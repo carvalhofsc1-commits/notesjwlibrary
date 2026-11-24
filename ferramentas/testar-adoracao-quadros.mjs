@@ -970,7 +970,7 @@ teste("6.12.75: servidor guarda as passagens do Personagem e de Jesus em \"relat
   assert.match(servidorJs, /const evitarDaParte = QUADROS_COM_RELATO\.includes\(id\) \? ctx\.evitar : \{ \.\.\.ctx\.evitar, relatos: \[\] \};/);
   assert.equal((servidorJs.match(/\.\.\.memoriaDaPassagem\(textos\)/g) || []).length, 2, "Personagem e Jesus");
   assert.equal((servidorJs.match(/listaEvitar\("relatos bíblicos", ctx\.evitar\.relatos\)/g) || []).length >= 3, true, "Abertura, Personagem e Jesus");
-  assert.match(servidorJs, /const semTexto = fontesConfiguradas\(\) \? parte\.textos\.filter\(\(t\) => t && t\.referencia && !t\.texto\)/);
+  assert.match(servidorJs, /const semTexto = fontesConfiguradas\(\) && id !== "principio" \? parte\.textos\.filter\(\(t\) => t && t\.referencia && !t\.texto\)/); // 6.12.79: menos no Princípio
   assert.match(servidorJs, /não foi achado na Bíblia/);
   assert.match(montados.sistemaFamiliaQuadro.personagem, /Fuja dos relatos bíblicos que vierem em EVITAR/);
   assert.match(montados.sistemaFamiliaQuadro.jesus, /Fuja dos relatos bíblicos que vierem em EVITAR/);
@@ -1478,6 +1478,122 @@ teste("6.12.78: Verdadeiro ou falso e Quem sou eu? com a conferência simulada (
   ab.ctx.conferirJogo = async () => { chamadas.push({ idTipo: "abreviacoes" }); return []; };
   await ab.prep.montar({ descricao: "d", nome: "Abreviações", comoJogar: "R.", rodadas: [{ pergunta: "P da P", resposta: "Príncipe da Paz", referencia: "Isaías 9:6" }], eventos: [] });
   assert.equal(chamadas.length, chamadasAntes, "Abreviações não é conferido pela IA");
+});
+
+// ---------- Patch 6.12.79: os 4 pontos da revisão de código ----------
+
+teste("6.12.79 (1): entre duas tentativas, vale a que tem menos problemas e, empatando, mais rodadas", () => {
+  const t = (rodadas, falta = "", repeticoes = []) => ({ repeticoes, falta, contagens: { rodadas } });
+  // O caso da revisão: 9 rodadas (falta 1) contra 4 rodadas (também falta 1): a de 4 NÃO substitui a de 9.
+  assert.equal(ger.segundaTentativaMelhor(t(9, "vieram 9"), t(4, "vieram 4")), false);
+  assert.equal(ger.segundaTentativaMelhor(t(4, "vieram 4"), t(9, "vieram 9")), true);
+  assert.equal(ger.segundaTentativaMelhor(t(9, "vieram 9"), t(9, "vieram 9")), true, "empate total: vale a 2ª (como antes)");
+  // Menos problemas ganha, mesmo com menos rodadas; mais problemas perde, mesmo com mais rodadas.
+  assert.equal(ger.segundaTentativaMelhor(t(9, "vieram 9"), t(8)), true);
+  assert.equal(ger.segundaTentativaMelhor(t(10), t(12, "vieram 12 e faltam falsas")), false);
+  assert.equal(ger.segundaTentativaMelhor(t(10, "", ["o personagem X já está em outro quadro"]), t(10)), true);
+  assert.equal(ger.segundaTentativaMelhor(t(10, "f", ["a"]), t(10, "f", ["a", "b"])), false);
+  // Quadros sem rodadas (nenhum é jogo): empate de problemas = a 2ª, como sempre foi.
+  assert.equal(ger.segundaTentativaMelhor({ repeticoes: ["a"], falta: "", contagens: {} }, { repeticoes: ["a"], falta: "", contagens: {} }), true);
+  assert.equal(ger.segundaTentativaMelhor(t(9, "x"), null), false);
+  assert.equal(ger.segundaTentativaMelhor(t(9, "x"), undefined), false);
+  assert.match(servidorJs, /if \(segundaTentativaMelhor\(r, r2\)\) r = r2;/);
+  assert.ok(!servidorJs.includes("problemas(r2).length <= problemas(r).length"), "a comparação antiga saiu");
+});
+
+teste("6.12.79 (2): rodada sem texto conferível sai (separarPorTexto, sem_texto) e a conferência só roda com a Bíblia respondendo", () => {
+  assert.equal(ger.vereditoDaConferencia("sem_texto"), "sem_texto");
+  assert.equal(ger.vereditoDaConferencia("Sem texto"), "sem_texto");
+  assert.deepEqual([...ger.TIPOS_DE_VEREDITO], ["confere", "contradiz", "nao_consta", "sem_texto"]);
+  const rodadas = [
+    { pergunta: "A", resposta: "Verdadeiro.", referencia: "Atos 7:59, 60" },
+    { pergunta: "B", resposta: "Falso.", referencia: "" },
+    { pergunta: "C", resposta: "Verdadeiro.", referencia: "Ato 99:1" },
+    { pergunta: "D", resposta: "Falso.", referencia: "Gênesis 50:16" },
+  ];
+  const textos = ["Atos 7:59 Enquanto apedrejavam Estêvão…", "", "", "Gênesis 50:16 Por isso, eles mandaram dizer a José"];
+  const { aConferir, semTexto } = ger.separarPorTexto(rodadas, textos);
+  assert.deepEqual(aConferir.map((x) => x.indice), [0, 3]);
+  assert.deepEqual(semTexto.map((x) => x.n), [2, 3]);
+  assert.ok(semTexto.every((x) => x.veredito === "sem_texto"));
+  assert.equal(semTexto[0].motivo, "a rodada veio sem referência");
+  assert.equal(semTexto[1].motivo, "o texto de Ato 99:1 não foi achado na Bíblia");
+  // A IA recebe só as rodadas com texto (n de 1 a 2); os itens voltam com o n da lista original (1 e 4).
+  const daIa = [{ n: 1, veredito: "confere", motivo: "" }, { n: 2, veredito: "contradiz", motivo: "os papéis estão trocados" }, { n: 7, veredito: "contradiz", motivo: "fora da lista" }];
+  const originais = ger.itensNaPosicaoOriginal(daIa, aConferir);
+  assert.deepEqual(originais.map((x) => [x.n, x.veredito]), [[1, "confere"], [4, "contradiz"]], "o n fora da lista de enviadas sai");
+  assert.deepEqual(ger.itensNaPosicaoOriginal(null, aConferir), []);
+  // Aplicadas: contradiz (D) e sem_texto (B e C) saem; só A fica.
+  const ap = ger.aplicarConferenciaDoJogo(rodadas, [...originais, ...semTexto]);
+  assert.deepEqual(ap.mantidas.map((r) => r.pergunta), ["A"]);
+  assert.deepEqual(ap.rejeitadas.map((x) => x.rodada.pergunta).sort(), ["B", "C", "D"]);
+  assert.match(ger.textoDasRejeitadas(ap.rejeitadas), /por contrariar o texto ou por não terem um texto conferível/);
+  assert.match(ger.textoDasRejeitadas(ap.rejeitadas), /\(a rodada veio sem referência\)/);
+  assert.match(ger.textoDasRejeitadas(ap.rejeitadas), /\(o texto de Ato 99:1 não foi achado na Bíblia\)/);
+  // O servidor usa tudo isso e testa se a Bíblia responde antes de dar as rodadas por inconferíveis.
+  assert.match(servidorJs, /const \{ aConferir, semTexto \} = separarPorTexto\(rodadas, textos\);/);
+  assert.match(servidorJs, /const prova = await buscarVersiculos\(\["Gênesis 1:1"\], 1\)\.catch\(\(\) => \[\]\);/);
+  assert.match(servidorJs, /return prova\.length \? semTexto : null;/);
+  assert.match(servidorJs, /return \[\.\.\.itensNaPosicaoOriginal\(resposta\.parsed_output\.rodadas, aConferir\), \.\.\.semTexto\];/);
+  assert.match(servidorJs, /mensagemDeConferenciaDoJogo\(idTipo, aConferir\.map\(\(x\) => x\.rodada\), aConferir\.map\(\(x\) => x\.texto\)\)/);
+  const jogoPrompt = prompts.PARTES.find((x) => x.id === "adoracao_q_jogo").padrao;
+  assert.match(jogoPrompt, /TODA rodada precisa de uma "referencia" que o servidor ache na Bíblia/);
+  assert.match(montados.sistemaFamiliaQuadro.jogo, /também sai \(não dá para conferi-la\)/);
+});
+
+teste("6.12.79 (2): com a conferência simulada devolvendo sem_texto, a rodada sai e o pedido de novo diz por quê (com FONTES_DIR)", async () => {
+  const vf = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "jogo", jogos: ["Verdadeiro ou falso"] }), montados);
+  const rodada = (i) => ({ pergunta: `Afirmação ${i}`, resposta: i % 2 ? "Verdadeiro. Está no relato." : "Falso. Foi outro.", referencia: i <= 4 ? "" : "Gênesis 1:1" });
+  const saida = { descricao: "d", nome: "V ou F", comoJogar: "Regras.", rodadas: Array.from({ length: 14 }, (_, i) => rodada(i + 1)), eventos: [] };
+  vf.ctx.conferirJogo = async (idTipo, rodadas) => rodadas.map((r, i) => (r.referencia ? { n: i + 1, veredito: "confere", motivo: "" } : { n: i + 1, veredito: "sem_texto", motivo: "a rodada veio sem referência" }));
+  const r = await vf.prep.montar(saida);
+  if (!comFontes) return console.log("      (sem FONTES_DIR: conferência simulada pulada)");
+  assert.equal(r.contagens.rejeitadasNaBiblia, 4);
+  assert.equal(r.contagens.rodadas, 10, "14 - 4 sem referência = 10");
+  assert.ok(!r.jogo.rodadas.some((x) => ["Afirmação 1", "Afirmação 2", "Afirmação 3", "Afirmação 4"].includes(x.pergunta)));
+  assert.equal(r.falta, "", "10 é o mínimo do tipo: não pede de novo");
+  const poucas = await vf.prep.montar({ ...saida, rodadas: Array.from({ length: 12 }, (_, i) => rodada(i + 1)) });
+  assert.match(poucas.falta, /^vieram 8 rodadas válidas; mande 14 rodadas \(no mínimo 10\)/);
+  assert.match(poucas.falta, /a conferência com a Bíblia tirou 4 rodadas por contrariar o texto ou por não terem um texto conferível/);
+  assert.match(poucas.falta, /\(a rodada veio sem referência\)/);
+});
+
+teste("6.12.79 (3): Princípio sem entradas do índice não chama a IA (503) e texto não achado não faz refazer o Princípio", async () => {
+  assert.match(servidorJs, /if \(prep\.indisponivel\) return erro\(res, 503, prep\.indisponivel\);/);
+  assert.match(servidorJs, /indisponivel: cands\.length \? "" : "A lista de Princípios Bíblicos não está disponível agora\./);
+  assert.match(servidorJs, /fontesConfiguradas\(\) && id !== "principio" \? parte\.textos\.filter/);
+  const pr = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "principio" }), montados);
+  assert.ok(!pr.erro);
+  if (comFontes) assert.equal(pr.prep.indisponivel, "", "com o índice, o quadro segue");
+  else assert.match(pr.prep.indisponivel, /^A lista de Princípios Bíblicos não está disponível agora\./, "sem o índice, o quadro não chama a IA");
+  // Os outros quadros não têm esse campo (seguem como sempre).
+  const jesus = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "jesus" }), montados);
+  assert.ok(!jesus.prep.indisponivel);
+});
+
+teste("6.12.79 (4): prazo total do quadro (270 s): cada chamada com o tempo que sobra e, sem tempo, nada de refazer, trocar o tipo ou conferir", () => {
+  assert.match(servidorJs, /const PRAZO_TOTAL_MS = 270_000;/);
+  assert.match(servidorJs, /const PRAZO_MINIMO_MS = 40_000;/);
+  assert.match(servidorJs, /const restante = \(\) => PRAZO_TOTAL_MS - \(Date\.now\(\) - inicio\);/);
+  assert.match(servidorJs, /const clienteComPrazo = \(\) => criarClienteIa\(\{ maxRetries: 0, timeout: Math\.max\(10_000, Math\.min\(120_000, restante\(\) - 5_000\)\) \}, P\.ia\.provedorTarefa\);/);
+  // O prazo cabe no que o app espera (IA_ESPERA_MS = 290 s).
+  const espera = Number((appJs.match(/const IA_ESPERA_MS = (\d+);/) || [])[1]);
+  assert.ok(espera >= 280000, "IA_ESPERA_MS");
+  assert.ok(270000 + 5000 < espera, "o prazo do servidor termina antes de o app desistir");
+  // Todas as chamadas do quadro usam o cliente com prazo (nenhum cliente de 120 s fixo sobrou na função).
+  const ini = servidorJs.indexOf("async function gerarQuadroFamilia(res, body, P)");
+  const fim = servidorJs.indexOf("// Chamada única de antes (versões antigas do app, sem \"fase\").", ini);
+  const corpo = servidorJs.slice(ini, fim);
+  assert.ok(ini > 0 && fim > ini);
+  assert.ok(!/criarClienteIa\(\{ maxRetries: 0, timeout: 120_000 \}/.test(corpo), "sem cliente de 120 s fixo");
+  assert.equal((corpo.match(/chamarIa\(\r?\n\s+clienteComPrazo\(\),/g) || []).length, 2, "geração e conferência");
+  assert.match(corpo, /if \(!fontesConfiguradas\(\) \|\| !P\.sistemaFamiliaConferir \|\| !comTempo\(\)\) return null;/);
+  assert.match(corpo, /if \(problemas\(r\)\.length && body\.refazerRepetido !== true && comTempo\(\)\) \{/);
+  assert.match(corpo, /if \(id === "jogo" && r\.trocarTipo && body\.refazerRepetido !== true && comTempo\(\)\) \{/);
+  assert.match(corpo, /tipoNovo && idDoJogo\(tipoNovo\) !== idDoJogo\(r\.trocarTipo\) && comTempo\(\)/);
+  assert.match(corpo, /"sem tempo para refazer o quadro"/);
+  // O CHANGELOG e a descrição da montagem registram o patch.
+  assert.match(prompts.travadosDe({}).find((x) => x.id === "montagem_pedidos").texto, /6\.12\.79: a rodada do Verdadeiro ou falso e do Quem sou eu\? sem referência/);
 });
 
 for (const [nome, fn] of testes) {

@@ -2,6 +2,17 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.79
+
+### Correções da revisão de código da Adoração em Família por quadros
+
+- **Entre duas tentativas, vale a melhor:** ao refazer um quadro, a 2ª tentativa só substitui a 1ª se tiver menos problemas ou, empatando, não tiver menos rodadas (`segundaTentativaMelhor`). Antes só se contavam os problemas, e uma 1ª tentativa com 9 rodadas (falta 1) perdia para uma 2ª com 4 rodadas (também falta 1).
+- **Rodada que não dá para conferir sai:** no Verdadeiro ou falso e no Quem sou eu?, a rodada sem referência, ou com referência que a Bíblia do servidor não achou, não passa mais como se tivesse sido conferida: sai do jogo, sem gastar a IA (veredito `sem_texto`, posto pelo servidor), e o pedido de novo diz por quê. A IA só confere as rodadas que têm o texto da Bíblia. Se nenhuma rodada tem texto e a Bíblia do servidor nem responde, nada é conferido e as rodadas ficam como estão (não derruba o jogo por uma falha do armazenamento). A instrução do jogo agora diz que toda rodada precisa de uma referência que o servidor ache na Bíblia.
+- **Princípio bíblico:** sem nenhuma entrada do índice (arquivo indisponível), o quadro dá erro 503 sem chamar a IA e o app mostra o "🔄 Refazer este quadro", em vez de sair só com as duas perguntas fixas ("do(s) texto(s) acima") e nenhum texto. E um texto bíblico que a Bíblia não achou deixa de fazer refazer o Princípio, porque as referências dele vêm do índice, escolhidas pelo servidor, e a IA não pode corrigi-las.
+- **Prazo total de cada quadro (270 s):** o app espera 290 s por quadro, mas um jogo podia encadear até 6 chamadas em série (gerar, conferir, refazer, conferir, trocar o tipo, conferir), cada uma com limite de 120 s. Agora cada chamada leva só o tempo que sobra (até 120 s) e, com menos de 40 s, o servidor não refaz, não troca o tipo do jogo nem confere: devolve o quadro como está, com o aviso "sem tempo para refazer o quadro", em vez de o app desistir enquanto o servidor ainda gasta IA.
+- Instruções da IA (tela de prompts): o jogo ganhou a regra da referência obrigatória, e o formato e a descrição da montagem foram atualizados.
+- Testes: `testar-adoracao-quadros.mjs` passou a ter 68 testes (5 novos).
+
 ## 6.12.78
 
 ### Jogos: conferência com a Bíblia

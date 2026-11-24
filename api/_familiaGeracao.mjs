@@ -826,14 +826,40 @@ export function quemFalaConfere(texto, resposta) {
 // chamada curta à IA confere cada rodada com o TEXTO da referência, transcrito da Bíblia do servidor, e o servidor tira as que o texto contradiz.
 // Os outros 4 tipos já nascem do texto transcrito (ou de dados do servidor) e não precisam dela.
 export const JOGOS_CONFERIDOS_NA_BIBLIA = Object.freeze(["quem_sou_eu", "verdadeiro_falso"]);
-export const TIPOS_DE_VEREDITO = Object.freeze(["confere", "contradiz", "nao_consta"]);
+// "sem_texto" não vem da IA: é posto pelo servidor na rodada sem referência ou com referência que a Bíblia do servidor não achou (6.12.79),
+// porque uma rodada que não dá para conferir não pode passar como se tivesse sido conferida.
+export const TIPOS_DE_VEREDITO = Object.freeze(["confere", "contradiz", "nao_consta", "sem_texto"]);
 
-// O veredito escrito pela IA vira um dos três (qualquer outra coisa, ou vazio, vale "nao_consta": só "contradiz" tira a rodada).
+// O veredito escrito pela IA vira um dos três (qualquer outra coisa, ou vazio, vale "nao_consta": só "contradiz" e "sem_texto" tiram a rodada).
 export function vereditoDaConferencia(valor) {
   const t = normalizarTexto(valor).replace(/\s+/g, "_");
   if (t.startsWith("contradiz") || t === "errada" || t === "errado") return "contradiz";
+  if (t.startsWith("sem_texto")) return "sem_texto";
   if (t.startsWith("confere")) return "confere";
   return "nao_consta";
+}
+
+// 6.12.79: separa as rodadas que têm o texto da Bíblia (vão à IA) das que não têm (referência vazia ou não achada: saem com o motivo, sem
+// gastar a IA). textos[i] é o texto da referência da rodada i. Devolve { aConferir: [{ indice, rodada, texto }], semTexto: [{ n, veredito, motivo }] }.
+export function separarPorTexto(rodadas, textos = []) {
+  const aConferir = [];
+  const semTexto = [];
+  (Array.isArray(rodadas) ? rodadas : []).forEach((r, i) => {
+    const texto = String((Array.isArray(textos) && textos[i]) || "").trim();
+    if (texto) aConferir.push({ indice: i, rodada: r, texto });
+    else semTexto.push({ n: i + 1, veredito: "sem_texto", motivo: r && r.referencia ? `o texto de ${r.referencia} não foi achado na Bíblia` : "a rodada veio sem referência" });
+  });
+  return { aConferir, semTexto };
+}
+
+// Os itens que a IA devolveu para as rodadas enviadas (n = posição entre as enviadas) com o n da posição na lista original.
+export function itensNaPosicaoOriginal(itens, aConferir) {
+  return (Array.isArray(itens) ? itens : [])
+    .map((it) => {
+      const alvo = (aConferir || [])[Math.round(Number(it && it.n)) - 1];
+      return alvo ? { ...it, n: alvo.indice + 1 } : null;
+    })
+    .filter(Boolean);
 }
 
 // A mensagem da conferência: cada rodada com o que ela diz, a resposta dada e o texto da Bíblia da sua referência (textos[i], pela ordem).
@@ -851,17 +877,30 @@ export function mensagemDeConferenciaDoJogo(idTipo, rodadas, textos = []) {
   return `TIPO DO JOGO: ${vf ? "Verdadeiro ou falso" : "Quem sou eu?"}\nRODADAS A CONFERIR (${blocos.length}), cada uma com o texto da Bíblia transcrito pelo servidor:\n\n${blocos.join("\n\n")}\n`;
 }
 
-// Aplica o que a conferência devolveu ([{ n, veredito, motivo }], com n a partir de 1): só "contradiz" tira a rodada. Sem resposta válida da
-// IA (itens que não é lista), todas ficam. Devolve { mantidas, rejeitadas: [{ rodada, motivo }] }.
+// Aplica o que a conferência devolveu ([{ n, veredito, motivo }], com n a partir de 1): "contradiz" (o texto mostra que a rodada está errada)
+// e "sem_texto" (não deu para conferir) tiram a rodada; "confere" e "nao_consta" ficam. Sem resposta válida da IA (itens que não é lista),
+// todas ficam. Devolve { mantidas, rejeitadas: [{ rodada, motivo }] }.
 export function aplicarConferenciaDoJogo(rodadas, itens) {
   const lista = Array.isArray(rodadas) ? rodadas : [];
   if (!Array.isArray(itens)) return { mantidas: lista.slice(), rejeitadas: [] };
   const fora = new Map();
   for (const it of itens) {
     const n = Math.round(Number(it && it.n));
-    if (n >= 1 && n <= lista.length && !fora.has(n) && vereditoDaConferencia(it.veredito) === "contradiz") fora.set(n, String(it.motivo || "").replace(/\s+/g, " ").trim().slice(0, 300));
+    const veredito = vereditoDaConferencia(it && it.veredito);
+    if (n >= 1 && n <= lista.length && !fora.has(n) && (veredito === "contradiz" || veredito === "sem_texto")) fora.set(n, String(it.motivo || "").replace(/\s+/g, " ").trim().slice(0, 300));
   }
   return { mantidas: lista.filter((_, i) => !fora.has(i + 1)), rejeitadas: [...fora].map(([n, motivo]) => ({ rodada: lista[n - 1], motivo })) };
+}
+
+// 6.12.79: entre a 1ª e a 2ª tentativa de um quadro, a 2ª só vale se tiver menos problemas (repetições e "falta", que conta 1) ou, empatando,
+// não tiver menos rodadas. Antes só se contavam os problemas e o `<=` escolhia a 2ª no empate: duas tentativas abaixo do mínimo (9 rodadas contra
+// 4) empatavam em 1 problema e o jogo com 4 rodadas ficava. Cada tentativa: { repeticoes: [], falta: "", contagens: { rodadas } }.
+export function segundaTentativaMelhor(primeira, segunda) {
+  if (!segunda) return false;
+  const problemas = (x) => (Array.isArray(x && x.repeticoes) ? x.repeticoes.length : 0) + (x && x.falta ? 1 : 0);
+  const rodadas = (x) => (x && x.contagens && Number.isFinite(x.contagens.rodadas) ? x.contagens.rodadas : 0);
+  if (problemas(segunda) !== problemas(primeira)) return problemas(segunda) < problemas(primeira);
+  return rodadas(segunda) >= rodadas(primeira);
 }
 
 // O que se diz à IA, ao pedir o jogo de novo, sobre as rodadas que a conferência tirou (até 4, curtas).
@@ -872,7 +911,7 @@ export function textoDasRejeitadas(rejeitadas) {
     const s = String(t || "").replace(/\s+/g, " ").trim();
     return s.length > n ? `${s.slice(0, n - 1)}…` : s;
   };
-  return `a conferência com a Bíblia tirou ${lista.length} ${lista.length === 1 ? "rodada" : "rodadas"} por contrariar o texto (confira quem fez o quê e a quem, e use na "referencia" todos os versículos que sustentam a rodada): ${lista
+  return `a conferência com a Bíblia tirou ${lista.length} ${lista.length === 1 ? "rodada" : "rodadas"} por contrariar o texto ou por não terem um texto conferível (confira quem fez o quê e a quem, e ponha em "referencia", sempre, TODOS os versículos que sustentam a rodada, com o livro escrito como na Bíblia): ${lista
     .slice(0, 4)
     .map((x) => `"${curto(x.rodada && x.rodada.pergunta, 110)}" (${curto(x.motivo, 140) || "contraria o texto"})`)
     .join("; ")}`;

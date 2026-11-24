@@ -64,6 +64,7 @@ import {
   fonteDoPrincipio,
   idDaEscolha,
   idDoJogo,
+  itensNaPosicaoOriginal,
   lacunaNoVersiculo,
   lankDoLink,
   linkDeConsultaWol,
@@ -85,6 +86,8 @@ import {
   semMarcasDeFigura,
   semMarcasDoTexto,
   sentidoQueCitaAPassagem,
+  segundaTentativaMelhor,
+  separarPorTexto,
   textoDasRejeitadas,
   tipoDoJogo,
   urlWolDoDocId,
@@ -3350,6 +3353,8 @@ const PREPARAR_QUADRO_FAMILIA = {
       sistema: "principio",
       schema: SAIDAS_QUADRO_FAMILIA.principio,
       listas,
+      // 6.12.79: sem nenhuma entrada do índice, o quadro sairia só com as duas perguntas fixas ("do(s) texto(s) acima") e nenhum texto: não se chama a IA.
+      indisponivel: cands.length ? "" : "A lista de Princípios Bíblicos não está disponível agora. Tente de novo daqui a pouco.",
       contagens: { candidatos: cands.length },
       async montar(o) {
         // 6.12.72: uma entrada só (a leitura transcreve só ela). Sem escolha válida, vale o candidato que mais combina com o tema.
@@ -3860,16 +3865,27 @@ async function gerarQuadroFamilia(res, body, P) {
     if (pedido.erro) return erro(res, ...pedido.erro);
     const { ctx, quadro, prep } = pedido;
     const id = quadro.id;
-    const client = criarClienteIa({ maxRetries: 0, timeout: 120_000 }, P.ia.provedorTarefa);
+    // 6.12.79: uma fonte que o quadro exige e não está disponível (ex.: o índice dos Princípios Bíblicos) não gasta a IA: o app mostra o erro e o "Refazer".
+    if (prep.indisponivel) return erro(res, 503, prep.indisponivel);
     const inicio = Date.now();
+    // 6.12.79: prazo total do quadro (o app espera IA_ESPERA_MS = 290 s). Cada chamada leva o tempo que sobra (até 120 s) e, com menos de
+    // PRAZO_MINIMO_MS, o refazer, a troca do tipo do jogo e a conferência com a Bíblia ficam de fora: o quadro sai como está, com aviso, em vez de
+    // o app desistir enquanto o servidor ainda gasta IA.
+    const PRAZO_TOTAL_MS = 270_000;
+    const PRAZO_MINIMO_MS = 40_000;
+    const restante = () => PRAZO_TOTAL_MS - (Date.now() - inicio);
+    const comTempo = () => restante() >= PRAZO_MINIMO_MS;
+    const clienteComPrazo = () => criarClienteIa({ maxRetries: 0, timeout: Math.max(10_000, Math.min(120_000, restante() - 5_000)) }, P.ia.provedorTarefa);
     let entrada = 0;
     let saida = 0;
     // 6.12.78: a conferência com a Bíblia dos jogos que a IA escreve sozinha (Verdadeiro ou falso e Quem sou eu?). Para cada rodada, o servidor
     // transcreve o texto da sua referência e uma segunda chamada, curta, diz se a rodada o contradiz (ver adoracao_q_conferir). Os tokens entram na
-    // conta do quadro. Devolve [{ n, veredito, motivo }] ou null (sem a Bíblia, recusa ou erro: as rodadas ficam como estão).
+    // conta do quadro. 6.12.79: a rodada sem referência, ou com referência que a Bíblia do servidor não achou, não pode ser conferida e SAI (veredito
+    // "sem_texto", posto pelo servidor, sem gastar a IA), para não passar como se tivesse sido conferida. Devolve [{ n, veredito, motivo }] ou null
+    // (sem a Bíblia no servidor, sem tempo, recusa ou erro da IA: as rodadas ficam como estão).
     const conferirJogoFamilia = async (idTipo, rodadas) => {
       try {
-        if (!fontesConfiguradas() || !P.sistemaFamiliaConferir) return null;
+        if (!fontesConfiguradas() || !P.sistemaFamiliaConferir || !comTempo()) return null;
         const textos = await Promise.all(
           rodadas.map(async (r) => {
             if (!r.referencia) return "";
@@ -3877,16 +3893,22 @@ async function gerarQuadroFamilia(res, body, P) {
             return (v && v.texto) || "";
           })
         );
+        const { aConferir, semTexto } = separarPorTexto(rodadas, textos);
+        if (!aConferir.length) {
+          // Nenhuma rodada com texto: se a Bíblia do servidor nem responde, não dá para conferir nada (ficam como estão); se responde, todas saem.
+          const prova = await buscarVersiculos(["Gênesis 1:1"], 1).catch(() => []);
+          return prova.length ? semTexto : null;
+        }
         const resposta = await chamarIa(
-          client,
+          clienteComPrazo(),
           P,
-          { max_tokens: P.ia.provedorTarefa === "gemini" ? 16000 : 4000, system: P.sistemaFamiliaConferir, messages: [{ role: "user", content: mensagemDeConferenciaDoJogo(idTipo, rodadas, textos) }] },
+          { max_tokens: P.ia.provedorTarefa === "gemini" ? 16000 : 4000, system: P.sistemaFamiliaConferir, messages: [{ role: "user", content: mensagemDeConferenciaDoJogo(idTipo, aConferir.map((x) => x.rodada), aConferir.map((x) => x.texto)) }] },
           { schema: SaidaConferenciaJogo, tarefa: "adoracao-familia" }
         );
         entrada += resposta.usage?.input_tokens || 0;
         saida += resposta.usage?.output_tokens || 0;
         if (resposta.stop_reason === "refusal" || !resposta.parsed_output || !Array.isArray(resposta.parsed_output.rodadas)) return null;
-        return resposta.parsed_output.rodadas;
+        return [...itensNaPosicaoOriginal(resposta.parsed_output.rodadas, aConferir), ...semTexto];
       } catch (e) {
         return null;
       }
@@ -3894,7 +3916,7 @@ async function gerarQuadroFamilia(res, body, P) {
     // pd: o pedido montado (o do quadro, ou o da troca do tipo do jogo, 6.12.76).
     const gerarUma = async (mensagem, pd = pedido) => {
       const resposta = await chamarIa(
-        client,
+        clienteComPrazo(),
         P,
         // 6.12.78: o jogo (Quem sou eu? com 10 rodadas de 3 dicas, Verdadeiro ou falso com 14) escreve bastante: com 6000 a saída chegou a ser cortada
         // no meio do JSON; o limite é só um teto (o custo é o que a IA realmente escreve).
@@ -3926,7 +3948,8 @@ async function gerarQuadroFamilia(res, body, P) {
       // que agora guardam as suas passagens nessa memória.
       const evitarDaParte = QUADROS_COM_RELATO.includes(id) ? ctx.evitar : { ...ctx.evitar, relatos: [] };
       // 6.12.75: um texto bíblico que a Bíblia do servidor não achou (referência errada, mal escrita ou de outro livro) faz refazer uma vez.
-      const semTexto = fontesConfiguradas() ? parte.textos.filter((t) => t && t.referencia && !t.texto).map((t) => t.referencia) : [];
+      // 6.12.79: não vale no Princípio bíblico: as referências dele vêm do índice escolhido pelo servidor, e a IA não pode corrigi-las.
+      const semTexto = fontesConfiguradas() && id !== "principio" ? parte.textos.filter((t) => t && t.referencia && !t.texto).map((t) => t.referencia) : [];
       const faltaTexto = semTexto.length ? `o texto bíblico ${semTexto.join("; ")} não foi achado na Bíblia (confira o livro, o capítulo e os versículos)` : "";
       return { parte, memoria: memoriaCompacta(memoria), usados, repeticoes: repeticoesDaParte(usados, ctx.jaUsados, evitarDaParte), falta: [falta, faltaTexto].filter(Boolean).join("; "), trocarTipo: trocarTipo || "", contagens: contagens || {} };
     };
@@ -3935,21 +3958,22 @@ async function gerarQuadroFamilia(res, body, P) {
     let refeito = false;
     // 6.12.73: o que faltou (o mínimo de rodadas do jogo) também faz refazer uma vez.
     const problemas = (x) => [...x.repeticoes, ...(x.falta ? [x.falta] : [])];
-    if (problemas(r).length && body.refazerRepetido !== true) {
+    // 6.12.79: a segunda tentativa só substitui a primeira se for melhor (segundaTentativaMelhor: menos problemas ou, empatando, mais rodadas).
+    if (problemas(r).length && body.refazerRepetido !== true && comTempo()) {
       refeito = true;
       const pedidoDeNovo = [r.repeticoes.length && `REPETIÇÃO A EVITAR (refaça o quadro sem repetir): ${r.repeticoes.join("; ")}.`, r.falta && `FALTOU (refaça o quadro completo): ${r.falta}.`].filter(Boolean).join("\n");
       const r2 = await gerarUma(`${pedido.mensagem}\n${pedidoDeNovo}\n`).catch(() => null);
-      if (r2 && problemas(r2).length <= problemas(r).length) r = r2;
+      if (segundaTentativaMelhor(r, r2)) r = r2;
     }
     // 6.12.76: o Complete o versículo e o Quem disse isso? são montados pelo servidor com o texto da Bíblia; se, mesmo depois de refazer,
     // ficaram com menos de MIN_RODADAS_PARA_MANTER_O_TIPO rodadas conferidas, o jogo é feito de novo com outro tipo aceito pela família.
     let trocado = "";
-    if (id === "jogo" && r.trocarTipo && body.refazerRepetido !== true) {
+    if (id === "jogo" && r.trocarTipo && body.refazerRepetido !== true && comTempo()) {
       const aceitos = ctx.perfil.jogos.length ? ctx.perfil.jogos : JOGOS_FAMILIA;
       if (aceitos.some((j) => idDoJogo(j) && idDoJogo(j) !== idDoJogo(r.trocarTipo))) {
         const pedido2 = await montarPedidoQuadroFamilia({ ...body, jogoFora: r.trocarTipo }, P);
         const tipoNovo = pedido2.erro ? "" : pedido2.prep.tipo || "";
-        if (tipoNovo && idDoJogo(tipoNovo) !== idDoJogo(r.trocarTipo)) {
+        if (tipoNovo && idDoJogo(tipoNovo) !== idDoJogo(r.trocarTipo) && comTempo()) {
           const r3 = await gerarUma(pedido2.mensagem, pedido2).catch(() => null);
           if (r3 && r3.parte.jogo && !r3.trocarTipo) {
             trocado = `o jogo ${r.trocarTipo} não teve rodadas suficientes conferidas na Bíblia; foi trocado por ${tipoNovo}`;
@@ -3958,7 +3982,9 @@ async function gerarQuadroFamilia(res, body, P) {
         }
       }
     }
-    const aviso = problemas(r).length || trocado ? `${quadro.nome}: ${[trocado, ...problemas(r)].filter(Boolean).join("; ")}.` : "";
+    // 6.12.79: se sobrou problema e acabou o tempo (prazo total do quadro), o aviso diz que não deu para refazer.
+    const semTempo = problemas(r).length && body.refazerRepetido !== true && !refeito && !comTempo() ? "sem tempo para refazer o quadro" : "";
+    const aviso = problemas(r).length || trocado ? `${quadro.nome}: ${[trocado, ...problemas(r), semTempo].filter(Boolean).join("; ")}.` : "";
     console.log("Adoração em Família (quadro):", JSON.stringify({ modelo: P.ia.modelo, quadro: id, ...prep.contagens, ...r.contagens, leitura: Boolean(r.parte.leitura), textos: r.parte.textos.length, refeito, repeticoes: r.repeticoes.length, falta: r.falta ? 1 : 0, segundosIa: Math.round((Date.now() - inicio) / 100) / 10, entrada, saida }));
     return res.status(200).json({ parte: r.parte, quadro: id, usados: r.usados, memoria: r.memoria, aviso, refeito, modelo: nomeDoModelo(P.ia.modelo), data: new Date().toISOString() });
   } catch (e) {
