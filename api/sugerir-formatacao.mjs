@@ -3110,6 +3110,7 @@ export const SAIDAS_QUADRO_FAMILIA = {
 
 // 6.12.78: a conferência dos jogos escritos pela IA (Verdadeiro ou falso e Quem sou eu?) com o texto da Bíblia: uma entrada por rodada
 // ("n" a partir de 1). O veredito é texto livre (confere, contradiz ou nao_consta; o servidor normaliza): só "contradiz" tira a rodada.
+export const SaidaRevisaoLeitura = z.object({ perguntas: z.array(z.string()) });
 export const SaidaConferenciaJogo = z.object({
   rodadas: z.array(z.object({ n: z.number(), veredito: z.string(), motivo: z.string() })),
 });
@@ -3243,29 +3244,34 @@ const publicacaoDoTrecho = (l) => (l ? [{ titulo: l.livro, fonte: localDoTrecho(
 async function leituraDoArtigoFamilia(a, rotulo = "Trecho do artigo") {
   const url = urlWolDoDocId(a?.docId);
   if (!url) return null;
-  const lido = await lerArtigoDoWol(url, { timeoutMs: 8000, maxCaracteres: 6000, estruturado: true }).catch(() => null);
+  const lido = await lerArtigoDoWol(url, { timeoutMs: 8000, maxCaracteres: 12000, estruturado: true }).catch(() => null);
   if (!lido || String(lido.texto || "").length < MIN_CARACTERES_ARTIGO) return null;
   // 6.12.86: os dados da publicação (revista, edição e página) no lugar da seção do catálogo, e o texto em parágrafos com os subtítulos ("## ").
   const fonte = [lido.publicacao, lido.citacao].filter(Boolean).join(" · ") || a.secao || "Ensinos Bíblicos";
   return { titulo: limparLinha(lido.titulo || a.titulo, 200), fonte: limparLinha(fonte, 240), paragrafos: "", texto: leituraEmParagrafos(lido.texto), url: lido.url || url, rotulo };
 }
-// Mantém um parágrafo por linha e os subtítulos ("## ") e corta no fim de um parágrafo ou de uma frase.
-function leituraEmParagrafos(bruto, max = 2600) {
+// Mantém um parágrafo por linha, o título de um quadro ou experiência ("# ") e os subtítulos ("## "). 6.12.90: o limite era 2600 e cortava o artigo
+// (e a experiência) no meio; agora o texto vai até 7000 caracteres e, se passar, corta ANTES do último título/subtítulo que ainda cabe (uma seção
+// inteira ou nenhuma), e só no meio de uma seção se a primeira já passar do limite.
+function leituraEmParagrafos(bruto, max = 7000) {
   const saida = [];
+  const cabecas = []; // posição (em saida) de cada título/subtítulo
   let total = 0;
   for (const linha of String(bruto || "").split(/\r?\n/)) {
-    const subtitulo = /^##\s+/.test(linha);
-    const limpo = limparTextoGerado(linha.replace(/^##\s+/, ""), 1800);
+    const m = linha.match(/^(#{1,2})\s+/);
+    const limpo = limparTextoGerado(linha.replace(/^#{1,2}\s+/, ""), 1800);
     if (!limpo) continue;
     if (total + limpo.length > max) {
-      const resto = max - total;
-      if (!subtitulo && resto > 250) saida.push(cortarNoFimDaFrase(limpo, resto));
+      const ultima = cabecas[cabecas.length - 1];
+      if (ultima !== undefined && total > max * 0.4 && ultima > 0) saida.length = ultima; // fica só até a seção anterior
+      else if (!m && max - total > 250) saida.push(cortarNoFimDaFrase(limpo, max - total));
       break;
     }
-    saida.push((subtitulo ? "## " : "") + limpo);
+    if (m) cabecas.push(saida.length);
+    saida.push((m ? m[1] + " " : "") + limpo);
     total += limpo.length;
   }
-  while (saida.length && saida[saida.length - 1].startsWith("## ")) saida.pop(); // sem subtítulo solto no fim
+  while (saida.length && /^#{1,2} /.test(saida[saida.length - 1])) saida.pop(); // sem título solto no fim
   return saida.join("\n");
 }
 const listaDeArtigos = (titulo, artigos) =>
@@ -3352,7 +3358,9 @@ const PREPARAR_QUADRO_FAMILIA = {
         }
         const relato = o.relato && typeof o.relato === "object" ? o.relato : null;
         const textos = relato ? await textosBiblicosFamilia([relato.referencia], 1) : [];
-        const daLeitura = leitura ? perguntasLimpas(o.perguntasLeitura, 3) : [];
+        let daLeitura = leitura ? perguntasLimpas(o.perguntasLeitura, 3) : [];
+        // 6.12.90: com o texto já lido, uma segunda chamada escreve as perguntas de revisão do artigo todo (inclusive a experiência); sem ela, valem as do quadro.
+        if (leitura && ctx.perguntarLeitura) daLeitura = (await ctx.perguntarLeitura(leitura, [], 3)) || daLeitura;
         const perguntas = [...daLeitura, ...(textos.length ? perguntasLimpas(relato.perguntas, 2) : [])];
         // 6.12.73: a memória guarda o artigo ou o trecho lido e o relato bíblico, para a próxima noite não repetir.
         const memoria = {};
@@ -3557,7 +3565,9 @@ const PREPARAR_QUADRO_FAMILIA = {
         }
         // 6.12.73: sem as marcas de figura das brochuras ("os ribossomos (5)").
         if (leitura) leitura = { ...leitura, texto: semMarcasDeFigura(leitura.texto) };
-        return { descricao: descricaoFamilia(o.descricao), leitura, publicacoes, perguntas: perguntasLimpas(o.perguntas, 2), memoria: chave ? { criador: [chave] } : {}, contagens: { artigoLido } };
+        // 6.12.90: perguntas de revisão escritas com o texto lido (se a segunda chamada falhar, as do quadro).
+        const perguntasCriador = (leitura && ctx.perguntarLeitura ? await ctx.perguntarLeitura(leitura, [], 2) : null) || perguntasLimpas(o.perguntas, 2);
+        return { descricao: descricaoFamilia(o.descricao), leitura, publicacoes, perguntas: perguntasCriador, memoria: chave ? { criador: [chave] } : {}, contagens: { artigoLido } };
       },
     };
   },
@@ -3944,6 +3954,30 @@ async function gerarQuadroFamilia(res, body, P) {
         return null;
       }
     };
+    // 6.12.90: as perguntas de revisão da leitura, escritas pela IA DEPOIS de o servidor ler o artigo (a chamada do quadro só vê o título e o resumo):
+    // cobrem o texto todo, inclusive a experiência ou o quadro. null = sem tempo, recusa ou erro: ficam as perguntas que o quadro já trouxe.
+    const perguntarLeituraFamilia = async (leitura, jaEscritas, quantas) => {
+      try {
+        if (!leitura || !leitura.texto || !P.sistemaFamiliaRevisao || !comTempo()) return null;
+        const mensagem =
+          `QUANTIDADE: escreva exatamente ${quantas} perguntas.\n\n` +
+          (jaEscritas.length ? `PERGUNTAS JÁ ESCRITAS (não repita):\n${jaEscritas.map((q) => `- ${q}`).join("\n")}\n\n` : "") +
+          `TEXTO DA LEITURA — ${leitura.titulo || "sem título"}${leitura.fonte ? ` (${leitura.fonte})` : ""}:\n${leitura.texto.split("\n").map((l) => l.replace(/^### /, "# ")).join("\n")}\n`;
+        const resposta = await chamarIa(
+          clienteComPrazo(),
+          P,
+          { max_tokens: P.ia.provedorTarefa === "gemini" ? 8000 : 1500, system: P.sistemaFamiliaRevisao, messages: [{ role: "user", content: mensagem }] },
+          { schema: SaidaRevisaoLeitura, tarefa: "adoracao-familia" }
+        );
+        entrada += resposta.usage?.input_tokens || 0;
+        saida += resposta.usage?.output_tokens || 0;
+        if (resposta.stop_reason === "refusal" || !resposta.parsed_output) return null;
+        const lista = perguntasLimpas(resposta.parsed_output.perguntas, quantas);
+        return lista.length >= Math.min(2, quantas) ? lista : null;
+      } catch (e) {
+        return null;
+      }
+    };
     // pd: o pedido montado (o do quadro, ou o da troca do tipo do jogo, 6.12.76).
     const gerarUma = async (mensagem, pd = pedido) => {
       const resposta = await chamarIa(
@@ -3958,6 +3992,7 @@ async function gerarQuadroFamilia(res, body, P) {
       saida += resposta.usage?.output_tokens || 0;
       if (resposta.stop_reason === "refusal" || !resposta.parsed_output) return null;
       pd.ctx.conferirJogo = conferirJogoFamilia;
+      pd.ctx.perguntarLeitura = perguntarLeituraFamilia;
       const { contagens, memoria, falta, trocarTipo, ...montado } = await pd.prep.montar(resposta.parsed_output);
       const parte = {
         nome: quadro.nome,

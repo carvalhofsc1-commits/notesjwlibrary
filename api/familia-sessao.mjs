@@ -153,8 +153,8 @@ export async function textoDaSessaoParaLer(codigo, texto, origem = null) {
   const daLeitura = (p) => {
     const l = p && p.leitura;
     if (!l || typeof l !== "object") return false;
-    const linhas = String(l.texto || "").split(/\r?\n/).map((x) => x.replace(/^##\s+/, "").trim());
-    return [String(l.titulo || "").trim(), ...linhas].includes(lido.replace(/^##\s+/, ""));
+    const linhas = String(l.texto || "").split(/\r?\n/).map((x) => x.replace(/^#{1,2}\s+/, "").trim());
+    return [String(l.titulo || "").trim(), ...linhas].includes(lido.replace(/^#{1,2}\s+/, ""));
   };
   if (programa.partes.some((p) => p && ((Array.isArray(p.perguntas) && p.perguntas.some((q) => String(q).trim() === lido)) || daLeitura(p)))) return true;
   // 6.12.88: textos que o servidor abre sob demanda (matéria na tela, transcrição do vídeo, letra do cântico): o pedaço lido tem de estar no texto
@@ -264,8 +264,8 @@ function limparPrograma(op) {
       // 6.12.88: quantas das primeiras perguntas são da leitura (vêm logo depois dela, antes dos textos bíblicos).
       perguntasLeitura: Math.max(0, Math.min(15, Math.round(Number(p.perguntasLeitura) || 0))),
       // 6.12.48: o trecho da matéria que o servidor leu no wol para a leitura da atividade.
-      leitura: p.leitura && typeof p.leitura === "object" && texto(p.leitura.texto, 4000)
-        ? { titulo: texto(p.leitura.titulo, 200), fonte: texto(p.leitura.fonte, 240).replace(/\s+/g, " "), primeiro: p.leitura.primeiro === true, paragrafos: texto(p.leitura.paragrafos, 20), texto: texto(p.leitura.texto, 4000), rotulo: texto(p.leitura.rotulo, 80), url: /^https:\/\/wol\.jw\.org\//i.test(String(p.leitura.url || "")) ? texto(p.leitura.url, 500) : "" }
+      leitura: p.leitura && typeof p.leitura === "object" && texto(p.leitura.texto, 8000)
+        ? { titulo: texto(p.leitura.titulo, 200), fonte: texto(p.leitura.fonte, 240).replace(/\s+/g, " "), primeiro: p.leitura.primeiro === true, paragrafos: texto(p.leitura.paragrafos, 20), texto: texto(p.leitura.texto, 8000), rotulo: texto(p.leitura.rotulo, 80), url: /^https:\/\/wol\.jw\.org\//i.test(String(p.leitura.url || "")) ? texto(p.leitura.url, 500) : "" }
         : null,
       transicao: texto(p.transicao, 600),
       jogo: null,

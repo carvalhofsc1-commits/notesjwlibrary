@@ -2,6 +2,15 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.90
+
+### Adoração em Família: artigo inteiro, experiência formatada e perguntas de revisão do texto lido
+
+- **Matéria não sai mais cortada:** o texto do artigo era cortado em 2600 caracteres, no meio da experiência (o artigo "Oração: ‘Lancem sobre ele toda a sua ansiedade’" tem 3158). Agora vai até 7000 caracteres e, se passar disso, o corte é antes do último título que ainda cabe (uma seção inteira ou nenhuma), nunca no meio de uma experiência; no fim nunca sobra um título solto.
+- **Formatação:** o título do quadro/experiência ("Como a Bíblia está ajudando Julian") sai em destaque, e os subtítulos (os do artigo e os curtos de dentro da experiência, como "Como a ansiedade me afeta") em negrito.
+- **Perguntas sobre o que foi lido:** a IA do quadro só via o título do artigo e escrevia perguntas genéricas. Agora, depois de o servidor ler o texto, uma segunda chamada curta (nova parte de prompt "Perguntas de revisão da leitura", visível e editável na tela de prompts) escreve as perguntas com o texto inteiro à frente, cobrindo começo, meio e fim e, quando houver, pelo menos uma sobre a experiência. Vale na Abertura (3 perguntas) e no Fé no Criador (2). Sem tempo ou com erro, ficam as perguntas do quadro.
+- A sessão compartilhada aceita a matéria de até 8000 caracteres, e o 🔊 reconhece os títulos e subtítulos.
+
 ## 6.12.89
 
 ### Adoração em Família: voz com a regra das referências bíblicas e ícone 🔊 dentro da moldura

@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.12.89'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.12.90'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -27049,7 +27049,7 @@ function saveTemplatesToStorage() {
         }
         // 6.12.86: botão 🔊 do trecho (adoração ao vivo), fora do campo recolhido, e o texto em parágrafos com os subtítulos ("## ") em negrito.
         const linhas = parte.leitura.texto.split(/\n+/).map(x => x.trim()).filter(Boolean);
-        const pedacosVoz = aoVivo && aoVivo.leitura ? [parte.leitura.titulo, ...linhas.map(x => x.replace(/^##\s+/, ''))].filter(Boolean) : [];
+        const pedacosVoz = aoVivo && aoVivo.leitura ? [parte.leitura.titulo, ...linhas.map(x => x.replace(/^#{1,2}\s+/, ''))].filter(Boolean) : [];
         const det = document.createElement('details'); // sempre recolhido ao montar; abre ao tocar
         det.className = 'fam-leitura-trecho';
         const sm = document.createElement('summary');
@@ -27057,12 +27057,14 @@ function saveTemplatesToStorage() {
         if (pedacosVoz.length) sm.prepend(aoVivo.leitura(pedacosVoz)); // 6.12.89: o ícone 🔊 dentro da moldura do campo, na mesma linha de "Trecho para considerar"
         det.appendChild(sm);
         linhas.forEach(par => {
-          const sub = /^##\s+/.test(par);
+          // 6.12.90: "# " = título do quadro ou da experiência (maior, em destaque); "## " = subtítulo (negrito)
+          const nivel = (par.match(/^(#{1,2})\s+/) || [])[1] || '';
+          const sub = Boolean(nivel);
           const pp = document.createElement('p');
-          pp.className = sub ? 'fam-leitura-par fam-leitura-sub' : 'fam-leitura-par';
+          pp.className = nivel === '#' ? 'fam-leitura-par fam-leitura-sub fam-leitura-tit' : sub ? 'fam-leitura-par fam-leitura-sub' : 'fam-leitura-par';
           if (sub) {
             const forte = document.createElement('strong');
-            forte.textContent = par.replace(/^##\s+/, '');
+            forte.textContent = par.replace(/^#{1,2}\s+/, '');
             pp.appendChild(forte);
           } else pp.textContent = par;
           det.appendChild(pp);

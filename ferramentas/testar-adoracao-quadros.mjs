@@ -1589,7 +1589,7 @@ teste("6.12.79 (4): prazo total do quadro (270 s): cada chamada com o tempo que 
   const corpo = servidorJs.slice(ini, fim);
   assert.ok(ini > 0 && fim > ini);
   assert.ok(!/criarClienteIa\(\{ maxRetries: 0, timeout: 120_000 \}/.test(corpo), "sem cliente de 120 s fixo");
-  assert.equal((corpo.match(/chamarIa\(\r?\n\s+clienteComPrazo\(\),/g) || []).length, 2, "geração e conferência");
+  assert.equal((corpo.match(/chamarIa\(\r?\n\s+clienteComPrazo\(\),/g) || []).length, 3, "geração, conferência e revisão da leitura");
   assert.match(corpo, /if \(!fontesConfiguradas\(\) \|\| !P\.sistemaFamiliaConferir \|\| !comTempo\(\)\) return null;/);
   assert.match(corpo, /if \(problemas\(r\)\.length && body\.refazerRepetido !== true && comTempo\(\)\) \{/);
   assert.match(corpo, /if \(id === "jogo" && r\.trocarTipo && body\.refazerRepetido !== true && comTempo\(\)\) \{/);
@@ -1695,7 +1695,7 @@ teste("6.12.85: Abertura — matéria antes do relato e local exato da fonte (ca
 
 teste("6.12.86: artigo da Abertura com dados da publicação, parágrafos e subtítulos, e botão de leitura do trecho", async () => {
   const wolJs = await readFile(new URL("api/_wol.mjs", raiz), "utf8");
-  assert.ok(wolJs.includes('estruturado && tag !== "p" ? "## " + texto : texto'));
+  assert.ok(wolJs.includes('estruturado ? (caixa ? "# " : tag !== "p" || curtoSemPonto ? "## " : "") + texto : texto'));
   assert.ok(wolJs.includes('documentCitationInformation'));
   assert.ok(servidorJs.includes("estruturado: true"));
   assert.ok(servidorJs.includes("texto: leituraEmParagrafos(lido.texto)"));
@@ -1725,6 +1725,27 @@ teste("6.12.89: a voz da adoração usa as regras de fala das referências bíbl
   assert.ok(appJs.includes("sm.prepend(aoVivo.leitura(pedacosVoz))"));
   assert.ok(vozJs.includes("textoDaSessaoParaLer(body.sessao, original || texto, body.origem)"));
   assert.ok(vozJs.includes("texto.length > original.length * 2 + 120"));
+});
+
+teste("6.12.90: artigo inteiro (corte só entre seções), títulos e subtítulos, e perguntas de revisão escritas depois da leitura", async () => {
+  const wolJs = await readFile(new URL("api/_wol.mjs", raiz), "utf8");
+  const prompts = await import(new URL("api/_prompts.mjs", raiz));
+  assert.ok(wolJs.includes("boxTtl"));
+  assert.ok(wolJs.includes("curtoSemPonto"));
+  assert.ok(servidorJs.includes("function leituraEmParagrafos(bruto, max = 7000)"));
+  assert.ok(servidorJs.includes("maxCaracteres: 12000, estruturado: true"));
+  assert.ok(servidorJs.includes("const perguntarLeituraFamilia = async (leitura, jaEscritas, quantas)"));
+  assert.ok(servidorJs.includes("pd.ctx.perguntarLeitura = perguntarLeituraFamilia;"));
+  assert.ok(servidorJs.includes("(await ctx.perguntarLeitura(leitura, [], 3)) || daLeitura"));
+  assert.ok(servidorJs.includes("ctx.perguntarLeitura(leitura, [], 2)"));
+  assert.ok(sessaoJs.includes("texto(p.leitura.texto, 8000)"));
+  const parte = prompts.PARTES.find((x) => x.id === "adoracao_q_revisao");
+  assert.ok(parte, "a parte existe");
+  assert.match(parte.padrao, /EXPERIÊNCIA/);
+  const cat = prompts.CATALOGO ? prompts.CATALOGO.find((x) => x.id === "adoracao_familia") : null;
+  if (cat) assert.ok(cat.partes.includes("adoracao_q_revisao"));
+  assert.ok(prompts.travadosDe({}).some((x) => x.id === "formato_familia_revisao_leitura"));
+  assert.ok(appJs.includes("fam-leitura-par fam-leitura-sub fam-leitura-tit"));
 });
 
 for (const [nome, fn] of testes) {

@@ -1051,12 +1051,20 @@ export async function lerArtigoDoWol(endereco, { timeoutMs = 8000, maxCaracteres
   const titulo = textoDe((html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/) || [])[1] || "") || daAba;
   const partes = [];
   const brutos = [];
-  for (const [, tag, pid, conteudo] of html.matchAll(/<(p|h2|h3)\b[^>]*data-pid="(\d+)"[^>]*>([\s\S]*?)<\/\1>/g)) {
+  // 6.12.90: com "estruturado" entram também os títulos de quadro/experiência (div boxTtl, marcados "# "); os subtítulos (h2/h3 e os parágrafos curtos
+  // sem ponto final, como "Como a Bíblia me ajuda") saem com "## ".
+  for (const [, tag1, pid1, conteudo1, , pid2, conteudo2] of html.matchAll(/<(p|h2|h3)\b[^>]*data-pid="(\d+)"[^>]*>([\s\S]*?)<\/\1>|<(div)\b(?=[^>]*\bboxTtl\b)[^>]*data-pid="(\d+)"[^>]*>([\s\S]*?)<\/div>/g)) {
+    const caixa = pid2 !== undefined;
+    const tag = caixa ? "div" : tag1;
+    const pid = caixa ? pid2 : pid1;
+    const conteudo = caixa ? conteudo2 : conteudo1;
+    if (caixa && !estruturado) continue;
     const n = Number(pid);
     if (de !== null && (n < de || n > ate)) continue;
     const texto = textoDe(conteudo);
     if (texto) {
-      partes.push(estruturado && tag !== "p" ? "## " + texto : texto);
+      const curtoSemPonto = tag === "p" && texto.length <= 70 && /^\p{Lu}/u.test(texto) && !/[.!?…”’"'»:;,)\d]$/u.test(texto);
+      partes.push(estruturado ? (caixa ? "# " : tag !== "p" || curtoSemPonto ? "## " : "") + texto : texto);
       brutos.push(conteudo);
     }
   }
