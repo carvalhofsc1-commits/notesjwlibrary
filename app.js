@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.12.86'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.12.87'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -27131,6 +27131,7 @@ function saveTemplatesToStorage() {
     // jogo pela posição da parte), e quem já entrou não recebe a programação de novo; trocar no meio deixaria cada um com uma versão.
     const FAMILIA_QUADROS_TROCAVEIS = new Set(QUADROS_FAMILIA.filter(q => q.minutos).map(q => q.id));
     let familiaTrocando = false;
+    const familiaStatusGeral = familiaStatus;
 
     // A sessão compartilhada desta programação (pelo id da programação salva ou, nas compartilhadas pela tela, pelo título), ou null.
     function familiaSessaoDoCartao(op, itemId) {
@@ -27169,7 +27170,11 @@ function saveTemplatesToStorage() {
       const nota = familiaGerarBtn.getAttribute('data-ia-nota');
       if (nota) ir.setAttribute('data-ia-nota', nota);
       acoes.appendChild(ir);
-      painel.append(rotulo, campo, acoes);
+      const avisoTroca = document.createElement('p');
+      avisoTroca.className = 'fam-trocar-aviso';
+      avisoTroca.setAttribute('role', 'status');
+      avisoTroca.hidden = true;
+      painel.append(rotulo, campo, acoes, avisoTroca);
       abrir.addEventListener('click', () => {
         painel.hidden = !painel.hidden;
         abrir.setAttribute('aria-expanded', String(!painel.hidden));
@@ -27183,6 +27188,13 @@ function saveTemplatesToStorage() {
     async function familiaTrocarQuadro(op, id, instrucaoBruta, botao, cfg) {
       const q = QUADROS_FAMILIA.find(x => x.id === id);
       if (!q || familiaTrocando) return;
+      // 6.12.86: o aviso também aparece logo abaixo do botão; a linha de status do formulário fica longe, no alto da tela, e a pessoa não via por que a troca não andava.
+      const painelDoBotao = botao.closest ? botao.closest('.fam-trocar-painel') : null;
+      const familiaStatus = (msg, tipo) => {
+        familiaStatusGeral(msg, tipo);
+        const el = painelDoBotao && painelDoBotao.querySelector('.fam-trocar-aviso');
+        if (el) { el.textContent = msg || ''; el.hidden = !msg; el.className = 'fam-trocar-aviso' + (tipo === 'erro' ? ' erro' : tipo === 'ok' ? ' ok' : ''); }
+      };
       if (familiaGerarBtn.disabled) { familiaStatus('Espere a preparação da programação terminar para trocar um quadro.', 'erro'); return; }
       if (!codigoAcessoSalvo()) { familiaStatus('Salve o código de pesquisa em Ajustes → 🔐 Autorização de acessos.', 'erro'); return; }
       const sessao = familiaSessaoDoCartao(op, cfg && cfg.itemId);

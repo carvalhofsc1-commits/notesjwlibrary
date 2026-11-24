@@ -16927,6 +16927,9 @@ input[type="time"].fam-campo::-webkit-date-and-time-value { text-align: left; mi
   overflow-wrap: anywhere;
 }
 .fam-status.msg-teto { margin: 0; }
+.fam-trocar-aviso { margin: 8px 0 0; font-size: .92rem; font-weight: 600; overflow-wrap: anywhere; } /* 6.12.86: o motivo de a troca não andar, logo abaixo do botão */
+.fam-trocar-aviso.ok { color: var(--success); }
+.fam-trocar-aviso.erro { color: var(--danger); }
 :is(#sv#sv, .msg-teto):empty,
 :is(#sv#sv, .msg-teto)[hidden] { display: none !important; }
 .fam-resultado { display: grid; gap: 14px; min-width: 0; }

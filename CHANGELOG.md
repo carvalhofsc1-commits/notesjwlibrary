@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.87
+
+### Adoração em Família: o motivo de "🔄 Trocar agora" não andar aparece junto do botão
+
+O aviso da troca (programação já compartilhada, família sem descrição, código de pesquisa ausente, preparação em andamento ou erro do serviço) ia só para a linha de status no alto do formulário, fora da vista; para quem estava no quadro, o botão parecia morto. Agora o mesmo aviso aparece logo abaixo do botão, dentro do painel da troca.
+
 ## 6.12.86
 
 ### Adoração em Família: trecho do artigo com dados da publicação, parágrafos e subtítulos, e botão de leitura
