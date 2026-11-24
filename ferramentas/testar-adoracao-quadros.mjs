@@ -769,7 +769,7 @@ teste("6.12.73: prompts do Personagem (ângulo), do Jogo (8 a 12, sem respostas 
   assert.match(s.ministerio, /SÓ sobre COMO PROCEDER/);
   assert.match(s.ministerio, /Nunca perguntas sobre sentimentos/);
   assert.match(s.abertura, /Fuja das leituras e dos relatos bíblicos já usados/);
-  assert.match(s.video, /até 12 minutos/);
+  assert.match(s.video, /até 15 minutos/);
   // As partes editáveis e os formatos não dizem "culto" (o sistema montado traz o VOCABULÁRIO, que cita a palavra para proibi-la).
   for (const id of ["adoracao_q_personagem", "adoracao_q_jogo", "adoracao_q_ministerio", "adoracao_q_abertura", "adoracao_q_video", "adoracao_q_criador", "adoracao_q_saiba"]) assert.doesNotMatch(prompts.PARTES.find((x) => x.id === id).padrao, /\bcultos?\b/i, id);
   for (const t of prompts.travadosDe({}).filter((x) => /^formato_familia_quadro_/.test(x.id))) assert.doesNotMatch(String(t.texto || t.padrao || ""), /\bcultos?\b/i, t.id);
@@ -847,7 +847,8 @@ teste("6.12.73: Criador sem marcas de figura e Saiba responder sem \"##\" e \"�
   if (!s.prep.contagens.livros) return console.log("      (sem trechos para o Saiba responder)");
   for (let i = 1; i <= s.prep.contagens.livros; i++) {
     const parte = await s.prep.montar({ pergunta: "Perdoar é esquecer?", descricao: "d", escolha: `L${i}`, verbete: null, textos: ["Colossenses 3:13"] });
-    assert.doesNotMatch(parte.leitura.texto, /(^|\n)\s*(##|•)/);
+    // 6.13.03: "## " no começo da linha é o subtítulo da seção (vindo do wol ou da lição) e sai em negrito; marcas soltas dos arquivos não
+    assert.doesNotMatch(parte.leitura.texto, /(^|\n)\s*•|(^|\n)##(?! \S)|#{3,}|\S ##/);
     assert.doesNotMatch(decodeURIComponent(parte.publicacoes[0].url), /##|•/);
   }
 });
@@ -1687,7 +1688,7 @@ teste("6.12.85: Abertura — matéria antes do relato e local exato da fonte (ca
   assert.equal(localDoTrecho({ numero: 12 }), "par. 12");
   assert.equal(localDoTrecho({}), "");
   assert.ok(servidorJs.includes("if (leitura) leitura.primeiro = true;"));
-  assert.ok(servidorJs.includes("fonte: localDoTrecho(l) || l.livro, paragrafos: l.numero"));
+  assert.ok(servidorJs.includes("fonte: [l.livro, localDoTrecho({ ...l, numero: 0 })].filter(Boolean).join(\", \"), paragrafos: l.numero"));
   assert.ok(sessaoJs.includes("primeiro: p.leitura.primeiro === true"));
   assert.ok(appJs.includes("if (parte.leitura && parte.leitura.primeiro) { // 6.12.85"));
   assert.ok(appJs.indexOf("{ // 6.12.85: Abertura") < appJs.indexOf("addLista('📖 Textos para considerar'"));
@@ -1812,6 +1813,20 @@ teste("6.13.02: Ame o ministério sem raciocínio longo e leitura com a lição/
     const m = await fontes.materiaDoTrecho(l);
     if (m) assert.ok(!/^\^ /m.test(m.texto), "sem notas de rodapé");
   }
+});
+
+teste("6.13.03: seção do livro pelo wol (capítulo, páginas e parágrafos), mínimo de 3 parágrafos, e vídeos alternando formatos", async () => {
+  const wolJs = await readFile(new URL("api/_wol.mjs", raiz), "utf8");
+  assert.ok(wolJs.includes("export async function secaoDoWolPelaFrase(frase"));
+  assert.ok(servidorJs.includes("secaoDoWolPelaFrase(l.trecho, { timeoutMs: 8000, minParagrafos: 3, maxChars: 4500 })"));
+  assert.ok(servidorJs.includes("const FORMATOS_VIDEO_FAMILIA = Object.freeze(["));
+  assert.ok(servidorJs.includes("FORMATO DESTA NOITE:"));
+  assert.ok(servidorJs.includes('["Programas e Eventos › Adorações Matinais", 15], ["Entrevistas e Casos Reais", 15]'));
+  assert.ok(servidorJs.includes("videosQueCabem(lista, ctx.quadro.minutos, 5)"));
+  const { videosQueCabem } = await import(new URL("api/_familiaGeracao.mjs", raiz));
+  assert.equal(videosQueCabem([{ duracao: "7:00" }, { duracao: "7:30" }], 10, 5).length, 2, "dois vídeos somando 14:30 cabem");
+  assert.equal(videosQueCabem([{ duracao: "9:00" }, { duracao: "8:00" }], 10, 5).length, 1, "17 min: fica só o primeiro");
+  assert.equal(videosQueCabem([{ duracao: "15:40" }], 10, 5).length, 1, "um vídeo longo sozinho fica");
 });
 
 for (const [nome, fn] of testes) {

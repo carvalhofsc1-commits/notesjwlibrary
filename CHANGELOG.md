@@ -2,6 +2,15 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.03
+
+### Adoração em Família: matéria do livro com capítulo, páginas e seção inteira; vídeos alternando formatos
+
+- **Local exato:** os arquivos de vários livros (A Adoração Pura, O Reino de Deus Já Governa!, Imite a Sua Fé…) não marcam os capítulos nem as páginas. Agora o servidor procura a frase do parágrafo no wol.jw.org, abre o capítulo e traz a citação certa: "A Adoração Pura de Jeová É Restaurada! (rr), cap. 18, págs. 193-194", "Parágrafos 13-15", o título do capítulo ("“O meu grande furor se acenderá”") e o link direto para o parágrafo.
+- **Matéria maior:** em vez de um parágrafo solto, vem a SEÇÃO inteira do subtítulo em que o parágrafo está (com o subtítulo em negrito), com no mínimo 3 parágrafos (se a seção for curta, junta a seguinte), sem as perguntas de estudo nem as legendas. Nas brochuras de lições (lmd e th) continua a lição inteira; se o wol não responder, valem os parágrafos seguintes do arquivo.
+- A linha da fonte não repete mais o parágrafo ("Parágrafo 15 · par. 15").
+- **Vídeos:** o quadro Vídeo alterna o formato de uma noite para outra: dois vídeos curtos; um vídeo longo (de 8 a 16 minutos, de preferência um discurso da Adoração Matinal); ou vídeos de experiências (Entrevistas e Casos Reais). Os discursos da Adoração Matinal e as experiências passam a estar sempre na lista (antes, os discursos só para famílias sem crianças). Um vídeo longo pode passar dos 10 minutos; com dois vídeos, a soma vai até 15 minutos.
+
 ## 6.13.02
 
 ### Adoração em Família: "Ame o ministério" mais rápido e matérias inteiras

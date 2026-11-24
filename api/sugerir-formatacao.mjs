@@ -104,6 +104,7 @@ import {
   lerEstudoBiblico,
   lerCamposDoDocumento,
   lerArtigoDoWol,
+  secaoDoWolPelaFrase,
   lerReuniaoDaSemana,
   lerEstudoDaSemana,
   lerEstudoDireto,
@@ -2802,7 +2803,8 @@ const PRIVILEGIOS_FAMILIA = ["Pioneiro regular", "Pioneiro auxiliar", "Pioneiro 
 // conforme a família: as de família e de relatos da Bíblia sempre; a série do casamento quando há um casal; as de crianças com alguém de até
 // 12 anos; as de adolescentes com alguém de 13 a 19; as adorações matinais quando não há criança (estudo pessoal, casal, adolescentes).
 const SECOES_VIDEOS_FAMILIA = {
-  sempre: [["Família", 65], ["A Bíblia › Relatos da Bíblia", 20], ["Produções Especiais › Tempos Bíblicos", 15], ["A Bíblia › Criação", 10]],
+  // 6.13.03: os discursos da Adoração Matinal (vídeos longos, de cerca de 10 a 15 min) e as experiências entram sempre, para o quadro Vídeo alternar.
+  sempre: [["Programas e Eventos › Adorações Matinais", 15], ["Entrevistas e Casos Reais", 15], ["Família", 65], ["A Bíblia › Relatos da Bíblia", 20], ["Produções Especiais › Tempos Bíblicos", 15], ["A Bíblia › Criação", 10]],
   casal: [["Séries › Como Ser Feliz no Casamento?", 10]],
   criancas: [["Crianças › Lições em vídeo", 40], ["Séries › Teve um Projeto?", 10], ["Séries › Sara e Jade", 10], ["Séries › Vamos Aprender com os Amigos de Jeová", 11], ["Crianças › Produções Especiais", 5], ["Crianças › Músicas", 15]],
   adolescentes: [["Adolescentes", 50], ["Séries › Vida de Adolescente", 10], ["Séries › O Que Outros Jovens Dizem", 10]],
@@ -3237,24 +3239,34 @@ const listaDeTrechos = (livros, titulo = "TRECHOS DE LIVROS (escolha pelo identi
   livros.length ? `\n${titulo}:\n${livros.map((l, i) => `[L${i + 1}] ${l.livro}: ${l.trecho}`).join("\n\n")}\n` : "";
 // 6.12.73: sem as marcas "##" e "•" de alguns livros guardados.
 // 6.12.85: o local exato do trecho (capítulo, parágrafo e página inicial do capítulo, quando o arquivo do livro os traz) para o usuário achar a fonte.
-const leituraDoTrecho = (l) => (l ? { titulo: l.livro, fonte: localDoTrecho(l) || l.livro, paragrafos: l.numero ? String(l.numero) : "", texto: leituraLimpa(semMarcasDoTexto(l.trecho)), url: linkDeConsultaWol(l.trecho), rotulo: "Trecho do livro" } : null);
+const leituraDoTrecho = (l) => (l ? { titulo: l.livro, fonte: [l.livro, localDoTrecho({ ...l, numero: 0 })].filter(Boolean).join(", "), paragrafos: l.numero ? String(l.numero) : "", texto: leituraLimpa(semMarcasDoTexto(l.trecho)), url: linkDeConsultaWol(l.trecho), rotulo: "Trecho do livro" } : null);
 // A publicação do trecho, com o link da busca da frase no wol.jw.org (o endereço do livro no wol não é conhecido).
 const publicacaoDoTrecho = (l) => (l ? [{ titulo: l.livro, fonte: localDoTrecho(l), url: linkDeConsultaWol(l.trecho) }] : []);
 // 6.13.02: a leitura com a matéria inteira (a lição toda, no lmd e no th, ou o parágrafo e os seguintes do capítulo), e não um parágrafo solto.
+// 6.13.03: nos livros, a SEÇÃO inteira do wol.jw.org (o subtítulo em que o parágrafo está, com pelo menos 3 parágrafos), com o capítulo, as páginas
+// e os números dos parágrafos exatos ("A Adoração Pura… (rr), cap. 18, págs. 193-194", parágrafos 13-15) e o link direto para o parágrafo.
 async function leituraCompletaDoTrecho(l) {
   const base = leituraDoTrecho(l);
   if (!base) return null;
   const m = await materiaDoTrecho(l).catch(() => null);
-  if (!m) return base;
-  const licao = Boolean(m.local);
-  return {
-    ...base,
-    titulo: licao ? m.titulo : base.titulo,
-    fonte: licao ? `${l.livro}, ${m.local}` : base.fonte,
-    paragrafos: licao ? "" : base.paragrafos,
-    texto: m.texto,
-    rotulo: licao ? "Lição da brochura" : "Trecho do livro",
-  };
+  if (m && m.local) {
+    return { ...base, titulo: m.titulo, fonte: `${l.livro}, ${m.local}`, paragrafos: "", texto: m.texto, rotulo: "Lição da brochura" };
+  }
+  const w = await secaoDoWolPelaFrase(l.trecho, { timeoutMs: 8000, minParagrafos: 3, maxChars: 4500 }).catch(() => null);
+  if (w && w.texto) {
+    const paginas = w.paginas ? (w.paginas.includes("-") ? `págs. ${w.paginas}` : `pág. ${w.paginas}`) : "";
+    return {
+      ...base,
+      titulo: w.tituloCapitulo || base.titulo,
+      fonte: [l.livro, w.capitulo ? `cap. ${w.capitulo}` : "", paginas].filter(Boolean).join(", "),
+      paragrafos: w.paragrafos || "",
+      texto: w.texto,
+      url: w.url || base.url,
+      rotulo: "Trecho do livro",
+    };
+  }
+  if (m) return { ...base, texto: m.texto };
+  return base;
 }
 // Um artigo do catálogo lido no wol pelo docId; null se não abrir ou vier com menos de MIN_CARACTERES_ARTIGO.
 async function leituraDoArtigoFamilia(a, rotulo = "Trecho do artigo") {
@@ -3340,6 +3352,13 @@ const MIN_VERSOS_EPISODIO = 3;
 
 // Jogos de pergunta e resposta: as regras quando a IA não as escreveu.
 const REGRAS_PADRAO_JOGO = "Quem dirige mostra uma rodada por vez; quem acertar primeiro marca um ponto. Depois de cada rodada, leiam a resposta e o texto bíblico.";
+
+// 6.13.03: os formatos do quadro Vídeo, alternados de uma noite para outra.
+const FORMATOS_VIDEO_FAMILIA = Object.freeze([
+  "DOIS VÍDEOS CURTOS que se completem, ligados ao ângulo (somando até 15 minutos).",
+  "UM VÍDEO LONGO (de 8 a 16 minutos): de preferência um discurso da Adoração Matinal (seção Programas e Eventos › Adorações Matinais) ligado ao assunto; se nenhum combinar, um programa ou relato mais longo da lista.",
+  "EXPERIÊNCIAS: 1 ou 2 vídeos de experiências reais (seção Entrevistas e Casos Reais) ligados ao assunto (até 15 minutos ao todo); se nenhuma combinar, dois vídeos curtos.",
+]);
 
 // Cada quadro: monta as listas da mensagem e devolve como transformar a saída da IA na parte (com as fontes transcritas) e a memória
 // "evitar" do que usou.
@@ -3527,10 +3546,12 @@ const PREPARAR_QUADRO_FAMILIA = {
     const listas = videos.length
       ? `\nVÍDEOS DO JW.ORG DISPONÍVEIS (escolha 1 ou 2 pelo identificador em "videos"):\n${videos.map((v, i) => `[V${i + 1}] "${v.titulo}" (${[v.duracao, v.categoria, (v.publicado || "").slice(0, 4)].filter(Boolean).join("; ")})`).join("\n")}\n`
       : `\nVÍDEOS: a lista não está disponível agora; deixe "videos" vazio e proponha uma conversa sobre o assunto.\n`;
+    // 6.13.03: o formato desta noite alterna (dois vídeos curtos, um vídeo longo de discurso, experiências), pela semente.
+    const formato = FORMATOS_VIDEO_FAMILIA[Math.abs(Math.round(Number(ctx.semente) || 0)) % FORMATOS_VIDEO_FAMILIA.length];
     return {
       sistema: "video",
       schema: SAIDAS_QUADRO_FAMILIA.video,
-      listas,
+      listas: listas + (videos.length ? `\nFORMATO DESTA NOITE: ${formato}\n` : ""),
       contagens: { videos: videos.length, evitados: todos.length - novos.length },
       async montar(o) {
         let lista = semRepetirFamilia((o.videos || []).map((c) => videoDaLista(videos, c)), (v) => v.link).slice(0, 2);
@@ -3539,7 +3560,7 @@ const PREPARAR_QUADRO_FAMILIA = {
           lista = semRepetirFamilia(citados, (v) => v.link).slice(0, 2);
         }
         // 6.12.73: com 2 vídeos, a soma das durações vai até os minutos do quadro mais 2; se passar, fica só o primeiro.
-        const cabem = videosQueCabem(lista, ctx.quadro.minutos);
+        const cabem = videosQueCabem(lista, ctx.quadro.minutos, 5); // 6.13.03: até 15 min ao todo
         const videosCortados = lista.length - cabem.length;
         lista = cabem;
         return { descricao: descricaoFamilia(o.descricao), videos: lista, perguntas: perguntasLimpas(o.perguntas, 3), memoria: { videos: lista.map((v) => lankDoLink(v.link)).filter(Boolean) }, contagens: { videosCortados } };
