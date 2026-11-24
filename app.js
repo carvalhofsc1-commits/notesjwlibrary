@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.13.21'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.13.22'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -26046,7 +26046,8 @@ function saveTemplatesToStorage() {
       'Ordem e data dos acontecimentos',
       'Quem disse isso? (frases da Bíblia)',
       'Complete o versículo',
-      'Abreviações bíblicas (ex.: Os 12 A de C)'
+      'Abreviações bíblicas (ex.: Os 12 A de C)',
+      'Perfil bíblico (dicas de pessoas, lugares, coisas e anos)'
     ]);
     const FAMILIA_NOMES_ANTIGOS_DOS_JOGOS = Object.freeze({ 'Ordem dos acontecimentos': 'Ordem e data dos acontecimentos' });
     // Os minutos dos quadros marcados (as orações não entram).
@@ -26073,6 +26074,8 @@ function saveTemplatesToStorage() {
       const canticoInicial = Boolean(b.canticoInicial) || legadoAmbos || atividades.some(a => /^c[aâ]ntico\s+inicial$/i.test(a));
       const canticoFinal = Boolean(b.canticoFinal) || legadoAmbos || atividades.some(a => /^c[aâ]ntico\s+final$/i.test(a));
       const jogosBrutos = (Array.isArray(b.jogos) ? b.jogos : []).map(j => FAMILIA_NOMES_ANTIGOS_DOS_JOGOS[j] || j);
+      // 6.13.22: o perfil salvo com os 6 jogos de antes todos marcados ganha também o Perfil bíblico (o 7º, novo).
+      if (FAMILIA_JOGOS.slice(0, 6).every(j => jogosBrutos.includes(j))) jogosBrutos.push(FAMILIA_JOGOS[6]);
       let jogos = FAMILIA_JOGOS.filter(j => jogosBrutos.includes(j));
       if (!jogos.length) jogos = FAMILIA_JOGOS.slice();
       return { quadros, canticoInicial, canticoFinal, jogos };
@@ -29437,7 +29440,7 @@ function saveTemplatesToStorage() {
               campoResp.className = 'fam-campo fam-sessao-resp-campo';
               campoResp.maxLength = 200;
               campoResp.autocomplete = 'off';
-              campoResp.placeholder = j.idTipo === 'quem_sou_eu' ? 'Quem é? Escreva o nome' : j.idTipo === 'complete_versiculo' ? 'Qual é a palavra que falta?' : j.idTipo === 'quem_disse' ? 'Quem disse?' : 'Sua resposta';
+              campoResp.placeholder = j.idTipo === 'quem_sou_eu' ? 'Quem é? Escreva o nome' : j.idTipo === 'complete_versiculo' ? 'Qual é a palavra que falta?' : j.idTipo === 'quem_disse' ? 'Quem disse?' : j.idTipo === 'perfil_biblico' ? 'Quem ou o que é? Escreva a resposta' : 'Sua resposta';
               campoResp.setAttribute('aria-label', 'Sua resposta para a questão ' + (k + 1));
               const b = document.createElement('button');
               b.type = 'button';
@@ -30071,7 +30074,7 @@ function saveTemplatesToStorage() {
     // <evitar-familia> (o teste ferramentas/testar-adoracao-quadros.mjs executa este bloco à parte)
     const FAMILIA_EVITAR_TIPO = 'familia-evitar';
     const FAMILIA_EVITAR_MAX = 40;
-    const FAMILIA_EVITAR_CATEGORIAS = ['assuntos', 'personagens', 'principios', 'jesus', 'saiba', 'ministerio', 'criador', 'artigos', 'canticos', 'jogos', 'videos', 'leituras', 'relatos', 'jogo_versiculos'];
+    const FAMILIA_EVITAR_CATEGORIAS = ['assuntos', 'personagens', 'principios', 'jesus', 'saiba', 'ministerio', 'criador', 'artigos', 'canticos', 'jogos', 'videos', 'leituras', 'relatos', 'jogo_versiculos', 'jogo_cartas'];
     const FAMILIA_USADOS_CHAVES = ['referencias', 'versiculos', 'personagens', 'videos', 'canticos'];
     const familiaChaveTexto = x => String(x ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
     const familiaSemRepetir = lista => {

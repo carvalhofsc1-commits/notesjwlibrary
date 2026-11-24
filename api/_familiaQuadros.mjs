@@ -164,7 +164,7 @@ export const QUADROS_FAMILIA = Object.freeze(
 export const IDS_QUADROS = Object.freeze(QUADROS_FAMILIA.map((q) => q.id));
 export const QUADROS_OBRIGATORIOS = Object.freeze(QUADROS_FAMILIA.filter((q) => q.obrigatorio).map((q) => q.id));
 
-// Os 6 tipos de jogo aceitos (os mesmos textos da tela). Os nomes antigos que mudaram ficam em NOMES_ANTIGOS_DOS_JOGOS (migração).
+// Os 7 tipos de jogo aceitos (6.13.22: + Perfil bíblico) (os mesmos textos da tela). Os nomes antigos que mudaram ficam em NOMES_ANTIGOS_DOS_JOGOS (migração).
 export const JOGOS_FAMILIA = Object.freeze([
   "Quem sou eu? (personagens bíblicos)",
   "Verdadeiro ou falso",
@@ -172,6 +172,7 @@ export const JOGOS_FAMILIA = Object.freeze([
   "Quem disse isso? (frases da Bíblia)",
   "Complete o versículo",
   "Abreviações bíblicas (ex.: Os 12 A de C)",
+  "Perfil bíblico (dicas de pessoas, lugares, coisas e anos)",
 ]);
 export const NOMES_ANTIGOS_DOS_JOGOS = Object.freeze({ "Ordem dos acontecimentos": "Ordem e data dos acontecimentos" });
 
@@ -201,6 +202,8 @@ export function quadrosDoPedido(body) {
   const canticoInicial = Boolean(b.canticoInicial) || legadoAmbos || atividades.some((a) => /^c[aâ]ntico\s+inicial$/i.test(a));
   const canticoFinal = Boolean(b.canticoFinal) || legadoAmbos || atividades.some((a) => /^c[aâ]ntico\s+final$/i.test(a));
   const jogosBrutos = (Array.isArray(b.jogos) ? b.jogos : []).map((j) => NOMES_ANTIGOS_DOS_JOGOS[j] || j);
+  // 6.13.22: o perfil salvo com os 6 jogos de antes todos marcados ganha também o Perfil bíblico (o 7º, novo).
+  if (JOGOS_FAMILIA.slice(0, 6).every((j) => jogosBrutos.includes(j))) jogosBrutos.push(JOGOS_FAMILIA[6]);
   let jogos = JOGOS_FAMILIA.filter((j) => jogosBrutos.includes(j));
   if (!jogos.length) jogos = JOGOS_FAMILIA.slice();
   return { quadros, canticoInicial, canticoFinal, jogos };

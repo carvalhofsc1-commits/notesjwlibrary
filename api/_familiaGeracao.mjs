@@ -226,7 +226,7 @@ export const MAX_CARACTERES_EVITAR = 120;
 // 6.12.73: "leituras" (o trecho de livro lido na Abertura, pela chave "trecho:…") e "relatos" (as referências dos relatos bíblicos da Abertura;
 // 6.12.75: também as passagens do Personagem do dia e das Lições da vida de Jesus; 6.12.76: também os versículos do Princípio bíblico).
 // 6.12.76: "jogo_versiculos" (os versículos usados no Complete o versículo e no Quem disse isso?, para a próxima noite não repetir).
-export const CATEGORIAS_EVITAR = Object.freeze(["assuntos", "personagens", "principios", "jesus", "saiba", "ministerio", "criador", "artigos", "canticos", "jogos", "videos", "leituras", "relatos", "jogo_versiculos"]);
+export const CATEGORIAS_EVITAR = Object.freeze(["assuntos", "personagens", "principios", "jesus", "saiba", "ministerio", "criador", "artigos", "canticos", "jogos", "videos", "leituras", "relatos", "jogo_versiculos", "jogo_cartas"]);
 
 const listaCurta = (valor, max, maxChars = MAX_CARACTERES_EVITAR) => {
   const vistos = new Set();
@@ -620,6 +620,7 @@ export const ID_DOS_JOGOS = Object.freeze({
   "Quem disse isso? (frases da Bíblia)": "quem_disse",
   "Complete o versículo": "complete_versiculo",
   "Abreviações bíblicas (ex.: Os 12 A de C)": "abreviacoes",
+  "Perfil bíblico (dicas de pessoas, lugares, coisas e anos)": "perfil_biblico",
 });
 
 // 6.13.17: a resposta que o participante escreveu (ou escolheu) bate com a resposta certa? Sem acentos, maiúsculas, pontuação e palavrinhas
@@ -639,6 +640,11 @@ export function respostaConfere(texto, resposta, idTipo = "") {
     const quem = nucleoDaResposta(r.split(",")[0]);
     return t === quem || t === nucleoDaResposta(r);
   }
+  // 6.13.22: no Perfil bíblico, num ano vale o número ("539", "539 a.C." = "539 AEC").
+  if (idTipo === "perfil_biblico" && /^\d+(?:\s*(?:aec|ec))?$/.test(nucleoDaResposta(r))) {
+    const num = nucleoDaResposta(r).replace(/\D/g, "");
+    return t.replace(/\D/g, "") === num && !(/\b(?:ec|dc|d c)\b/.test(t) && /aec/.test(nucleoDaResposta(r)));
+  }
   return t === nucleoDaResposta(r);
 }
 
@@ -651,6 +657,7 @@ export function idDoJogo(nome) {
   if (/^quem disse/.test(t)) return "quem_disse";
   if (/^complete/.test(t)) return "complete_versiculo";
   if (/^abrevia/.test(t)) return "abreviacoes";
+  if (/^perfil/.test(t)) return "perfil_biblico";
   return "";
 }
 
@@ -664,7 +671,44 @@ export const RODADAS_DO_JOGO = Object.freeze({
   complete_versiculo: Object.freeze({ pedir: 12, min: 8, max: 10 }),
   abreviacoes: Object.freeze({ pedir: 10, min: 8, max: 10 }),
   ordem_data: Object.freeze({ pedir: 8, min: 6, max: 8 }),
+  // 6.13.22: Perfil bíblico: 4 cartas de 10 dicas (cada uma leva uns 2 minutos); a IA escreve as cartas dos verbetes oferecidos (até 3 ficam)
+  // e o servidor completa com as cartas prontas.
+  perfil_biblico: Object.freeze({ pedir: 4, min: 2, max: 3 }),
 });
+
+// ---------- Perfil bíblico (6.13.22) ----------
+// Cada carta: a categoria (Pessoa, Lugar, Coisa, Qualidade ou Ano) e de 8 a 12 dicas, da mais difícil para a mais fácil, mostradas uma por vez
+// por quem dirige; quem acerta com menos dicas ganha mais pontos (total de dicas − dicas dadas + 1).
+export const MIN_DICAS_PERFIL = 8;
+export const MAX_DICAS_PERFIL = 12;
+export const CARTAS_DO_PERFIL = 4;
+export const REGRAS_DO_PERFIL =
+  "Quem dirige mostra uma dica por vez, da mais difícil para a mais fácil. Quem descobrir primeiro diz (ou envia pelo app) a resposta. Quanto menos dicas, mais pontos: com 10 dicas, acertar na 1ª vale 10 pontos, na 2ª vale 9, e assim por diante.";
+// As dicas escritas pela IA ("Dica 1: … Dica 2: …", ou uma lista) -> [texto], sem as dicas que entregam a resposta (o nome, uma palavra
+// importante dele ou o número do ano) e sem as repetidas.
+export function dicasDoPerfil(textoOuLista, resposta) {
+  const brutas = Array.isArray(textoOuLista)
+    ? textoOuLista
+    : String(textoOuLista || "")
+        .split(/\s*Dica\s*\d+\s*:\s*/i)
+        .slice(1);
+  const resp = normalizarTexto(resposta);
+  const palavras = resp.split(/[^a-z0-9]+/).filter((w) => w.length >= 4 || /^\d+$/.test(w));
+  const vistas = new Set();
+  return brutas
+    .map((d) => String(d || "").replace(/\s+/g, " ").trim().slice(0, 220))
+    .filter((d) => {
+      const n = normalizarTexto(d);
+      if (d.length < 12 || vistas.has(n)) return false;
+      vistas.add(n);
+      const ws = n.split(/[^a-z0-9]+/);
+      return !palavras.some((p) => ws.includes(p));
+    })
+    .slice(0, MAX_DICAS_PERFIL);
+}
+export function perguntaDoPerfil(categoria, dicas) {
+  return `Perfil bíblico: ${categoria}. Dica 1: ${dicas.map((d, i) => (i ? `Dica ${i + 1}: ` : "") + d.replace(/\s*Dica\s*\d+\s*:\s*/gi, " ")).join(" ")}`;
+}
 // Complete o versículo e Quem disse isso?: com menos que isto depois de refazer, o servidor troca o tipo do jogo.
 export const MIN_RODADAS_PARA_MANTER_O_TIPO = 6;
 
@@ -766,10 +810,17 @@ export function confereAbreviacao(sigla, resposta) {
     } else if (/^\p{Lu}\.?$/u.test(s)) {
       if (normalizarTexto(w).charAt(0) !== normalizarTexto(s).charAt(0)) return false;
       iniciais++;
-    } else if (normalizarTexto(s) !== normalizarTexto(w)) return false;
+    } else if (normalizarTexto(s) === normalizarTexto(w)) {
+      // a palavra por extenso (de, da, "Os", "Uma"…)
+    } else if (/^\p{Lu}\p{Ll}{1,2}$/u.test(s) && normalizarTexto(w).startsWith(normalizarTexto(s))) {
+      // 6.13.22: o começo da palavra com 2 ou 3 letras ("C Go" = Corpo Governante, "G Mu" = Grande Multidão), para desfazer a dúvida
+      iniciais++;
+    } else return false;
   }
   return iniciais > 0;
 }
+// Palavras curtas com maiúscula que, numa sigla, costumam vir por extenso (não contam como iniciais).
+const PALAVRAS_POR_EXTENSO_NA_SIGLA = new Set(["as", "os", "um", "uma", "so", "por", "com", "em", "ao", "aos", "na", "no", "nas", "nos", "da", "do", "de", "das", "dos"]);
 
 // 6.12.81: a sigla de um jogo de Abreviações tem de ser curta e jogável: de 1 a MAX_INICIAIS_NA_SIGLA iniciais (maiúscula sozinha; "A.T." vale 2) e
 // até 7 palavras ao todo. Os testes com o Gemini mostraram siglas de frases inteiras de versículos ("T L C O N E D P" para "Tão Longe Como O Nascente É
@@ -783,8 +834,24 @@ export function siglaCurta(sigla) {
     .split(" ")
     .filter(Boolean)
     .flatMap((t) => (/^(?:\p{Lu}\.){2,}$/u.test(t) ? t.split(".").filter(Boolean) : [t.replace(/[,;:!?]+$/, "")]));
-  const iniciais = tokens.filter((t) => /^\p{Lu}\.?$/u.test(t)).length;
+  const iniciais = tokens.filter((t) => /^\p{Lu}\.?$/u.test(t) || (/^\p{Lu}\p{Ll}{1,2}$/u.test(t) && !PALAVRAS_POR_EXTENSO_NA_SIGLA.has(normalizarTexto(t)))).length;
   return iniciais >= 1 && iniciais <= MAX_INICIAIS_NA_SIGLA && tokens.length <= 7;
+}
+
+// 6.13.22: as dicas de uma rodada de Abreviações: quantas palavras, onde está (o livro da Bíblia ou o tipo da sigla) e o começo de cada
+// palavra ("Gr Mu" para "Grande Multidão": as 2 primeiras letras; números e palavras de até 2 letras ficam inteiros).
+export function comecoDasPalavras(resposta) {
+  return String(resposta || "")
+    .replace(/[.,;:!?]+$/, "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((w) => (/^\d/.test(w) || w.replace(/[^\p{L}]/gu, "").length <= 2 ? w : w.replace(/^(\P{L}*\p{L}\p{L}).*$/u, "$1")))
+    .join(" ");
+}
+export function perguntaDaAbreviacao(sigla, resposta, onde) {
+  const n = String(resposta || "").trim().split(/\s+/).filter(Boolean).length;
+  return `O que significa a sigla “${sigla}”? Dica 1: A resposta tem ${n} ${n === 1 ? "palavra" : "palavras"}. Dica 2: ${onde}. Dica 3: O começo de cada palavra: “${comecoDasPalavras(resposta)}”.`;
 }
 
 // A rodada de Abreviações vale se a sigla é curta e confere, palavra por palavra, com a resposta.

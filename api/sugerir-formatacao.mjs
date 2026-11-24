@@ -96,7 +96,15 @@ import {
   valorDaData,
   videosQueCabem,
   duracaoEmSegundos,
+  CARTAS_DO_PERFIL,
+  MIN_DICAS_PERFIL,
+  REGRAS_DO_PERFIL,
+  dicasDoPerfil,
+  perguntaDaAbreviacao,
+  perguntaDoPerfil,
+  sentidosDoVerbete,
 } from "./_familiaGeracao.mjs";
+import { DICA_DO_TIPO_DA_SIGLA, PERFIL_CANDIDATOS, PERFIL_CARTAS_PRONTAS, SIGLAS_BANCO } from "./_jogosBanco.mjs";
 import { DETALHES_CIRCUNSTANCIAS_FAMILIA, familiaTemCasal, prioridadesAplicaveis } from "./_prompts.mjs";
 // 6.13.05: a circunstância marcada com a descrição que ela tem para a IA (o rótulo na tela fica curto e discreto).
 const circunstanciaParaIa = (c) => (DETALHES_CIRCUNSTANCIAS_FAMILIA[c] ? `${c} (${DETALHES_CIRCUNSTANCIAS_FAMILIA[c]})` : c);
@@ -3020,7 +3028,7 @@ function jogoDaFamilia(jogos, j) {
   // Rodadas (pergunta, resposta e referência separadas). Se a IA não as separou num jogo de pergunta e resposta, o servidor separa os
   // itens pelos sinais de sempre ("Resposta:", " = ", "(Verdadeiro — …)", travessão); o que não der para separar continua em "itens".
   const rodadas = (Array.isArray(j.rodadas) ? j.rodadas : [])
-    .map((r) => (r && typeof r === "object" ? { pergunta: limparTextoGerado(r.pergunta, 400), resposta: limparTextoGerado(r.resposta, 300), referencia: linhaFamilia(r.referencia, 120) } : null))
+    .map((r) => (r && typeof r === "object" ? { pergunta: limparTextoGerado(r.pergunta, 1800), resposta: limparTextoGerado(r.resposta, 300), referencia: linhaFamilia(r.referencia, 120) } : null))
     .filter((r) => r && r.pergunta && r.resposta)
     .slice(0, 25);
   if (!rodadas.length && JOGOS_COM_RESPOSTA.test(`${j.tipo || ""} ${j.nome || ""}`)) {
@@ -3428,6 +3436,41 @@ const MIN_VERSOS_EPISODIO = 3;
 
 // Jogos de pergunta e resposta: as regras quando a IA não as escreveu.
 const REGRAS_PADRAO_JOGO = "Quem dirige mostra uma rodada por vez; quem acertar primeiro marca um ponto. Depois de cada rodada, leiam a resposta e o texto bíblico.";
+// 6.13.22: quantas siglas do banco fixo (SIGLAS_BANCO, revisadas das sugestões do usuário) entram em cada jogo de Abreviações; as outras a IA cria.
+const SIGLAS_DO_BANCO_POR_JOGO = 4;
+// A rodada de Abreviações de uma sigla do banco: a dica 2 é o livro do versículo ou o tipo da sigla (publicação, termo da congregação…).
+function rodadaDaSiglaDoBanco([sigla, resposta, onde]) {
+  const ref = DICA_DO_TIPO_DA_SIGLA[onde] ? "" : onde;
+  const dica = ref ? `Está em ${livroDaReferencia(ref)}` : DICA_DO_TIPO_DA_SIGLA[onde];
+  return { pergunta: perguntaDaAbreviacao(sigla, resposta, dica), resposta, referencia: ref };
+}
+// 6.13.22: Perfil bíblico: as cartas que a IA vai escrever, com o verbete do Perspicaz (o sentido que cita a passagem do candidato). Alterna as
+// categorias (pessoa, lugar, coisa ou qualidade) e tira as das últimas semanas (memória "jogo_cartas"). Até 4 cartas, cada uma com até 2500
+// caracteres do verbete, cortados no fim de uma frase.
+async function candidatosDoPerfil(fora, semente, max = 4) {
+  const porCategoria = {};
+  for (const c of embaralhar(PERFIL_CANDIDATOS.filter((c) => !fora.has(normalizarTexto(c[0]))), semente + 19)) {
+    const cat = c[1] === "Qualidade" ? "Coisa" : c[1];
+    (porCategoria[cat] = porCategoria[cat] || []).push(c);
+  }
+  const ordem = [];
+  for (let i = 0; ordem.length < max * 2 && i < 20; i++) {
+    for (const cat of ["Pessoa", "Lugar", "Coisa"]) if (porCategoria[cat] && porCategoria[cat][i]) ordem.push(porCategoria[cat][i]);
+  }
+  const livroDe = await resolvedorDeLivros().catch(() => null);
+  const lidos = await Promise.all(
+    ordem.slice(0, max * 2).map(async ([resposta, categoria, verbete, referencia]) => {
+      const v = await lerVerbeteCompleto([verbete]).catch(() => null);
+      if (!v || !v.texto) return null;
+      const sentidos = sentidosDoVerbete(v.texto);
+      const s = (livroDe && sentidoQueCitaAPassagem(v.texto, referencia, livroDe)) || (sentidos.length === 1 ? sentidos[0] : null);
+      if (!s) return null;
+      const texto = cortarNoFimDaFrase(String(s.texto).replace(/\s+/g, " ").trim(), 2500);
+      return texto.length >= 300 ? { resposta, categoria, verbete: v.verbete, volume: v.volume, referencia, texto } : null;
+    })
+  );
+  return lidos.filter(Boolean).slice(0, max);
+}
 
 // 6.13.12: os quadros em que a matéria lida leva o "Objetivo da matéria" (no quadro Vídeo, cada vídeo tem o seu objetivo).
 const QUADROS_COM_OBJETIVO_DA_MATERIA = Object.freeze(["abertura", "personagem", "jesus", "criador"]);
@@ -3801,18 +3844,40 @@ const PREPARAR_QUADRO_FAMILIA = {
     const ordem = idTipo === "ordem_data";
     const limite = RODADAS_DO_JOGO[idTipo] || { pedir: 10, min: 8, max: 12 };
     const montadoPeloServidor = idTipo === "complete_versiculo" || idTipo === "quem_disse";
+    // 6.13.22: Abreviações misturam siglas do banco fixo com as da IA; o Perfil bíblico usa cartas prontas e cartas escritas pela IA a partir do
+    // verbete do Perspicaz. Os dois guardam o que saiu na memória "jogo_cartas" (as respostas), para as próximas semanas não repetirem.
+    const abrev = idTipo === "abreviacoes";
+    const perfil = idTipo === "perfil_biblico";
+    const cartasFora = new Set((ctx.evitar.jogo_cartas || []).map((x) => normalizarTexto(x)));
+    const siglasDoBanco = abrev ? embaralhar(SIGLAS_BANCO.filter((s) => !cartasFora.has(normalizarTexto(s[1]))), ctx.semente + 11).slice(0, SIGLAS_DO_BANCO_POR_JOGO) : [];
+    const pedir = abrev ? Math.max(4, limite.pedir - siglasDoBanco.length) : limite.pedir;
+    const minDaIa = abrev ? Math.max(1, limite.min - siglasDoBanco.length) : limite.min;
+    let prontas = [];
+    let candidatos = [];
+    if (perfil) {
+      prontas = embaralhar(PERFIL_CARTAS_PRONTAS.filter((c) => !cartasFora.has(normalizarTexto(c.resposta))), ctx.semente + 13);
+      // Os anos (só nas cartas prontas) primeiro: a 1ª carta pronta da noite é um ano, quando houver.
+      prontas.sort((a, b) => (a.categoria === "Ano" ? 0 : 1) - (b.categoria === "Ano" ? 0 : 1));
+      if (prontas.length < CARTAS_DO_PERFIL) prontas = prontas.concat(embaralhar(PERFIL_CARTAS_PRONTAS.filter((c) => !prontas.includes(c)), ctx.semente + 17));
+      if (comBiblia) candidatos = await candidatosDoPerfil(cartasFora, ctx.semente).catch(() => []);
+    }
     const listas =
       `\nTIPO DO JOGO DESTA NOITE (use só este): ${tipo}\n` +
       (ordem
         ? `\nACONTECIMENTOS DO APÊNDICE B DA BÍBLIA DE ESTUDO (data — acontecimento; escolha de 6 a 8 em "eventos" pelo identificador):\n${eventos.map((e, i) => `[B${i + 1}] ${e.data} — ${e.evento}`).join("\n")}\n`
-        : `QUANTIDADE: mande ${limite.pedir} rodadas (no mínimo ${limite.min}; ficam até ${limite.max}).\n` +
-          (montadoPeloServidor ? listaEvitar("versículos dos jogos", ctx.evitar.jogo_versiculos) : ""));
+        : perfil
+          ? candidatos.length
+            ? `QUANTIDADE: mande uma rodada para cada carta [C#] abaixo (${candidatos.length} rodadas), com 10 dicas cada.\n\nCARTAS DO PERFIL BÍBLICO (escreva as dicas SÓ com o que está no texto do verbete de cada carta):\n${candidatos.map((c, i) => `[C${i + 1}] ${c.categoria} — resposta: ${c.resposta} — Estudo Perspicaz das Escrituras, verbete “${c.verbete}”: ${c.texto}`).join("\n\n")}\n`
+            : `QUANTIDADE: neste jogo o servidor usa só as cartas prontas: mande "rodadas" vazio (só "nome", "comoJogar" e "descricao").\n`
+          : `QUANTIDADE: mande ${pedir} rodadas (no mínimo ${minDaIa}; ficam até ${limite.max - siglasDoBanco.length}).\n` +
+            (montadoPeloServidor ? listaEvitar("versículos dos jogos", ctx.evitar.jogo_versiculos) : "") +
+            (abrev ? listaEvitar("siglas dos jogos", ctx.evitar.jogo_cartas) + (siglasDoBanco.length ? `JÁ NESTE JOGO (siglas que o servidor põe; não repita): ${siglasDoBanco.map((s) => `${s[0]} = ${s[1]}`).join("; ")}\n` : "") : ""));
     return {
       sistema: "jogo",
       tipo,
       schema: SAIDAS_QUADRO_FAMILIA.jogo,
       listas,
-      contagens: { eventos: eventos.length },
+      contagens: { eventos: eventos.length, ...(perfil ? { candidatosPerfil: candidatos.length } : {}), ...(abrev ? { siglasDoBanco: siglasDoBanco.length } : {}) },
       async montar(o) {
         const nome = linhaFamilia(o.nome, 80) || tipo.replace(/\s*\(.*$/, "");
         let jogo = null;
@@ -3821,7 +3886,35 @@ const PREPARAR_QUADRO_FAMILIA = {
         let falta = "";
         let trocarTipo = "";
         let versiculosDoJogo = [];
-        if (ordem) {
+        let cartasDoJogo = [];
+        if (perfil) {
+          // 6.13.22: cada rodada da IA é uma carta [C#]: as dicas tiradas do verbete (8 a 12, sem a resposta); a resposta e a referência são as do
+          // candidato (postas pelo servidor). Ficam até 3 cartas da IA, com uma carta pronta (um ano, de preferência) na frente e as prontas
+          // completando as 4 cartas da noite.
+          const brutas = (Array.isArray(o.rodadas) ? o.rodadas : []).filter((r) => r && typeof r === "object").slice(0, 10);
+          const usadas = new Set();
+          const daIa = [];
+          for (const b of brutas) {
+            const texto = String(b.pergunta || "");
+            const id = texto.match(/\[?\bC(\d{1,2})\]?/);
+            let cand = id ? candidatos[Number(id[1]) - 1] : null;
+            if (!cand) cand = candidatos.find((c) => normalizarTexto(c.resposta) === normalizarTexto(b.resposta));
+            if (!cand || usadas.has(cand)) continue;
+            const dicas = dicasDoPerfil(texto.replace(/^.*?(?=Dica\s*1\s*:)/is, ""), cand.resposta);
+            if (dicas.length < MIN_DICAS_PERFIL) continue;
+            usadas.add(cand);
+            daIa.push({ pergunta: perguntaDoPerfil(cand.categoria, dicas), resposta: cand.resposta, referencia: cand.referencia });
+          }
+          const ia = daIa.slice(0, limite.max);
+          const rodadas = [...prontas.slice(0, 1), ...ia, ...prontas.slice(1)].slice(0, CARTAS_DO_PERFIL).map((c) =>
+            c.dicas ? { pergunta: perguntaDoPerfil(c.categoria, c.dicas), resposta: c.resposta, referencia: c.referencia } : c
+          );
+          jogo = { tipo, idTipo, nome, comoJogar: REGRAS_DO_PERFIL, material: "", rodadas, itens: [] };
+          tiradas = brutas.length - ia.length;
+          cartasDoJogo = rodadas.map((r) => r.resposta);
+          if (candidatos.length && ia.length < Math.min(limite.min, candidatos.length))
+            falta = `vieram ${ia.length} cartas válidas; mande uma rodada para cada carta [C#] recebida, com a pergunta começando pelo identificador ("[C1] Dica 1: … Dica 2: …"), de ${MIN_DICAS_PERFIL} a 12 dicas tiradas só do texto do verbete, da mais difícil para a mais fácil, e nenhuma dica com a resposta (nem uma palavra dela)`;
+        } else if (ordem) {
           const porData = (e) => valorDaData(e.data);
           const escolhidos = semRepetirFamilia(escolhasValidas(o.eventos, "B", eventos.length, 8).map((i) => eventos[i]), porData);
           // 6.12.73: pelo menos 6 acontecimentos (com menos, o servidor pede de novo uma vez; se ainda faltar, completa com o Apêndice B).
@@ -3911,9 +4004,8 @@ const PREPARAR_QUADRO_FAMILIA = {
                 if (!sigla || !livro || !abreviacaoJogavel(sigla, r.resposta) || !novaRodada(normalizarTexto(sigla))) return;
                 // 6.13.17: a sigla aparece logo na pergunta (antes ficava escondida na 1ª dica); as dicas ajudam a descobrir: quantas palavras,
                 // em que livro está e a primeira palavra importante.
-                const palavrasResp = String(r.resposta || "").trim().split(/\s+/).filter(Boolean);
-                const chave = palavrasResp.find((w) => w.replace(/[^\p{L}]/gu, "").length >= 4) || palavrasResp[0] || "";
-                r.pergunta = `O que significa a sigla “${sigla}”? Dica 1: A resposta tem ${palavrasResp.length} ${palavrasResp.length === 1 ? "palavra" : "palavras"}. Dica 2: Está em ${livro}. Dica 3: Uma das palavras é “${chave.replace(/[.,;:!?]+$/, "")}”.`;
+                // 6.13.22: a 3ª dica é o começo de cada palavra ("Gr Mu"), como nas sugestões do usuário.
+                r.pergunta = perguntaDaAbreviacao(sigla, r.resposta, `Está em ${livro}`);
                 if (v) r.referencia = v.referencia;
               } else if (!novaRodada(normalizarTexto(r.pergunta))) return;
               conferidas.push(r);
@@ -3937,9 +4029,17 @@ const PREPARAR_QUADRO_FAMILIA = {
             }
           }
           contagensDaConferencia = { conferenciaNaBiblia: conferidasNaBiblia, rejeitadasNaBiblia: rejeitadasNaBiblia.length };
+          const conferidasDaIa = conferidas.length;
+          if (abrev && siglasDoBanco.length) {
+            // 6.13.22: as siglas do banco entram no jogo (sem repetir uma sigla ou uma resposta da IA), misturadas com as da IA.
+            const daIa = conferidas.slice(0, limite.max - siglasDoBanco.length);
+            const jaTem = new Set(daIa.flatMap((r) => [normalizarTexto(r.resposta), normalizarTexto((r.pergunta.match(/“([^”]+)”/) || [])[1] || "")]));
+            const doBanco = siglasDoBanco.filter((s) => !jaTem.has(normalizarTexto(s[1])) && !jaTem.has(normalizarTexto(s[0]))).map(rodadaDaSiglaDoBanco);
+            conferidas = embaralhar([...daIa, ...doBanco], ctx.semente + 23);
+          }
           jogo = jogoDaFamilia([tipo], { tipo, nome, comoJogar: limparTextoGerado(o.comoJogar, 1200) || REGRAS_PADRAO_JOGO, rodadas: conferidas.slice(0, limite.max), itens: [] });
           if (jogo) jogo.idTipo = idTipo;
-          tiradas = brutas.length - conferidas.length;
+          tiradas = brutas.length - conferidasDaIa; // 6.13.22: as siglas do banco não contam
           // 6.12.73/6.12.76: com menos rodadas válidas que o mínimo do tipo, o servidor pede de novo uma vez, dizendo o que faltou.
           const validas = jogo ? jogo.rodadas.length : 0;
           const exigencia = {
@@ -3950,7 +4050,8 @@ const PREPARAR_QUADRO_FAMILIA = {
             abreviacoes: "a sigla na pergunta curta (no máximo 4 iniciais), de uma expressão bíblica conhecida (nome, título ou grupo, nunca um pedaço de frase de versículo), conferindo palavra por palavra com a resposta, e a referência do versículo onde está",
           }[idTipo];
           const faltas = [];
-          if (validas < limite.min) faltas.push(`vieram ${validas} rodadas válidas; mande ${limite.pedir} rodadas (no mínimo ${limite.min}), em nível de adulto batizado${exigencia ? `, ${exigencia}` : ""}${semData ? ", e sem datas fora do Apêndice B" : ""}${rejeitadasNaBiblia.length ? `; ${textoDasRejeitadas(rejeitadasNaBiblia)}` : ""}`);
+          if (abrev && jogo) cartasDoJogo = jogo.rodadas.map((r) => r.resposta);
+          if (validas < limite.min) faltas.push(`vieram ${validas} rodadas válidas${abrev && siglasDoBanco.length ? ` (com ${siglasDoBanco.length} siglas do servidor)` : ""}; mande ${pedir} rodadas (no mínimo ${minDaIa}), em nível de adulto batizado${exigencia ? `, ${exigencia}` : ""}${semData ? ", e sem datas fora do Apêndice B" : ""}${rejeitadasNaBiblia.length ? `; ${textoDasRejeitadas(rejeitadasNaBiblia)}` : ""}`);
           if (idTipo === "verdadeiro_falso" && validas) {
             const verdadeiras = jogo.rodadas.filter((r) => /^Verdadeiro\b/.test(r.resposta)).length;
             if (verdadeiras < 3 || validas - verdadeiras < 3) faltas.push(`vieram ${verdadeiras} verdadeiras e ${validas - verdadeiras} falsas; mande pelo menos 3 verdadeiras e 3 falsas`);
@@ -3963,10 +4064,10 @@ const PREPARAR_QUADRO_FAMILIA = {
           descricao: descricaoFamilia(o.descricao),
           jogo,
           perguntas: [],
-          memoria: { jogos: [tipo], ...(versiculosDoJogo.length ? { jogo_versiculos: versiculosDoJogo } : {}) },
+          memoria: { jogos: [tipo], ...(versiculosDoJogo.length ? { jogo_versiculos: versiculosDoJogo } : {}), ...(cartasDoJogo.length ? { jogo_cartas: cartasDoJogo } : {}) },
           falta,
           trocarTipo,
-          contagens: { tiradas, rodadas: jogo ? (ordem ? jogo.itens.length : jogo.rodadas.length) : 0, idTipo, ...contagensDaConferencia },
+          contagens: { tiradas, rodadas: jogo ? (ordem ? jogo.itens.length : jogo.rodadas.length) : 0, idTipo, ...contagensDaConferencia, ...(perfil ? { cartasDaIa: jogo.rodadas.filter((r) => candidatos.some((c) => c.resposta === r.resposta)).length } : {}) },
         };
       },
     };

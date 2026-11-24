@@ -278,7 +278,7 @@ function limparPrograma(op) {
     if (QUADRO_VALIDO.test(String(p.quadro || ""))) parte.quadro = String(p.quadro);
     const j = p.jogo;
     if (j && typeof j === "object") {
-      const rodadas = lista(j.rodadas, 60, (r) => (r && typeof r === "object" && texto(r.pergunta, 600) ? { pergunta: texto(r.pergunta, 600), resposta: texto(r.resposta, 600), referencia: texto(r.referencia, 120) } : null));
+      const rodadas = lista(j.rodadas, 60, (r) => (r && typeof r === "object" && texto(r.pergunta, 1800) ? { pergunta: texto(r.pergunta, 1800), resposta: texto(r.resposta, 600), referencia: texto(r.referencia, 120) } : null));
       if (rodadas.length) respostas[i] = rodadas.map((r) => r.resposta);
       // 6.12.76: a referência de cada rodada também é resposta (no Complete o versículo e no Quem disse isso? ela entrega a resposta): vai
       // para respostas.json e só chega a todos quando quem dirige revela a rodada (estado.referenciasReveladas).

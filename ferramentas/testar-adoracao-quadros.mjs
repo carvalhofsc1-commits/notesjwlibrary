@@ -159,7 +159,7 @@ teste("catálogo dos quadros: 12 na ordem fixa, obrigatórios, minutos (mínimo 
   assert.ok(QUADROS_FAMILIA.every((q) => q.nome && q.emoji && (q.minutos === null) === q.id.startsWith("oracao")));
   for (const q of QUADROS_FAMILIA) for (const chave of q.fontes.livros) assert.ok(nomeDoLivro(chave), `${q.id}: livro "${chave}" não existe em LIVROS`);
   assert.deepEqual(QUADROS_FAMILIA.find((q) => q.id === "principio").perguntasPadrao, ["Que princípio podemos extrair do(s) texto(s) acima?", "Em que situações práticas esse princípio pode nos orientar?"]);
-  assert.equal(JOGOS_FAMILIA.length, 6);
+  assert.equal(JOGOS_FAMILIA.length, 7); // 6.13.22: + Perfil bíblico
   assert.ok(QUADROS_FAMILIA.every((q) => !/culto/i.test(q.nome + q.saida)));
 });
 
@@ -511,7 +511,7 @@ teste("Apêndice B: acontecimentos (4 formatos), valor das datas, datas permitid
 
 teste("memória evitar: categorias conhecidas, até 40 por categoria e 120 caracteres, sem repetir", () => {
   assert.equal(ger.MAX_EVITAR_POR_CATEGORIA, 40);
-  assert.deepEqual([...ger.CATEGORIAS_EVITAR], ["assuntos", "personagens", "principios", "jesus", "saiba", "ministerio", "criador", "artigos", "canticos", "jogos", "videos", "leituras", "relatos", "jogo_versiculos"]);
+  assert.deepEqual([...ger.CATEGORIAS_EVITAR], ["assuntos", "personagens", "principios", "jesus", "saiba", "ministerio", "criador", "artigos", "canticos", "jogos", "videos", "leituras", "relatos", "jogo_versiculos", "jogo_cartas"]);
   const muitos = Array.from({ length: 60 }, (_, i) => "Personagem " + i);
   const e = ger.normalizarEvitar({ personagens: [...muitos, "personagem 0"], assuntos: ["x".repeat(300)], intruso: ["a"], canticos: [12, "12", { n: 1 }] });
   assert.equal(e.personagens.length, 40);
@@ -1138,10 +1138,13 @@ teste("6.12.76: Quem sou eu? e Abreviações conferidos pelo servidor; Princípi
   assert.deepEqual(p1.memoria, { jogos: ["Quem sou eu? (personagens bíblicos)"] });
   const ab = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "jogo", jogos: ["Abreviações bíblicas (ex.: Os 12 A de C)"] }), montados);
   const p2 = await ab.prep.montar({ descricao: "d", nome: "Siglas", comoJogar: "R.", rodadas: [{ pergunta: "Os 12 A de C", resposta: "Os 12 Apóstolos de Cristo", referencia: "Mateus 10:2" }, { pergunta: "O que significa? Os 12 A de C", resposta: "Os 12 Apóstolos de Cristo", referencia: "Mateus 10:2" }, { pergunta: "R de D", resposta: "Reino dos Céus", referencia: "Mateus 5:3" }], eventos: [] });
-  assert.equal(p2.contagens.rodadas, 1, "sigla repetida e sigla que não confere saem");
-  // 6.13.17: a sigla na própria pergunta; as dicas: quantas palavras, o livro e uma palavra importante
-  assert.equal(p2.jogo.rodadas[0].pergunta, "O que significa a sigla “Os 12 A de C”? Dica 1: A resposta tem 5 palavras. Dica 2: Está em Mateus. Dica 3: Uma das palavras é “Apóstolos”.");
-  assert.match(p2.falta, /^vieram 1 rodadas válidas; mande 10 rodadas \(no mínimo 8\)/);
+  // 6.13.22: + 4 siglas do banco fixo; das 3 da IA, a repetida e a que não confere saem
+  assert.equal(p2.contagens.rodadas, 5, "sigla repetida e sigla que não confere saem (ficam 1 da IA e 4 do banco)");
+  assert.equal(p2.contagens.tiradas, 2);
+  // 6.13.17: a sigla na própria pergunta; 6.13.22: as dicas: quantas palavras, o livro e o começo de cada palavra
+  assert.equal(p2.jogo.rodadas.find((r) => r.pergunta.includes("“Os 12 A de C”")).pergunta, "O que significa a sigla “Os 12 A de C”? Dica 1: A resposta tem 5 palavras. Dica 2: Está em Mateus. Dica 3: O começo de cada palavra: “Os 12 Ap de Cr”.");
+  assert.match(p2.falta, /^vieram 5 rodadas válidas \(com 4 siglas do servidor\); mande 6 rodadas \(no mínimo 4\)/);
+  assert.equal(p2.memoria.jogo_cartas.length, 5, "as respostas das siglas vão para a memória jogo_cartas");
   assert.equal(p2.trocarTipo, "", "Abreviações não troca de tipo");
   if (!comFontes) return console.log("      (sem FONTES_DIR: Princípio pulado)");
   const pr = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "principio", assunto: "perdão", evitar: {} }), montados);
@@ -1427,7 +1430,7 @@ teste("6.12.78: servidor liga a conferência ao jogo (só os 2 tipos, com a Bíb
   // O motivo das rodadas tiradas volta no pedido de novo (FALTOU) e a contagem entra no log.
   assert.match(servidorJs, /textoDasRejeitadas\(rejeitadasNaBiblia\)/);
   assert.match(servidorJs, /contagensDaConferencia = \{ conferenciaNaBiblia: conferidasNaBiblia, rejeitadasNaBiblia: rejeitadasNaBiblia\.length \}/);
-  assert.match(servidorJs, /\.\.\.contagensDaConferencia \},/);
+  assert.match(servidorJs, /\.\.\.contagensDaConferencia[ ,}]/);
   // Nada do perfil nem do texto das rodadas no log.
   const logs = servidorJs.split("\n").filter((l) => /console\.log\("Adoração em Família \((plano|quadro)\)/.test(l));
   for (const l of logs.filter((x) => /\(quadro\)/.test(x))) assert.doesNotMatch(l, /\.pergunta|\.resposta\b|motivo|rejeitadas\b|textos\.map/);
@@ -1684,13 +1687,16 @@ teste("6.12.81 (2): o jogo de Abreviações tira as siglas longas e o pedido de 
   const longas = [["T L C O N E D P", "Tão Longe Como O Nascente É Do Poente", "Salmos 103:12"], ["P L U A O", "Perdoando-se Liberalmente Uns Aos Outros", "Efésios 4:32"], ["P P A A O", "Passar Por Alto A Ofensa", "Provérbios 19:11"]];
   const rodadas = [...longas.slice(0, 1), ...boas, ...longas.slice(1)].map(([pergunta, resposta, referencia]) => ({ pergunta, resposta, referencia }));
   const r = await ab.prep.montar({ descricao: "d", nome: "Abreviações", comoJogar: "R.", rodadas, eventos: [] });
-  assert.equal(r.contagens.rodadas, 6, JSON.stringify(r.jogo && r.jogo.rodadas.map((x) => x.pergunta)));
+  // 6.13.22: as 6 boas da IA e 4 do banco
+  assert.equal(r.contagens.rodadas, 10, JSON.stringify(r.jogo && r.jogo.rodadas.map((x) => x.pergunta)));
   assert.equal(r.contagens.tiradas, 3, "as 3 siglas longas saem");
   assert.ok(!r.jogo.rodadas.some((x) => /T L C O|P L U A|P P A A/.test(x.pergunta)));
-  assert.match(r.jogo.rodadas[0].pergunta, /^O que significa a sigla “O P da P”\? Dica 1: A resposta tem 4 palavras\. Dica 2: Está em Isaías\. Dica 3: Uma das palavras é “Príncipe”\.$/);
-  // 6 < 8: o pedido de novo traz a exigência nova.
-  assert.match(r.falta, /^vieram 6 rodadas válidas; mande 10 rodadas \(no mínimo 8\)/);
-  assert.match(r.falta, /a sigla na pergunta curta \(no máximo 4 iniciais\), de uma expressão bíblica conhecida \(nome, título ou grupo, nunca um pedaço de frase de versículo\)/);
+  assert.equal(r.jogo.rodadas.find((x) => x.pergunta.includes("“O P da P”")).pergunta, "O que significa a sigla “O P da P”? Dica 1: A resposta tem 4 palavras. Dica 2: Está em Isaías. Dica 3: O começo de cada palavra: “O Pr da Pa”.");
+  assert.equal(r.falta, "", "com as siglas do banco, 10 rodadas: nada falta");
+  // Sem as siglas do banco (todas na memória das últimas semanas não cabem: só 40), a IA sozinha com poucas siglas pede de novo.
+  const r2 = await ab.prep.montar({ descricao: "d", nome: "Abreviações", comoJogar: "R.", rodadas: rodadas.slice(0, 3), eventos: [] });
+  assert.match(r2.falta, /^vieram 6 rodadas válidas \(com 4 siglas do servidor\); mande 6 rodadas \(no mínimo 4\)/);
+  assert.match(r2.falta, /a sigla na pergunta curta \(no máximo 4 iniciais\), de uma expressão bíblica conhecida \(nome, título ou grupo, nunca um pedaço de frase de versículo\)/);
 });
 
 teste("6.12.85: Abertura — matéria antes do relato e local exato da fonte (capítulo, parágrafo, página)", async () => {
@@ -1971,6 +1977,84 @@ teste("6.13.17: sigla à mostra na pergunta, conferência automática da respost
   assert.ok(appJs.includes("acao: 'julgar', parte: parteIdx, rodada: k, certo: true"));
   assert.ok(appJs.includes("[['Verdadeiro', '✅ Verdadeiro'], ['Falso', '❌ Falso']]"));
 });
+
+teste("6.13.22: banco de siglas e cartas do Perfil bíblico (todas jogáveis), duas letras na sigla e começo das palavras", async () => {
+  const banco = await import(new URL("api/_jogosBanco.mjs", raiz));
+  assert.ok(banco.SIGLAS_BANCO.length >= 70);
+  const vistas = new Set();
+  for (const [sigla, resposta, onde] of banco.SIGLAS_BANCO) {
+    assert.ok(ger.abreviacaoJogavel(sigla, resposta), `sigla do banco não jogável: ${sigla} = ${resposta}`);
+    assert.ok(banco.DICA_DO_TIPO_DA_SIGLA[onde] || /^[\p{L}0-9 ]+ \d{1,3}:\d/u.test(onde), `onde inválido: ${onde}`);
+    assert.ok(!vistas.has(sigla), "sigla repetida no banco: " + sigla);
+    vistas.add(sigla);
+    assert.doesNotMatch(resposta, /Teocrático|Nosso Ministério do Reino|Reunião de Serviço|Gibeão|Camço|Perspicas|culto/i);
+  }
+  assert.ok(ger.confereAbreviacao("C Go", "Corpo Governante"));
+  assert.ok(ger.confereAbreviacao("G Mu", "Grande Multidão"));
+  assert.ok(!ger.confereAbreviacao("G Mu", "Grande Tribulação"));
+  assert.ok(ger.siglaCurta("Só 2 E F F"), "Só por extenso não conta como inicial");
+  assert.equal(ger.comecoDasPalavras("10 Espias Foram Infiéis"), "10 Es Fo In");
+  assert.equal(ger.comecoDasPalavras("O Pão da Vida"), "O Pã da Vi");
+  // Perfil: as cartas prontas passam na conferência das dicas (8 a 12, nenhuma com a resposta)
+  assert.ok(banco.PERFIL_CARTAS_PRONTAS.length >= 12);
+  for (const c of banco.PERFIL_CARTAS_PRONTAS) {
+    const dicas = ger.dicasDoPerfil(c.dicas, c.resposta);
+    assert.equal(dicas.length, c.dicas.length, `carta ${c.resposta}: dica tirada (${c.dicas.filter((d) => !dicas.includes(d)).join(" | ")})`);
+    assert.ok(dicas.length >= ger.MIN_DICAS_PERFIL && dicas.length <= ger.MAX_DICAS_PERFIL);
+    const p = ger.perguntaDoPerfil(c.categoria, dicas);
+    assert.equal((p.match(/Dica \d+:/g) || []).length, dicas.length);
+    assert.ok(p.length <= 1800, "pergunta longa demais: " + c.resposta);
+  }
+  assert.deepEqual(ger.dicasDoPerfil("Dica 1: Fui rei de Israel por quarenta anos. Dica 2: Davi foi meu pai e eu construí o templo. Dica 3: Curto.", "Salomão"), ["Fui rei de Israel por quarenta anos.", "Davi foi meu pai e eu construí o templo."]);
+  assert.deepEqual(ger.dicasDoPerfil(["Neste ano caiu Babilônia, em 539.", "Neste ano, Ciro conquistou uma cidade."], "539 AEC"), ["Neste ano, Ciro conquistou uma cidade."]);
+  assert.ok(ger.respostaConfere("539 a.C.", "539 AEC", "perfil_biblico"));
+  assert.ok(ger.respostaConfere("539", "539 AEC", "perfil_biblico"));
+  assert.ok(!ger.respostaConfere("538", "539 AEC", "perfil_biblico"));
+  assert.ok(ger.respostaConfere("pedro", "Pedro", "perfil_biblico"));
+  assert.equal(ger.idDoJogo("Perfil bíblico (dicas de pessoas, lugares, coisas e anos)"), "perfil_biblico");
+  assert.ok(JOGOS_FAMILIA.includes("Perfil bíblico (dicas de pessoas, lugares, coisas e anos)"));
+  assert.match(appJs, /'Perfil bíblico \(dicas de pessoas, lugares, coisas e anos\)'/);
+  assert.match(appJs, /FAMILIA_EVITAR_CATEGORIAS = \[[^\]]*'jogo_cartas'/);
+  // Perfil salvo com os 6 jogos de antes marcados ganha o 7º
+  assert.equal(quadrosDoPedido({ quadros: ["jogo"], jogos: JOGOS_FAMILIA.slice(0, 6) }).jogos.length, 7);
+  assert.equal(quadrosDoPedido({ quadros: ["jogo"], jogos: JOGOS_FAMILIA.slice(0, 2) }).jogos.length, 2);
+});
+
+teste("6.13.22: o quadro do Perfil bíblico — cartas da IA conferidas, prontas completando 4 cartas e memória jogo_cartas", async () => {
+  const pf = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "jogo", jogos: ["Perfil bíblico (dicas de pessoas, lugares, coisas e anos)"] }), montados);
+  assert.ok(!pf.erro);
+  assert.equal(pf.prep.contagens.candidatosPerfil, comFontes ? pf.prep.contagens.candidatosPerfil : 0);
+  if (!comFontes) {
+    // Sem as fontes: só as cartas prontas, 4, a primeira um ano
+    const r = await pf.prep.montar({ descricao: "d", nome: "Perfil", comoJogar: "x", rodadas: [], eventos: [] });
+    assert.equal(r.jogo.idTipo, "perfil_biblico");
+    assert.equal(r.jogo.rodadas.length, 4);
+    assert.match(r.jogo.rodadas[0].pergunta, /^Perfil bíblico: Ano\. Dica 1: /);
+    assert.equal(r.jogo.comoJogar, ger.REGRAS_DO_PERFIL);
+    assert.equal(r.falta, "");
+    assert.equal(r.memoria.jogo_cartas.length, 4);
+    // a memória das últimas semanas tira as cartas já vistas
+    const pf2 = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "jogo", jogos: ["Perfil bíblico (dicas de pessoas, lugares, coisas e anos)"], evitar: { jogo_cartas: r.memoria.jogo_cartas } }), montados);
+    const r2 = await pf2.prep.montar({ descricao: "d", nome: "Perfil", comoJogar: "x", rodadas: [], eventos: [] });
+    assert.ok(!r2.jogo.rodadas.some((x) => r.memoria.jogo_cartas.includes(x.resposta)));
+    return console.log("      (sem FONTES_DIR: cartas da IA puladas)");
+  }
+  const cands = pf.prep.contagens.candidatosPerfil;
+  assert.ok(cands >= 2, "candidatos com verbete: " + cands);
+  assert.match(pf.prep.listas, /CARTAS DO PERFIL BÍBLICO/);
+  const respostas = [...pf.prep.listas.matchAll(/\[C(\d)\] \S+ — resposta: ([^—]+) —/g)].map((m) => m[2].trim());
+  const dez = (n) => Array.from({ length: 10 }, (_, i) => `Dica ${i + 1}: Fato número ${i + 1} da carta ${n}, tirado do verbete.`).join(" ");
+  const rodadas = [
+    { pergunta: "[C1] " + dez(1), resposta: respostas[0], referencia: "" },
+    { pergunta: "[C2] Dica 1: curta. Dica 2: outra.", resposta: respostas[1], referencia: "" },
+  ];
+  const r = await pf.prep.montar({ descricao: "d", nome: "Perfil", comoJogar: "x", rodadas, eventos: [] });
+  assert.equal(r.jogo.rodadas.length, 4);
+  assert.ok(r.jogo.rodadas.some((x) => x.resposta === respostas[0]));
+  assert.ok(!r.jogo.rodadas.some((x) => x.resposta === respostas[1]), "carta com poucas dicas sai");
+  assert.match(r.falta, /^vieram 1 cartas válidas/);
+});
+
 
 for (const [nome, fn] of testes) {
   try {

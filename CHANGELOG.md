@@ -2,6 +2,24 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.22
+
+### Adoração em Família: banco de siglas e o novo jogo Perfil bíblico
+
+A partir das planilhas de sugestões (Jogo Siglas e Perfil Bíblico), revisadas.
+
+- **Abreviações:** cada jogo junta 4 siglas de um banco fixo (`api/_jogosBanco.mjs`, 81 siglas revisadas) às que a IA cria, sem repetir as das últimas semanas (nova memória `jogo_cartas`).
+  - Revisão das siglas: erros corrigidos (Gideão, Serviço de Campo, Perspicaz), nomes antigos tirados (Escola do Ministério Teocrático, Nosso Ministério do Reino, Reunião de Serviço…) e siglas longas encurtadas.
+  - A sigla aceita as 2 primeiras letras da palavra para desfazer a dúvida ("C Go" = Corpo Governante, "G Mu" = Grande Multidão).
+  - A 3ª dica passou a ser o começo de cada palavra ("10 Es Fo In"). A dica 2 das siglas sem versículo diz o tipo: publicação, termo da congregação…
+- **Perfil bíblico (7º tipo de jogo):** 4 cartas por noite, cada uma com a categoria (Pessoa, Lugar, Coisa, Qualidade ou Ano) e 10 dicas, da mais difícil para a mais fácil.
+  - Quem dirige mostra uma dica por vez; quanto menos dicas, mais pontos (10, 9, 8…).
+  - Até 3 cartas são escritas pela IA só com o texto do verbete do Perspicaz (o servidor manda o sentido certo do verbete). Dicas com a resposta saem; a carta com menos de 8 dicas sai.
+  - As 4 cartas são completadas com 13 cartas prontas e revisadas, entre elas os anos (539 AEC, 607 AEC, 2 AEC, 14 EC, 29 EC, 33 EC, 455 AEC, 1513 AEC, 2370 AEC, 1914), Urim e Tumim, Pedro e Jerusalém.
+  - Nos anos, a resposta enviada confere pelo número ("539", "539 a.C.").
+  - Quem tinha os 6 jogos de antes todos marcados ganha também o Perfil bíblico.
+- Prompts (tela de prompts) com as regras novas. A pergunta do jogo aceita até 1800 caracteres (as cartas são longas).
+
 ## 6.13.21
 
 ### Anotações: carregar texto, Word ou PDF no campo
