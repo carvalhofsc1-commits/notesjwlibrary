@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.12.95'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.12.96'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -27058,6 +27058,9 @@ function saveTemplatesToStorage() {
         // 6.12.86: botão 🔊 do trecho (adoração ao vivo), fora do campo recolhido, e o texto em parágrafos com os subtítulos ("## ") em negrito.
         const linhas = parte.leitura.texto.split(/\n+/).map(x => x.trim()).filter(Boolean);
         const pedacosVoz = aoVivo && aoVivo.leitura ? [tituloMateria, ...linhas.map(x => x.replace(/^#{1,2}\s+/, '').replace(/\*\*/g, ''))].filter(Boolean) : [];
+        // 6.12.95: o primeiro parágrafo da matéria, se curto (até 300 caracteres), vale como título: a referência depois do travessão ("— 1 PEDRO 5:7") é lida.
+        const iLinha1 = linhas.findIndex(x => !/^#{1,2}s/.test(x));
+        const iPrimeiraCurta = iLinha1 >= 0 && linhas[iLinha1].length <= 300 ? iLinha1 + 1 : -1; // +1: o título da matéria é o pedaço 0
         const det = document.createElement('details'); // sempre recolhido ao montar; abre ao tocar
         det.className = 'fam-leitura-trecho';
         const sm = document.createElement('summary');
@@ -27066,7 +27069,7 @@ function saveTemplatesToStorage() {
         // 6.12.92: o título dentro do campo, com fundo cinza clarinho como o do link, uma linha embaixo e o 🔊 no começo da linha do título.
         const ptm = document.createElement('div');
         ptm.className = 'fam-leitura-materia';
-        if (pedacosVoz.length) ptm.appendChild(aoVivo.leitura(pedacosVoz));
+        if (pedacosVoz.length) ptm.appendChild(aoVivo.leitura(pedacosVoz, iPrimeiraCurta));
         const ftm = document.createElement('strong');
         ftm.textContent = '📰 ' + tituloMateria;
         ptm.appendChild(ftm);
@@ -28160,7 +28163,7 @@ function saveTemplatesToStorage() {
     // (uso "familia", sem código e sem créditos); o próximo pedaço já vai sendo preparado. Se o Google falhar, continua na voz do aparelho.
     // 6.12.88: só o ícone 🔊 (pequeno, no alto do campo, como nas perguntas). origem (opcional): { tipo, parte, indice } dos textos que o servidor abre
     // sob demanda (matéria na tela, transcrição, letra do cântico), para o servidor conferir que o pedaço é desse texto.
-    function participarLeituraVozBotao(pedacos, origem) {
+    function participarLeituraVozBotao(pedacos, origem, abrirRefs) {
       const botao = document.createElement('button');
       botao.type = 'button';
       botao.className = 'secondary fam-pergunta-voz fam-leitura-voz';
@@ -28211,7 +28214,8 @@ function saveTemplatesToStorage() {
           // 6.12.89: o pedaço passa pelas mesmas regras de fala da leitura em voz alta (referências por extenso: "1 Pedro 5:7" -> "Primeira Pedro cinco sete"); o servidor confere o original.
           const buscar = async pedaco => {
             const regras = await vozCarregarRegras();
-            const falado = textoParaVoz(pedaco, regras);
+            // 6.12.95: exceção à regra de não ler a referência depois do travessão: o pedaço que é como um título da matéria (o primeiro parágrafo, curto) lê a referência
+            const falado = textoParaVoz(pedaco, pedaco === pedacos[abrirRefs] ? Object.assign({}, regras, { pularRefs: false }) : regras);
             return falado ? vozBuscar(falado, null, 'familia', { origem, original: pedaco }) : null;
           };
           let proximo = buscar(pedacos[0]);
@@ -28468,7 +28472,7 @@ function saveTemplatesToStorage() {
       if (!ancora || !pedacos.length) return;
       ancora.prepend(participarLeituraVozBotao(pedacos, origem));
     }
-    const participarMidia = i => ({ leitura: pedacos => participarLeituraVozBotao(pedacos), publicacao: (li, pub, k) => participarMateriaMidia(li, pub, k, i), texto: t => participarTextoMidia(t), video: (li, v, k) => participarVideoMidia(li, v, k, i), cantico: (li, c, k) => participarVideoMidia(li, c, k, i, true) });
+    const participarMidia = i => ({ leitura: (pedacos, abrirRefs) => participarLeituraVozBotao(pedacos, undefined, abrirRefs), publicacao: (li, pub, k) => participarMateriaMidia(li, pub, k, i), texto: t => participarTextoMidia(t), video: (li, v, k) => participarVideoMidia(li, v, k, i), cantico: (li, c, k) => participarVideoMidia(li, c, k, i, true) });
 
     // ---- A sessão na tela: cabeçalho, painel do dirigente e uma seção por parte ----
     function participarMontar() {

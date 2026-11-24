@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.96
+
+### Adoração em Família: a voz lê a referência do primeiro parágrafo da matéria
+
+A regra de voz que não lê a referência bíblica depois de um travessão no fim do parágrafo fazia o 🔊 pular o "— 1 PEDRO 5:7" do primeiro parágrafo da matéria ("A BÍBLIA DIZ: ‘Lancem sobre Deus toda a sua ansiedade…’ — 1 PEDRO 5:7."). Agora há uma exceção: o primeiro parágrafo da matéria, se for curto (até 300 caracteres), vale como título, e a referência depois do travessão é lida ("Primeira Pedro cinco sete"). Em parágrafo longo, e nos travessões do meio do artigo, a regra de não ler continua valendo.
+
 ## 6.12.95
 
 ### Adoração em Família: cabeçalho do campo da matéria em cinza e centralizado

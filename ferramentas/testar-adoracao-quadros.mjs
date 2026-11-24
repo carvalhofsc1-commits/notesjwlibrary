@@ -1700,9 +1700,9 @@ teste("6.12.86: artigo da Abertura com dados da publicação, parágrafos e subt
   assert.ok(servidorJs.includes("estruturado: true"));
   assert.ok(servidorJs.includes("texto: leituraEmParagrafos(lido.texto)"));
   assert.ok(sessaoJs.includes("daLeitura"));
-  assert.ok(appJs.includes("leitura: pedacos => participarLeituraVozBotao(pedacos)"));
+  assert.ok(appJs.includes("leitura: (pedacos, abrirRefs) => participarLeituraVozBotao(pedacos, undefined, abrirRefs)"));
   assert.ok(appJs.includes("fam-leitura-par fam-leitura-sub"));
-  assert.ok(appJs.includes("aoVivo.leitura(pedacosVoz)"));
+  assert.ok(appJs.includes("aoVivo.leitura(pedacosVoz, iPrimeiraCurta)"));
 });
 
 teste("6.12.88: perguntas da leitura logo depois dela; 🔊 só ícone nos campos de texto (matéria, transcrição, letra)", async () => {
@@ -1719,10 +1719,10 @@ teste("6.12.88: perguntas da leitura logo depois dela; 🔊 só ícone nos campo
 
 teste("6.12.89: a voz da adoração usa as regras de fala das referências bíblicas e o ícone fica dentro da moldura do campo", async () => {
   const vozJs = await readFile(new URL("api/voz.mjs", raiz), "utf8");
-  assert.ok(appJs.includes("const falado = textoParaVoz(pedaco, regras);"));
+  assert.ok(appJs.includes("const falado = textoParaVoz(pedaco, pedaco === pedacos[abrirRefs]"));
   assert.ok(appJs.includes("{ origem, original: pedaco }"));
   assert.ok(appJs.includes("{ original: pergunta }"));
-  assert.ok(appJs.includes("ptm.appendChild(aoVivo.leitura(pedacosVoz))"));
+  assert.ok(appJs.includes("ptm.appendChild(aoVivo.leitura(pedacosVoz, iPrimeiraCurta))"));
   assert.ok(vozJs.includes("textoDaSessaoParaLer(body.sessao, original || texto, body.origem)"));
   assert.ok(vozJs.includes("texto.length > original.length * 2 + 120"));
 });
@@ -1771,6 +1771,13 @@ teste("6.12.94: Princípios Bíblicos em linhas, referência em negrito e a mat�
   assert.ok(servidorJs.includes('"## Versículos citados"'));
   assert.ok(appJs.includes("par.match(/^\\*\\*(.+?)\\*\\*(.*)$/)"));
   assert.ok(sessaoJs.includes('.replace(/\\*\\*/g, "")'));
+});
+
+teste("6.12.96: o primeiro parágrafo curto da matéria vale como título e lê a referência depois do travessão", async () => {
+  assert.ok(appJs.includes("function participarLeituraVozBotao(pedacos, origem, abrirRefs)"));
+  assert.ok(appJs.includes("pedaco === pedacos[abrirRefs] ? Object.assign({}, regras, { pularRefs: false }) : regras"));
+  assert.ok(appJs.includes("linhas[iLinha1].length <= 300 ? iLinha1 + 1 : -1"));
+  assert.ok(appJs.includes("aoVivo.leitura(pedacosVoz, iPrimeiraCurta)"));
 });
 
 for (const [nome, fn] of testes) {
