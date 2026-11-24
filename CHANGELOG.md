@@ -2,6 +2,14 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.80
+
+### Adoração em Família por quadros: tempo limite acompanha o modelo
+
+- **Achado no teste com o Gemini (Google Cloud):** o plano e os quadros usavam 120 s fixos por chamada à IA. O Gemini 4 Argon com esforço alto passou disso nos jogos de 3 dicas e no Verdadeiro ou falso, e o servidor respondeu erro 504 ("A IA demorou demais"): 3 dos 6 tipos de jogo não ficaram prontos.
+- **Correção:** o plano e cada chamada dos quadros agora usam `tempoIa`, a mesma regra das outras telas do app (120 s no Flash e no Haiku; o dobro, até 170 s, nos demais modelos), sempre dentro do prazo total de 270 s de cada quadro. Com o limite novo, os 3 jogos voltaram prontos no 4 Argon com esforço alto (141 s, 172 s e 258 s).
+- Teste: `testar-adoracao-quadros.mjs` confere que o plano e os quadros usam `tempoIa` e que não sobrou cliente de 120 s fixo na Adoração em Família.
+
 ## 6.12.79
 
 ### Correções da revisão de código da Adoração em Família por quadros

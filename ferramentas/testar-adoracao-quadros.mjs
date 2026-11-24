@@ -1575,7 +1575,10 @@ teste("6.12.79 (4): prazo total do quadro (270 s): cada chamada com o tempo que 
   assert.match(servidorJs, /const PRAZO_TOTAL_MS = 270_000;/);
   assert.match(servidorJs, /const PRAZO_MINIMO_MS = 40_000;/);
   assert.match(servidorJs, /const restante = \(\) => PRAZO_TOTAL_MS - \(Date\.now\(\) - inicio\);/);
-  assert.match(servidorJs, /const clienteComPrazo = \(\) => criarClienteIa\(\{ maxRetries: 0, timeout: Math\.max\(10_000, Math\.min\(120_000, restante\(\) - 5_000\)\) \}, P\.ia\.provedorTarefa\);/);
+  assert.match(servidorJs, /const clienteComPrazo = \(\) => criarClienteIa\(\{ maxRetries: 0, timeout: Math\.max\(10_000, Math\.min\(tempoIa\(P, 120_000\), restante\(\) - 5_000\)\) \}, P\.ia\.provedorTarefa\);/);
+  // 6.12.80: o limite de cada chamada acompanha o modelo (tempoIa), no quadro e no plano; o 4 Argon com esforço alto estourava os 120 fixos.
+  assert.match(servidorJs, /const client = criarClienteIa\(\{ maxRetries: 0, timeout: tempoIa\(P, 120_000\) \}, P\.ia\.provedorTarefa\); \/\/ 6\.12\.80/);
+  assert.ok(!/maxRetries: 0, timeout: 120_000 \}, P\.ia\.provedorTarefa\)/.test(servidorJs), "nenhum cliente de 120 s fixo na Adoração em Família");
   // O prazo cabe no que o app espera (IA_ESPERA_MS = 290 s).
   const espera = Number((appJs.match(/const IA_ESPERA_MS = (\d+);/) || [])[1]);
   assert.ok(espera >= 280000, "IA_ESPERA_MS");

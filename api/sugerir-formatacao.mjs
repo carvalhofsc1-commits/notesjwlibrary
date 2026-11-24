@@ -3176,7 +3176,7 @@ async function gerarPlanoFamilia(res, body, P) {
     const pedido = await montarPedidoPlanoFamilia(body, P);
     if (pedido.erro) return erro(res, ...pedido.erro);
     const { perfil, canticos, comAngulo, mensagem } = pedido;
-    const client = criarClienteIa({ maxRetries: 0, timeout: 120_000 }, P.ia.provedorTarefa);
+    const client = criarClienteIa({ maxRetries: 0, timeout: tempoIa(P, 120_000) }, P.ia.provedorTarefa); // 6.12.80: o tempo acompanha o modelo (tempoIa)
     const inicio = Date.now();
     const resposta = await chamarIa(
       client,
@@ -3875,7 +3875,9 @@ async function gerarQuadroFamilia(res, body, P) {
     const PRAZO_MINIMO_MS = 40_000;
     const restante = () => PRAZO_TOTAL_MS - (Date.now() - inicio);
     const comTempo = () => restante() >= PRAZO_MINIMO_MS;
-    const clienteComPrazo = () => criarClienteIa({ maxRetries: 0, timeout: Math.max(10_000, Math.min(120_000, restante() - 5_000)) }, P.ia.provedorTarefa);
+    // 6.12.80: o limite de cada chamada acompanha o modelo (tempoIa: 120 s no Flash e no Haiku, até 170 s nos outros): com o limite fixo de 120 s, o
+    // Gemini 4 Argon com esforço alto estourava o tempo nos jogos de 3 dicas e no Verdadeiro ou falso (erro 504) e o quadro não ficava pronto.
+    const clienteComPrazo = () => criarClienteIa({ maxRetries: 0, timeout: Math.max(10_000, Math.min(tempoIa(P, 120_000), restante() - 5_000)) }, P.ia.provedorTarefa);
     let entrada = 0;
     let saida = 0;
     // 6.12.78: a conferência com a Bíblia dos jogos que a IA escreve sozinha (Verdadeiro ou falso e Quem sou eu?). Para cada rodada, o servidor
