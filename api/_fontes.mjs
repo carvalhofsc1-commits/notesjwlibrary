@@ -233,6 +233,27 @@ function lerReferencia(referencia, indice, { maxVersiculos = MAX_VERSICULOS_POR_
   const partes = [];
   const trechos = [];
   for (const segmento of String(referencia || "").split(";")) {
+    // 6.12.75: trecho que passa para outro capítulo: "Atos 7:54-8:1", "Gênesis 44:18-45:15", "Jon 3:10–4:11". Vai do versículo inicial
+    // até o fim do 1º capítulo, os capítulos do meio inteiros e, no último, de 1 até o versículo final (até 4 capítulos e maxVersiculos
+    // ao todo). A referência sai escrita por capítulo, como as de vários trechos: "Atos 7:54-60; 8:1".
+    const x = segmento.trim().match(/^(?:((?:[1-3]\s*)?\p{L}[^\d:]*?)\s*)?(\d{1,3})\s*:\s*(\d{1,3})\s*[-–—]\s*(\d{1,3})\s*:\s*(\d{1,3})$/u);
+    if (x) {
+      if (x[1] && x[1].trim()) livro = acharLivro(x[1], indice);
+      if (!livro) continue;
+      const [c1, v1, c2, v2] = [x[2], x[3], x[4], x[5]].map(Number);
+      if (c2 <= c1 || c2 - c1 > 3) continue;
+      let quantos = 0;
+      for (let c = c1; c <= c2 && quantos < maxVersiculos; c++) {
+        const achados = versosDoCapitulo(indice, livro, c)
+          .filter((v) => (c > c1 || v >= v1) && (c < c2 || v <= v2))
+          .slice(0, maxVersiculos - quantos);
+        if (!achados.length) continue;
+        quantos += achados.length;
+        partes.push({ livro, capitulo: c, versos: achados });
+        achados.forEach((v) => trechos.push({ livro, capitulo: c, verso: v, texto: indice.versiculos.get(`${livro}|${c}|${v}`) }));
+      }
+      continue;
+    }
     // O nome do livro é opcional depois do primeiro trecho ("28:19, 20" continua no mesmo livro).
     const m = segmento.trim().match(/^(?:((?:[1-3]\s*)?\p{L}[^\d:]*?)\s*)?(\d{1,3})\s*:\s*([\d\s,.\-–—]+)$/u);
     // Livro de um capítulo só, citado como nas publicações, sem o capítulo: "Filêmon 8, 9, 17", "Judas 3", "3 João 4".

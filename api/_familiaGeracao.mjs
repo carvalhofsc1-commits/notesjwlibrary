@@ -205,7 +205,8 @@ export function cortarNoFimDaFrase(texto, max) {
 
 export const MAX_EVITAR_POR_CATEGORIA = 40;
 export const MAX_CARACTERES_EVITAR = 120;
-// 6.12.73: "leituras" (o trecho de livro lido na Abertura, pela chave "trecho:…") e "relatos" (as referências dos relatos bíblicos da Abertura).
+// 6.12.73: "leituras" (o trecho de livro lido na Abertura, pela chave "trecho:…") e "relatos" (as referências dos relatos bíblicos da Abertura;
+// 6.12.75: também as passagens do Personagem do dia e das Lições da vida de Jesus).
 export const CATEGORIAS_EVITAR = Object.freeze(["assuntos", "personagens", "principios", "jesus", "saiba", "ministerio", "criador", "artigos", "canticos", "jogos", "videos", "leituras", "relatos"]);
 
 const listaCurta = (valor, max, maxChars = MAX_CARACTERES_EVITAR) => {
@@ -245,10 +246,29 @@ export function chavesDosVersiculos(ref, max = 40) {
   const m = t.match(/^(.+?)\s+(\d{1,3}):(.+)$/);
   if (!m) return t ? [normalizarTexto(t)] : [];
   const livro = normalizarTexto(m[1]);
-  const cap = Number(m[2]);
+  let cap = Number(m[2]);
   const chaves = [];
-  for (const pedaco of m[3].split(/[,;]/)) {
-    const r = pedaco.trim().match(/^(\d{1,3})(?:\s*[-–]\s*(\d{1,3}))?$/);
+  for (const bruto of m[3].split(/[,;]/)) {
+    let pedaco = bruto.trim();
+    // 6.12.75: "8:1" depois de ";" muda o capítulo no mesmo livro ("Atos 7:54-60; 8:1", como a Bíblia do servidor escreve o trecho que
+    // passa para outro capítulo; "Mateus 24:14; 28:19, 20").
+    const outroCap = pedaco.match(/^(\d{1,3})\s*:\s*(.+)$/);
+    if (outroCap) {
+      cap = Number(outroCap[1]);
+      pedaco = outroCap[2].trim();
+    }
+    // 6.12.75: "54-8:1" (o trecho como a IA escreve, sem a Bíblia à mão para saber onde o capítulo acaba): a metade das chaves fica para o
+    // começo do 2º capítulo (1…v2) e o resto vai do v1 em diante no 1º; chave de versículo que não existe não atrapalha a comparação.
+    const cruza = pedaco.match(/^(\d{1,3})\s*[-–—]\s*(\d{1,3})\s*:\s*(\d{1,3})$/);
+    if (cruza) {
+      const [v1, c2, v2] = [cruza[1], cruza[2], cruza[3]].map(Number);
+      const doSegundo = Math.min(v2, Math.floor((max - chaves.length) / 2));
+      for (let v = v1; chaves.length < max - doSegundo; v++) chaves.push(`${livro} ${cap}:${v}`);
+      for (let v = 1; v <= doSegundo && chaves.length < max; v++) chaves.push(`${livro} ${c2}:${v}`);
+      cap = c2;
+      continue;
+    }
+    const r = pedaco.match(/^(\d{1,3})(?:\s*[-–]\s*(\d{1,3}))?$/);
     if (!r) {
       // "1–2:3" (passa para outro capítulo): fica o primeiro versículo.
       const so = pedaco.trim().match(/^(\d{1,3})/);

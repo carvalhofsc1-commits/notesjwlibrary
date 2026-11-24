@@ -2,6 +2,32 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.75
+
+### Passagens entre capítulos e texto bíblico vazio
+
+- **Passagens que atravessam capítulos:**
+  - A Bíblia do servidor agora transcreve passagens como "Atos 7:54-8:1", "Gênesis 44:18-45:15" e "Jon 3:10–4:11".
+  - A passagem vai do versículo inicial até o fim do 1º capítulo, pega os capítulos do meio inteiros e termina no versículo final do último.
+  - Vale para até 4 capítulos e respeita o limite de versículos de cada uso. A referência sai escrita por capítulo, como "Atos 7:54-60; 8:1".
+  - Antes, essas passagens vinham sem texto. As 3 referências do Princípios Bíblicos que atravessam capítulos agora são lidas.
+- **Conferência de repetição:** passagens com outro capítulo depois de ";" ("Mateus 24:14; 28:19, 20") e passagens entre capítulos ("Atos 7:54-8:1") contam os versículos certos. Antes, "Mateus 24:14; 28:19, 20" virava o versículo errado 24:28.
+- **Texto bíblico não achado:** se a passagem de um quadro não for achada na Bíblia do servidor (por exemplo, uma referência mal escrita), o servidor pede o quadro de novo uma vez, avisando a IA do que faltou.
+
+### Memória entre noites: passagens do Personagem e de Jesus
+
+- As passagens do Personagem do dia e das Lições da vida de Jesus agora entram na memória "relatos", junto com o relato da Abertura. A passagem só entra se foi achada na Bíblia.
+- Nesses dois quadros, a IA recebe a lista dos relatos das últimas semanas para evitar. Se repetir, o servidor refaz uma vez e, se ainda repetir, avisa.
+- Exemplo: o Personagem de uma noite não volta como relato da Abertura na noite seguinte.
+- As instruções aparecem na tela de prompts (Personagem, Jesus e a descrição de como o pedido é montado).
+
+### Remoção do ajuste da programação montada
+
+- Saiu a montagem da "minha programação" com partes de duas opções. Ela só servia às programações salvas antigas, que tinham duas opções.
+- Saiu também o botão "✨ Ajustar com a IA" dessa montagem, e com ele a função do servidor e o prompt "Adoração em Família: ajuste da programação montada pelo usuário".
+- As programações salvas antigas com duas opções continuam abrindo: cada opção aparece no seu cartão, com copiar, Word e compartilhar.
+- Um app antigo ainda em cache que pedir o ajuste recebe só o aviso para atualizar, sem gastar uma chamada da IA.
+
 ## 6.12.74
 
 ### Geração em duas levas

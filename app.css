@@ -16867,18 +16867,6 @@ input[type="time"].fam-campo::-webkit-date-and-time-value { text-align: left; mi
 .fam-jogo-itens .fam-lista { padding-left: 1.4em; }
 .fam-link-botao { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; box-sizing: border-box; }
 /* Montar a minha programação com partes das duas opções (6.11.19). */
-.fam-mescla { display: grid; gap: 10px; min-width: 0; }
-.fam-mescla-painel { display: grid; gap: 8px; min-width: 0; border: 1.5px solid #3b82f6; border-radius: 12px; padding: 10px; }
-.fam-mescla-painel[hidden] { display: none; }
-.fam-mescla-grupo { display: grid; gap: 6px; min-width: 0; }
-.fam-mescla-parte { align-items: center; }
-.fam-mescla-num { flex: none; min-width: 1.6em; height: 1.6em; border-radius: 999px; background: #3b82f6; color: #fff; font-size: .8rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
-.fam-mescla-num[hidden] { display: none; }
-.fam-mescla-total { margin: 0; padding: 8px 10px; border-radius: 10px; border: 1.5px solid #3b82f6; font-weight: 700; position: sticky; bottom: 4px; background: var(--card, #fff); }
-.fam-mescla-total.passou { border-color: #dc2626; color: #b91c1c; }
-.fam-mescla-total.exato { border-color: #2563eb; color: #1d4ed8; }
-.fam-mescla-resultado { display: grid; gap: 10px; min-width: 0; }
-.fam-mescla-painel .fam-acoes > .fam-mescla-limpar { flex: 1 1 100%; width: 100%; }
 /* Situação espiritual, ano e privilégios de cada membro (6.11.17). */
 .fam-membro .fam-situacao { grid-area: situacao; min-width: 0; }
 .fam-membro .fam-ano-sit { grid-area: anosit; min-width: 0; }

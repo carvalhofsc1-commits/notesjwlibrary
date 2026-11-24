@@ -400,8 +400,9 @@ teste("servidor: fases plano/quadro, limite 16 partes, limite por hora dos quadr
   assert.match(servidorJs, /if \(body\.fase === "quadro"\) return gerarQuadroFamilia\(res, body, P\);/);
   assert.match(servidorJs, /const partesBrutas = \(o\.partes \|\| \[\]\)\.slice\(0, 16\);/);
   assert.doesNotMatch(servidorJs, /const partesBrutas = \(o\.partes \|\| \[\]\)\.slice\(0, 10\);/);
-  const ajuste = servidorJs.slice(servidorJs.indexOf("async function ajustarProgramaFamilia"), servidorJs.indexOf("async function ajustarProgramaFamilia") + 600);
-  assert.match(ajuste, /\.slice\(0, 16\)/);
+  // 6.12.75: o ajuste da programação montada (ajustarProgramaFamilia) saiu; um app antigo recebe 410 sem chamar a IA.
+  assert.ok(!servidorJs.includes("ajustarProgramaFamilia"), "ajustarProgramaFamilia saiu");
+  assert.match(servidorJs, /if \(body\.programa\) return erro\(res, 410, /);
   assert.match(servidorJs, /const quadroFamilia = tarefa === "adoracao-familia" && body\.fase === "quadro";/);
   assert.match(servidorJs, /excedeuLimite\(quadroFamilia \? ip \+ "\|quadro" : ip, quadroFamilia \? P\.limites\.limitePorHora \* 4 : P\.limites\.limitePorHora\)/);
   assert.match(sessaoJs, /rotulo: texto\(p\.leitura\.rotulo, 80\)/);
@@ -936,6 +937,78 @@ teste("6.12.74: app com 🔄 Trocar este quadro (troca: true, evitar e jaUsados)
   assert.match(sessaoJs, /const SUFIXO_ORDEM_CERTA = /);
   assert.match(sessaoJs, /extras\.ordens = ordens/);
   assert.match(sessaoJs, /if \(op\.versao === 2\) programa\.versao = 2;/);
+});
+
+// ---------- Patch 6.12.75: passagens entre capítulos, texto vazio refaz, passagens do Personagem e de Jesus na memória, ajuste removido ----------
+
+teste("6.12.75: chaves de versículos com outro capítulo (\"; 8:1\", \"54-8:1\") e relatos repetidos entre capítulos", () => {
+  const atos = ger.chavesDosVersiculos("Atos 7:54-60; 8:1");
+  assert.ok(atos.includes("atos 7:54") && atos.includes("atos 7:60") && atos.includes("atos 8:1"), atos.join());
+  assert.ok(!atos.includes("atos 7:61"));
+  assert.deepEqual(ger.chavesDosVersiculos("Mateus 24:14; 28:19, 20"), ["mateus 24:14", "mateus 28:19", "mateus 28:20"], "antes saía \"mateus 24:28\"");
+  const bruto = ger.chavesDosVersiculos("Atos 7:54-8:1");
+  assert.ok(bruto.includes("atos 7:54") && bruto.includes("atos 8:1"), bruto.join());
+  assert.deepEqual(ger.chavesDosVersiculos("Lucas 15:11-13"), ["lucas 15:11", "lucas 15:12", "lucas 15:13"], "faixa comum como antes");
+  const usados = ger.usadosDaParte({ textos: [{ referencia: "Atos 7:54-60; 8:1" }] });
+  assert.deepEqual(ger.repeticoesDaParte(usados, {}, { relatos: ["Atos 8:1-3"] }), ["o texto Atos 7:54-60; 8:1 foi usado nas últimas semanas"]);
+  assert.deepEqual(ger.repeticoesDaParte(usados, {}, { relatos: ["Atos 9:1-9"] }), []);
+});
+
+teste("6.12.75: servidor guarda as passagens do Personagem e de Jesus em \"relatos\", com EVITAR dos relatos, e refaz quando o texto bíblico vem vazio", () => {
+  assert.match(servidorJs, /const QUADROS_COM_RELATO = Object\.freeze\(\["abertura", "personagem", "jesus"\]\);/);
+  assert.match(servidorJs, /const evitarDaParte = QUADROS_COM_RELATO\.includes\(id\) \? ctx\.evitar : \{ \.\.\.ctx\.evitar, relatos: \[\] \};/);
+  assert.equal((servidorJs.match(/\.\.\.memoriaDaPassagem\(textos\)/g) || []).length, 2, "Personagem e Jesus");
+  assert.equal((servidorJs.match(/listaEvitar\("relatos bíblicos", ctx\.evitar\.relatos\)/g) || []).length >= 3, true, "Abertura, Personagem e Jesus");
+  assert.match(servidorJs, /const semTexto = fontesConfiguradas\(\) \? parte\.textos\.filter\(\(t\) => t && t\.referencia && !t\.texto\)/);
+  assert.match(servidorJs, /não foi achado na Bíblia/);
+  assert.match(montados.sistemaFamiliaQuadro.personagem, /Fuja dos relatos bíblicos que vierem em EVITAR/);
+  assert.match(montados.sistemaFamiliaQuadro.jesus, /Fuja dos relatos bíblicos que vierem em EVITAR/);
+});
+
+teste("6.12.75: ajuste da programação montada removido (servidor, prompts, app e estilos)", async () => {
+  assert.ok(!prompts.PARTES.some((x) => x.id === "adoracao_familia_ajuste"), "parte de ajuste saiu");
+  assert.ok(!prompts.CATEGORIAS.some((c) => (c.partes || []).includes("adoracao_familia_ajuste")), "fora das categorias");
+  assert.ok(!("sistemaAdoracaoFamiliaAjuste" in montados), "sistema de ajuste saiu");
+  assert.ok(!servidorJs.includes("SaidaAjusteFamilia"));
+  for (const nome of ["familiaMesclaMontar", "fam-mescla", "fam-ajustar-ia", "cfg.ajustar", "cfg.salvar"]) assert.ok(!appJs.includes(nome), nome);
+  const css = await readFile(new URL("app.css", raiz), "utf8");
+  assert.ok(!css.includes(".fam-mescla"), "estilos da mescla saíram");
+  // As programações salvas antigas (com duas opções) continuam abrindo: cada opção vira um cartão.
+  assert.match(appJs, /function familiaRenderOpcoes\(opcoes, numeros, itemId\)/);
+  const promptsJs = await readFile(new URL("api/_prompts.mjs", raiz), "utf8");
+  assert.match(promptsJs, /6\.12\.75: passagens entre capítulos/);
+});
+
+teste("6.12.75: passagens entre capítulos na Bíblia do servidor (Princípios e Personagem) (com FONTES_DIR)", async () => {
+  if (!comFontes) return console.log("      (sem FONTES_DIR: pulado)");
+  const ler = async (r, op) => (await fontesMod.buscarVersiculos([r], 1, op).catch(() => []))[0];
+  const atos = await ler("Atos 7:54-8:1", { numerado: true });
+  assert.ok(atos && atos.texto, "Atos 7:54-8:1");
+  assert.equal(atos.referencia, "Atos 7:54-60; 8:1");
+  assert.match(atos.textoNumerado, /\[8:1\] /);
+  const genesis = await ler("Gênesis 44:18-45:15", { maxVersiculos: 30, maxChars: 4500 });
+  assert.equal(genesis.referencia, "Gênesis 44:18-34; 45:1-13", "até 30 versículos (17 + 13)");
+  assert.equal((await ler("Gên 44:18-45:15")).referencia, "Gênesis 44:18-27", "padrão: 10 versículos");
+  assert.equal(await ler("Atos 7:54-12:1"), undefined, "mais de 4 capítulos: não lê");
+  // As referências do Princípios Bíblicos que atravessam capítulos.
+  const dados = await fontesMod.lerPrincipios();
+  const cruzam = [...new Set(ger.principiosCandidatos(dados.entradas).flatMap((e) => ger.referenciasDoPrincipio(e, 50)).filter((r) => /\d+:\d+\s*[-–—]\s*\d+:\d+/.test(r)))];
+  let lidas = 0;
+  for (const r of cruzam) if ((await ler(r))?.texto) lidas++;
+  console.log(`      referências do Princípios que atravessam capítulos: ${lidas} de ${cruzam.length} lidas (${cruzam.join("; ")})`);
+  assert.ok(cruzam.length >= 1 && lidas === cruzam.length, `${lidas} de ${cruzam.length}`);
+  // Personagem com a passagem entre capítulos: texto transcrito e a passagem na memória "relatos".
+  const pedido = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "personagem", assunto: "perdoar os irmãos", angulo: "perdoar quem nos fere", evitar: {} }), montados);
+  const estevao = await pedido.prep.montar({ nome: "Estêvão", referencia: "Atos 7:54-8:1", descricao: "d", escolha: null, verbete: null });
+  assert.ok(estevao.textos[0].texto, "texto da passagem");
+  assert.deepEqual(estevao.memoria.relatos, ["Atos 7:54-60; 8:1"]);
+  assert.deepEqual(estevao.memoria.personagens, ["Estêvão"]);
+  const jp = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "jesus", assunto: "perdoar os irmãos", angulo: "perdoar sempre", evitar: {} }), montados);
+  const jesus = await jp.prep.montar({ episodio: "Jesus ensina a perdoar 77 vezes", referencia: "Mateus 18:21-35", qualidade: "misericórdia", escolha: null, descricao: "d", perguntas: ["?"] });
+  assert.deepEqual(jesus.memoria.relatos, [jesus.textos[0].referencia]);
+  assert.ok(jesus.memoria.jesus && jesus.memoria.jesus.length === 1);
+  const sem = await pedido.prep.montar({ nome: "Fulano", referencia: "Livro Inventado 3:1-5", descricao: "d", escolha: null, verbete: null });
+  assert.ok(!sem.memoria.relatos, "passagem não achada não entra na memória");
 });
 
 for (const [nome, fn] of testes) {
