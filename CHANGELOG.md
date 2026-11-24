@@ -2,6 +2,15 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.00
+
+### Adoração em Família: três circunstâncias novas
+
+- 🏠 Vida familiar: "Cultivar o respeito e amor no casamento" e "Promover a paz nos nossos relacionamentos".
+- 📖 Vida cristã: "Respeitar a autoridade na congregação".
+
+(Depois de 6.12.99 vem 6.13.00: o último número não passa de 99.)
+
 ## 6.12.99
 
 ### Adoração em Família: circunstâncias em subgrupos e rótulos novos
