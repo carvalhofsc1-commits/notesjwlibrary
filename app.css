@@ -16838,6 +16838,11 @@ input[type="time"].fam-campo::-webkit-date-and-time-value { text-align: left; mi
 .fam-salvas-lista { display: grid; gap: 10px; padding: 0 0 10px; min-width: 0; }
 .fam-salva { display: grid; gap: 6px; min-width: 0; padding: 8px 10px; border: 1.5px solid #3b82f6; border-radius: 12px; }
 .fam-salva-titulo { margin: 0; font-weight: 700; overflow-wrap: anywhere; }
+/* 6.12.97: programação salva com só o título à vista; os detalhes abrem ao tocar no título e os botões ficam sempre visíveis */
+.fam-salva-det { display: grid; gap: 6px; min-width: 0; }
+.fam-salva-det > summary.fam-salva-titulo { cursor: pointer; min-height: 32px; display: flex; align-items: center; }
+.fam-salva-det > summary.fam-salva-titulo::before { content: "▸"; margin-right: 6px; flex: none; }
+.fam-salva-det[open] > summary.fam-salva-titulo::before { content: "▾"; }
 /* Cada opção salva num contêiner próprio, para ser vista e escolhida separadamente. */
 .fam-salva-op { display: grid; gap: 4px; min-width: 0; padding: 8px 10px; border: 1px solid var(--line, #cbd5e1); border-radius: 10px; background: color-mix(in srgb, #3b82f6 6%, transparent); }
 .fam-salva-abrir-op { width: 100%; margin: 4px 0 0; }

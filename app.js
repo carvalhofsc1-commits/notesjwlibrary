@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.12.96'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.12.97'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -27450,7 +27450,12 @@ function saveTemplatesToStorage() {
         const op = item.familiaOpcoes[0];
         const art = document.createElement('article');
         art.className = 'fam-salva';
-        const h = document.createElement('p');
+        // 6.12.97: só o título aparece; os detalhes ficam recolhidos (toque no título para abrir) e os botões da programação ficam sempre visíveis embaixo.
+        const det = document.createElement('details');
+        det.className = 'fam-salva-det';
+        det.open = familiaSalvasAbertas.has(item.id);
+        det.addEventListener('toggle', () => { if (det.open) familiaSalvasAbertas.add(item.id); else familiaSalvasAbertas.delete(item.id); });
+        const h = document.createElement('summary');
         h.className = 'fam-salva-titulo';
         h.textContent = item.titulo;
         const quando = new Date(item.data);
@@ -27462,13 +27467,13 @@ function saveTemplatesToStorage() {
         const partes = op.partes || [];
         const minutos = Number(op.duracaoTotal) || partes.reduce((s, p) => s + (Number(p.minutos) || 0), 0);
         tema.textContent = (op.emoji ? op.emoji + ' ' : '') + (op.titulo || 'Programação') + ' · ⏱️ ' + minutos + ' min · ' + partes.length + (partes.length === 1 ? ' atividade' : ' atividades');
-        art.append(h, meta, tema);
+        det.append(h, meta, tema);
         const assunto = familiaResumoCurto(op.resumo || op.objetivo, 200);
         if (assunto) {
           const r = document.createElement('p');
           r.className = 'fam-parte-desc';
           r.textContent = assunto;
-          art.appendChild(r);
+          det.appendChild(r);
         }
         const ul = document.createElement('ul');
         ul.className = 'fam-lista';
@@ -27482,7 +27487,8 @@ function saveTemplatesToStorage() {
           if (resumo || jogo) li.appendChild(document.createTextNode(' — ' + resumo + jogo));
           ul.appendChild(li);
         });
-        art.appendChild(ul);
+        det.appendChild(ul);
+        art.appendChild(det);
         const acoes = document.createElement('div');
         acoes.className = 'fam-acoes';
         const abrir = document.createElement('button');
@@ -27736,6 +27742,7 @@ function saveTemplatesToStorage() {
     // A lista de Programações salvas é redesenhada sempre que as pesquisas salvas mudam: o painel aberto fica guardado pelo id da
     // programação e volta ao cartão novo.
     const familiaPaineisAbertos = new Map();
+    const familiaSalvasAbertas = new Set(); // 6.12.97: ids das programações salvas com os detalhes abertos (a lista é redesenhada)
     function familiaCompartilharAbrir(op, onde, botao, chave) {
       const aberto = onde.querySelector(':scope > .fam-sessao-painel');
       if (aberto) { aberto.remove(); botao.setAttribute('aria-expanded', 'false'); if (chave) familiaPaineisAbertos.delete(chave); return; }

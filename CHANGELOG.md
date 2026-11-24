@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.97
+
+### Adoração em Família: programações salvas só com o título à vista
+
+Na lista "📂 Programações salvas" da tela inicial do módulo, cada programação agora mostra só o título; a data, o tema, o resumo e as atividades ficam recolhidos e abrem ao tocar no título (▸/▾). Os botões da programação (Abrir, Selecionar, 🗑️) continuam sempre visíveis embaixo. Quem foi aberto continua aberto quando a lista é redesenhada.
+
 ## 6.12.96
 
 ### Adoração em Família: a voz lê a referência do primeiro parágrafo da matéria

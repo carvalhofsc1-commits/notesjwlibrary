@@ -1780,6 +1780,18 @@ teste("6.12.96: o primeiro parágrafo curto da matéria vale como título e lê 
   assert.ok(appJs.includes("aoVivo.leitura(pedacosVoz, iPrimeiraCurta)"));
 });
 
+teste("6.12.97: programações salvas com só o título à vista, detalhes recolhidos e botões sempre visíveis", async () => {
+  const css = await readFile(new URL("app.css", raiz), "utf8");
+  assert.ok(appJs.includes("det.className = 'fam-salva-det';"));
+  assert.ok(appJs.includes("const h = document.createElement('summary');"));
+  assert.ok(appJs.includes("det.append(h, meta, tema);"));
+  assert.ok(appJs.includes("det.appendChild(ul);") && appJs.includes("art.appendChild(det);"));
+  assert.ok(appJs.includes("const familiaSalvasAbertas = new Set();"));
+  assert.ok(css.includes(".fam-salva-det > summary.fam-salva-titulo"));
+  // os botões (acoes) são filhos do cartão, fora do details
+  assert.ok(appJs.indexOf("art.appendChild(det);") < appJs.indexOf("art.appendChild(acoes);", appJs.indexOf("art.appendChild(det);")));
+});
+
 for (const [nome, fn] of testes) {
   try {
     await fn();
