@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.34
+
+### Respostas do estudo: mais espaço entre a linha separadora e a resposta seguinte
+
+- Os botões "📋 Copiar …" e "📖 JW Library" subiram para logo abaixo do fim da resposta (4 px), e a linha fica 6 px abaixo deles. Assim sobram 14 px até a resposta seguinte; antes eram cerca de 6, e o texto ficava emendado na linha.
+
 ## 6.13.33
 
 ### Respostas do estudo: linha separando cada comentário

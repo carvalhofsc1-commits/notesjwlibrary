@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.13.33'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.13.34'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -15561,7 +15561,9 @@ function saveTemplatesToStorage() {
 
         // Fim da última linha da resposta + o espaço em branco que separa as respostas (duas linhas), com o botão no meio dele: assim sobra folga de uma linha
         // para os dois lados, e um erro de medida pequeno não põe o botão por cima do texto.
-        const top = fimDaResposta + lineHeight - btnHeight / 2 - input.scrollTop;
+        // 6.13.34: os botões sobem para logo abaixo da resposta (4 px), para a linha separadora ficar bem acima da resposta seguinte (o espelho é
+        // uma cópia do campo e mede o fim da resposta sem erro).
+        const top = fimDaResposta + 4 - input.scrollTop;
         const visible = top >= 0 && top + btnHeight <= input.clientHeight;
         entry.btn.hidden = !visible;
         entry.btn.style.height = btnHeight + 'px';
@@ -15576,7 +15578,7 @@ function saveTemplatesToStorage() {
           }
         }
         if (entry.linha) { // 6.13.33: a linha entre o fim dos botões e o começo da resposta seguinte (duas linhas depois do fim desta)
-          const topLinha = Math.round((top + btnHeight + (fimDaResposta + 2 * lineHeight - input.scrollTop)) / 2);
+          const topLinha = Math.round(top + btnHeight + 6); // 6.13.34: 6 px abaixo dos botões; o resto do espaço em branco fica antes da resposta seguinte
           const larg = input.clientWidth - (parseFloat(style.paddingLeft) || 0) - (parseFloat(style.paddingRight) || 0);
           entry.linha.hidden = topLinha < 0 || topLinha > input.clientHeight;
           entry.linha.style.top = (borderTop + topLinha) + 'px';
