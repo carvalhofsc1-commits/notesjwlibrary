@@ -3042,24 +3042,35 @@
 
           <div class="fam-bloco">
             <h3 class="fam-bloco-titulo">💛 Circunstâncias <span class="opc">(opcional)</span></h3>
-            <div id="familiaCircunstancias" class="fam-checks" role="group" aria-label="Circunstâncias">
-              <label class="fam-check"><input type="checkbox" value="Ansiedade ou desânimo"><span>Ansiedade ou desânimo</span></label>
-              <label class="fam-check"><input type="checkbox" value="Desânimo espiritual"><span>Desânimo espiritual</span></label>
-              <label class="fam-check"><input type="checkbox" value="Falta de ânimo para estudos e revisitas"><span>Falta de ânimo para estudos e revisitas</span></label>
-              <label class="fam-check"><input type="checkbox" value="Falta de ânimo para ministério"><span>Falta de ânimo para ministério</span></label>
-              <label class="fam-check"><input type="checkbox" value="Equilíbrio em entretenimento"><span>Equilíbrio em entretenimento</span></label>
-              <label class="fam-check"><input type="checkbox" value="Equilíbrio no trabalho"><span>Equilíbrio no trabalho</span></label>
-              <label class="fam-check"><input type="checkbox" value="Comunicação na família"><span>Comunicação na família</span></label>
-              <label class="fam-check"><input type="checkbox" value="Manutenção do relacionamento da família"><span>Manutenção do relacionamento da família</span></label>
-              <label class="fam-check"><input type="checkbox" value="Dificuldades com relacionamentos (família, amigos, trabalho, irmãos)"><span>Dificuldades com relacionamentos (família, amigos, trabalho, irmãos)</span></label>
-              <label class="fam-check"><input type="checkbox" value="Bullying ou dificuldades na escola"><span>Bullying ou dificuldades na escola</span></label>
-              <label class="fam-check"><input type="checkbox" value="Doença na família"><span>Doença na família</span></label>
-              <label class="fam-check"><input type="checkbox" value="Luto"><span>Luto</span></label>
-              <label class="fam-check"><input type="checkbox" value="Dificuldades financeiras"><span>Dificuldades financeiras</span></label>
-              <label class="fam-check"><input type="checkbox" value="Problemas no casamento"><span>Problemas no casamento</span></label>
-              <label class="fam-check"><input type="checkbox" value="Parente que não serve a Jeová"><span>Parente que não serve a Jeová</span></label>
-              <label class="fam-check"><input type="checkbox" value="Filho adolescente"><span>Filho adolescente</span></label>
-              <label class="fam-check"><input type="checkbox" value="Criança pequena"><span>Criança pequena</span></label>
+            <!-- 6.12.99: as circunstâncias em três subgrupos (Vida familiar, Vida cristã, Circunstâncias especiais). -->
+            <div id="familiaCircunstancias" class="fam-circ-grupos" role="group" aria-label="Circunstâncias">
+              <p class="fam-subgrupo-titulo">🏠 Vida familiar</p>
+              <div class="fam-checks">
+                <label class="fam-check"><input type="checkbox" value="Comunicação na família"><span>Comunicação na família</span></label>
+                <label class="fam-check"><input type="checkbox" value="Manutenção do relacionamento da família"><span>Manutenção do relacionamento da família</span></label>
+                <label class="fam-check"><input type="checkbox" value="Problemas no casamento"><span>Problemas no casamento</span></label>
+                <label class="fam-check"><input type="checkbox" value="Educação de filhos pequenos"><span>Educação de filhos pequenos</span></label>
+                <label class="fam-check"><input type="checkbox" value="Lidar com filhos adolescentes"><span>Lidar com filhos adolescentes</span></label>
+                <label class="fam-check"><input type="checkbox" value="Lidar com familiares descrentes"><span>Lidar com familiares descrentes</span></label>
+                <label class="fam-check"><input type="checkbox" value="Cultivar bons relacionamentos (família, amigos, trabalho, irmãos)"><span>Cultivar bons relacionamentos (família, amigos, trabalho, irmãos)</span></label>
+              </div>
+              <p class="fam-subgrupo-titulo">📖 Vida cristã</p>
+              <div class="fam-checks">
+                <label class="fam-check"><input type="checkbox" value="Desânimo espiritual"><span>Desânimo espiritual</span></label>
+                <label class="fam-check"><input type="checkbox" value="Falta de ânimo para estudos e revisitas"><span>Falta de ânimo para estudos e revisitas</span></label>
+                <label class="fam-check"><input type="checkbox" value="Falta de ânimo para ministério"><span>Falta de ânimo para ministério</span></label>
+                <label class="fam-check"><input type="checkbox" value="Equilíbrio em entretenimento"><span>Equilíbrio em entretenimento</span></label>
+                <label class="fam-check"><input type="checkbox" value="Equilíbrio no trabalho"><span>Equilíbrio no trabalho</span></label>
+                <label class="fam-check"><input type="checkbox" value="Evitar más associações e fazer bons amigos"><span>Evitar más associações e fazer bons amigos</span></label>
+              </div>
+              <p class="fam-subgrupo-titulo">💛 Circunstâncias especiais</p>
+              <div class="fam-checks">
+                <label class="fam-check"><input type="checkbox" value="Ansiedade ou desânimo"><span>Ansiedade ou desânimo</span></label>
+                <label class="fam-check"><input type="checkbox" value="Bullying ou dificuldades na escola"><span>Bullying ou dificuldades na escola</span></label>
+                <label class="fam-check"><input type="checkbox" value="Doença na família"><span>Doença na família</span></label>
+                <label class="fam-check"><input type="checkbox" value="Luto"><span>Luto</span></label>
+                <label class="fam-check"><input type="checkbox" value="Dificuldades financeiras"><span>Dificuldades financeiras</span></label>
+              </div>
             </div>
             <label class="fam-rotulo" for="familiaOutrasCirc">Outras circunstâncias <span class="opc">(opcional)</span></label>
             <textarea id="familiaOutrasCirc" class="fam-campo" rows="1" maxlength="500" spellcheck="true" placeholder="Ex.: mudança recente, pressão no trabalho…"></textarea>

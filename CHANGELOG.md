@@ -2,6 +2,16 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.99
+
+### Adoração em Família: circunstâncias em subgrupos e rótulos novos
+
+- O card "💛 Circunstâncias" agora tem três subgrupos: 🏠 Vida familiar, 📖 Vida cristã e 💛 Circunstâncias especiais.
+- "Filho adolescente" e "Criança pequena" saíram; no lugar, "Lidar com filhos adolescentes" e "Educação de filhos pequenos".
+- "Parente que não serve a Jeová" virou "Lidar com familiares descrentes"; "Dificuldades com relacionamentos (família, amigos, trabalho, irmãos)" virou "Cultivar bons relacionamentos (família, amigos, trabalho, irmãos)".
+- Nova: "Evitar más associações e fazer bons amigos" (em Vida cristã).
+- Os perfis salvos com os nomes antigos são convertidos ao abrir: o que estava marcado continua marcado com o nome novo.
+
 ## 6.12.98
 
 ### Adoração em Família: o atalho dos quadros mostra o que está marcado

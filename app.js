@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.12.98'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.12.99'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -26408,7 +26408,9 @@ function saveTemplatesToStorage() {
       if (typeof familiaAnosAjustar === 'function') familiaAnosAjustar();
       if (typeof salvo.diaAdoracao === 'string') document.getElementById('familiaDiaSemana').value = salvo.diaAdoracao;
       if (typeof salvo.horaAdoracao === 'string') document.getElementById('familiaHorario').value = salvo.horaAdoracao;
-      familiaChecksMarcar(document.getElementById('familiaCircunstancias'), salvo.circunstancias);
+      // 6.12.99: os nomes antigos das circunstâncias, salvos antes, viram os novos.
+      const circNovas = { 'Filho adolescente': 'Lidar com filhos adolescentes', 'Criança pequena': 'Educação de filhos pequenos', 'Parente que não serve a Jeová': 'Lidar com familiares descrentes', 'Dificuldades com relacionamentos (família, amigos, trabalho, irmãos)': 'Cultivar bons relacionamentos (família, amigos, trabalho, irmãos)' };
+      familiaChecksMarcar(document.getElementById('familiaCircunstancias'), (salvo.circunstancias || []).map(c => circNovas[c] || c));
       if (typeof salvo.outrasCircunstancias === 'string') familiaOutrasCircEl.value = salvo.outrasCircunstancias;
       // 6.12.70: quadros, cânticos e jogos; o perfil antigo (atividades, duracao, quantidade, jogoPapel) é convertido por familiaQuadrosMigrados.
       familiaQuadrosAplicar(familiaQuadrosMigrados(salvo));

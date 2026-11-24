@@ -16742,6 +16742,10 @@ input[type="time"].fam-campo::-webkit-date-and-time-value { text-align: left; mi
   min-width: 0;
   max-width: 100%;
 }
+/* 6.12.99: circunstâncias em subgrupos */
+.fam-circ-grupos { display: grid; gap: 6px; min-width: 0; }
+.fam-subgrupo-titulo { margin: 8px 0 0; font-size: .9rem; font-weight: 700; color: color-mix(in srgb, #3b82f6 55%, var(--text)); }
+.fam-circ-grupos > .fam-subgrupo-titulo:first-child { margin-top: 2px; }
 .fam-check {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
