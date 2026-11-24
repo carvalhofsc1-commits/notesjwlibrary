@@ -683,7 +683,7 @@ export const MIN_DICAS_PERFIL = 8;
 export const MAX_DICAS_PERFIL = 12;
 export const CARTAS_DO_PERFIL = 4;
 export const REGRAS_DO_PERFIL =
-  "Quem dirige mostra uma dica por vez, da mais difícil para a mais fácil. Quem descobrir primeiro diz (ou envia pelo app) a resposta. Quanto menos dicas, mais pontos: com 10 dicas, acertar na 1ª vale 10 pontos, na 2ª vale 9, e assim por diante.";
+  "O presidente da reunião mostra uma dica por vez, da mais difícil para a mais fácil. Quem descobrir primeiro diz (ou envia pelo app) a resposta. Quanto menos dicas, mais pontos: com 10 dicas, acertar na 1ª vale 10 pontos, na 2ª vale 9, e assim por diante.";
 // As dicas escritas pela IA ("Dica 1: … Dica 2: …", ou uma lista) -> [texto], sem as dicas que entregam a resposta (o nome, uma palavra
 // importante dele ou o número do ano) e sem as repetidas.
 export function dicasDoPerfil(textoOuLista, resposta) {

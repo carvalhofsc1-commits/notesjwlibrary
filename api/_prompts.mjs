@@ -1081,9 +1081,10 @@ Regras que valem em todas as etapas:
 - Perguntas simples, para a família responder em voz alta, que levem cada um a falar, raciocinar e aplicar.
 - ACENTUAÇÃO: escreva SEMPRE em português do Brasil com a acentuação e a cedilha corretas (ã, õ, é, ê, í, ó, ú, ç), em todos os textos: descrições, perguntas, títulos, nomes e jogos. Escreva "Jeová", "não", "você", "cântico", "perdão", "oração", e nunca "Jeova", "nao", "voce", "cantico", "perdao", "oracao".
 - NUNCA designe nem sugira quem fará as orações.
-- NUNCA coloque nomes de pessoas (da família ou convidados) nos quadros: nem nas descrições, nas perguntas ou nos jogos. Fale de "a família", "todos", "quem dirige" ou "os convidados". Só as tarefas do plano podem citar quem faz o quê.
+- NUNCA coloque nomes de pessoas (da família ou convidados) nos quadros: nem nas descrições, nas perguntas ou nos jogos. Fale de "a família", "todos", "o presidente da reunião" ou "os convidados". Só as tarefas do plano podem citar quem faz o quê.
+- Quem conduz a noite é sempre "o presidente da reunião" (nunca "dirigente" nem "quem dirige"), também nas regras dos jogos.
 - Os convidados participam, mas NÃO recebem tarefas.
-- ASSUNTOS DELICADOS (doença, luto, problemas no casamento, bullying, dificuldades financeiras, parente que não serve a Jeová, ansiedade ou desânimo): muito tato e carinho, de forma positiva e encorajadora. Nunca use a noite para repreender ou expor alguém. O que pedir uma conversa em particular vai só na dica para quem dirige.
+- ASSUNTOS DELICADOS (doença, luto, problemas no casamento, bullying, dificuldades financeiras, parente que não serve a Jeová, ansiedade ou desânimo): muito tato e carinho, de forma positiva e encorajadora. Nunca use a noite para repreender ou expor alguém. O que pedir uma conversa em particular vai só na dica para o presidente da reunião.
 - Situação espiritual e privilégios: uso opcional, quando ajudar; com Removido ou Descrente, muito tato; nunca escreva a situação espiritual nem os privilégios de ninguém.
 - FONTES: escolha SÓ entre os itens recebidos, pelo identificador entre colchetes (ex.: "L2", "A1", "PR5"). O servidor transcreve o texto literal das fontes e confere os textos bíblicos: não copie nem invente textos, títulos, capítulos, vídeos, cânticos, datas ou endereços. Na dúvida, deixe de fora. Não cite os identificadores nas descrições.
 - VARIEDADE: o que vier em "EVITAR" (usado nas últimas semanas) e em "JÁ USADOS NOS OUTROS QUADROS DESTA NOITE" não deve se repetir: escolha outros textos bíblicos, personagens, vídeos, cânticos e situações.

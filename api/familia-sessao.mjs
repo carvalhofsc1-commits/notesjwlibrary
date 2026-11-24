@@ -388,7 +388,7 @@ export default async function handler(req, res) {
     const exigirDirigente = async () => {
       if (await ehDirigente()) return true;
       registrarErro(ip);
-      erro(res, 403, "Só quem dirige a adoração pode fazer isso.");
+      erro(res, 403, "Só o presidente da reunião pode fazer isso.");
       return false;
     };
     // 6.13.17: dá os pontos de quem acertou (total de dicas − dicas dadas + 1, no mínimo 1), revela a resposta e a referência da rodada.
@@ -436,7 +436,7 @@ export default async function handler(req, res) {
       const dirigente = await ehDirigente();
       if (typeof corpo.chave === "string" && corpo.chave && !dirigente) {
         registrarErro(ip);
-        return erro(res, 403, "A chave de dirigente deste aparelho não vale para esta adoração.");
+        return erro(res, 403, "A chave de presidente da reunião deste aparelho não vale para esta adoração.");
       }
       const programa = await lerJson(caminho(cod, "programa.json"));
       if (!programa) return erro(res, 404, "A programação desta adoração não foi encontrada.");
@@ -481,7 +481,7 @@ export default async function handler(req, res) {
       const programa = await lerJson(caminho(cod, "programa.json"));
       const v = programa && Number.isInteger(parte) && Number.isInteger(indice) && programa.partes && programa.partes[parte] && (programa.partes[parte].videos || [])[indice];
       if (!v || !v.link) return erro(res, 404, "Esse vídeo não está nesta programação.");
-      if (!(estado.liberadas || []).includes(parte) && !(await ehDirigente())) return erro(res, 403, "Esta parte ainda não foi liberada pelo dirigente.");
+      if (!(estado.liberadas || []).includes(parte) && !(await ehDirigente())) return erro(res, 403, "Esta parte ainda não foi liberada pelo presidente da reunião.");
       const dados = await dadosDoVideo(v.link);
       if (!dados) return erro(res, 502, "Não consegui abrir o vídeo agora. Use o link para assistir no jw.org.");
       return res.status(200).json(dados);
@@ -494,7 +494,7 @@ export default async function handler(req, res) {
       const programa = await lerJson(caminho(cod, "programa.json"));
       const c = programa && Number.isInteger(parte) && Number.isInteger(indice) && programa.partes && programa.partes[parte] && (programa.partes[parte].canticos || [])[indice];
       if (!c) return erro(res, 404, "Esse cântico não está nesta programação.");
-      if (!(estado.liberadas || []).includes(parte) && !(await ehDirigente())) return erro(res, 403, "Esta parte ainda não foi liberada pelo dirigente.");
+      if (!(estado.liberadas || []).includes(parte) && !(await ehDirigente())) return erro(res, 403, "Esta parte ainda não foi liberada pelo presidente da reunião.");
       const dados = await dadosDoCantico(c.numero);
       if (!dados) return erro(res, 502, "Não consegui abrir o cântico agora. Use o link para assistir no jw.org.");
       return res.status(200).json(dados);
@@ -508,7 +508,7 @@ export default async function handler(req, res) {
       const programa = await lerJson(caminho(cod, "programa.json"));
       const pub = programa && Number.isInteger(parte) && Number.isInteger(indice) && programa.partes && programa.partes[parte] && (programa.partes[parte].publicacoes || [])[indice];
       if (!pub) return erro(res, 404, "Essa matéria não está nesta programação.");
-      if (!(estado.liberadas || []).includes(parte) && !(await ehDirigente())) return erro(res, 403, "Esta parte ainda não foi liberada pelo dirigente.");
+      if (!(estado.liberadas || []).includes(parte) && !(await ehDirigente())) return erro(res, 403, "Esta parte ainda não foi liberada pelo presidente da reunião.");
       const artigo = await lerMateriaDaPublicacao(pub);
       if (!artigo) return erro(res, 502, "Não consegui abrir a matéria agora. Use o link para ler no wol.jw.org.");
       return res.status(200).json(artigo);
@@ -521,7 +521,7 @@ export default async function handler(req, res) {
       const d = segredo && segredo.direcao;
       if (!informado || !d || Date.now() > d.expira || !textosIguais(hash(informado), d.hash)) {
         registrarErro(ip);
-        return erro(res, 403, "Código do dirigente inválido ou vencido. Peça um novo a quem está dirigindo.");
+        return erro(res, 403, "Código do presidente da reunião inválido ou vencido. Peça um novo a quem está presidindo.");
       }
       const chave = randomBytes(32).toString("base64url");
       segredo.chaves = [...(segredo.chaves || []), hash(chave)].slice(-MAX_CHAVES);
@@ -543,7 +543,7 @@ export default async function handler(req, res) {
       const jogo = programa && Number.isInteger(parte) && programa.partes && programa.partes[parte] && programa.partes[parte].jogo;
       const r = jogo && Number.isInteger(rodada) ? (jogo.rodadas || [])[rodada] : null;
       if (!r) return erro(res, 400, "Questão inválida.");
-      if (!(estado.liberadas || []).includes(parte)) return erro(res, 403, "Esta parte ainda não foi liberada pelo dirigente.");
+      if (!(estado.liberadas || []).includes(parte)) return erro(res, 403, "Esta parte ainda não foi liberada pelo presidente da reunião.");
       const textoResp = texto(corpo.texto, 200).replace(/\s+/g, " ");
       if (!textoResp) return erro(res, 400, "Escreva a resposta.");
       if (((estado.reveladas || {})[parte] || {})[rodada] || ((estado.acertos || {})[parte] || {})[rodada]) return erro(res, 409, "Esta questão já foi respondida.");

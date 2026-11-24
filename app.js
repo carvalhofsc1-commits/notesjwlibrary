@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.13.25'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.13.26'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -27676,6 +27676,17 @@ function saveTemplatesToStorage() {
         meta.textContent = metaTexto;
         topo.append(h, meta);
         card.appendChild(topo);
+        // 6.13.26: tocar no título (ou na linha de baixo dele) recolhe ou abre a programação inteira
+        card.classList.add('fam-opcao-recolhivel');
+        topo.setAttribute('role', 'button');
+        topo.tabIndex = 0;
+        topo.setAttribute('aria-expanded', 'true');
+        const alternarCard = () => {
+          const fechada = card.classList.toggle('fam-opcao-recolhida');
+          topo.setAttribute('aria-expanded', String(!fechada));
+        };
+        topo.addEventListener('click', alternarCard);
+        topo.addEventListener('keydown', ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); alternarCard(); } });
         if (op.resumo) {
           const p = document.createElement('p');
           p.className = 'fam-opcao-resumo';
@@ -28342,7 +28353,7 @@ function saveTemplatesToStorage() {
         if (dados[cod].chave) {
           const linhaDir = document.createElement('span');
           linhaDir.className = 'fam-recente-dirige';
-          linhaDir.textContent = '👑 você dirige (toque para reabrir)';
+          linhaDir.textContent = '👑 você preside (toque para reabrir)';
           b.appendChild(linhaDir);
         }
         b.addEventListener('click', () => participarAbrir(cod));
@@ -28370,7 +28381,8 @@ function saveTemplatesToStorage() {
       const guardada = familiaSessoesLer()[cod] || {};
       const corpo = { acao: 'entrar', sessao: cod };
       if (guardada.chave) corpo.chave = guardada.chave;
-      const nomeUsado = nome || (!guardada.chave && guardada.participanteId && guardada.nome) || '';
+      // 6.13.26: o presidente da reunião que entrou no jogo com um nome (🎮 Jogar também) volta com o mesmo nome e responde como os outros
+      const nomeUsado = nome || (guardada.participanteId && guardada.nome) || '';
       if (nomeUsado) {
         corpo.nome = nomeUsado;
         if (guardada.participanteId) corpo.participanteId = guardada.participanteId;
@@ -28405,7 +28417,7 @@ function saveTemplatesToStorage() {
         nome: nomeUsado, participantes: d.participantes || [], extras: d.extras || null
       });
       const titulo = (d.programa.emoji ? d.programa.emoji + ' ' : '') + (d.programa.titulo || 'Adoração em Família');
-      familiaSessaoGuardar(cod, Object.assign({ titulo }, d.dirigente ? {} : { participanteId: d.participanteId, nome: nomeUsado }));
+      familiaSessaoGuardar(cod, Object.assign({ titulo }, d.participanteId ? { participanteId: d.participanteId, nome: nomeUsado } : {}));
       participarStatus('');
       participarMontar();
       participarAplicar(d);
@@ -28862,7 +28874,7 @@ function saveTemplatesToStorage() {
       h.textContent = (p.emoji ? p.emoji + ' ' : '') + (p.titulo || 'Adoração em Família');
       const meta = document.createElement('p');
       meta.className = 'fam-opcao-meta';
-      meta.textContent = 'Código ' + participar.cod + ' · ' + (participar.dirigente ? '👑 Você dirige esta adoração' : 'Você entrou como ' + participar.nome);
+      meta.textContent = 'Código ' + participar.cod + ' · ' + (participar.dirigente ? '👑 Você preside esta adoração' : 'Você entrou como ' + participar.nome);
       // ⏱️ O cronômetro da parte (6.11.51), visível para todos, e o 📺 modo tela grande (TV ou notebook).
       const cron = document.createElement('p');
       cron.className = 'fam-sessao-cron-linha';
@@ -28881,7 +28893,7 @@ function saveTemplatesToStorage() {
       else {
         const dica = document.createElement('p');
         dica.className = 'hint fam-dica';
-        dica.textContent = 'As partes se abrem aqui quando o dirigente liberar. Deixe esta tela aberta.';
+        dica.textContent = 'As partes se abrem aqui quando o presidente da reunião liberar. Deixe esta tela aberta.';
         caixa.appendChild(dica);
       }
       const lista = document.createElement('div');
@@ -28949,7 +28961,7 @@ function saveTemplatesToStorage() {
         topo.append(numEl, nome, lado); // 6.12.22: sem os ícones 🔒/📖 (o botão de liberar já diz o estado); o elemento do ícone segue existindo fora da tela
         const aviso = document.createElement('p');
         aviso.className = 'fam-sessao-aviso';
-        aviso.textContent = '🔒 Aguardando o dirigente liberar esta parte.';
+        aviso.textContent = '🔒 Aguardando o presidente da reunião liberar esta parte.';
         aviso.hidden = true;
         const corpo = document.createElement('div');
         corpo.className = 'fam-sessao-corpo';
@@ -29229,7 +29241,7 @@ function saveTemplatesToStorage() {
       painel.className = 'fam-sessao-dirigente';
       const t = document.createElement('summary');
       t.className = 'fam-secao-titulo';
-      t.textContent = '👑 Controles do dirigente';
+      t.textContent = '👑 Controles do presidente da reunião';
       const quem = document.createElement('p');
       quem.className = 'fam-sessao-quem';
       const acoes = document.createElement('div');
@@ -29250,7 +29262,7 @@ function saveTemplatesToStorage() {
       passar.type = 'button';
       passar.className = 'secondary fam-fino';
       passar.textContent = '🔁 Passar a direção';
-      passar.title = 'Gera um código do dirigente para dirigir de outro aparelho';
+      passar.title = 'Gera um código do presidente da reunião para presidir de outro aparelho';
       const encerrar = document.createElement('button');
       encerrar.type = 'button';
       encerrar.className = 'secondary fam-fino limpar-btn';
@@ -29267,13 +29279,13 @@ function saveTemplatesToStorage() {
         const ate = new Date(d.validoAte).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
         const rotulo = document.createElement('summary');
         rotulo.className = 'fam-sessao-rotulo';
-        rotulo.textContent = '🔑 Código do dirigente (só você vê)';
+        rotulo.textContent = '🔑 Código do presidente da reunião (só você vê)';
         const cod = document.createElement('p');
         cod.className = 'fam-sessao-codigo fam-sessao-codigo-dir';
         cod.textContent = d.codigoDirigente;
         const dica = document.createElement('p');
         dica.className = 'hint fam-dica';
-        dica.textContent = 'No outro aparelho: Participar de uma adoração → 🔁 Dirigir de outro aparelho, com o código da adoração (' + participar.cod + ') e este código. Vale até ' + ate + ' e uma vez só. Este aparelho continua dirigindo também.';
+        dica.textContent = 'No outro aparelho: Participar de uma adoração → 🔁 Presidir de outro aparelho, com o código da adoração (' + participar.cod + ') e este código. Vale até ' + ate + ' e uma vez só. Este aparelho continua presidindo também.';
         const copiar = document.createElement('button');
         copiar.type = 'button';
         copiar.className = 'secondary fam-fino';
@@ -29360,7 +29372,7 @@ function saveTemplatesToStorage() {
       const det = document.createElement('details');
       det.className = 'fam-sessao-extras';
       const sm = document.createElement('summary');
-      sm.textContent = '🔐 Só para o dirigente: preparação, tarefas e dica';
+      sm.textContent = '🔐 Só para o presidente da reunião: preparação, tarefas e dica';
       det.appendChild(sm);
       const lista = (titulo, itens, texto) => {
         if (!itens || !itens.length) return;
@@ -29451,7 +29463,7 @@ function saveTemplatesToStorage() {
         const det = document.createElement('details');
         det.className = 'fam-jogo-itens fam-jogo-ordem';
         const sm = document.createElement('summary');
-        sm.textContent = '🔑 Ordem certa (só quem dirige vê)';
+        sm.textContent = '🔑 Ordem certa (só o presidente da reunião vê)';
         const ol = document.createElement('ol');
         ol.className = 'fam-lista';
         ordemCerta.forEach(o => {
@@ -29480,6 +29492,40 @@ function saveTemplatesToStorage() {
       progresso.append(progTexto, progBarra);
       progresso.hidden = !(j.rodadas || []).length;
       caixa.append(enunciado, placar, progresso); // 6.12.19: as regras logo depois do título do jogo, antes do placar
+      // 6.13.26: o presidente da reunião também pode jogar: entra com um nome e responde pelo app como qualquer participante (a resposta fica
+      // registrada no nome dele). Útil quando ele não precisa ver a resposta antes e deixa para revelar no fim.
+      if (participar.dirigente && !participar.participanteId && (j.rodadas || []).length) {
+        const jogar = document.createElement('div');
+        jogar.className = 'fam-sessao-jogar-tambem';
+        const rot = document.createElement('label');
+        rot.className = 'fam-trocar-rotulo';
+        rot.htmlFor = 'famJogarTambem-' + parteIdx;
+        rot.textContent = '🎮 Jogar também (o presidente da reunião responde como os outros)';
+        const linha = document.createElement('div');
+        linha.className = 'fam-sessao-jogar-linha';
+        const campo = document.createElement('input');
+        campo.type = 'text';
+        campo.id = 'famJogarTambem-' + parteIdx;
+        campo.className = 'fam-campo';
+        campo.maxLength = 40;
+        campo.autocomplete = 'off';
+        campo.placeholder = 'Seu nome no jogo';
+        campo.value = (familiaSessoesLer()[participar.cod] || {}).nome || '';
+        const ir = document.createElement('button');
+        ir.type = 'button';
+        ir.className = 'fam-fino fam-principal';
+        ir.textContent = '🎮 Entrar no jogo';
+        const entrar = () => {
+          const nomeJogo = campo.value.replace(/\s+/g, ' ').trim();
+          if (!nomeJogo) { participarStatus('Escreva o seu nome para jogar.', 'erro'); campo.focus(); return; }
+          participarEntrar(participar.cod, nomeJogo);
+        };
+        ir.addEventListener('click', entrar);
+        campo.addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); entrar(); } });
+        linha.append(campo, ir);
+        jogar.append(rot, linha);
+        caixa.appendChild(jogar);
+      }
       const ref = { rodadas: [], sorteio: null, nome: null, ultimoN: null, placar, progTexto, progBarra, progPreench };
       // Sorteio: o nome sorteado aparece para todos; os botões, só para o dirigente.
       const sorteio = document.createElement('div');
@@ -29623,7 +29669,7 @@ function saveTemplatesToStorage() {
           envioEl.hidden = true;
           li.appendChild(envioEl);
           let area = null, areaNota = null, campoResp = null;
-          if (!participar.dirigente && participar.participanteId) {
+          if (participar.participanteId) { // 6.13.26: também o presidente da reunião que entrou no jogo com um nome
             area = document.createElement('div');
             area.className = 'fam-sessao-responder';
             areaNota = document.createElement('p');
@@ -29788,7 +29834,7 @@ function saveTemplatesToStorage() {
         lista.className = 'fam-lista';
         const aguarda = document.createElement('p');
         aguarda.className = 'fam-sessao-aguarda';
-        aguarda.textContent = '⏳ Quem dirige vai revelar a ordem certa.';
+        aguarda.textContent = '⏳ O presidente da reunião vai revelar a ordem certa.';
         const resultado = document.createElement('p');
         resultado.className = 'fam-sessao-ordem-resultado';
         card.append(tit, lista, aguarda, resultado);
@@ -29936,7 +29982,7 @@ function saveTemplatesToStorage() {
           const linhas = [];
           (erradas[k] || []).forEach(x => linhas.push(['errada', '❌ ' + x.nome + ': “' + x.texto + '”']));
           if (env && env.status === 'certa') linhas.push(['certa', '🎉 ' + env.nome + ' acertou: “' + env.texto + '”' + (ac && ac.nome === env.nome ? ' · +' + ac.pts + (ac.pts === 1 ? ' ponto' : ' pontos') : '')]);
-          else if (pend) linhas.push(['pendente', '⏳ ' + env.nome + ' respondeu: “' + env.texto + '” — aguardando o julgamento de quem dirige']);
+          else if (pend) linhas.push(['pendente', '⏳ ' + env.nome + ' respondeu: “' + env.texto + '” — aguardando o julgamento do presidente da reunião']);
           // 6.13.20: resposta que esperava julgamento quando a questão foi revelada (sessões de antes desta versão): conta como errada
           if (env && env.status === 'pendente' && (revK || ac) && !(ac && ac.nome === env.nome)) linhas.push(['errada', '❌ ' + env.nome + ': “' + env.texto + '”']);
           // "Ninguém acertou": marcado por quem dirige, ou a resposta revelada sem ninguém pontuar — no lugar de quem acertou, em laranja claro
@@ -30072,7 +30118,7 @@ function saveTemplatesToStorage() {
       participarLimpar();
       participarRecentesPintar();
       participarVista('entrada');
-      participarStatus('Adoração encerrada. Obrigado por dirigir!', 'ok');
+      participarStatus('Adoração encerrada. Obrigado por presidir!', 'ok');
     }
 
     // A sessão não existe mais (encerrada pelo dirigente ou vencida).
@@ -30082,7 +30128,7 @@ function saveTemplatesToStorage() {
       participarLimpar();
       participarRecentesPintar();
       participarVista('entrada');
-      participarStatus('Esta adoração terminou (o dirigente encerrou ou ela venceu).', 'ok');
+      participarStatus('Esta adoração terminou (o presidente da reunião encerrou ou ela venceu).', 'ok');
     }
 
     // ---- Consulta periódica: só com a tela Participar aberta e a página visível ----
@@ -30145,7 +30191,7 @@ function saveTemplatesToStorage() {
     participarEls.assumirBtn.addEventListener('click', async () => {
       const cod = participarCodigoLimpo(participarEls.assumirSessao.value);
       const codigoDirigente = participarCodigoLimpo(participarEls.assumirCodigo.value);
-      if (!participarCodigoValido(cod) || codigoDirigente.length !== 8) { participarStatus('Informe o código da adoração (6 caracteres) e o código do dirigente (8 caracteres).', 'erro'); return; }
+      if (!participarCodigoValido(cod) || codigoDirigente.length !== 8) { participarStatus('Informe o código da adoração (6 caracteres) e o código do presidente da reunião (8 caracteres).', 'erro'); return; }
       participarOcupado(true);
       const r = await familiaSessaoPedir({ acao: 'assumir', sessao: cod, codigoDirigente });
       participarOcupado(false);

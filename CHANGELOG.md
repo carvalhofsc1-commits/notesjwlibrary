@@ -2,6 +2,18 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.26
+
+### Adoração em Família: o presidente da reunião também joga, e o título recolhe a programação
+
+- **🎮 Jogar também:** na tela do jogo da adoração compartilhada, o presidente da reunião pode entrar com um nome e responder pelo app como qualquer participante.
+  - A resposta fica registrada no nome dele, e ele aparece no placar e na lista de quem acertou.
+  - O nome fica guardado no aparelho: ao reabrir, ele continua no jogo.
+  - O servidor já aceitava a chave junto com o nome; o app passou a guardar o nome e a mostrar o campo de resposta para ele.
+- **Presidente da reunião:** os textos da Adoração em Família que diziam "dirigente" ou "quem dirige" agora dizem "presidente da reunião": telas, avisos do servidor, regras dos jogos e a regra comum dos prompts.
+  - A Preparação para dirigir das reuniões continua com "dirigente".
+- **Título da programação:** tocar no título recolhe ou abre a programação inteira (▾/▸).
+
 ## 6.13.25
 
 ### Adoração em Família: Cancelar ao lado do botão principal

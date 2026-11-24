@@ -3435,7 +3435,7 @@ const MIN_EVENTOS_JOGO = 6;
 const MIN_VERSOS_EPISODIO = 3;
 
 // Jogos de pergunta e resposta: as regras quando a IA não as escreveu.
-const REGRAS_PADRAO_JOGO = "Quem dirige mostra uma rodada por vez; quem acertar primeiro marca um ponto. Depois de cada rodada, leiam a resposta e o texto bíblico.";
+const REGRAS_PADRAO_JOGO = "O presidente da reunião mostra uma rodada por vez; quem acertar primeiro marca um ponto. Depois de cada rodada, leiam a resposta e o texto bíblico.";
 // 6.13.22: quantas siglas do banco fixo (SIGLAS_BANCO, revisadas das sugestões do usuário) entram em cada jogo de Abreviações; as outras a IA cria.
 const SIGLAS_DO_BANCO_POR_JOGO = 4;
 // A rodada de Abreviações de uma sigla do banco: a dica 2 é o livro do versículo ou o tipo da sigla (publicação, termo da congregação…).

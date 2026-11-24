@@ -17037,6 +17037,16 @@ button.secondary.fam-atalho-ativo { background: color-mix(in srgb, #3b82f6 18%, 
   border-radius: 8px;
 }
 .fam-adicionar-sel { width: 100%; min-width: 0; box-sizing: border-box; }
+/* 6.13.26: o presidente da reunião entra no jogo com um nome (o campo cresce; o botão ao lado) */
+.fam-sessao-jogar-tambem { display: grid; gap: 6px; min-width: 0; margin: 8px 0; padding: 10px; border: 1px solid var(--sv-azul-bd, #bfdbfe); border-radius: 10px; }
+.fam-sessao-jogar-linha { display: flex; gap: 6px; min-width: 0; align-items: stretch; }
+.fam-sessao-jogar-linha > .fam-campo { flex: 1 1 auto; min-width: 0; margin: 0; }
+.fam-sessao-jogar-linha > button { flex: 0 0 auto; margin: 0; }
+/* 6.13.26: tocar no título da programação recolhe ou abre a programação inteira */
+.fam-opcao.fam-opcao-recolhivel > .fam-opcao-topo { cursor: pointer; user-select: none; }
+.fam-opcao.fam-opcao-recolhivel > .fam-opcao-topo .fam-opcao-titulo::before { content: "▾ "; color: color-mix(in srgb, #3b82f6 70%, var(--text)); }
+.fam-opcao.fam-opcao-recolhivel.fam-opcao-recolhida > .fam-opcao-topo .fam-opcao-titulo::before { content: "▸ "; }
+.fam-opcao.fam-opcao-recolhida > :not(.fam-opcao-topo) { display: none !important; }
 .fam-parte.fam-parte-recolhivel > .fam-parte-topo .fam-parte-nome::before { content: "▾ "; color: color-mix(in srgb, #3b82f6 70%, var(--text)); }
 .fam-parte.fam-parte-recolhivel.fam-recolhida > .fam-parte-topo .fam-parte-nome::before { content: "▸ "; }
 .fam-parte.fam-recolhida > :not(.fam-parte-topo) { display: none !important; }
