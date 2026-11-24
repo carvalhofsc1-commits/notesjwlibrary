@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.04
+
+### Adoração em Família: duas circunstâncias novas em Vida cristã
+
+"Luta para fazer o que é certo e fugir de tentações" e "Vencer maus hábitos".
+
 ## 6.13.03
 
 ### Adoração em Família: matéria do livro com capítulo, páginas e seção inteira; vídeos alternando formatos
