@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.13.07'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.13.08'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -29780,16 +29780,23 @@ function saveTemplatesToStorage() {
     }
 
     // A lista de andamento: o plano e cada quadro (⏳ preparando, ✓ pronto, ⚠️ não ficou pronto, • na fila).
+    // 6.13.08: a lista fica num card recolhível; cada linha tem o estado, o tempo (alinhado, um embaixo do outro), o ícone e o nome, à esquerda.
+    // Ao terminar, a lista continua à vista com os botões "Exibir a programação" e "Iniciar a adoração" (ger.concluido).
     function familiaProgressoPintar(ger) {
       if (!familiaProgressoEl) return;
       familiaProgressoEl.textContent = '';
-      const titulo = document.createElement('p');
+      const card = document.createElement('details');
+      card.className = 'fam-prog-card';
+      card.open = ger.progAberto !== false;
+      card.addEventListener('toggle', () => { ger.progAberto = card.open; });
+      const titulo = document.createElement('summary');
       titulo.className = 'fam-prog-titulo';
-      titulo.textContent = 'Andamento da preparação';
-      familiaProgressoEl.appendChild(titulo);
+      titulo.textContent = ger.concluido ? '✅ Atividades montadas' : 'Andamento da preparação';
+      card.appendChild(titulo);
+      familiaProgressoEl.appendChild(card);
       const lista = document.createElement('ul');
       lista.className = 'fam-prog-lista';
-      const item = (estado, rotulo, msg, id) => {
+      const item = (estado, rotulo, msg, id, minutos, emoji) => {
         const li = document.createElement('li');
         li.className = 'fam-prog-item ' + estado;
         const linha = document.createElement('div');
@@ -29797,10 +29804,16 @@ function saveTemplatesToStorage() {
         const icone = document.createElement('span');
         icone.className = 'fam-prog-icone';
         icone.textContent = estado === 'ok' ? '✓' : estado === 'erro' ? '⚠️' : estado === 'gerando' ? '⏳' : '•';
+        const tempo = document.createElement('span');
+        tempo.className = 'fam-prog-tempo';
+        tempo.textContent = minutos ? minutos + ' min' : '';
+        const emo = document.createElement('span');
+        emo.className = 'fam-prog-emoji';
+        emo.textContent = emoji || '';
         const nome = document.createElement('span');
         nome.className = 'fam-prog-nome';
         nome.textContent = rotulo;
-        linha.append(icone, nome);
+        linha.append(icone, tempo, emo, nome);
         li.appendChild(linha);
         if (msg) {
           const m = document.createElement('p');
@@ -29819,12 +29832,30 @@ function saveTemplatesToStorage() {
         }
         lista.appendChild(li);
       };
-      item(ger.plano ? 'ok' : 'gerando', '🗺️ Plano da noite', '', null);
+      item(ger.plano ? 'ok' : 'gerando', 'Plano da noite', '', null, 0, '🗺️');
       for (const id of ger.ids || []) {
         const q = QUADROS_FAMILIA.find(x => x.id === id);
-        item(ger.estado[id] || 'fila', (q ? q.emoji + ' ' + q.nome : id), ger.estado[id] === 'erro' ? ger.erros[id] || '' : ger.avisos && ger.avisos[id] ? '⚠️ ' + ger.avisos[id] : '', id);
+        item(ger.estado[id] || 'fila', (q ? q.nome : id), ger.estado[id] === 'erro' ? ger.erros[id] || '' : ger.avisos && ger.avisos[id] ? '⚠️ ' + ger.avisos[id] : '', id, q ? q.minutos : 0, q ? q.emoji : '');
       }
-      familiaProgressoEl.appendChild(lista);
+      card.appendChild(lista);
+      // 6.13.08: pronto: os botões para exibir a programação montada ou já iniciar a adoração (gerar o código para compartilhar).
+      if (ger.concluido && ger.op) {
+        const acoes = document.createElement('div');
+        acoes.className = 'fam-acoes fam-prog-acoes';
+        const exibir = document.createElement('button');
+        exibir.type = 'button';
+        exibir.className = 'fam-fino fam-principal';
+        exibir.textContent = '📄 Exibir a programação';
+        exibir.addEventListener('click', () => {
+          ger.exibido = true;
+          ger.progAberto = false;
+          familiaRenderOpcoes([ger.op], undefined, ger.itemId);
+          familiaProgressoPintar(ger);
+          requestAnimationFrame(() => familiaResultadoEl.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+        });
+        acoes.append(exibir, familiaBotaoCompartilhar(ger.op, familiaProgressoEl, ger.itemId, '▶️ Iniciar a adoração (gerar o código)'));
+        familiaProgressoEl.appendChild(acoes);
+      }
       familiaProgressoEl.hidden = false;
     }
 
@@ -30033,11 +30064,15 @@ function saveTemplatesToStorage() {
 
     // Monta a programação com o que ficou pronto, salva e mostra (a primeira vez cria o item; depois de refazer um quadro, atualiza o mesmo item).
     // 6.12.74: salva antes de mostrar, para o cartão já saber o id do item salvo (o "🔄 Trocar este quadro" atualiza esse item).
+    // 6.13.08: monta e salva; a programação só aparece na tela depois do "Exibir a programação" (ou já aparece, se já tinha sido exibida).
     function familiaMostrarESalvar(ger) {
       familiaRegistrarMemoria(ger);
       const op = familiaMontarPrograma(ger.plano, ger.partes, ger.perfil.quadros, QUADROS_FAMILIA, ger.usados);
       const salvo = familiaSalvarPrograma(ger, op);
-      familiaRenderOpcoes([op], undefined, ger.itemId);
+      ger.op = op;
+      ger.concluido = true;
+      if (ger.exibido) familiaRenderOpcoes([op], undefined, ger.itemId);
+      familiaProgressoPintar(ger);
       return salvo;
     }
 
@@ -30093,8 +30128,7 @@ function saveTemplatesToStorage() {
         familiaStatus('O quadro ' + (q ? q.nome : id) + ' ainda não ficou pronto: ' + (ger.erros[id] || 'tente de novo') + '.', 'erro');
         return;
       }
-      const salvo = familiaMostrarESalvar(ger);
-      if (!familiaFalhasTexto(ger)) familiaProgressoLimpar();
+      const salvo = familiaMostrarESalvar(ger); // 6.13.08: a lista continua à vista (card), com os botões
       familiaStatus('Quadro ' + (q ? q.nome : id) + ' pronto' + (salvo ? ' · 📂 programação salva atualizada' : '') + familiaFalhasTexto(ger) + '.', 'ok');
     }
 
@@ -30120,6 +30154,10 @@ function saveTemplatesToStorage() {
       familiaGerarBtn.disabled = true;
       familiaCancelarBtn.hidden = false;
       familiaProgressoLimpar();
+      // 6.13.08: a programação anterior sai da tela; a nova aparece no "📄 Exibir a programação", quando ficar pronta.
+      familiaResultadoEl.innerHTML = '';
+      familiaResultadoEl.hidden = true;
+      familiaLimparBtn.hidden = true;
       const payload = familiaPayloadDe(perfil);
       const ger = {
         pedido, payload, perfil, plano: null, ids: familiaIdsComIa(perfil.quadros), partes: {}, estado: {}, erros: {}, modelo: '', itemId: null, refazendo: false,
@@ -30156,11 +30194,10 @@ function saveTemplatesToStorage() {
         await familiaConferirRepeticoes(ger);
         if (pedido !== familiaPedido) return;
         const tempoTotal = familiaRelogioTexto();
+        // 6.13.08: a lista das atividades continua à vista, toda azul, com "Exibir a programação" e "Iniciar a adoração" embaixo.
         const salvo = familiaMostrarESalvar(ger);
         const falhas = familiaFalhasTexto(ger);
-        if (!falhas) familiaProgressoLimpar();
         familiaStatus('Pronto: programação preparada' + (ger.modelo ? ' · ' + ger.modelo : '') + ' · ' + tempoTotal + (salvo ? ' · 📂 salva em Programações salvas' : '') + falhas + '.', 'ok');
-        familiaResultadoEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
       } catch (e) {
         if (pedido !== familiaPedido) return;
         familiaProgressoLimpar();

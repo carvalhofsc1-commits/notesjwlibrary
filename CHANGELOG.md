@@ -2,6 +2,14 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.08
+
+### Adoração em Família: andamento alinhado à esquerda, com o tempo de cada atividade, e botões ao terminar
+
+- **Alinhado à esquerda:** os itens prontos ficavam centralizados porque a regra geral `.ok` do app (no celular, bloco centralizado com margem) pegava o item "ok" da lista. Agora todas as linhas ficam à esquerda; os prontos continuam azuis.
+- **Tempo alinhado:** cada linha mostra o estado, o tempo da atividade ("10 min"), o ícone e o nome, em colunas fixas: os tempos ficam exatamente um embaixo do outro (conferido por medidas a 375 px: mesmas posições em todas as linhas).
+- **Ao terminar:** a lista continua à vista (agora num card recolhível, "✅ Atividades montadas"), com os botões "📄 Exibir a programação" e "▶️ Iniciar a adoração (gerar o código)" embaixo. Ao tocar em Exibir, a programação aparece e a lista recolhe (dá para abrir de novo). A programação anterior sai da tela quando uma nova preparação começa.
+
 ## 6.13.07
 
 ### Adoração em Família: "Assuntos e situações abrangidas" em cards, com Qualidades cristãs e Personagens bíblicos

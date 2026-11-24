@@ -16911,11 +16911,21 @@ button.secondary.fam-atalho-ativo { background: color-mix(in srgb, #3b82f6 18%, 
 .fam-progresso { display: grid; gap: 8px; padding: 10px 12px; border: 1px solid var(--line, #cbd5e1); border-radius: 10px; background: var(--card); min-width: 0; box-sizing: border-box; }
 .fam-progresso[hidden] { display: none; }
 .fam-prog-titulo { margin: 0; font-size: .92rem; font-weight: 600; }
-.fam-prog-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; min-width: 0; }
-.fam-prog-item { display: grid; gap: 6px; min-width: 0; font-size: .92rem; }
-.fam-prog-linha { display: flex; gap: 8px; align-items: baseline; min-width: 0; }
-.fam-prog-icone { flex: 0 0 1.4em; text-align: center; }
-.fam-prog-nome { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+/* 6.13.08: card recolhível; cada linha alinhada à esquerda: estado · tempo (coluna fixa, um embaixo do outro) · ícone · nome */
+.fam-prog-card { min-width: 0; }
+.fam-prog-card > summary.fam-prog-titulo { cursor: pointer; min-height: 32px; display: flex; align-items: center; }
+.fam-prog-card[open] > summary.fam-prog-titulo { margin-bottom: 8px; }
+.fam-prog-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; min-width: 0; text-align: left; }
+.fam-prog-item { display: grid; gap: 6px; min-width: 0; font-size: .92rem; text-align: left; }
+.fam-prog-linha { display: grid; grid-template-columns: 1.4em 4.2em 1.6em minmax(0, 1fr); column-gap: 6px; align-items: baseline; justify-items: start; min-width: 0; text-align: left; }
+.fam-prog-icone { text-align: center; justify-self: center; }
+.fam-prog-tempo { font-variant-numeric: tabular-nums; white-space: nowrap; justify-self: end; opacity: .85; }
+.fam-prog-emoji { justify-self: center; }
+.fam-prog-nome { min-width: 0; overflow-wrap: anywhere; text-align: left; }
+.fam-prog-item.ok .fam-prog-nome, .fam-prog-item.ok .fam-prog-tempo { color: color-mix(in srgb, #3b82f6 75%, var(--text)); font-weight: 600; }
+.fam-prog-acoes { margin-top: 4px; }
+/* 6.13.08: o item pronto tem a classe "ok", e a regra geral .ok (no celular: bloco centralizado com margem) o centralizava */
+.fam-prog-lista > .fam-prog-item.ok { display: grid; width: auto; margin: 0; text-align: left; }
 .fam-prog-item.fila .fam-prog-nome { opacity: .65; }
 .fam-prog-item.ok .fam-prog-icone { color: var(--sv-azul-bd, #60a5fa); font-weight: 700; }
 .fam-prog-item.erro { padding: 8px 10px; border: 1px solid var(--danger); border-radius: 8px; }

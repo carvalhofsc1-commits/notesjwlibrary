@@ -1862,6 +1862,17 @@ teste("6.13.06: até 2 circunstâncias relacionadas (Luto sozinha, ministério s
   assert.ok(appJs.includes("if (!assuntoValido && !perfil.circunstancias.length && !perfil.outrasCircunstancias) {"));
 });
 
+teste("6.13.08: andamento à esquerda com o tempo alinhado; ao terminar a lista fica (card) com Exibir e Iniciar", async () => {
+  const css = await readFile(new URL("app.css", raiz), "utf8");
+  assert.ok(appJs.includes("linha.append(icone, tempo, emo, nome);"));
+  assert.ok(appJs.includes("exibir.textContent = '📄 Exibir a programação';"));
+  assert.ok(appJs.includes("familiaBotaoCompartilhar(ger.op, familiaProgressoEl, ger.itemId, '▶️ Iniciar a adoração (gerar o código)')"));
+  assert.ok(appJs.includes("if (ger.exibido) familiaRenderOpcoes([op], undefined, ger.itemId);"), "a programação só aparece depois de Exibir");
+  assert.ok(!/const falhas = familiaFalhasTexto\(ger\);\s*if \(!falhas\) familiaProgressoLimpar\(\);/.test(appJs), "a lista não fecha mais ao terminar");
+  assert.ok(css.includes(".fam-prog-lista > .fam-prog-item.ok { display: grid; width: auto; margin: 0; text-align: left; }"));
+  assert.ok(/\.fam-prog-linha \{[^}]*grid-template-columns: 1\.4em 4\.2em 1\.6em minmax\(0, 1fr\)/.test(css));
+});
+
 for (const [nome, fn] of testes) {
   try {
     await fn();
