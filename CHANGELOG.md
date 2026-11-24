@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.19
+
+### Adoração em Família: resposta certa em verde claro e errada em vermelho claro
+
+No jogo da adoração compartilhada, cada resposta enviada fica numa linha própria: a certa ("🎉 Ana acertou: …") com fundo verde claro, cada errada ("❌ Ana: …") com fundo vermelho claro e a que espera o julgamento em cinza claro. Quando quem dirige marca "Ninguém acertou", aparece no mesmo lugar a linha "🚫 Ninguém acertou", com fundo laranja claro (cor neutra). As cores seguem o tema (claro e escuro). O verde aqui é pedido do usuário, exceção ao padrão visual suave sem verde.
+
 ## 6.13.18
 
 ### Adoração em Família: "Trocar agora" volta a funcionar e seções da programação recolhidas

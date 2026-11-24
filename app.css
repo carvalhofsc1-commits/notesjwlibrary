@@ -17563,9 +17563,14 @@ label.fam-rotulo[hidden] { display: none; }
 #participarSessao .fam-sessao-responder > button { width: 100%; }
 #participarSessao p.fam-sessao-responder-nota { margin: 6px 0 0; color: var(--muted); font-weight: 600; }
 #participarSessao p.fam-sessao-responder-nota[hidden] { display: none; }
-#participarSessao p.fam-sessao-envio { margin: 6px 0 0; padding: 8px 10px; border: 1px solid var(--line, #cbd5e1); border-radius: 8px; background: color-mix(in srgb, #94a3b8 10%, var(--card)); white-space: pre-line; overflow-wrap: anywhere; font-weight: 600; }
-#participarSessao p.fam-sessao-envio.fam-sessao-envio-certa { border-color: #3b82f6; background: color-mix(in srgb, #3b82f6 14%, var(--card)); }
-#participarSessao p.fam-sessao-envio[hidden] { display: none; }
+/* 6.13.19: cada resposta numa linha: certa com fundo verde claro, errada com fundo vermelho claro, esperando o julgamento em cinza (pedido do usuário) */
+#participarSessao .fam-sessao-envio { display: grid; gap: 6px; margin: 6px 0 0; min-width: 0; }
+#participarSessao .fam-sessao-envio[hidden] { display: none; }
+#participarSessao .fam-sessao-envio-linha { display: block; padding: 8px 10px; border: 1px solid var(--line, #cbd5e1); border-radius: 8px; overflow-wrap: anywhere; font-weight: 600; color: var(--text); }
+#participarSessao .fam-sessao-envio-pendente { background: color-mix(in srgb, #94a3b8 10%, var(--card)); }
+#participarSessao .fam-sessao-envio-certa { border-color: color-mix(in srgb, #22c55e 55%, var(--card)); background: color-mix(in srgb, #22c55e 16%, var(--card)); }
+#participarSessao .fam-sessao-envio-errada { border-color: color-mix(in srgb, #ef4444 50%, var(--card)); background: color-mix(in srgb, #ef4444 13%, var(--card)); }
+#participarSessao .fam-sessao-envio-ninguem { border-color: color-mix(in srgb, #f59e0b 55%, var(--card)); background: color-mix(in srgb, #f59e0b 15%, var(--card)); }
 #participarSessao .fam-sessao-julgar { margin: 6px 0 0; }
 #participarSessao .fam-sessao-julgar[hidden] { display: none; }
 /* 6.12.03: uma linha em branco entre um texto bíblico e o seguinte. */
