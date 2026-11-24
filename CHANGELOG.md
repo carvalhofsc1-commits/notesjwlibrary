@@ -2,6 +2,18 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.17
+
+### Adoração em Família: sigla à mostra e respostas pelo próprio app em todos os jogos
+
+- **Abreviações bíblicas:** a sigla aparece logo na pergunta ("O que significa a sigla “O P da P”?"); antes ela só aparecia na 1ª dica e a questão abria só com "O que significa?". As dicas agora ajudam a descobrir: 1) quantas palavras tem a resposta, 2) em que livro está, 3) uma palavra importante da resposta.
+- **Responder pelo app (adoração compartilhada):** em cada questão do jogo, quem participa tem um campo para escrever a resposta e "📨 Enviar resposta" (no Verdadeiro ou falso, os botões "✅ Verdadeiro" e "❌ Falso"). A primeira resposta enviada trava a questão para os outros até ser julgada.
+  - Se a resposta bater com a certa (sem contar acentos, maiúsculas, pontuação e palavrinhas como "o", "de", "da"; no Verdadeiro ou falso, a primeira palavra; no Quem disse isso?, quem falou), o servidor já dá como certa: "🎉 Ana acertou: … · +2 pontos", com os pontos (como no Pontuar) e a resposta revelada para todos.
+  - Senão, aparece para todos "⏳ Ana respondeu: “…” — aguardando o julgamento", e quem dirige vê "✅ Certa" e "❌ Errada". Errada vai para a lista "❌ Ana: “…”" e a questão volta a aceitar respostas.
+  - Com alguém sorteado para a parte, só ele responde ("🔒 Agora é a vez de …"); com uma questão sorteada, só ela pode ser respondida. No jogo de dicas sem enunciado (Quem sou eu?), o campo aparece depois da 1ª dica.
+  - Reiniciar a questão apaga as respostas enviadas e as erradas. O Pontuar e o Revelar de quem dirige continuam funcionando como antes. O "Ordem e data" continua com a pontuação feita por quem dirige.
+- Servidor: ações "responder" (participante, pelo id de quem entrou) e "julgar" (quem dirige), estado público com "envios" e "erradas"; conferência em `respostaConfere` (api/_familiaGeracao.mjs). Testes: 11 casos novos no teste da sessão compartilhada (70 verificações).
+
 ## 6.13.16
 
 ### Adoração em Família: uma matéria só por seção, e curta

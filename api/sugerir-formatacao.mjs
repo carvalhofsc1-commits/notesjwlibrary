@@ -3909,7 +3909,11 @@ const PREPARAR_QUADRO_FAMILIA = {
                 const livro = v ? livroDaReferencia(v.referencia) : comBiblia ? "" : livroDaReferencia(r.referencia);
                 // 6.12.81: a sigla tem de ser curta (até 4 iniciais): siglas de frases inteiras de versículos não são jogáveis (abreviacaoJogavel).
                 if (!sigla || !livro || !abreviacaoJogavel(sigla, r.resposta) || !novaRodada(normalizarTexto(sigla))) return;
-                r.pergunta = `O que significa? Dica 1: ${sigla} Dica 2: Está em ${livro}.`;
+                // 6.13.17: a sigla aparece logo na pergunta (antes ficava escondida na 1ª dica); as dicas ajudam a descobrir: quantas palavras,
+                // em que livro está e a primeira palavra importante.
+                const palavrasResp = String(r.resposta || "").trim().split(/\s+/).filter(Boolean);
+                const chave = palavrasResp.find((w) => w.replace(/[^\p{L}]/gu, "").length >= 4) || palavrasResp[0] || "";
+                r.pergunta = `O que significa a sigla “${sigla}”? Dica 1: A resposta tem ${palavrasResp.length} ${palavrasResp.length === 1 ? "palavra" : "palavras"}. Dica 2: Está em ${livro}. Dica 3: Uma das palavras é “${chave.replace(/[.,;:!?]+$/, "")}”.`;
                 if (v) r.referencia = v.referencia;
               } else if (!novaRodada(normalizarTexto(r.pergunta))) return;
               conferidas.push(r);

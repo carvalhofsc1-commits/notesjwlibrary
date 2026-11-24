@@ -622,6 +622,26 @@ export const ID_DOS_JOGOS = Object.freeze({
   "Abreviações bíblicas (ex.: Os 12 A de C)": "abreviacoes",
 });
 
+// 6.13.17: a resposta que o participante escreveu (ou escolheu) bate com a resposta certa? Sem acentos, maiúsculas, pontuação e palavrinhas
+// (o, a, os, as, de, da, do, das, dos, e). No Verdadeiro ou falso vale a primeira palavra ("Verdadeiro"/"Falso"); no Quem disse isso?, quem
+// falou (o que vem antes da vírgula: "Rute, a Noemi"). Quando não bate, o servidor deixa a resposta para quem dirige julgar.
+const PALAVRINHAS = new Set(["o", "a", "os", "as", "de", "da", "do", "das", "dos", "e", "um", "uma"]);
+const nucleoDaResposta = (s) => normalizarTexto(s).replace(/[^a-z0-9 ]+/g, " ").split(/\s+/).filter((w) => w && !PALAVRINHAS.has(w)).join(" ");
+export function respostaConfere(texto, resposta, idTipo = "") {
+  const t = nucleoDaResposta(texto);
+  if (!t) return false;
+  const r = String(resposta || "");
+  if (idTipo === "verdadeiro_falso") {
+    const certa = (normalizarTexto(r).match(/^(verdadeiro|falso)/) || [])[1];
+    return Boolean(certa) && (t === certa || t.split(" ")[0] === certa);
+  }
+  if (idTipo === "quem_disse") {
+    const quem = nucleoDaResposta(r.split(",")[0]);
+    return t === quem || t === nucleoDaResposta(r);
+  }
+  return t === nucleoDaResposta(r);
+}
+
 // O nome do tipo (o da tela ou um parecido) -> o identificador; "" quando não é um dos 6.
 export function idDoJogo(nome) {
   const t = normalizarTexto(nome);

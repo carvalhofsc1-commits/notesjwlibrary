@@ -277,6 +277,43 @@ try {
   assert.deepEqual(po2.dados.estado.ordensReveladas["2"], v2.partes[2].jogo.ordem); passo("pontuar a ordem (mesmo com 0 ponto) também revela a ordem");
   await chamar({ acao: "encerrar", sessao: cv2.sessao, chave: cv2.chave });
 
+  // 6.13.17: responder pelo app e julgar
+  {
+    const s3 = (await chamar({ acao: "criar", programa, codigo: "codigo-de-teste" })).dados;
+    const pA = await chamar({ acao: "entrar", sessao: s3.sessao, nome: "Ana" });
+    const pB = await chamar({ acao: "entrar", sessao: s3.sessao, nome: "Beto" });
+    const idA = pA.dados.participanteId, idB = pB.dados.participanteId;
+    assert.equal((await chamar({ acao: "responder", sessao: s3.sessao, participanteId: idA, parte: 2, rodada: 0, texto: "Moisés" })).status, 403); passo("responder antes de liberar a parte recusado");
+    await chamar({ acao: "liberar", sessao: s3.sessao, chave: s3.chave, parte: 2 });
+    assert.equal((await chamar({ acao: "responder", sessao: s3.sessao, parte: 2, rodada: 0, texto: "Moisés" })).status, 403); passo("responder sem ter entrado com nome recusado");
+    const certa = await chamar({ acao: "responder", sessao: s3.sessao, participanteId: idA, parte: 2, rodada: 0, texto: "moises" });
+    assert.equal(certa.status, 200);
+    assert.equal(certa.dados.estado.envios["2"]["0"].status, "certa");
+    assert.deepEqual(certa.dados.estado.acertos["2"]["0"], { nome: "Ana", pts: 2 });
+    assert.equal(certa.dados.estado.reveladas["2"]["0"], "Moisés"); passo("resposta que bate (sem acento) é dada como certa na hora: pontos e resposta revelada");
+    assert.equal((await chamar({ acao: "responder", sessao: s3.sessao, participanteId: idB, parte: 2, rodada: 0, texto: "Moisés" })).status, 409); passo("questão já respondida não aceita outra resposta");
+    const pend = await chamar({ acao: "responder", sessao: s3.sessao, participanteId: idA, parte: 2, rodada: 1, texto: "Golias" });
+    assert.equal(pend.dados.estado.envios["2"]["1"].status, "pendente"); passo("resposta que não bate fica esperando o julgamento");
+    const trava = await chamar({ acao: "responder", sessao: s3.sessao, participanteId: idB, parte: 2, rodada: 1, texto: "Davi" });
+    assert.equal(trava.status, 409); assert.match(trava.dados.erro, /Ana já respondeu/); passo("a primeira resposta trava a questão para os outros");
+    assert.equal((await chamar({ acao: "julgar", sessao: s3.sessao, parte: 2, rodada: 1, certo: false })).status, 403); passo("julgar sem a chave do dirigente recusado");
+    const errada = await chamar({ acao: "julgar", sessao: s3.sessao, chave: s3.chave, parte: 2, rodada: 1, certo: false });
+    assert.deepEqual(errada.dados.estado.erradas["2"]["1"], [{ nome: "Ana", texto: "Golias" }]);
+    assert.ok(!("1" in errada.dados.estado.envios["2"])); passo("julgada errada: vai para a lista das erradas e a questão volta a aceitar respostas");
+    await chamar({ acao: "responder", sessao: s3.sessao, participanteId: idB, parte: 2, rodada: 1, texto: "o rei Davi" });
+    const ok2 = await chamar({ acao: "julgar", sessao: s3.sessao, chave: s3.chave, parte: 2, rodada: 1, certo: true });
+    assert.deepEqual(ok2.dados.estado.acertos["2"]["1"], { nome: "Beto", pts: 2 });
+    assert.equal(ok2.dados.estado.envios["2"]["1"].status, "certa"); passo("julgada certa: ganha os pontos e a resposta é revelada");
+    await chamar({ acao: "sortear", sessao: s3.sessao, chave: s3.chave, fonte: "participantes", parte: 2 });
+    const est = (await chamar({ acao: "estado", sessao: s3.sessao })).dados.estado;
+    const fora = est.sorteio.nome === "Ana" ? idB : idA;
+    const vez = await chamar({ acao: "responder", sessao: s3.sessao, participanteId: fora, parte: 2, rodada: 2, texto: "Jonas" });
+    assert.equal(vez.status, 403); assert.match(vez.dados.erro, /Agora é a vez de/); passo("com alguém sorteado, só ele responde");
+    const rei = await chamar({ acao: "reiniciar", sessao: s3.sessao, chave: s3.chave, parte: 2, rodada: 1 });
+    assert.ok(!("1" in (rei.dados.estado.envios["2"] || {})) && !("1" in (rei.dados.estado.erradas["2"] || {}))); passo("reiniciar a questão apaga as respostas enviadas e as erradas");
+    await chamar({ acao: "encerrar", sessao: s3.sessao, chave: s3.chave });
+  }
+
   // Encerrar
   const outra = (await chamar({ acao: "criar", programa, codigo: "codigo-de-teste" })).dados;
   assert.equal((await chamar({ acao: "encerrar", sessao: outra.sessao, chave: outra.chave })).status, 200);

@@ -17,6 +17,7 @@ import { blobConfigurado, del, get, list, put } from "./_blob.mjs";
 import { mensagemSeBloqueado, prepararCodigosPessoais, recursoCodigoValido } from "./_acessoSite.mjs";
 import { lerArtigoDoWol, lerTextoDoVideo, pesquisarNoWol, playerDoVideo, videoDoEndereco } from "./_wol.mjs";
 import { lerCanticos } from "./_fontes.mjs";
+import { respostaConfere } from "./_familiaGeracao.mjs";
 
 const PASTA = "familia-sessoes/";
 const ALFABETO = "23456789ABCDEFGHJKMNPQRSTUVWXYZ"; // sem 0/O e 1/I/L, que se confundem
@@ -133,6 +134,10 @@ function estadoPublico(e) {
     sorteio: e.sorteio || null,
     sorteioQuestao: e.sorteioQuestao || null, // { parte, rodada, n }: a questão sorteada para ser respondida
     cronometro: e.cronometro || null,
+    // 6.13.17: as respostas que os participantes enviaram pelo app ({ parte: { rodada: { nome, texto, em, status: "pendente" | "certa" } } }) e as
+    // julgadas erradas ({ parte: { rodada: [{ nome, texto }] } }).
+    envios: e.envios && typeof e.envios === "object" ? e.envios : {},
+    erradas: e.erradas && typeof e.erradas === "object" ? e.erradas : {},
   };
 }
 // O dirigente recebe também a lista de quem entrou; a versão dele inclui a quantidade de participantes (muda quando alguém entra).
@@ -386,6 +391,20 @@ export default async function handler(req, res) {
       erro(res, 403, "Só quem dirige a adoração pode fazer isso.");
       return false;
     };
+    // 6.13.17: dá os pontos de quem acertou (total de dicas − dicas dadas + 1, no mínimo 1), revela a resposta e a referência da rodada.
+    const darPontos = (e, parte, rodada, r, nome, resposta) => {
+      const total = Math.max(1, (String(r.pergunta || "").match(/Dica\s*\d+\s*:/gi) || []).length);
+      const dadas = Math.min(total, Number(((e.dicas || {})[parte] || {})[rodada]) || 0);
+      e.acertos = e.acertos || {};
+      e.acertos[parte] = { ...(e.acertos[parte] || {}), [rodada]: { nome, pts: Math.max(1, total - dadas + 1) } };
+      e.reveladas = e.reveladas || {};
+      e.reveladas[parte] = { ...(e.reveladas[parte] || {}), [rodada]: resposta };
+      const ref = String((((segredo && segredo.referencias) || {})[parte] || [])[rodada] || "");
+      if (ref) {
+        e.referenciasReveladas = e.referenciasReveladas || {};
+        e.referenciasReveladas[parte] = { ...(e.referenciasReveladas[parte] || {}), [rodada]: ref };
+      }
+    };
     const gravarEstado = async (mudar) => {
       mudar(estado);
       estado.versao = (Number(estado.versao) || 0) + 1;
@@ -496,9 +515,42 @@ export default async function handler(req, res) {
       return res.status(200).json({ sessao: cod, chave });
     }
 
+    // ----- responder (6.13.17): o participante manda a resposta de uma questão do jogo pelo próprio app. A primeira resposta trava a questão
+    // até ser julgada. Se bater com a resposta certa, o servidor já dá os pontos e revela a resposta; senão, quem dirige julga (julgar).
+    // Com alguém sorteado (para esta parte), só ele responde; com uma questão sorteada, só ela pode ser respondida. -----
+    if (acao === "responder") {
+      const participanteId = idLimpo(corpo.participanteId);
+      const quem = participanteId ? await lerJson(caminho(cod, `participantes/${participanteId}.json`)) : null;
+      if (!quem || !quem.nome) return erro(res, 403, "Entre na adoração com o seu nome para responder.");
+      const parte = Number(corpo.parte);
+      const rodada = Number(corpo.rodada);
+      const programa = await lerJson(caminho(cod, "programa.json"));
+      const jogo = programa && Number.isInteger(parte) && programa.partes && programa.partes[parte] && programa.partes[parte].jogo;
+      const r = jogo && Number.isInteger(rodada) ? (jogo.rodadas || [])[rodada] : null;
+      if (!r) return erro(res, 400, "Questão inválida.");
+      if (!(estado.liberadas || []).includes(parte)) return erro(res, 403, "Esta parte ainda não foi liberada pelo dirigente.");
+      const textoResp = texto(corpo.texto, 200).replace(/\s+/g, " ");
+      if (!textoResp) return erro(res, 400, "Escreva a resposta.");
+      if (((estado.reveladas || {})[parte] || {})[rodada] || ((estado.acertos || {})[parte] || {})[rodada]) return erro(res, 409, "Esta questão já foi respondida.");
+      const pendente = ((estado.envios || {})[parte] || {})[rodada];
+      if (pendente && pendente.status === "pendente") return erro(res, 409, `${pendente.nome} já respondeu: espere o julgamento.`);
+      const s = estado.sorteio;
+      if (s && s.nome && (s.parte == null || s.parte === parte) && s.nome !== quem.nome) return erro(res, 403, `Agora é a vez de ${s.nome}.`);
+      const sq = estado.sorteioQuestao;
+      if (sq && sq.parte === parte && sq.rodada !== rodada && !((estado.reveladas || {})[parte] || {})[sq.rodada]) return erro(res, 403, `Responda a questão sorteada (questão ${sq.rodada + 1}).`);
+      segredo ||= await lerJson(caminho(cod, "respostas.json"));
+      const certa = String((((segredo && segredo.respostas) || {})[parte] || [])[rodada] || "");
+      const confere = certa && respostaConfere(textoResp, certa, jogo.idTipo || "");
+      return gravarEstado((e) => {
+        e.envios = e.envios || {};
+        e.envios[parte] = { ...(e.envios[parte] || {}), [rodada]: { nome: quem.nome, texto: textoResp, em: Date.now(), status: confere ? "certa" : "pendente" } };
+        if (confere) darPontos(e, parte, rodada, r, quem.nome, certa);
+      });
+    }
+
     // ----- Daqui em diante, só o dirigente -----
     if (!(await exigirDirigente())) return;
-    const programa = ["liberar", "bloquear", "revelar", "revelar-ordem", "dica", "pontuar", "reiniciar", "sortear", "sortear-questao", "limpar-sorteio", "cronometro"].includes(acao) ? await lerJson(caminho(cod, "programa.json")) : null;
+    const programa = ["liberar", "bloquear", "revelar", "revelar-ordem", "dica", "pontuar", "reiniciar", "sortear", "sortear-questao", "limpar-sorteio", "cronometro", "julgar"].includes(acao) ? await lerJson(caminho(cod, "programa.json")) : null;
     const parteValida = (i) => programa && Number.isInteger(i) && i >= 0 && i < programa.partes.length;
     // 6.12.76: a referência secreta da rodada (respostas.json; sessões antigas não a têm) e a revelação dela junto com a resposta.
     const referenciaDaRodada = (parte, rodada) => String((((segredo && segredo.referencias) || {})[parte] || [])[rodada] || "");
@@ -645,7 +697,7 @@ export default async function handler(req, res) {
       }
       if (!parteValida(parte) || !Number.isInteger(rodada) || rodada < 0) return erro(res, 400, "Rodada inválida.");
       return gravarEstado((e) => {
-        for (const campo of ["dicas", "reveladas", "acertos", "referenciasReveladas"]) {
+        for (const campo of ["dicas", "reveladas", "acertos", "referenciasReveladas", "envios", "erradas"]) {
           if (e[campo] && e[campo][parte]) {
             const copia = { ...e[campo][parte] };
             delete copia[rodada];
@@ -690,6 +742,30 @@ export default async function handler(req, res) {
       const rodada = opcoes[randomInt(opcoes.length)];
       return gravarEstado((e) => {
         e.sorteioQuestao = { parte, rodada, n: ((e.sorteioQuestao && e.sorteioQuestao.n) || 0) + 1 };
+      });
+    }
+
+    // ----- julgar (6.13.17): quem dirige diz se a resposta enviada está certa (ganha os pontos e a resposta é revelada) ou errada (fica na lista
+    // das erradas e a questão volta a aceitar respostas) -----
+    if (acao === "julgar") {
+      const parte = Number(corpo.parte);
+      const rodada = Number(corpo.rodada);
+      if (!parteValida(parte)) return erro(res, 400, "Parte inválida.");
+      const r = programa.partes[parte].jogo && (programa.partes[parte].jogo.rodadas || [])[rodada];
+      const envio = ((estado.envios || {})[parte] || {})[rodada];
+      if (!r || !envio || envio.status !== "pendente") return erro(res, 400, "Não há resposta esperando julgamento nesta questão.");
+      const respostas = (segredo.respostas || {})[parte] || [];
+      return gravarEstado((e) => {
+        if (corpo.certo === true) {
+          e.envios[parte][rodada] = { ...envio, status: "certa" };
+          darPontos(e, parte, rodada, r, envio.nome, respostas[rodada]);
+        } else {
+          e.erradas = e.erradas || {};
+          e.erradas[parte] = { ...(e.erradas[parte] || {}), [rodada]: [...(((e.erradas[parte] || {})[rodada]) || []), { nome: envio.nome, texto: envio.texto }].slice(-10) };
+          const copia = { ...e.envios[parte] };
+          delete copia[rodada];
+          e.envios = { ...e.envios, [parte]: copia };
+        }
       });
     }
 

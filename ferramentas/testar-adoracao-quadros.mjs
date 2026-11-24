@@ -1139,7 +1139,8 @@ teste("6.12.76: Quem sou eu? e Abreviações conferidos pelo servidor; Princípi
   const ab = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "jogo", jogos: ["Abreviações bíblicas (ex.: Os 12 A de C)"] }), montados);
   const p2 = await ab.prep.montar({ descricao: "d", nome: "Siglas", comoJogar: "R.", rodadas: [{ pergunta: "Os 12 A de C", resposta: "Os 12 Apóstolos de Cristo", referencia: "Mateus 10:2" }, { pergunta: "O que significa? Os 12 A de C", resposta: "Os 12 Apóstolos de Cristo", referencia: "Mateus 10:2" }, { pergunta: "R de D", resposta: "Reino dos Céus", referencia: "Mateus 5:3" }], eventos: [] });
   assert.equal(p2.contagens.rodadas, 1, "sigla repetida e sigla que não confere saem");
-  assert.equal(p2.jogo.rodadas[0].pergunta, "O que significa? Dica 1: Os 12 A de C Dica 2: Está em Mateus.");
+  // 6.13.17: a sigla na própria pergunta; as dicas: quantas palavras, o livro e uma palavra importante
+  assert.equal(p2.jogo.rodadas[0].pergunta, "O que significa a sigla “Os 12 A de C”? Dica 1: A resposta tem 5 palavras. Dica 2: Está em Mateus. Dica 3: Uma das palavras é “Apóstolos”.");
   assert.match(p2.falta, /^vieram 1 rodadas válidas; mande 10 rodadas \(no mínimo 8\)/);
   assert.equal(p2.trocarTipo, "", "Abreviações não troca de tipo");
   if (!comFontes) return console.log("      (sem FONTES_DIR: Princípio pulado)");
@@ -1686,7 +1687,7 @@ teste("6.12.81 (2): o jogo de Abreviações tira as siglas longas e o pedido de 
   assert.equal(r.contagens.rodadas, 6, JSON.stringify(r.jogo && r.jogo.rodadas.map((x) => x.pergunta)));
   assert.equal(r.contagens.tiradas, 3, "as 3 siglas longas saem");
   assert.ok(!r.jogo.rodadas.some((x) => /T L C O|P L U A|P P A A/.test(x.pergunta)));
-  assert.match(r.jogo.rodadas[0].pergunta, /^O que significa\? Dica 1: O P da P Dica 2: Está em Isaías\.$/);
+  assert.match(r.jogo.rodadas[0].pergunta, /^O que significa a sigla “O P da P”\? Dica 1: A resposta tem 4 palavras\. Dica 2: Está em Isaías\. Dica 3: Uma das palavras é “Príncipe”\.$/);
   // 6 < 8: o pedido de novo traz a exigência nova.
   assert.match(r.falta, /^vieram 6 rodadas válidas; mande 10 rodadas \(no mínimo 8\)/);
   assert.match(r.falta, /a sigla na pergunta curta \(no máximo 4 iniciais\), de uma expressão bíblica conhecida \(nome, título ou grupo, nunca um pedaço de frase de versículo\)/);
@@ -1953,6 +1954,22 @@ teste("6.13.12: objetivo começando por verbo, só na Abertura, Personagem, Jesu
   if (!v.prep.contagens.videos) return console.log("      (sem catálogo de vídeos: montar pulado)");
   const p = await v.prep.montar({ descricao: "d", videos: ["V1"], objetivos: ["Ver como perdoar de coração"], perguntas: ["a?"] });
   assert.equal(p.videos[0].objetivo, "Ver como perdoar de coração");
+});
+
+teste("6.13.17: sigla à mostra na pergunta, conferência automática da resposta e responder/julgar pelo app", async () => {
+  const g = await import(new URL("api/_familiaGeracao.mjs", raiz));
+  assert.equal(g.respostaConfere("debora", "Débora", "quem_sou_eu"), true);
+  assert.equal(g.respostaConfere("12 apostolos cristo", "Os 12 Apóstolos de Cristo", "abreviacoes"), true);
+  assert.equal(g.respostaConfere("Verdadeiro", "Verdadeiro. Ele foi...", "verdadeiro_falso"), true);
+  assert.equal(g.respostaConfere("Falso", "Verdadeiro. Ele foi...", "verdadeiro_falso"), false);
+  assert.equal(g.respostaConfere("Rute", "Rute, a Noemi", "quem_disse"), true);
+  assert.equal(g.respostaConfere("Noemi", "Rute, a Noemi", "quem_disse"), false);
+  assert.equal(g.respostaConfere("", "x"), false);
+  assert.ok(sessaoJs.includes('if (acao === "responder") {'));
+  assert.ok(sessaoJs.includes('if (acao === "julgar") {'));
+  assert.ok(appJs.includes("acao: 'responder', sessao: participar.cod, participanteId: participar.participanteId"));
+  assert.ok(appJs.includes("acao: 'julgar', parte: parteIdx, rodada: k, certo: true"));
+  assert.ok(appJs.includes("[['Verdadeiro', '✅ Verdadeiro'], ['Falso', '❌ Falso']]"));
 });
 
 for (const [nome, fn] of testes) {

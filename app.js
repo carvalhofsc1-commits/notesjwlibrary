@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.13.16'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.13.17'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -29370,6 +29370,79 @@ function saveTemplatesToStorage() {
           li.append(num);
           if (perg.textContent) li.appendChild(perg);
           li.append(...dicasEls, aguarda, resp);
+          // 6.13.17: quem participa responde pelo próprio app (texto ou, no Verdadeiro ou falso, um dos dois botões); a primeira resposta trava a
+          // questão até ser julgada (o servidor já dá como certa a que bate com a resposta; as outras, quem dirige julga).
+          const envioEl = document.createElement('p');
+          envioEl.className = 'fam-sessao-envio';
+          envioEl.setAttribute('aria-live', 'polite');
+          envioEl.hidden = true;
+          li.appendChild(envioEl);
+          let area = null, areaNota = null, campoResp = null;
+          if (!participar.dirigente && participar.participanteId) {
+            area = document.createElement('div');
+            area.className = 'fam-sessao-responder';
+            areaNota = document.createElement('p');
+            areaNota.className = 'fam-sessao-responder-nota';
+            areaNota.hidden = true;
+            const enviar = async (txt, botao) => {
+              const textoEnvio = String(txt || '').trim();
+              if (!textoEnvio) { participarStatus('Escreva a resposta antes de enviar.', 'erro'); return; }
+              botao.disabled = true;
+              const rr = await familiaSessaoPedir({ acao: 'responder', sessao: participar.cod, participanteId: participar.participanteId, parte: parteIdx, rodada: k, texto: textoEnvio });
+              botao.disabled = false;
+              if (!rr.ok) { participarStatus(rr.erro || 'Não consegui enviar a resposta.', 'erro'); return; }
+              participarStatus('');
+              if (campoResp) campoResp.value = '';
+              participarAplicar(rr.data);
+            };
+            if (j.idTipo === 'verdadeiro_falso') {
+              const linha = document.createElement('div');
+              linha.className = 'fam-acoes-dupla';
+              [['Verdadeiro', '✅ Verdadeiro'], ['Falso', '❌ Falso']].forEach(([valor, rotulo]) => {
+                const b = document.createElement('button');
+                b.type = 'button';
+                b.className = 'secondary fam-fino';
+                b.textContent = rotulo;
+                b.addEventListener('click', () => enviar(valor, b));
+                linha.appendChild(b);
+              });
+              area.appendChild(linha);
+            } else {
+              campoResp = document.createElement('input');
+              campoResp.type = 'text';
+              campoResp.className = 'fam-campo fam-sessao-resp-campo';
+              campoResp.maxLength = 200;
+              campoResp.autocomplete = 'off';
+              campoResp.placeholder = j.idTipo === 'quem_sou_eu' ? 'Quem é? Escreva o nome' : j.idTipo === 'complete_versiculo' ? 'Qual é a palavra que falta?' : j.idTipo === 'quem_disse' ? 'Quem disse?' : 'Sua resposta';
+              campoResp.setAttribute('aria-label', 'Sua resposta para a questão ' + (k + 1));
+              const b = document.createElement('button');
+              b.type = 'button';
+              b.className = 'fam-fino fam-principal';
+              b.textContent = '📨 Enviar resposta';
+              b.addEventListener('click', () => enviar(campoResp.value, b));
+              campoResp.addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); enviar(campoResp.value, b); } });
+              area.append(campoResp, b);
+            }
+            li.append(areaNota, area);
+          }
+          let julgarEl = null;
+          if (participar.dirigente) {
+            julgarEl = document.createElement('div');
+            julgarEl.className = 'fam-sessao-julgar fam-acoes-dupla';
+            julgarEl.hidden = true;
+            const bCerta = document.createElement('button');
+            bCerta.type = 'button';
+            bCerta.className = 'secondary fam-fino';
+            bCerta.textContent = '✅ Certa';
+            bCerta.addEventListener('click', () => participarAcao({ acao: 'julgar', parte: parteIdx, rodada: k, certo: true }, bCerta));
+            const bErrada = document.createElement('button');
+            bErrada.type = 'button';
+            bErrada.className = 'secondary fam-fino';
+            bErrada.textContent = '❌ Errada';
+            bErrada.addEventListener('click', () => participarAcao({ acao: 'julgar', parte: parteIdx, rodada: k, certo: false }, bErrada));
+            julgarEl.append(bCerta, bErrada);
+            li.appendChild(julgarEl);
+          }
           let btn = null;
           let btnDica = null;
           let btnReiniciar = null;
@@ -29441,7 +29514,7 @@ function saveTemplatesToStorage() {
             });
             li.append(btnEspiar, espiada, btn);
           }
-          ref.rodadas.push({ li, linhaAcerto, sel, btnPontuar, btnEspiar, btnReiniciar, espiada, sig: null, resp, btn, btnDica, dicasEls, aguarda, pontos, total: dicas.length, referencia: r.referencia || '' });
+          ref.rodadas.push({ li, linhaAcerto, sel, btnPontuar, btnEspiar, btnReiniciar, espiada, sig: null, resp, btn, btnDica, dicasEls, aguarda, pontos, total: dicas.length, referencia: r.referencia || '', envioEl, area, areaNota, julgarEl, temIntro: Boolean(intro) });
           ol.appendChild(li);
         });
         caixa.appendChild(ol);
@@ -29603,7 +29676,34 @@ function saveTemplatesToStorage() {
         }
       }
       let anteriorRespondida = true; // jogo de dicas: a questão seguinte só aparece depois que a anterior foi respondida (resposta revelada)
+      // 6.13.17: quem pode responder agora (sorteio de jogador ou de questão) e as respostas enviadas pelo app
+      const envios = (e.envios && e.envios[i]) || {};
+      const erradas = (e.erradas && e.erradas[i]) || {};
+      const sorteadoNome = e.sorteio && e.sorteio.nome && (e.sorteio.parte == null || e.sorteio.parte === i) ? e.sorteio.nome : '';
+      const questaoSorteada = e.sorteioQuestao && e.sorteioQuestao.parte === i && !(rev[e.sorteioQuestao.rodada] != null && rev[e.sorteioQuestao.rodada] !== '') ? e.sorteioQuestao.rodada : null;
       ref.rodadas.forEach((r, k) => {
+        {
+          const revK = rev[k] != null && rev[k] !== '';
+          const ac = acertos[k];
+          const env = envios[k];
+          const pend = Boolean(env && env.status === 'pendente' && !revK && !ac);
+          const linhas = [];
+          if (env && env.status === 'certa') linhas.push('🎉 ' + env.nome + ' acertou: “' + env.texto + '”' + (ac && ac.nome === env.nome ? ' · +' + ac.pts + (ac.pts === 1 ? ' ponto' : ' pontos') : ''));
+          else if (pend) linhas.push('⏳ ' + env.nome + ' respondeu: “' + env.texto + '” — aguardando o julgamento de quem dirige');
+          (erradas[k] || []).forEach(x => linhas.push('❌ ' + x.nome + ': “' + x.texto + '”'));
+          r.envioEl.textContent = linhas.join('\n');
+          r.envioEl.hidden = !linhas.length;
+          r.envioEl.classList.toggle('fam-sessao-envio-certa', Boolean(env && env.status === 'certa'));
+          if (r.julgarEl) r.julgarEl.hidden = !pend;
+          if (r.area) {
+            const ndadas = Math.min(r.total, Number(dadas[k]) || 0);
+            const aberta = !revK && !ac && !pend && (r.total === 0 || ndadas > 0 || r.temIntro);
+            const bloqueio = sorteadoNome && sorteadoNome !== participar.nome ? 'Agora é a vez de ' + sorteadoNome + '.' : questaoSorteada != null && questaoSorteada !== k ? 'Responda a questão sorteada (questão ' + (questaoSorteada + 1) + ').' : '';
+            r.area.hidden = !aberta || Boolean(bloqueio);
+            r.areaNota.hidden = !aberta || !bloqueio;
+            r.areaNota.textContent = bloqueio ? '🔒 ' + bloqueio : '';
+          }
+        }
         const txt = rev[k];
         const revelada = txt != null && txt !== '';
         const comDicas = r.total > 0;

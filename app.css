@@ -17551,6 +17551,18 @@ label.fam-rotulo[hidden] { display: none; }
 /* 6.12.06: a resposta vista só pelo dirigente (nada vai para os participantes). */
 #participarSessao p.fam-sessao-espiada { margin: 0; padding: 8px 10px; border: 1px dashed #7c6bd6; border-radius: 8px; background: color-mix(in srgb, #7c6bd6 16%, var(--card)); color: var(--text); font-weight: 600; overflow-wrap: anywhere; }
 #participarSessao p.fam-sessao-espiada[hidden] { display: none; }
+/* 6.13.17: responder pelo app, a resposta enviada e o julgamento */
+#participarSessao .fam-sessao-responder { display: grid; gap: 6px; margin: 6px 0 0; min-width: 0; }
+#participarSessao .fam-sessao-responder[hidden] { display: none; }
+#participarSessao .fam-sessao-resp-campo { width: 100%; box-sizing: border-box; }
+#participarSessao .fam-sessao-responder > button { width: 100%; }
+#participarSessao p.fam-sessao-responder-nota { margin: 6px 0 0; color: var(--muted); font-weight: 600; }
+#participarSessao p.fam-sessao-responder-nota[hidden] { display: none; }
+#participarSessao p.fam-sessao-envio { margin: 6px 0 0; padding: 8px 10px; border: 1px solid var(--line, #cbd5e1); border-radius: 8px; background: color-mix(in srgb, #94a3b8 10%, var(--card)); white-space: pre-line; overflow-wrap: anywhere; font-weight: 600; }
+#participarSessao p.fam-sessao-envio.fam-sessao-envio-certa { border-color: #3b82f6; background: color-mix(in srgb, #3b82f6 14%, var(--card)); }
+#participarSessao p.fam-sessao-envio[hidden] { display: none; }
+#participarSessao .fam-sessao-julgar { margin: 6px 0 0; }
+#participarSessao .fam-sessao-julgar[hidden] { display: none; }
 /* 6.12.03: uma linha em branco entre um texto bíblico e o seguinte. */
 #participarSessao li.fam-texto-item:not(:last-child) { margin-bottom: 1.4em; }
 /* 6.12.01: 🔊 pequeno no início da pergunta (lê "Pergunta", pausa e a pergunta). */
