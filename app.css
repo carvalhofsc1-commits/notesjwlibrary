@@ -16675,6 +16675,9 @@ body[data-screen="familia"] :is(.screen-inicio, .screen-editor, .screen-formatar
 #familiaCard[data-vista] > .fam-perfil-box:not([open]) { display: none !important; } /* na vista, só o card aberto aparece */
 #familiaCard[data-vista] > .fam-perfil-box { border: 0; background: transparent; }
 #familiaCard[data-vista] > .fam-perfil-box > summary { display: none; }
+/* 6.13.11: o card dos assuntos não aparece na tela principal: abre só pela vista (botão sob o campo Assunto) */
+#familiaCard:not([data-vista="assuntos"]) > #familiaAssuntosBox { display: none !important; }
+.fam-assuntos-btn { display: block; width: 100%; margin-top: 8px; box-sizing: border-box; }
 .fam-perfil-topo[hidden] { display: none; }
 .fam-perfil-concluir { display: none; }
 #familiaCard[data-vista] .fam-perfil-concluir { display: block; width: 100%; }

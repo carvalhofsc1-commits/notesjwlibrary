@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.13.10'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.13.11'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -26384,6 +26384,43 @@ function saveTemplatesToStorage() {
       });
     }
 
+    // 6.13.11: os temas escolhidos na lista vão para o campo Assunto ("Assunto (2 escolhidos)"); se a pessoa digitar, o rótulo volta a ser só
+    // "Assunto". O botão Preparar só fica ativo com um assunto escrito ou pelo menos um tema marcado.
+    function familiaAssuntoDaLista() {
+      const marcados = Array.from(document.querySelectorAll('#familiaCircunstancias input[type="checkbox"]:checked')).map(i => i.value);
+      if (marcados.length) {
+        familiaAssuntoEl.value = marcados.join('; ');
+        familiaAssuntoEl.dataset.daLista = '1';
+      } else if (familiaAssuntoEl.dataset.daLista === '1') {
+        familiaAssuntoEl.value = '';
+        delete familiaAssuntoEl.dataset.daLista;
+      }
+      familiaAssuntoRotulo();
+    }
+    function familiaAssuntoRotulo() {
+      const qtd = document.getElementById('familiaAssuntoQtd');
+      const n = familiaAssuntoEl.dataset.daLista === '1' ? document.querySelectorAll('#familiaCircunstancias input[type="checkbox"]:checked').length : 0;
+      if (qtd) qtd.textContent = n ? '(' + n + (n === 1 ? ' escolhido)' : ' escolhidos)') : '';
+      familiaGerarHabilitar();
+    }
+    function familiaGerarHabilitar() {
+      if (!familiaCancelarBtn.hidden) return; // preparando: o botão fica como está
+      const ok = /\p{L}{3,}/u.test(familiaAssuntoEl.value || '') || document.querySelectorAll('#familiaCircunstancias input[type="checkbox"]:checked').length > 0 || Boolean((familiaOutrasCircEl.value || '').trim());
+      familiaGerarBtn.disabled = !ok;
+      familiaGerarBtn.title = ok ? '' : 'Escreva o assunto ou escolha um tema na lista';
+    }
+    // Depois de preparar: tudo desmarcado e o assunto limpo, para a pessoa escolher de novo na próxima vez.
+    function familiaAssuntosLimpar() {
+      document.querySelectorAll('#familiaCircunstancias input[type="checkbox"]').forEach(i => { i.checked = false; });
+      familiaCircAplicarLimite(null);
+      document.querySelectorAll('#familiaCircunstancias details.fam-circ-secao').forEach(d => { d.open = false; });
+      familiaOutrasCircEl.value = '';
+      familiaAssuntoEl.value = '';
+      delete familiaAssuntoEl.dataset.daLista;
+      familiaAssuntoRotulo();
+      familiaPerfilSalvar();
+    }
+
     function familiaChecksMarcar(caixa, valores) {
       const set = new Set((valores || []).map(String));
       caixa.querySelectorAll('input[type="checkbox"]').forEach(el => { el.checked = set.has(el.value); });
@@ -26431,7 +26468,7 @@ function saveTemplatesToStorage() {
       if (progEl) {
         const nQuadros = perfil.quadros.filter(id => QUADROS_FAMILIA.find(q => q.id === id).minutos).length;
         const nCirc = perfil.circunstancias.length + (perfil.outrasCircunstancias ? 1 : 0);
-        progEl.textContent = [nQuadros + (nQuadros === 1 ? ' quadro' : ' quadros'), familiaTotalTexto(perfil.quadros), nCirc ? nCirc + (nCirc === 1 ? ' assunto ou situação' : ' assuntos ou situações') : ''].filter(Boolean).join(' · ');
+        progEl.textContent = [nQuadros + (nQuadros === 1 ? ' quadro' : ' quadros'), familiaTotalTexto(perfil.quadros), ''].filter(Boolean).join(' · ');
       }
       const convEl = document.getElementById('familiaConvidadosResumo');
       if (convEl) {
@@ -30155,7 +30192,7 @@ function saveTemplatesToStorage() {
       // 6.13.06: é preciso um assunto (com pelo menos uma palavra de verdade) ou pelo menos uma circunstância marcada (ou escrita em Outras).
       const assuntoValido = /\p{L}{3,}/u.test(perfil.assunto);
       if (!assuntoValido && !perfil.circunstancias.length && !perfil.outrasCircunstancias) {
-        familiaStatus('Escreva o assunto desta semana ou marque pelo menos um item em Programação → 💛 Assuntos e situações abrangidas.', 'erro');
+        familiaStatus('Escreva o assunto desta semana ou toque em “💛 Escolha um tema ou assunto na lista…”.', 'erro');
         try { familiaAssuntoEl.focus(); } catch (e) { /* sem foco */ }
         return;
       }
@@ -30207,6 +30244,7 @@ function saveTemplatesToStorage() {
         const salvo = familiaMostrarESalvar(ger);
         const falhas = familiaFalhasTexto(ger);
         familiaStatus('Pronto: programação preparada' + (ger.modelo ? ' · ' + ger.modelo : '') + ' · ' + tempoTotal + (salvo ? ' · 📂 salva em Programações salvas' : '') + falhas + '.', 'ok');
+        familiaAssuntosLimpar(); // 6.13.11: a próxima preparação pede uma escolha nova
       } catch (e) {
         if (pedido !== familiaPedido) return;
         familiaProgressoLimpar();
@@ -30217,6 +30255,7 @@ function saveTemplatesToStorage() {
           familiaRelogioDesligar();
           familiaGerarBtn.disabled = false;
           familiaCancelarBtn.hidden = true;
+          familiaGerarHabilitar();
         }
       }
     }
@@ -30256,7 +30295,8 @@ function saveTemplatesToStorage() {
     var familiaPerfilRolagem = 0; // var e função: showScreen chama familiaVista antes destas linhas rodarem
     // 6.12.63: Estrutura da programação, Circunstâncias e Atividades aceitas ficam num card só (vista 'prog'), separado dos dados da família.
     // 6.12.70: o card 'prog' virou "Quadros da programação" (quadros, cânticos, jogos aceitos e circunstâncias).
-    function familiaVistasIds() { return { perfil: ['familiaPerfilBox', 'familiaPerfilTopo'], prog: ['familiaProgBox', 'familiaProgTopo'],convidados: ['familiaConvidadosBox', 'familiaConvidadosTopo'] }; }
+    // 6.13.11: os assuntos e situações abrangidas têm vista própria (botão sob o campo Assunto).
+    function familiaVistasIds() { return { perfil: ['familiaPerfilBox', 'familiaPerfilTopo'], prog: ['familiaProgBox', 'familiaProgTopo'], assuntos: ['familiaAssuntosBox', 'familiaAssuntosTopo'], convidados: ['familiaConvidadosBox', 'familiaConvidadosTopo'] }; }
     function familiaVista(qual, opcoes) {
       const card = document.getElementById('familiaCard');
       if (!card) return;
@@ -30290,6 +30330,7 @@ function saveTemplatesToStorage() {
       familiaStatus('Cancelado.');
       familiaGerarBtn.disabled = false;
       familiaCancelarBtn.hidden = true;
+      familiaGerarHabilitar();
     });
     familiaLimparBtn.addEventListener('click', () => {
       familiaOpcoes = null;
@@ -30301,7 +30342,11 @@ function saveTemplatesToStorage() {
     });
     [familiaFormacaoEl, familiaAnosCasadosEl, document.getElementById('familiaDiaSemana'), document.getElementById('familiaHorario'), document.getElementById('familiaConvidadosFormacao'), document.getElementById('familiaCanticoInicial'), document.getElementById('familiaCanticoFinal')].forEach(el => el.addEventListener('change', familiaPerfilSalvar));
     [familiaOutrasCircEl, familiaAssuntoEl].forEach(el => el.addEventListener('input', () => { clearTimeout(el._t); el._t = setTimeout(familiaPerfilSalvar, 400); }));
-    document.getElementById('familiaCircunstancias').addEventListener('change', e => { familiaCircAplicarLimite(e.target); familiaPerfilSalvar(); });
+    document.getElementById('familiaCircunstancias').addEventListener('change', e => { familiaCircAplicarLimite(e.target); familiaAssuntoDaLista(); familiaPerfilSalvar(); });
+    // 6.13.11: o botão sob o campo Assunto abre a vista dos assuntos e situações; digitar no Assunto tira o "(N escolhidos)".
+    document.getElementById('familiaAssuntosAbrir').addEventListener('click', () => familiaVista('assuntos'));
+    familiaAssuntoEl.addEventListener('input', () => { delete familiaAssuntoEl.dataset.daLista; familiaAssuntoRotulo(); });
+    familiaOutrasCircEl.addEventListener('input', familiaGerarHabilitar);
     // Quadros (6.12.70): salva ao marcar e atualiza o total; os atalhos marcam só os obrigatórios (noite curta) ou todos (completa).
     familiaQuadrosEl.addEventListener('change', () => { familiaQuadrosAtualizar(); familiaPerfilSalvar(); });
     const familiaQuadrosAtalho = todos => {
@@ -30316,6 +30361,11 @@ function saveTemplatesToStorage() {
     document.getElementById('familiaJogosTodos').addEventListener('click', () => { familiaJogosEl.querySelectorAll('input').forEach(el => { el.checked = true; }); familiaJogosAtualizar(); familiaPerfilSalvar(); });
     document.getElementById('familiaJogosNenhum').addEventListener('click', () => { familiaJogosEl.querySelectorAll('input').forEach(el => { el.checked = false; }); familiaJogosAtualizar(); familiaPerfilSalvar(); });
     familiaPerfilCarregar();
+    {
+      const marcadosAoAbrir = Array.from(document.querySelectorAll('#familiaCircunstancias input[type="checkbox"]:checked')).map(i => i.value);
+      if (marcadosAoAbrir.length && familiaAssuntoEl.value === marcadosAoAbrir.join('; ')) familiaAssuntoEl.dataset.daLista = '1';
+      familiaAssuntoRotulo();
+    }
     familiaSalvasRender();
     document.getElementById('familiaSalvasBox').addEventListener('toggle', () => { if (document.getElementById('familiaSalvasBox').open) familiaSalvasRender(); });
 

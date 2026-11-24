@@ -1858,7 +1858,7 @@ teste("6.13.06: até 2 circunstâncias relacionadas (Luto sozinha, ministério s
   // a relação é de mão dupla
   for (const a of valores) for (const b of familiaCircCompativeis(a)) assert.ok(familiaCircCompativeis(b).has(a), a + " <-> " + b);
   assert.ok(appJs.includes("i.disabled = !livre;"));
-  assert.ok(appJs.includes("familiaCircAplicarLimite(e.target); familiaPerfilSalvar();"));
+  assert.ok(appJs.includes("familiaCircAplicarLimite(e.target); familiaAssuntoDaLista(); familiaPerfilSalvar();"));
   assert.ok(appJs.includes("if (!assuntoValido && !perfil.circunstancias.length && !perfil.outrasCircunstancias) {"));
 });
 
@@ -1904,6 +1904,20 @@ teste("6.13.10: tempo do quadro Vídeo pela duração dos vídeos e \"Objetivo d
   assert.ok(sessaoJs.includes("objetivo: texto(p.leitura.objetivo, 400)"));
   assert.ok(appJs.includes("rot.textContent = 'Objetivo da matéria:';"));
   assert.ok(appJs.indexOf("lei.appendChild(lt);") < appJs.indexOf("rot.textContent = 'Objetivo da matéria:';"), "o objetivo vem depois da fonte e do título");
+});
+
+teste("6.13.11: assuntos em vista própria pelo botão sob o Assunto, temas no campo, botão só com assunto e tudo limpo depois de preparar", async () => {
+  const html = await readFile(new URL("index.html", raiz), "utf8");
+  const prog = html.slice(html.indexOf('id="familiaProgBox"'), html.indexOf('id="familiaProgConcluir"'));
+  assert.ok(!prog.includes('id="familiaCircunstancias"'), "o card Quadros não tem mais os assuntos");
+  assert.ok(html.includes('id="familiaAssuntosBox"') && html.includes('id="familiaAssuntosTopo"') && html.includes('id="familiaAssuntosConcluir"'));
+  assert.ok(html.includes('>💛 Escolha um tema ou assunto na lista…</button>'));
+  assert.ok(!/for="familiaAssunto">Assunto <span class="opc">\(opcional\)/.test(html), "sem o (opcional)");
+  assert.ok(appJs.includes("assuntos: ['familiaAssuntosBox', 'familiaAssuntosTopo']"));
+  assert.ok(appJs.includes("familiaAssuntoEl.value = marcados.join('; ');"));
+  assert.ok(appJs.includes("qtd.textContent = n ? '(' + n + (n === 1 ? ' escolhido)' : ' escolhidos)') : '';"));
+  assert.ok(appJs.includes("familiaGerarBtn.disabled = !ok;"));
+  assert.ok(appJs.includes("familiaAssuntosLimpar(); // 6.13.11"));
 });
 
 for (const [nome, fn] of testes) {

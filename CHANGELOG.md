@@ -2,6 +2,17 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.11
+
+### Adoração em Família: escolha do assunto pela lista, botão só com assunto e tudo limpo depois de preparar
+
+- **"🧩 Quadros da programação"** mostra só os quadros (com os cânticos e os jogos aceitos); os "💛 Assuntos e situações abrangidas" saíram dele.
+- **Botão "💛 Escolha um tema ou assunto na lista…"** (fino, na largura toda), logo abaixo do campo do Assunto desta semana: abre a lista dos assuntos e situações numa vista própria (com ◀ Voltar e ✔ Concluir e voltar).
+- **Temas no campo Assunto:** ao marcar, os títulos dos temas escolhidos vão para o campo ("Comunicação na família; Problemas no casamento") e o rótulo mostra "Assunto (2 escolhidos)". Se a pessoa digitar o assunto, o rótulo volta a ser só "Assunto". O "(opcional)" saiu: agora o assunto é obrigatório.
+- **Botão Preparar desativado** sem um assunto escrito ou sem um tema marcado (ou "Outros assuntos ou situações" preenchido).
+- **Depois de preparar**, todos os temas são desmarcados e o campo Assunto fica vazio: a próxima preparação pede uma escolha nova.
+- Conferido no navegador por estado e medidas (sem captura): os assuntos não estão mais no card dos Quadros, a vista abre pelo botão (319 px, a largura da linha), 2 temas marcados levam o texto ao campo com "(2 escolhidos)", digitar tira o "(2 escolhidos)" e, sem nada, o botão Preparar fica desativado.
+
 ## 6.13.10
 
 ### Adoração em Família: tempo do quadro Vídeo pela duração dos vídeos e "Objetivo da matéria"

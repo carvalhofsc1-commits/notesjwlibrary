@@ -3001,7 +3001,7 @@
       </details>
 
       <!-- 6.12.70: os quadros da programação (vista exclusiva, como a Família e as definições gerais): a lista dos quadros (os obrigatórios marcados e
-           travados; montada pelo app a partir de QUADROS_FAMILIA), o total ao vivo, os atalhos, os cânticos inicial e final, os 6 jogos aceitos e as circunstâncias. -->
+           travados; montada pelo app a partir de QUADROS_FAMILIA), o total ao vivo, os atalhos, os cânticos inicial e final, e os 6 jogos aceitos (6.13.11: os assuntos e situações saíram para a vista própria). -->
       <div id="familiaProgTopo" class="fam-topo fam-perfil-topo" hidden>
         <button id="familiaProgVoltar" class="secondary" type="button">◀ Voltar</button>
         <h2 class="fam-titulo"><span aria-hidden="true">🧩</span> Quadros da programação</h2>
@@ -3040,6 +3040,22 @@
             </details>
           </div>
 
+          <button id="familiaProgConcluir" class="secondary fam-perfil-concluir" type="button">✔ Concluir e voltar</button>
+        </div>
+      </details>
+
+      <!-- 6.13.11: Assuntos e situações abrangidas em vista própria (como os Quadros), aberta pelo botão "Escolha um tema ou assunto na lista…"
+           que fica sob o campo Assunto desta semana. O card não aparece na tela principal (só abre pela vista). -->
+      <div id="familiaAssuntosTopo" class="fam-topo fam-perfil-topo" hidden>
+        <button id="familiaAssuntosVoltar" class="secondary" type="button">◀ Voltar</button>
+        <h2 class="fam-titulo"><span aria-hidden="true">💛</span> Assuntos e situações abrangidas</h2>
+      </div>
+
+      <details id="familiaAssuntosBox" class="fam-perfil-box fam-assuntos-box">
+        <summary>
+          <span class="fam-perfil-titulo">💛 Assuntos e situações abrangidas</span>
+        </summary>
+        <div class="fam-perfil-corpo">
           <div class="fam-bloco">
             <h3 class="fam-bloco-titulo">💛 Assuntos e situações abrangidas</h3>
             <p class="hint fam-dica">Toque numa seção para abrir. Marque até 2 itens relacionados entre si (ao marcar um, só ficam liberados os que combinam com ele; alguns, como Luto, não combinam com nenhum). Em Qualidades cristãs e em Personagens bíblicos vale só 1 item. Sem assunto desta semana, é preciso marcar pelo menos um.</p>
@@ -3212,7 +3228,7 @@
             <textarea id="familiaOutrasCirc" class="fam-campo" rows="1" maxlength="500" spellcheck="true" placeholder="Ex.: mudança recente, pressão no trabalho…"></textarea>
           </div>
 
-          <button id="familiaProgConcluir" class="secondary fam-perfil-concluir" type="button">✔ Concluir e voltar</button>
+          <button id="familiaAssuntosConcluir" class="secondary fam-perfil-concluir" type="button">✔ Concluir e voltar</button>
         </div>
       </details>
 
@@ -3252,8 +3268,9 @@
 
       <div class="fam-bloco">
         <h3 class="fam-bloco-titulo">📝 Assunto desta semana</h3>
-        <label class="fam-rotulo" for="familiaAssunto">Assunto <span class="opc">(opcional)</span></label>
-        <textarea id="familiaAssunto" class="fam-campo" rows="1" maxlength="300" spellcheck="true" placeholder="Ex.: o perdão; a oração; o relato do filho pródigo. Vazio = a IA escolhe um assunto para a família."></textarea>
+        <label class="fam-rotulo" for="familiaAssunto">Assunto <span id="familiaAssuntoQtd" class="opc"></span></label>
+        <textarea id="familiaAssunto" class="fam-campo" rows="1" maxlength="300" spellcheck="true" placeholder="Escreva o assunto (ex.: o perdão; a oração; o relato do filho pródigo) ou escolha na lista abaixo."></textarea>
+        <button id="familiaAssuntosAbrir" class="secondary fam-fino fam-assuntos-btn" type="button">💛 Escolha um tema ou assunto na lista…</button>
       </div>
 
       <div class="fam-acoes">
