@@ -17428,15 +17428,15 @@ input[type="date"].fam-campo::-webkit-calendar-picker-indicator { margin: 0; pad
 #participarSessao details.fam-sessao-direcao > :not(summary) { margin: 8px 0 0; }
 #participarSessao details.fam-sessao-direcao > button { width: 100%; }
 /* 6.12.36: tela de boas-vindas (celular e tela grande): emojis, tema, quem participa e o programa com o tempo na frente. */
-#participarSessao .fam-boasvindas { margin: 0 0 12px; padding: 14px 12px; border: 1px solid var(--accent); box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent); border-radius: 14px; background: linear-gradient(180deg, #eaf3ff, #f1eefc); color: var(--text); text-align: center; min-width: 0; }
+#participarSessao .fam-boasvindas { margin: 0 0 12px; padding: 14px 12px; border: 1px solid var(--accent); box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent); border-radius: 14px; background: linear-gradient(180deg, #eaf3ff, #f1eefc); color: #1f2937; text-align: center; min-width: 0; } /* 6.12.82: o fundo é claro nos dois temas, então o texto é escuro fixo (com var(--text) ficava quase invisível no tema escuro) */
 #participarSessao .fam-boasvindas[hidden] { display: none; }
 #participarSessao .fam-boasvindas p { margin: 0; }
 #participarSessao .fam-bv-emojis { font-size: 1.6rem; letter-spacing: .15em; }
-#participarSessao .fam-bv-ola { margin-top: 4px; font-size: 1.05rem; font-weight: 700; color: color-mix(in srgb, #7c3aed 70%, var(--text)); }
+#participarSessao .fam-bv-ola { margin-top: 4px; font-size: 1.05rem; font-weight: 700; color: color-mix(in srgb, #7c3aed 70%, #1f2937); }
 #participarSessao .fam-bv-tema { margin: 8px 0 4px; font-size: 1.4rem; font-weight: 800; line-height: 1.25; overflow-wrap: anywhere; }
 #participarSessao .fam-bv-objetivo { font-size: .92rem; opacity: .85; }
 #participarSessao .fam-bv-quem { margin-top: 10px; font-size: .95rem; overflow-wrap: anywhere; }
-#participarSessao .fam-bv-programa { margin-top: 14px; padding: 10px; border: 1px solid color-mix(in srgb, #7c3aed 40%, var(--line)); border-radius: 12px; background: var(--card); text-align: left; }
+#participarSessao .fam-bv-programa { margin-top: 14px; padding: 10px; border: 1px solid color-mix(in srgb, #7c3aed 40%, var(--line)); border-radius: 12px; background: var(--card); color: var(--text); text-align: left; } /* 6.12.82: o quadro do programa segue o tema (o cartão em volta tem texto escuro fixo) */
 #participarSessao .fam-bv-programa-titulo { margin: 0 0 6px; font-weight: 800; text-align: center; }
 #participarSessao .fam-bv-lista { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
 #participarSessao .fam-bv-lista li { display: grid; grid-template-columns: 4.2em minmax(0, 1fr); gap: 8px; align-items: baseline; padding: 4px 0; border-bottom: 1px solid var(--line); }

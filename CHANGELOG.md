@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.82
+
+- **Adoração em família ao vivo, tema escuro:** no cartão de boas-vindas (fundo claro nos dois temas), o título da noite, o resumo e "Quem participa" ficavam com texto claro sobre fundo claro, quase invisíveis. O texto do cartão agora é escuro fixo e o quadro "Programa" dentro dele continua seguindo o tema.
+
 ## 6.12.81
 
 ### Adoração em Família por quadros: acentuação e siglas curtas (achados no teste com o Gemini)
