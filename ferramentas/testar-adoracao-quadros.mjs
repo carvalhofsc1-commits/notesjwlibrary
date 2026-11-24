@@ -354,7 +354,7 @@ teste("formatos (zod): plano e cada quadro aceitam uma saída de exemplo e recus
     principio: { descricao: "d", escolha: "PR1" },
     personagem: { nome: "José", referencia: "Gên 45:1-15", descricao: "d", escolha: null, verbete: "José" },
     jesus: { episodio: "O filho pródigo", referencia: "Lu 15:11-32", qualidade: "misericórdia", descricao: "d", escolha: "L1", perguntas: [] },
-    video: { descricao: "d", videos: ["V1"], perguntas: ["p"] },
+    video: { descricao: "d", videos: ["V1"], objetivos: ["Ver x"], perguntas: ["p"] },
     criador: { descricao: "d", escolha: "A1", perguntas: ["p"] },
     saiba: { pergunta: "Deus se importa?", descricao: "d", escolha: "L1", verbete: null, textos: ["1Pe 5:7"] },
     ministerio: { cenario: "Uma pessoa diz que não tem tempo", descricao: "d", escolha: null, perguntas: ["p"] },
@@ -1897,7 +1897,7 @@ teste("6.13.10: tempo do quadro Vídeo pela duração dos vídeos e \"Objetivo d
   assert.equal(mins(240, 2), 10);
   assert.ok(servidorJs.includes("const minutosVideo = Math.max(ctx.quadro.minutos, Math.ceil((segundosVideos / 60 + perguntasVideo.length) / 5) * 5);"));
   assert.ok(servidorJs.includes("return { minutos: minutosVideo,"));
-  assert.ok(servidorJs.includes("if (montado.leitura && montado.leitura.texto && !montado.leitura.objetivo) await perguntarLeituraFamilia(montado.leitura, [], 0);"));
+  assert.ok(servidorJs.includes("if (QUADROS_COM_OBJETIVO_DA_MATERIA.includes(id) && montado.leitura && montado.leitura.texto && !montado.leitura.objetivo) await perguntarLeituraFamilia(montado.leitura, [], 0);"));
   assert.ok(servidorJs.includes("if (objetivo) leitura.objetivo = objetivo;"));
   assert.ok(servidorJs.includes("export const SaidaRevisaoLeitura = z.object({ objetivo: z.string(), perguntas: z.array(z.string()) });"));
   assert.match(prompts.PARTES.find((x) => x.id === "adoracao_q_revisao").padrao, /"objetivo": UMA frase/);
@@ -1918,6 +1918,26 @@ teste("6.13.11: assuntos em vista própria pelo botão sob o Assunto, temas no c
   assert.ok(appJs.includes("qtd.textContent = n ? '(' + n + (n === 1 ? ' escolhido)' : ' escolhidos)') : '';"));
   assert.ok(appJs.includes("familiaGerarBtn.disabled = !ok;"));
   assert.ok(appJs.includes("familiaAssuntosLimpar(); // 6.13.11"));
+});
+
+teste("6.13.12: objetivo começando por verbo, só na Abertura, Personagem, Jesus e Criador, e um objetivo antes de cada vídeo", async () => {
+  const prompts = await import(new URL("api/_prompts.mjs", raiz));
+  const rev = prompts.PARTES.find((x) => x.id === "adoracao_q_revisao").padrao;
+  assert.match(rev, /começando DIRETO por um verbo no infinitivo/);
+  assert.ok(!/"Considerem esta matéria, que vai ajudá-los a ver…" ou/.test(rev));
+  assert.match(prompts.PARTES.find((x) => x.id === "adoracao_q_video").padrao, /"objetivos": um para cada vídeo/);
+  assert.ok(servidorJs.includes('const QUADROS_COM_OBJETIVO_DA_MATERIA = Object.freeze(["abertura", "personagem", "jesus", "criador"]);'));
+  assert.ok(servidorJs.includes("objetivos: z.array(z.string())"));
+  assert.ok(servidorJs.includes("return v ? { ...v, objetivo: objetivoDoVideo(i) } : null;"));
+  assert.ok(sessaoJs.includes("objetivo: texto(v.objetivo, 300)"));
+  assert.ok(appJs.includes("rot.textContent = 'Objetivo do vídeo:';"));
+  // montar do Vídeo: o objetivo segue o vídeo certo
+  const { montarPedidoQuadroFamilia } = await import(new URL("api/sugerir-formatacao.mjs", raiz));
+  const corpo = { formacao: "Casal com filhos", membros: [{ papel: "Pai", idade: 40 }], quadros: ["abertura", "video"], quadro: "video", assunto: "perdão", angulo: "x" };
+  const v = await montarPedidoQuadroFamilia(corpo, montados);
+  if (!v.prep.contagens.videos) return console.log("      (sem catálogo de vídeos: montar pulado)");
+  const p = await v.prep.montar({ descricao: "d", videos: ["V1"], objetivos: ["Ver como perdoar de coração"], perguntas: ["a?"] });
+  assert.equal(p.videos[0].objetivo, "Ver como perdoar de coração");
 });
 
 for (const [nome, fn] of testes) {

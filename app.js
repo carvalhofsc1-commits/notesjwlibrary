@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.13.11'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.13.12'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -27214,6 +27214,15 @@ function saveTemplatesToStorage() {
       }
       addLista('🎬 Vídeos', parte.videos, (li, v, idx) => {
         if (aoVivo && aoVivo.video) li.classList.add('fam-video-moldura'); // ao vivo: cada vídeo (link, reproduzir e transcrição) numa moldura roxa clara
+        // 6.13.12: antes de cada vídeo, o objetivo dele ("Ver…", "Entender…")
+        if (v.objetivo) {
+          const obj = document.createElement('p');
+          obj.className = 'fam-leitura-objetivo';
+          const rot = document.createElement('strong');
+          rot.textContent = 'Objetivo do vídeo:';
+          obj.append(rot, ' ' + v.objetivo);
+          li.appendChild(obj);
+        }
         if (v.link) {
           const a = document.createElement('a');
           a.href = v.link;
@@ -27222,7 +27231,7 @@ function saveTemplatesToStorage() {
           a.className = 'fam-link-moldura'; // 6.12.92: também os links dos vídeos, na moldura fininha, com o texto centralizado
           a.textContent = (v.titulo || 'Vídeo') + (v.duracao ? ' (' + v.duracao + ')' : '') + (aoVivo && aoVivo.video ? ' ↗ jw.org' : '');
           li.appendChild(a);
-        } else li.textContent = v.titulo || 'Vídeo';
+        } else li.appendChild(document.createTextNode(v.titulo || 'Vídeo')); // sem apagar o objetivo
         if (aoVivo && aoVivo.video) aoVivo.video(li, v, idx);
       });
       addLista('🎵 Cânticos', parte.canticos, (li, c, idx) => {

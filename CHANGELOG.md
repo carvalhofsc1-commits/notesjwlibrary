@@ -2,6 +2,14 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.12
+
+### Adoração em Família: objetivo começando pelo verbo, só em alguns quadros, e um objetivo antes de cada vídeo
+
+- O "Objetivo da matéria" agora começa direto pelo verbo ("Ver a importância da perseverança no trabalho de pregação", "Entender como…"), sem "Considerem esta matéria…".
+- Aparece só na **Abertura**, no **Personagem do dia**, em **Lições da vida de Jesus** e em **Fé no Criador** (saiu do Princípio bíblico, do Saiba responder e do Ame o ministério).
+- **Vídeo:** antes de cada vídeo aparece "**Objetivo do vídeo:** Ver…", escrito pela IA junto com a escolha dos vídeos (um por vídeo, na mesma ordem). Vale também na adoração compartilhada.
+
 ## 6.13.11
 
 ### Adoração em Família: escolha do assunto pela lista, botão só com assunto e tudo limpo depois de preparar

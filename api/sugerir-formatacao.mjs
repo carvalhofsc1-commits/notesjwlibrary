@@ -3100,7 +3100,7 @@ export const SAIDAS_QUADRO_FAMILIA = {
   principio: z.object({ descricao: z.string(), escolha: z.string().nullable() }),
   personagem: z.object({ nome: z.string(), referencia: z.string(), descricao: z.string(), escolha: z.string().nullable(), verbete: z.string().nullable() }),
   jesus: z.object({ episodio: z.string(), referencia: z.string(), qualidade: z.string(), descricao: z.string(), escolha: z.string().nullable(), perguntas: z.array(z.string()) }),
-  video: z.object({ descricao: z.string(), videos: z.array(z.string()), perguntas: z.array(z.string()) }),
+  video: z.object({ descricao: z.string(), videos: z.array(z.string()), objetivos: z.array(z.string()), perguntas: z.array(z.string()) }),
   criador: z.object({ descricao: z.string(), escolha: z.string().nullable(), perguntas: z.array(z.string()) }),
   saiba: z.object({ pergunta: z.string(), descricao: z.string(), escolha: z.string().nullable(), verbete: z.string().nullable(), textos: z.array(z.string()) }),
   ministerio: z.object({ cenario: z.string(), descricao: z.string(), escolha: z.string().nullable(), perguntas: z.array(z.string()) }),
@@ -3389,6 +3389,8 @@ const MIN_VERSOS_EPISODIO = 3;
 // Jogos de pergunta e resposta: as regras quando a IA não as escreveu.
 const REGRAS_PADRAO_JOGO = "Quem dirige mostra uma rodada por vez; quem acertar primeiro marca um ponto. Depois de cada rodada, leiam a resposta e o texto bíblico.";
 
+// 6.13.12: os quadros em que a matéria lida leva o "Objetivo da matéria" (no quadro Vídeo, cada vídeo tem o seu objetivo).
+const QUADROS_COM_OBJETIVO_DA_MATERIA = Object.freeze(["abertura", "personagem", "jesus", "criador"]);
 // 6.13.03: os formatos do quadro Vídeo, alternados de uma noite para outra.
 const FORMATOS_VIDEO_FAMILIA = Object.freeze([
   "DOIS VÍDEOS CURTOS que se completem, ligados ao ângulo (somando até 15 minutos).",
@@ -3583,7 +3585,9 @@ const PREPARAR_QUADRO_FAMILIA = {
       listas: listas + (videos.length ? `\nFORMATO DESTA NOITE: ${formato}\n` : ""),
       contagens: { videos: videos.length, evitados: todos.length - novos.length },
       async montar(o) {
-        let lista = semRepetirFamilia((o.videos || []).map((c) => videoDaLista(videos, c)), (v) => v.link).slice(0, 2);
+        // 6.13.12: cada vídeo leva o seu objetivo ("Ver…", "Entender…"), escrito pela IA na mesma ordem de "videos".
+        const objetivoDoVideo = (i) => limparTextoGerado(String((Array.isArray(o.objetivos) ? o.objetivos[i] : "") || ""), 300);
+        let lista = semRepetirFamilia((o.videos || []).map((c, i) => { const v = videoDaLista(videos, c); return v ? { ...v, objetivo: objetivoDoVideo(i) } : null; }), (v) => v.link).slice(0, 2);
         if (!lista.length && videos.length) {
           const citados = [...String(o.descricao || "").matchAll(/\[?V\s*(\d{1,3})\]?(?![\p{L}\d])/giu)].map((m) => videoDaLista(videos, m[0]));
           lista = semRepetirFamilia(citados, (v) => v.link).slice(0, 2);
@@ -4097,7 +4101,9 @@ async function gerarQuadroFamilia(res, body, P) {
       const { contagens, memoria, falta, trocarTipo, ...montado } = await pd.prep.montar(resposta.parsed_output);
       // 6.13.10: toda matéria para ler leva o "Objetivo da matéria" (por que foi escolhida, ligado ao tema); a Abertura e o Criador já o recebem
       // junto com as perguntas de revisão.
-      if (montado.leitura && montado.leitura.texto && !montado.leitura.objetivo) await perguntarLeituraFamilia(montado.leitura, [], 0);
+      // 6.13.12: só na Abertura, no Personagem do dia, em Lições da vida de Jesus e em Fé no Criador (pedido do usuário).
+      if (QUADROS_COM_OBJETIVO_DA_MATERIA.includes(id) && montado.leitura && montado.leitura.texto && !montado.leitura.objetivo) await perguntarLeituraFamilia(montado.leitura, [], 0);
+      if (montado.leitura && !QUADROS_COM_OBJETIVO_DA_MATERIA.includes(id)) delete montado.leitura.objetivo;
       const parte = {
         nome: quadro.nome,
         minutos: quadro.minutos,
