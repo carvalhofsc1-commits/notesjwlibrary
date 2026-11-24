@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.12.92'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.12.93'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -26974,7 +26974,7 @@ function saveTemplatesToStorage() {
         d.textContent = parte.descricao;
         bloco.appendChild(d);
       }
-      const addLista = (titulo, itens, montar) => {
+      const addLista = (titulo, itens, montar, classe) => {
         if (!itens || !itens.length) return;
         const t = document.createElement('p');
         t.className = 'fam-secao-titulo';
@@ -26988,7 +26988,7 @@ function saveTemplatesToStorage() {
         });
         // 6.12.25: cada seção (Textos, Vídeos, Cânticos, Perguntas…) num bloco, separado do anterior por uma linha fina.
         const secao = document.createElement('div');
-        secao.className = 'fam-secao-bloco';
+        secao.className = 'fam-secao-bloco' + (classe ? ' ' + classe : '');
         secao.append(t, ul);
         bloco.appendChild(secao);
       };
@@ -27005,7 +27005,7 @@ function saveTemplatesToStorage() {
         montarLeitura();
         if (nPerguntasLeitura) addLista('❓ Perguntas sobre a matéria', parte.perguntas.slice(0, nPerguntasLeitura), montarPerguntaItem);
       }
-      addLista('📖 Textos', parte.textos, (li, t) => {
+      addLista('📖 Textos para considerar', parte.textos, (li, t) => {
         if (aoVivo && aoVivo.texto) {
           // Ao vivo: ▶️ áudio do texto (botão fino) na mesma linha, antes do texto; referência em negrito e o texto entre aspas, em itálico.
           li.classList.add('fam-texto-item'); // 6.12.03: uma linha em branco entre um texto e outro
@@ -27026,7 +27026,7 @@ function saveTemplatesToStorage() {
           span.textContent = ' — ' + t.texto;
           li.appendChild(span);
         }
-      });
+      }, 'fam-secao-textos'); // 6.12.93: uma linha em branco entre o rótulo "Textos para considerar" e o primeiro texto
       // 6.12.48: a leitura de um trecho de uma matéria (os parágrafos que o servidor leu no wol.jw.org).
       // 6.12.85: na Abertura (leitura.primeiro) a matéria vem antes do relato bíblico; nas outras atividades, depois dos textos.
       if (!(parte.leitura && parte.leitura.primeiro)) montarLeitura();
@@ -28293,7 +28293,7 @@ function saveTemplatesToStorage() {
         const botao = document.createElement('button');
         botao.type = 'button';
         botao.className = 'secondary fam-audio-btn';
-        botao.dataset.rotulo = trechos.length > 1 ? '▶️ áudio: ' + t.rotulo : '▶️ áudio do texto';
+        botao.dataset.rotulo = trechos.length > 1 ? '▶️ áudio do JW: ' + t.rotulo : '▶️ áudio do texto do JW';
         botao.textContent = botao.dataset.rotulo;
         botao.title = 'Toca só ' + t.rotulo + ' (áudio da jw.org)';
         botao.setAttribute('aria-pressed', 'false');

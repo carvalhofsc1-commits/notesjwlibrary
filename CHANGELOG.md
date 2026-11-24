@@ -2,6 +2,13 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.93
+
+### Adoração em Família: rótulos dos textos bíblicos e do áudio
+
+- O botão de áudio do versículo agora diz "▶️ áudio do texto do JW" (com mais de um trecho, "▶️ áudio do JW: Salmo 65:2").
+- O rótulo "📖 Textos" virou "📖 Textos para considerar", com uma linha em branco entre ele e o primeiro texto.
+
 ## 6.12.92
 
 ### Adoração em Família: título nos dois lugares, links de matéria padronizados e textos ajustados
