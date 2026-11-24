@@ -16945,8 +16945,10 @@ button.secondary.fam-atalho-ativo { background: color-mix(in srgb, #3b82f6 18%, 
 .fam-trocar-painel[hidden] { display: none; }
 .fam-trocar-rotulo { font-size: .88rem; font-weight: 600; }
 .fam-trocar-instrucao { width: 100%; min-width: 0; box-sizing: border-box; resize: vertical; }
-.fam-trocar-painel .fam-acoes > .fam-trocar-ir { flex: 1 1 100%; width: 100%; margin: 0; }
-.fam-trocar-painel .fam-acoes > .fam-trocar-cancelar { flex: 1 1 100%; width: 100%; margin: 0; min-height: 40px; } /* 6.13.24: Cancelar na linha de baixo, na largura toda */
+/* 6.13.25: o botão principal e o Cancelar (só o ✖️, bem menor) na mesma linha; o principal cresce e ocupa o resto */
+.fam-trocar-painel .fam-acoes { display: flex; flex-wrap: nowrap; align-items: stretch; gap: 6px; }
+.fam-trocar-painel .fam-acoes > .fam-trocar-ir { flex: 1 1 auto; width: auto; min-width: 0; margin: 0; }
+.fam-trocar-painel .fam-acoes > .fam-trocar-cancelar { flex: 0 0 48px; width: 48px; min-width: 48px; margin: 0; padding: 0; min-height: 40px; display: inline-flex; align-items: center; justify-content: center; font-size: 1rem; }
 /* Mensagem de teto de gastos atingido (6.11.07): letras vermelhas, moldura ao redor e sem negrito. */
 :is(#sv#sv, .msg-teto) {
   display: block;

@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.25
+
+### Adoração em Família: Cancelar ao lado do botão principal
+
+- Nos painéis "➕ Adicionar atividade" e "🔄 Trocar este quadro", o Cancelar virou um botão só com o ✖️ (48 px), na mesma linha do "Adicionar agora" ou do "Trocar agora", que crescem e ocupam o resto da linha.
+
 ## 6.13.24
 
 ### Adoração em Família: botão Cancelar nos painéis de adicionar e trocar
