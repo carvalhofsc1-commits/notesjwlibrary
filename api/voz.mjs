@@ -134,8 +134,8 @@ export default async function handler(req, res) {
   if (!texto) return erro(res, 400, "Não há texto para ler.");
   if (texto.length > MAX_CARACTERES) return erro(res, 400, `Trecho grande demais (máximo de ${MAX_CARACTERES} caracteres por parte).`);
 
-  if (!exemplo && uso === "familia" && !(await textoDaSessaoParaLer(body.sessao, texto))) {
-    return erro(res, 403, "Esta leitura vale só para as perguntas de uma adoração em andamento.");
+  if (!exemplo && uso === "familia" && !(await textoDaSessaoParaLer(body.sessao, texto, body.origem))) {
+    return erro(res, 403, "Esta leitura vale só para os textos de uma adoração em andamento.");
   }
 
   if (!exemplo && uso === "texto-diario") {

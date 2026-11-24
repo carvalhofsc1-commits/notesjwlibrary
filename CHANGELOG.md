@@ -2,6 +2,13 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.88
+
+### Adoração em Família: perguntas logo depois de cada leitura e 🔊 só ícone em todos os campos de texto
+
+- **Leitura e, em seguida, as perguntas dela:** na Abertura a ordem agora é matéria, perguntas sobre a matéria, relato bíblico e perguntas sobre o relato (antes as perguntas ficavam todas no fim). O servidor marca quantas das primeiras perguntas são da leitura (`perguntasLeitura`) e a sessão compartilhada guarda essa marca. Programações já geradas continuam como estavam.
+- **🔊 como ícone, não botão largo:** o botão largo da 6.12.86 virou o ícone pequeno 🔊 no alto do campo, como nas perguntas. Está no "Trecho para considerar", no "Exibir a matéria na tela", na transcrição do vídeo e na letra do cântico. Lê pedaço por pedaço, pela voz do Google, sem código e sem créditos; o servidor só lê pedaços que estão no texto que a programação aponta (parte, tipo e posição em `origem`).
+
 ## 6.12.87
 
 ### Adoração em Família: o motivo de "🔄 Trocar agora" não andar aparece junto do botão

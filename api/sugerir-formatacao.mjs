@@ -3352,7 +3352,8 @@ const PREPARAR_QUADRO_FAMILIA = {
         }
         const relato = o.relato && typeof o.relato === "object" ? o.relato : null;
         const textos = relato ? await textosBiblicosFamilia([relato.referencia], 1) : [];
-        const perguntas = [...perguntasLimpas(o.perguntasLeitura, 3), ...(textos.length ? perguntasLimpas(relato.perguntas, 2) : [])];
+        const daLeitura = leitura ? perguntasLimpas(o.perguntasLeitura, 3) : [];
+        const perguntas = [...daLeitura, ...(textos.length ? perguntasLimpas(relato.perguntas, 2) : [])];
         // 6.12.73: a memória guarda o artigo ou o trecho lido e o relato bíblico, para a próxima noite não repetir.
         const memoria = {};
         if (docId) memoria.artigos = [docId];
@@ -3360,7 +3361,8 @@ const PREPARAR_QUADRO_FAMILIA = {
         if (textos.length) memoria.relatos = [textos[0].referencia];
         // 6.12.85: na Abertura a matéria vem primeiro e o relato bíblico depois (marca "primeiro" na leitura).
         if (leitura) leitura.primeiro = true;
-        return { descricao: descricaoFamilia(o.descricao), leitura, textos, perguntas, memoria, contagens: { artigoLido } };
+        // 6.12.88: leitura, logo as perguntas dela, depois o relato e as perguntas dele (perguntasLeitura = quantas das primeiras são da leitura).
+        return { descricao: descricaoFamilia(o.descricao), leitura, textos, perguntas, perguntasLeitura: daLeitura.length, memoria, contagens: { artigoLido } };
       },
     };
   },

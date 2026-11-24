@@ -141,7 +141,7 @@ const versaoDe = (e, qtd) => (qtd == null ? String(e.versao || 0) : `${e.versao 
 // 6.12.02: leitura em voz alta (Google) para quem está numa adoração compartilhada. api/voz.mjs (uso "familia") chama esta função:
 // vale só para a sessão que existe e só para o texto que a própria programação tem (as perguntas) ou a palavra "Pergunta".
 // Quem tem o código da adoração não precisa de código de leitura nem gasta créditos: o custo é do app.
-export async function textoDaSessaoParaLer(codigo, texto) {
+export async function textoDaSessaoParaLer(codigo, texto, origem = null) {
   const cod = codigoLimpo(codigo);
   if (!cod || !blobConfigurado()) return false;
   const lido = String(texto || "").trim();
@@ -156,7 +156,45 @@ export async function textoDaSessaoParaLer(codigo, texto) {
     const linhas = String(l.texto || "").split(/\r?\n/).map((x) => x.replace(/^##\s+/, "").trim());
     return [String(l.titulo || "").trim(), ...linhas].includes(lido.replace(/^##\s+/, ""));
   };
-  return programa.partes.some((p) => p && ((Array.isArray(p.perguntas) && p.perguntas.some((q) => String(q).trim() === lido)) || daLeitura(p)));
+  if (programa.partes.some((p) => p && ((Array.isArray(p.perguntas) && p.perguntas.some((q) => String(q).trim() === lido)) || daLeitura(p)))) return true;
+  // 6.12.88: textos que o servidor abre sob demanda (matéria na tela, transcrição do vídeo, letra do cântico): o pedaço lido tem de estar no texto
+  // que a programação aponta (parte, tipo e posição vêm em "origem").
+  const o = origem && typeof origem === "object" ? origem : null;
+  if (!o || lido.length > 2500) return false;
+  const parte = Number(o.parte);
+  const indice = Number(o.indice);
+  const p = Number.isInteger(parte) && Number.isInteger(indice) ? programa.partes[parte] : null;
+  if (!p) return false;
+  const norm = (s) => String(s || "").replace(/\s+/g, " ").trim();
+  let fonte = "";
+  try {
+    if (o.tipo === "video") {
+      const v = (p.videos || [])[indice];
+      fonte = v && v.link ? (await dadosDoVideo(v.link))?.texto : "";
+    } else if (o.tipo === "cantico") {
+      const c = (p.canticos || [])[indice];
+      fonte = c ? (await dadosDoCantico(c.numero))?.texto : "";
+    } else if (o.tipo === "materia") {
+      const pub = (p.publicacoes || [])[indice];
+      const artigo = pub ? await lerMateriaDaPublicacao(pub) : null;
+      fonte = artigo ? `${artigo.titulo}\n${artigo.texto}`.replace(/^##\s+/gm, "") : "";
+    }
+  } catch {
+    return false;
+  }
+  const alvo = norm(lido.replace(/^##\s+/gm, ""));
+  return Boolean(alvo) && norm(fonte).includes(alvo);
+}
+
+// O texto de uma publicação citada na parte: o endereço do wol da própria publicação ou o primeiro resultado da pesquisa pelo nome dela.
+async function lerMateriaDaPublicacao(pub) {
+  let url = /^https:\/\/wol\.jw\.org\/pt\/wol\/d\/r5\/lp-t\/\d{5,12}/i.test(String(pub.url || "")) ? pub.url.split("#")[0] : "";
+  if (!url) {
+    const achados = await pesquisarNoWol([pub.titulo, pub.fonte].filter(Boolean).join(" ").replace(/[()]/g, " "), 8000, 1).catch(() => []);
+    url = achados[0] && achados[0].url ? achados[0].url : "";
+  }
+  const artigo = url ? await lerArtigoDoWol(url, { timeoutMs: 9000, maxCaracteres: 6000 }).catch(() => null) : null;
+  return artigo && artigo.texto ? { titulo: artigo.titulo || pub.titulo, texto: artigo.texto, url: artigo.url || url } : null;
 }
 
 // ---------- Vídeo da parte: o MP4 para tocar e a transcrição (legenda publicada), guardados 6 h por vídeo ----------
@@ -223,6 +261,8 @@ function limparPrograma(op) {
       canticos: lista(p.canticos, 6, (c) => (c && Number.isInteger(Number(c.numero)) ? { numero: Number(c.numero), titulo: texto(c.titulo, 150) } : null)),
       publicacoes: lista(p.publicacoes, 8, (u) => (u && typeof u === "object" ? { titulo: texto(u.titulo, 200), fonte: texto(u.fonte, 120), url: /^https:\/\//i.test(String(u.url || "")) ? texto(u.url, 500) : "" } : null)),
       perguntas: lista(p.perguntas, 15, (q) => texto(q, 500)),
+      // 6.12.88: quantas das primeiras perguntas são da leitura (vêm logo depois dela, antes dos textos bíblicos).
+      perguntasLeitura: Math.max(0, Math.min(15, Math.round(Number(p.perguntasLeitura) || 0))),
       // 6.12.48: o trecho da matéria que o servidor leu no wol para a leitura da atividade.
       leitura: p.leitura && typeof p.leitura === "object" && texto(p.leitura.texto, 4000)
         ? { titulo: texto(p.leitura.titulo, 200), fonte: texto(p.leitura.fonte, 240).replace(/\s+/g, " "), primeiro: p.leitura.primeiro === true, paragrafos: texto(p.leitura.paragrafos, 20), texto: texto(p.leitura.texto, 4000), rotulo: texto(p.leitura.rotulo, 80), url: /^https:\/\/wol\.jw\.org\//i.test(String(p.leitura.url || "")) ? texto(p.leitura.url, 500) : "" }
@@ -435,14 +475,9 @@ export default async function handler(req, res) {
       const pub = programa && Number.isInteger(parte) && Number.isInteger(indice) && programa.partes && programa.partes[parte] && (programa.partes[parte].publicacoes || [])[indice];
       if (!pub) return erro(res, 404, "Essa matéria não está nesta programação.");
       if (!(estado.liberadas || []).includes(parte) && !(await ehDirigente())) return erro(res, 403, "Esta parte ainda não foi liberada pelo dirigente.");
-      let url = /^https:\/\/wol\.jw\.org\/pt\/wol\/d\/r5\/lp-t\/\d{5,12}/i.test(String(pub.url || "")) ? pub.url.split("#")[0] : "";
-      if (!url) {
-        const achados = await pesquisarNoWol([pub.titulo, pub.fonte].filter(Boolean).join(" ").replace(/[()]/g, " "), 8000, 1).catch(() => []);
-        url = achados[0] && achados[0].url ? achados[0].url : "";
-      }
-      const artigo = url ? await lerArtigoDoWol(url, { timeoutMs: 9000, maxCaracteres: 6000 }).catch(() => null) : null;
-      if (!artigo || !artigo.texto) return erro(res, 502, "Não consegui abrir a matéria agora. Use o link para ler no wol.jw.org.");
-      return res.status(200).json({ titulo: artigo.titulo || pub.titulo, texto: artigo.texto, url: artigo.url || url });
+      const artigo = await lerMateriaDaPublicacao(pub);
+      if (!artigo) return erro(res, 502, "Não consegui abrir a matéria agora. Use o link para ler no wol.jw.org.");
+      return res.status(200).json(artigo);
     }
 
     // ----- assumir: troca o código do dirigente (passado por quem dirige) por uma chave nova neste aparelho -----

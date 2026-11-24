@@ -4340,7 +4340,7 @@
         : uso === 'leitura'
           ? { codigoLeitura: codigoLeituraSalvo(), texto, uso }
           : uso === 'familia'
-          ? { sessao: participar.cod, texto, uso } // 6.12.02: quem tem o código da adoração lê sem código de leitura e sem gastar créditos (custo do app)
+          ? { sessao: participar.cod, texto, uso, origem: extras && extras.origem } // 6.12.02: quem tem o código da adoração lê sem código de leitura e sem gastar créditos (custo do app)
           : uso === 'texto-diario'
           ? {
               codigo: codigoAcessoSalvo(),
@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.12.87'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.12.88'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -26989,7 +26989,18 @@ function saveTemplatesToStorage() {
         bloco.appendChild(secao);
       };
       // aoVivo (Adoração compartilhada, 6.11.56): { texto(li, t), video(li, v, indice) } acrescentam o áudio dos versículos e o vídeo com a transcrição.
-      if (parte.leitura && parte.leitura.primeiro) montarLeitura(); // 6.12.85: Abertura — a matéria antes do relato bíblico
+      // 6.12.88: regra — uma leitura e, logo depois, as perguntas dela; nada de deixar todas as perguntas para o fim. Na Abertura: matéria, perguntas da matéria, relato e perguntas do relato.
+      const nPerguntasLeitura = parte.leitura && parte.leitura.primeiro ? Math.max(0, Math.min(Number(parte.perguntasLeitura) || 0, (parte.perguntas || []).length)) : 0;
+      const montarPerguntaItem = (li, q) => {
+        if (!aoVivo) { li.textContent = q; return; }
+        li.classList.add('fam-pergunta-moldura'); // ao vivo: cada pergunta numa moldura, em negrito
+        li.appendChild(participarPerguntaVozBotao(q)); // 🔊 pequeno no início: lê "Pergunta", pausa e lê a pergunta (voz do Google; reserva: voz do aparelho)
+        li.appendChild(document.createTextNode(q));
+      };
+      if (parte.leitura && parte.leitura.primeiro) { // 6.12.85: Abertura — a matéria antes do relato bíblico
+        montarLeitura();
+        if (nPerguntasLeitura) addLista('❓ Perguntas sobre a matéria', parte.perguntas.slice(0, nPerguntasLeitura), montarPerguntaItem);
+      }
       addLista('📖 Textos', parte.textos, (li, t) => {
         if (aoVivo && aoVivo.texto) {
           // Ao vivo: ▶️ áudio do texto (botão fino) na mesma linha, antes do texto; referência em negrito e o texto entre aspas, em itálico.
@@ -27040,7 +27051,7 @@ function saveTemplatesToStorage() {
         const linhas = parte.leitura.texto.split(/\n+/).map(x => x.trim()).filter(Boolean);
         if (aoVivo && aoVivo.leitura) {
           const pedacos = [parte.leitura.titulo, ...linhas.map(x => x.replace(/^##\s+/, ''))].filter(Boolean);
-          if (pedacos.length) lei.appendChild(aoVivo.leitura(pedacos));
+          if (pedacos.length) lt.prepend(aoVivo.leitura(pedacos)); // 6.12.88: só o ícone 🔊, no começo do título do campo
         }
         const det = document.createElement('details'); // sempre recolhido ao montar; abre ao tocar
         det.className = 'fam-leitura-trecho';
@@ -27101,17 +27112,12 @@ function saveTemplatesToStorage() {
         if (aoVivo && aoVivo.publicacao) aoVivo.publicacao(li, pub, idx); // ao vivo: 📖 Exibir a matéria na tela (recolhido)
       });
       // 6.12.44: ao vivo, atividade com textos bíblicos e sem perguntas (programação feita antes da regra) ganha duas perguntas simples sobre os textos.
-      let perguntasDaParte = parte.perguntas;
-      if (aoVivo && !(perguntasDaParte || []).length && (parte.textos || []).length) {
+      let perguntasDaParte = (parte.perguntas || []).slice(nPerguntasLeitura);
+      if (aoVivo && !perguntasDaParte.length && (parte.textos || []).length) {
         const refs = parte.textos.map(t => t.referencia).filter(Boolean);
         perguntasDaParte = [refs.length > 1 ? 'O que ' + refs.slice(0, 2).join(' e ') + ' nos ensinam?' : 'O que ' + (refs[0] || 'este texto') + ' nos ensina?', 'Como podemos aplicar isso na nossa vida esta semana?'];
       }
-      addLista('❓ Perguntas', perguntasDaParte, (li, q) => {
-        if (!aoVivo) { li.textContent = q; return; }
-        li.classList.add('fam-pergunta-moldura'); // ao vivo: cada pergunta numa moldura, em negrito
-        li.appendChild(participarPerguntaVozBotao(q)); // 🔊 pequeno no início: lê "Pergunta", pausa e lê a pergunta (voz do Google; reserva: voz do aparelho)
-        li.appendChild(document.createTextNode(q));
-      });
+      addLista(nPerguntasLeitura ? '❓ Perguntas sobre o relato' : '❓ Perguntas', perguntasDaParte, montarPerguntaItem);
       if (parte.jogo && jogoMontar) bloco.appendChild(jogoMontar(parte.jogo));
       else if (parte.jogo) bloco.appendChild(familiaJogoLocalMontar(parte.jogo)); // 6.12.77: uma questão por vez, resposta escondida e placar local
       if (parte.transicao) {
@@ -28119,13 +28125,16 @@ function saveTemplatesToStorage() {
     }
     // 6.12.86: 🔊 do trecho da matéria (campo "Trecho para considerar"): lê o título e cada parágrafo, um pedaço por vez, pela voz do Google
     // (uso "familia", sem código e sem créditos); o próximo pedaço já vai sendo preparado. Se o Google falhar, continua na voz do aparelho.
-    function participarLeituraVozBotao(pedacos) {
+    // 6.12.88: só o ícone 🔊 (pequeno, no alto do campo, como nas perguntas). origem (opcional): { tipo, parte, indice } dos textos que o servidor abre
+    // sob demanda (matéria na tela, transcrição, letra do cântico), para o servidor conferir que o pedaço é desse texto.
+    function participarLeituraVozBotao(pedacos, origem) {
       const botao = document.createElement('button');
       botao.type = 'button';
-      botao.className = 'secondary fam-fino fam-leitura-voz';
-      botao.dataset.rotulo = '🔊 Ouvir o trecho';
+      botao.className = 'secondary fam-pergunta-voz fam-leitura-voz';
+      botao.dataset.rotulo = '🔊';
       botao.textContent = botao.dataset.rotulo;
-      botao.title = 'Ouvir o trecho da matéria';
+      botao.title = 'Ouvir este texto';
+      botao.setAttribute('aria-label', 'Ouvir este texto');
       botao.setAttribute('aria-pressed', 'false');
       botao.addEventListener('click', () => {
         if (perguntaVoz.botao === botao) { perguntaVozParar(); return; }
@@ -28133,7 +28142,7 @@ function saveTemplatesToStorage() {
         participarAudioParar();
         document.querySelectorAll('#participarSessao video').forEach(v => v.pause());
         perguntaVoz.botao = botao;
-        botao.textContent = '⏹️ Parar';
+        botao.textContent = '⏹️';
         botao.setAttribute('aria-pressed', 'true');
         if (!perguntaVoz.el) perguntaVoz.el = new Audio();
         const el = perguntaVoz.el;
@@ -28164,11 +28173,12 @@ function saveTemplatesToStorage() {
           falar(0);
         };
         (async () => {
-          let proximo = vozBuscar(pedacos[0], null, 'familia');
+          const extras = origem ? { origem } : undefined;
+          let proximo = vozBuscar(pedacos[0], null, 'familia', extras);
           for (let i = 0; i < pedacos.length; i++) {
             const entrada = await proximo;
             if (!ativo()) return;
-            proximo = i + 1 < pedacos.length ? vozBuscar(pedacos[i + 1], null, 'familia') : null;
+            proximo = i + 1 < pedacos.length ? vozBuscar(pedacos[i + 1], null, 'familia', extras) : null;
             if (proximo) proximo.catch(() => { /* o erro aparece ao esperar por ele */ });
             await tocar(entrada);
             if (!ativo()) return;
@@ -28293,6 +28303,13 @@ function saveTemplatesToStorage() {
       const preencher = d => {
         carregada = true;
         texto.textContent = d.erro ? d.erro : (d.texto || (cantico ? 'A letra deste cântico não está disponível agora.' : 'Este vídeo não tem transcrição publicada.'));
+        // 6.12.88: 🔊 no alto do campo (transcrição ou letra), quando há texto
+        if (!d.erro && d.texto) {
+          const barra = document.createElement('div');
+          barra.className = 'fam-leitura-barra';
+          texto.prepend(barra);
+          participarVozNoCampo(barra, d.texto, { tipo: cantico ? 'cantico' : 'video', parte: i, indice: k });
+        }
       };
       const carregarTexto = async () => {
         if (carregada) return;
@@ -28376,6 +28393,7 @@ function saveTemplatesToStorage() {
         forte.textContent = dados.titulo || '';
         t.appendChild(forte);
         corpo.appendChild(t);
+        participarVozNoCampo(t, (dados.titulo || '') + '\n' + String(dados.texto || ''), { tipo: 'materia', parte: i, indice: k }); // 6.12.88: 🔊 no alto do campo
         String(dados.texto || '').split(/\n+/).filter(Boolean).forEach(par => {
           const pp = document.createElement('p');
           pp.className = 'fam-leitura-par';
@@ -28384,6 +28402,28 @@ function saveTemplatesToStorage() {
         });
       });
       li.appendChild(det);
+    }
+    // Divide um texto longo (matéria, transcrição, letra) em pedaços de até ~900 caracteres, cortando nas quebras de linha e, se preciso, no fim das frases.
+    function participarPedacosDoTexto(texto, max = 900) {
+      const saida = [];
+      let atual = '';
+      const empurrar = () => { if (atual.trim()) saida.push(atual.trim()); atual = ''; };
+      String(texto || '').split(/\n+/).map(l => l.trim()).filter(Boolean).forEach(linha => {
+        const frases = linha.length > max ? linha.match(/[^.!?…]+[.!?…]*["”’)]*\s*/g) || [linha] : [linha];
+        frases.forEach(f => {
+          if (atual && (atual + ' ' + f).length > max) empurrar();
+          atual = atual ? atual + ' ' + f.trim() : f.trim();
+        });
+        if (atual.length > max * 0.6) empurrar();
+      });
+      empurrar();
+      return saida;
+    }
+    // O ícone 🔊 no alto do campo de texto que o servidor abre sob demanda; ele se encaixa antes de `ancora`.
+    function participarVozNoCampo(ancora, texto, origem) {
+      const pedacos = participarPedacosDoTexto(texto);
+      if (!ancora || !pedacos.length) return;
+      ancora.prepend(participarLeituraVozBotao(pedacos, origem));
     }
     const participarMidia = i => ({ leitura: pedacos => participarLeituraVozBotao(pedacos), publicacao: (li, pub, k) => participarMateriaMidia(li, pub, k, i), texto: t => participarTextoMidia(t), video: (li, v, k) => participarVideoMidia(li, v, k, i), cantico: (li, c, k) => participarVideoMidia(li, c, k, i, true) });
 

@@ -1689,8 +1689,8 @@ teste("6.12.85: Abertura — matéria antes do relato e local exato da fonte (ca
   assert.ok(servidorJs.includes("if (leitura) leitura.primeiro = true;"));
   assert.ok(servidorJs.includes("fonte: localDoTrecho(l) || l.livro, paragrafos: l.numero"));
   assert.ok(sessaoJs.includes("primeiro: p.leitura.primeiro === true"));
-  assert.ok(appJs.includes("if (parte.leitura && parte.leitura.primeiro) montarLeitura();"));
-  assert.ok(appJs.indexOf("montarLeitura(); // 6.12.85") < appJs.indexOf("addLista('📖 Textos'"));
+  assert.ok(appJs.includes("if (parte.leitura && parte.leitura.primeiro) { // 6.12.85"));
+  assert.ok(appJs.indexOf("{ // 6.12.85: Abertura") < appJs.indexOf("addLista('📖 Textos'"));
 });
 
 teste("6.12.86: artigo da Abertura com dados da publicação, parágrafos e subtítulos, e botão de leitura do trecho", async () => {
@@ -1703,6 +1703,18 @@ teste("6.12.86: artigo da Abertura com dados da publicação, parágrafos e subt
   assert.ok(appJs.includes("leitura: pedacos => participarLeituraVozBotao(pedacos)"));
   assert.ok(appJs.includes("fam-leitura-par fam-leitura-sub"));
   assert.ok(appJs.includes("aoVivo.leitura(pedacos)"));
+});
+
+teste("6.12.88: perguntas da leitura logo depois dela; 🔊 só ícone nos campos de texto (matéria, transcrição, letra)", async () => {
+  assert.ok(servidorJs.includes("perguntasLeitura: daLeitura.length"));
+  assert.ok(sessaoJs.includes("perguntasLeitura: Math.max(0"));
+  assert.ok(sessaoJs.includes("textoDaSessaoParaLer(codigo, texto, origem = null)"));
+  assert.ok(appJs.includes("addLista('❓ Perguntas sobre a matéria'"));
+  assert.ok(appJs.indexOf("addLista('❓ Perguntas sobre a matéria'") < appJs.indexOf("addLista('📖 Textos'"));
+  assert.ok(appJs.includes("participarVozNoCampo(t, "));
+  assert.ok(appJs.includes("tipo: cantico ? 'cantico' : 'video'"));
+  const css = await readFile(new URL("app.css", raiz), "utf8");
+  assert.ok(!css.includes(".fam-leitura-voz { width: 100%"), "sem botão largo");
 });
 
 for (const [nome, fn] of testes) {
