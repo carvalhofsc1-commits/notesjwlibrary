@@ -2,6 +2,13 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.24
+
+### Adoração em Família: botão Cancelar nos painéis de adicionar e trocar
+
+- Os painéis "➕ Adicionar atividade" e "🔄 Trocar este quadro" ganharam **✖️ Cancelar**, na linha de baixo e na largura toda. Ele fecha o painel e limpa a instrução e o aviso.
+- Enquanto a IA prepara, o Cancelar não faz nada, porque o pedido já foi feito.
+
 ## 6.13.23
 
 ### Adoração em Família: tirar e adicionar atividades na programação
