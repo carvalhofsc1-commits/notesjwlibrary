@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.32
+
+### Adoração compartilhada: painel de participantes em roxo claro
+
+- O painel **👥 Quem está participando** ganhou fundo roxo claro e moldura roxa, para se destacar dos controles do presidente da reunião. As etiquetas dos nomes continuam brancas, com a borda roxa.
+
 ## 6.13.31
 
 ### Adoração compartilhada: painel "Quem está participando"
