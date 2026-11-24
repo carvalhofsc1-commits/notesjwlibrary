@@ -5,8 +5,9 @@
 // Ações (POST, campo "acao"): criar · entrar · estado · liberar · bloquear · sortear · revelar · passar-direcao · assumir · encerrar.
 // Arquivos em familia-sessoes/<CODIGO>/ (api/_blob.mjs):
 //  - programa.json      a programação SEM as respostas dos jogos (não muda depois de criada);
-//  - respostas.json     só o servidor lê: as respostas, o hash (SHA-256) das chaves do dirigente e os extras dele (preparação, tarefas, dica);
-//  - estado.json        só as ações do dirigente gravam: partes liberadas, sorteio, respostas reveladas e o número da versão;
+//  - respostas.json     só o servidor lê: as respostas e as referências das rodadas dos jogos (6.12.76), o hash (SHA-256) das chaves do
+//                       dirigente e os extras dele (preparação, tarefas, dica, a ordem certa do "Ordem e data");
+//  - estado.json        só as ações do dirigente gravam: partes liberadas, sorteio, respostas (e referências) reveladas e o número da versão;
 //  - participantes/<id>.json  um arquivo por participante (ninguém grava no arquivo do outro).
 // A chave do dirigente nunca é guardada em texto; a sessão vence depois de 48 horas sem uso e é apagada na próxima vez que alguém
 // tenta abri-la (ou quando outra sessão é criada).
@@ -123,6 +124,8 @@ function estadoPublico(e) {
     liberadas: Array.isArray(e.liberadas) ? e.liberadas : [],
     atual: Number.isInteger(e.atual) ? e.atual : null,
     reveladas: e.reveladas && typeof e.reveladas === "object" ? e.reveladas : {},
+    // 6.12.76: a referência das rodadas reveladas ({ parte: { rodada: "Livro c:v" } }); antes da revelação ela fica só em respostas.json.
+    referenciasReveladas: e.referenciasReveladas && typeof e.referenciasReveladas === "object" ? e.referenciasReveladas : {},
     dicas: e.dicas && typeof e.dicas === "object" ? e.dicas : {}, // quantas dicas de cada rodada já foram dadas: { parte: { rodada: n } }
     acertos: e.acertos && typeof e.acertos === "object" ? e.acertos : {}, // quem acertou cada rodada e quantos pontos ganhou: { parte: { rodada: { nome, pts } } }
     sorteio: e.sorteio || null,
@@ -192,9 +195,11 @@ export async function dadosDoCantico(numero) {
 // data", a ordem certa (jogo.ordem: [{ data, evento }]). A ordem é resposta: vai para respostas.json (extras.ordens, só quem dirige recebe) e sai
 // também do fim de "comoJogar", que é público. As programações antigas (sem esses campos) continuam iguais.
 const QUADRO_VALIDO = /^[a-z_]{2,40}$/;
+const ID_TIPO_VALIDO = /^[a-z_]{2,30}$/;
 const SUFIXO_ORDEM_CERTA = /\s*Ordem certa \(datas do Apêndice B[\s\S]*$/;
 function limparPrograma(op) {
   const respostas = {};
+  const referencias = {};
   const ordens = {};
   // Só as partes válidas, antes de numerar: o índice da parte é a chave das respostas dela.
   const brutas = (Array.isArray(op.partes) ? op.partes : []).filter((p) => p && typeof p === "object").slice(0, 30);
@@ -221,6 +226,9 @@ function limparPrograma(op) {
     if (j && typeof j === "object") {
       const rodadas = lista(j.rodadas, 60, (r) => (r && typeof r === "object" && texto(r.pergunta, 600) ? { pergunta: texto(r.pergunta, 600), resposta: texto(r.resposta, 600), referencia: texto(r.referencia, 120) } : null));
       if (rodadas.length) respostas[i] = rodadas.map((r) => r.resposta);
+      // 6.12.76: a referência de cada rodada também é resposta (no Complete o versículo e no Quem disse isso? ela entrega a resposta): vai
+      // para respostas.json e só chega a todos quando quem dirige revela a rodada (estado.referenciasReveladas).
+      if (rodadas.some((r) => r.referencia)) referencias[i] = rodadas.map((r) => r.referencia);
       const ordem = lista(j.ordem, 12, (o) => (o && typeof o === "object" && texto(o.evento, 300) ? { data: texto(o.data, 40), evento: texto(o.evento, 300) } : null));
       if (ordem.length) ordens[i] = ordem;
       parte.jogo = {
@@ -228,9 +236,11 @@ function limparPrograma(op) {
         nome: texto(j.nome, 160),
         comoJogar: texto(ordem.length ? String(j.comoJogar || "").replace(SUFIXO_ORDEM_CERTA, "") : j.comoJogar, 3000),
         material: texto(j.material, 600),
-        rodadas: rodadas.map((r) => ({ pergunta: r.pergunta, referencia: r.referencia })),
+        rodadas: rodadas.map((r) => ({ pergunta: r.pergunta })),
         itens: lista(j.itens, 80, (t) => texto(t, 600)),
       };
+      // 6.12.76: o identificador fixo do tipo do jogo (quem_sou_eu, verdadeiro_falso, ordem_data, quem_disse, complete_versiculo, abreviacoes).
+      if (ID_TIPO_VALIDO.test(String(j.idTipo || ""))) parte.jogo.idTipo = String(j.idTipo);
     }
     return parte;
   });
@@ -249,7 +259,7 @@ function limparPrograma(op) {
     // 6.12.70: o FunPlayB saiu (extras.funplayb não é mais guardado; programações antigas com ele continuam sendo compartilhadas sem esse extra).
   };
   if (Object.keys(ordens).length) extras.ordens = ordens; // { índice da parte: [{ data, evento }] } (só quem dirige)
-  return { programa, respostas, extras };
+  return { programa, respostas, referencias, extras };
 }
 
 // ---------- Handler ----------
@@ -280,7 +290,7 @@ export default async function handler(req, res) {
       const op = corpo.programa;
       if (!op || typeof op !== "object" || !Array.isArray(op.partes) || !op.partes.length) return erro(res, 400, "Programação inválida.");
       if (JSON.stringify(op).length > MAX_PROGRAMA) return erro(res, 413, "A programação é grande demais para compartilhar.");
-      const { programa, respostas, extras } = limparPrograma(op);
+      const { programa, respostas, referencias, extras } = limparPrograma(op);
       if (!programa.partes.length) return erro(res, 400, "Programação sem partes.");
       const vistos = new Set();
       programa.nomes = lista(corpo.nomes, MAX_NOMES, nomeLimpo).filter((n) => !vistos.has(n.toLowerCase()) && vistos.add(n.toLowerCase()));
@@ -295,7 +305,7 @@ export default async function handler(req, res) {
       const chave = randomBytes(32).toString("base64url");
       const agora = Date.now();
       programa.criadoEm = agora;
-      await gravarJson(caminho(cod, "respostas.json"), { chaves: [hash(chave)], respostas, extras, direcao: null });
+      await gravarJson(caminho(cod, "respostas.json"), { chaves: [hash(chave)], respostas, referencias, extras, direcao: null });
       await gravarJson(caminho(cod, "programa.json"), programa);
       await gravarJson(caminho(cod, "estado.json"), { versao: 1, liberadas: [], atual: null, reveladas: {}, sorteio: null, cronometro: null, atualizadoEm: agora });
       return res.status(200).json({ sessao: cod, chave });
@@ -446,6 +456,14 @@ export default async function handler(req, res) {
     if (!(await exigirDirigente())) return;
     const programa = ["liberar", "bloquear", "revelar", "dica", "pontuar", "reiniciar", "sortear", "sortear-questao", "limpar-sorteio", "cronometro"].includes(acao) ? await lerJson(caminho(cod, "programa.json")) : null;
     const parteValida = (i) => programa && Number.isInteger(i) && i >= 0 && i < programa.partes.length;
+    // 6.12.76: a referência secreta da rodada (respostas.json; sessões antigas não a têm) e a revelação dela junto com a resposta.
+    const referenciaDaRodada = (parte, rodada) => String((((segredo && segredo.referencias) || {})[parte] || [])[rodada] || "");
+    const revelarReferencia = (e, parte, rodada) => {
+      const ref = referenciaDaRodada(parte, rodada);
+      if (!ref) return;
+      e.referenciasReveladas = e.referenciasReveladas || {};
+      e.referenciasReveladas[parte] = { ...(e.referenciasReveladas[parte] || {}), [rodada]: ref };
+    };
 
     // ----- voltar-inicio (6.12.37): volta à tela de boas-vindas: nenhuma parte liberada e nenhuma atual -----
     if (acao === "voltar-inicio") {
@@ -477,16 +495,18 @@ export default async function handler(req, res) {
       return gravarEstado((e) => {
         e.reveladas = e.reveladas || {};
         e.reveladas[parte] = { ...(e.reveladas[parte] || {}), [rodada]: respostas[rodada] };
+        revelarReferencia(e, parte, rodada);
       });
     }
 
     // ----- espiar (6.12.06): só o dirigente vê a resposta da rodada, sem revelá-la aos participantes (nada é gravado no estado) -----
+    // 6.12.76: com a referência da rodada (o texto bíblico que confirma), que também fica escondida dos participantes.
     if (acao === "espiar") {
       const parte = Number(corpo.parte);
       const rodada = Number(corpo.rodada);
       const respostas = (segredo.respostas || {})[parte] || [];
       if (!Number.isInteger(parte) || !Number.isInteger(rodada) || rodada < 0 || rodada >= respostas.length) return erro(res, 400, "Rodada inválida.");
-      return res.status(200).json({ resposta: String(respostas[rodada] || "") });
+      return res.status(200).json({ resposta: String(respostas[rodada] || ""), referencia: referenciaDaRodada(parte, rodada) });
     }
 
     // ----- dica (6.11.96): dá a próxima dica da rodada (Dica 1, Dica 2, Dica 3…), uma de cada vez; no máximo as que a pergunta tem -----
@@ -525,6 +545,7 @@ export default async function handler(req, res) {
         e.acertos[parte] = { ...(e.acertos[parte] || {}), [rodada]: ninguem ? { nome: "", pts: 0, ninguem: true } : { nome, pts } };
         e.reveladas = e.reveladas || {};
         e.reveladas[parte] = { ...(e.reveladas[parte] || {}), [rodada]: respostas[rodada] };
+        revelarReferencia(e, parte, rodada);
       });
     }
 
@@ -534,7 +555,7 @@ export default async function handler(req, res) {
       const rodada = Number(corpo.rodada);
       if (!parteValida(parte) || !Number.isInteger(rodada) || rodada < 0) return erro(res, 400, "Rodada inválida.");
       return gravarEstado((e) => {
-        for (const campo of ["dicas", "reveladas", "acertos"]) {
+        for (const campo of ["dicas", "reveladas", "acertos", "referenciasReveladas"]) {
           if (e[campo] && e[campo][parte]) {
             const copia = { ...e[campo][parte] };
             delete copia[rodada];

@@ -2,6 +2,44 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.76
+
+### Jogos conferidos e montados pelo servidor
+
+- **Tipo do jogo:** o servidor sorteia o tipo da noite e grava o identificador fixo em `jogo.idTipo` (quem_sou_eu, verdadeiro_falso, ordem_data, quem_disse, complete_versiculo, abreviacoes). `jogo.tipo` continua sendo o nome que aparece na tela.
+- **Rodadas por tipo, para caber nos 10 minutos:**
+  - Quem sou eu?: pede 8, no mínimo 6. Cada rodada tem 3 dicas, por isso cabem menos.
+  - Verdadeiro ou falso: pede 12, no mínimo 10.
+  - Quem disse isso? e Complete o versículo: pede 12, no mínimo 8, e ficam no máximo 10.
+  - Abreviações: pede 10, no mínimo 8.
+  - O número vai para a IA na linha "QUANTIDADE". Com menos rodadas válidas que o mínimo, o servidor refaz uma vez dizendo o que faltou.
+- **Conferência de cada tipo:**
+  - Quem sou eu?: exatamente 3 dicas, sem o nome da resposta e sem repetir o personagem.
+  - Verdadeiro ou falso: a resposta começa com "Verdadeiro." ou "Falso." (o servidor padroniza) e tem pelo menos 3 de cada.
+  - Abreviações: a sigla confere palavra por palavra com a resposta (exemplo: "Os 12 A de C" = "Os 12 Apóstolos de Cristo"). A pergunta fica "O que significa? Dica 1: sigla Dica 2: Está em livro."
+- **Complete o versículo, montado pelo servidor:**
+  - A IA só escolhe a referência e a palavra. O servidor transcreve o versículo da Bíblia e põe a lacuna.
+  - A pergunta fica "Complete a palavra que falta. Dica 1: “versículo com ______” Dica 2: Está em livro."
+  - Não valem como lacuna: "Jeová", "Deus", palavras com menos de 4 letras, números, o nome do livro, palavras muito comuns e palavras que aparecem mais de uma vez no versículo.
+- **Quem disse isso?, montado pelo servidor:**
+  - A IA escolhe a referência e quem disse. O servidor transcreve a fala que está entre aspas no versículo.
+  - Sai a rodada que não tem fala entre aspas, a que tem fala curta e a que traz na fala o nome de quem disse.
+  - Dica 2: o livro. Se o livro tem o nome de quem disse (Jó, Rute, Ester), a Dica 2 diz a parte das Escrituras.
+- **Troca do tipo:** no Complete o versículo e no Quem disse isso?, se depois de refazer ficarem menos de 6 rodadas conferidas, o servidor faz o jogo de novo com outro tipo aceito pela família e avisa.
+- **Pontos:** quem acerta com a 1ª dica ganha 2 pontos; com a 2ª, 1 ponto. É a fórmula que já existia.
+- **Sem a Bíblia no servidor:** o Complete o versículo e o Quem disse isso? ficam fora do sorteio.
+- **Referência secreta na Adoração compartilhada:**
+  - A referência de cada rodada (o texto que confirma a resposta) fica só em respostas.json, como a resposta.
+  - Ela aparece para todos quando quem dirige revela ou pontua a rodada (`estado.referenciasReveladas`).
+  - "Espiar" mostra a resposta e a referência só a quem dirige. "Reiniciar" esconde as duas de novo.
+- **Memória entre noites:** os versículos do Complete o versículo e do Quem disse isso? entram na nova memória "jogo_versiculos" e não voltam nas noites seguintes, nem os já usados em outros quadros da mesma noite.
+
+### Princípio e Jesus
+
+- Os versículos do Princípio bíblico agora entram na memória "relatos". Na noite seguinte, a Abertura, o Personagem e Jesus não os repetem.
+- O quadro de Jesus traz um episódio narrado (o que Jesus fez ou viveu), com pelo menos 3 versículos, e não só um ensino. Com menos de 3 versículos, o servidor refaz uma vez.
+- As instruções aparecem na tela de prompts (Jesus, Jogo, os formatos e a descrição de como o pedido é montado).
+
 ## 6.12.75
 
 ### Passagens entre capítulos e texto bíblico vazio

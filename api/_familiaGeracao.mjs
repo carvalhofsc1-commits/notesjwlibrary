@@ -206,8 +206,9 @@ export function cortarNoFimDaFrase(texto, max) {
 export const MAX_EVITAR_POR_CATEGORIA = 40;
 export const MAX_CARACTERES_EVITAR = 120;
 // 6.12.73: "leituras" (o trecho de livro lido na Abertura, pela chave "trecho:…") e "relatos" (as referências dos relatos bíblicos da Abertura;
-// 6.12.75: também as passagens do Personagem do dia e das Lições da vida de Jesus).
-export const CATEGORIAS_EVITAR = Object.freeze(["assuntos", "personagens", "principios", "jesus", "saiba", "ministerio", "criador", "artigos", "canticos", "jogos", "videos", "leituras", "relatos"]);
+// 6.12.75: também as passagens do Personagem do dia e das Lições da vida de Jesus; 6.12.76: também os versículos do Princípio bíblico).
+// 6.12.76: "jogo_versiculos" (os versículos usados no Complete o versículo e no Quem disse isso?, para a próxima noite não repetir).
+export const CATEGORIAS_EVITAR = Object.freeze(["assuntos", "personagens", "principios", "jesus", "saiba", "ministerio", "criador", "artigos", "canticos", "jogos", "videos", "leituras", "relatos", "jogo_versiculos"]);
 
 const listaCurta = (valor, max, maxChars = MAX_CARACTERES_EVITAR) => {
   const vistos = new Set();
@@ -589,4 +590,186 @@ export function sentidoQueCitaAPassagem(textoDoVerbete, referencia, livroDe) {
     if (pontos > 0 && (!melhor || pontos > melhor.pontos)) melhor = { numero: s.numero, texto: s.texto, pontos };
   }
   return melhor ? { numero: melhor.numero, texto: melhor.texto } : null;
+}
+
+// ---------- Jogos conferidos e montados pelo servidor (6.12.76) ----------
+
+// O identificador fixo de cada um dos 6 tipos (jogo.idTipo), posto pelo servidor. jogo.tipo continua o nome da tela (o app o mostra).
+export const ID_DOS_JOGOS = Object.freeze({
+  "Quem sou eu? (personagens bíblicos)": "quem_sou_eu",
+  "Verdadeiro ou falso": "verdadeiro_falso",
+  "Ordem e data dos acontecimentos": "ordem_data",
+  "Quem disse isso? (frases da Bíblia)": "quem_disse",
+  "Complete o versículo": "complete_versiculo",
+  "Abreviações bíblicas (ex.: Os 12 A de C)": "abreviacoes",
+});
+
+// O nome do tipo (o da tela ou um parecido) -> o identificador; "" quando não é um dos 6.
+export function idDoJogo(nome) {
+  const t = normalizarTexto(nome);
+  if (/^quem sou/.test(t)) return "quem_sou_eu";
+  if (/^verdadeiro/.test(t)) return "verdadeiro_falso";
+  if (/^ordem/.test(t)) return "ordem_data";
+  if (/^quem disse/.test(t)) return "quem_disse";
+  if (/^complete/.test(t)) return "complete_versiculo";
+  if (/^abrevia/.test(t)) return "abreviacoes";
+  return "";
+}
+
+// Quantas rodadas cabem nos 10 minutos do quadro: pedir (o que se pede à IA), min (com menos, refaz uma vez) e max (o que fica).
+// Quem sou eu? tem 3 dicas por rodada (mais demorado); Verdadeiro ou falso é rápido; nos montados pelo servidor pede-se folga.
+export const RODADAS_DO_JOGO = Object.freeze({
+  quem_sou_eu: Object.freeze({ pedir: 8, min: 6, max: 8 }),
+  verdadeiro_falso: Object.freeze({ pedir: 12, min: 10, max: 12 }),
+  quem_disse: Object.freeze({ pedir: 12, min: 8, max: 10 }),
+  complete_versiculo: Object.freeze({ pedir: 12, min: 8, max: 10 }),
+  abreviacoes: Object.freeze({ pedir: 10, min: 8, max: 10 }),
+  ordem_data: Object.freeze({ pedir: 8, min: 6, max: 8 }),
+});
+// Complete o versículo e Quem disse isso?: com menos que isto depois de refazer, o servidor troca o tipo do jogo.
+export const MIN_RODADAS_PARA_MANTER_O_TIPO = 6;
+
+// "1 Samuel 17:45" -> "1 Samuel"; sem capítulo e versículo -> "".
+export function livroDaReferencia(ref) {
+  const m = String(ref || "").trim().match(/^(.+?)\s+\d{1,3}:/);
+  return m ? m[1].trim() : "";
+}
+
+const LIVROS_GREGOS = new Set(
+  "mateus marcos lucas joao atos romanos corintios galatas efesios filipenses colossenses tessalonicenses timoteo tito filemom filemon hebreus tiago pedro judas apocalipse".split(" ")
+);
+const semNumeroDoLivro = (livro) => normalizarTexto(livro).replace(/^\d\s*/, "");
+// "Escrituras Gregas Cristãs" ou "Escrituras Hebraicas" (pelo nome do livro).
+export function parteDasEscrituras(livro) {
+  return LIVROS_GREGOS.has(semNumeroDoLivro(livro)) ? "Escrituras Gregas Cristãs" : "Escrituras Hebraicas";
+}
+
+// A fala entre aspas de um versículo (Tradução do Novo Mundo, aspas “ ”): do “ até o ” que o fecha (ou até o fim, quando a fala continua no
+// versículo seguinte); só com o ” (a fala começou no versículo de antes), do começo até ele. Sem aspas, "" (a rodada sai). Pelo menos 4
+// palavras; cortada no fim de uma frase (até max caracteres).
+export function falaEntreAspas(texto, max = 300) {
+  const t = String(texto || "").replace(/\s+/g, " ").trim();
+  let fala = "";
+  const abre = t.indexOf("“");
+  if (abre >= 0) {
+    let nivel = 0;
+    let fim = -1;
+    for (let i = abre; i < t.length; i++) {
+      if (t[i] === "“") nivel++;
+      else if (t[i] === "”" && --nivel === 0) {
+        fim = i;
+        break;
+      }
+    }
+    fala = t.slice(abre + 1, fim >= 0 ? fim : t.length);
+  } else {
+    const fecha = t.indexOf("”");
+    if (fecha > 0) fala = t.slice(0, fecha);
+  }
+  fala = fala.replace(/[“”]/g, "").replace(/\s+/g, " ").trim();
+  if (fala.split(" ").filter((p) => /\p{L}/u.test(p)).length < 4) return "";
+  return cortarNoFimDaFrase(fala, max);
+}
+
+// Palavras que não servem de lacuna no Complete o versículo (além das de menos de 4 letras, dos números e do nome do livro da Dica 2).
+// "Jeová" e "Deus" estão aqui porque são óbvias (decisão do usuário na 6.12.76).
+const PALAVRAS_SEM_LACUNA = new Set(
+  (
+    "jeova deus para porque como quando pois mais isso isto esse essa esses essas este esta estes estas aquele aquela aqueles aquelas aquilo " +
+    "eles elas voce voces tambem sobre entre todo todos toda todas seus suas meus minha minhas teus tuas nosso nossa nossos nossas " +
+    "pelo pelos pela pelas onde aqui ainda assim entao muito muitos muita muitas nunca sempre mesmo mesma mesmos mesmas outro outra outros outras " +
+    "dele dela deles delas nele nela neles nelas qual quais quem cujo cuja desde contra depois antes porem embora havia tinha seja sejam eram estava estavam"
+  ).split(" ")
+);
+
+// Complete o versículo: troca a palavra escolhida pela IA por "______" no texto transcrito pelo servidor. Devolve { texto, resposta } (a
+// resposta como está no versículo) ou null: palavra com espaço, número ou menos de 4 letras; palavra vazia ou proibida ("Jeová", "Deus");
+// igual ao nome do livro (que é a Dica 2); ausente do versículo ou repetida nele (a lacuna ficaria ambígua).
+export function lacunaNoVersiculo(texto, palavra, livro = "") {
+  const t = String(texto || "");
+  const p = String(palavra || "").trim().replace(/^[^\p{L}\d]+|[^\p{L}\d]+$/gu, "");
+  if (!t || !p || /\s/.test(p) || /\d/.test(p) || !/^[\p{L}\p{M}]+$/u.test(p)) return null;
+  const alvo = normalizarTexto(p);
+  if (alvo.length < 4 || PALAVRAS_SEM_LACUNA.has(alvo)) return null;
+  const nomeDoLivro = semNumeroDoLivro(livro);
+  if (nomeDoLivro && alvo === nomeDoLivro) return null;
+  const achados = [...t.matchAll(/[\p{L}\p{M}]+/gu)].filter((m) => normalizarTexto(m[0]) === alvo);
+  if (achados.length !== 1) return null;
+  const m = achados[0];
+  return { texto: `${t.slice(0, m.index)}______${t.slice(m.index + m[0].length)}`, resposta: m[0] };
+}
+
+// Abreviações bíblicas: as iniciais da sigla conferem, na ordem, com as palavras da resposta ("Os 12 A de C" = "Os 12 Apóstolos de
+// Cristo"). Letra maiúscula sozinha (ou com ponto; "A.T." vale por duas) = a primeira letra da palavra; número = o mesmo número; as outras
+// palavras (de, da, do, e, os…) iguais. O que vier entre parênteses ou depois de travessão no fim da resposta não conta. Precisa de ao
+// menos uma inicial.
+export function confereAbreviacao(sigla, resposta) {
+  const tokensDaSigla = String(sigla || "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .split(" ")
+    .filter(Boolean)
+    .flatMap((t) => (/^(?:\p{Lu}\.){2,}$/u.test(t) ? t.split(".").filter(Boolean) : [t.replace(/[,;:!?]+$/, "")]));
+  const limpa = String(resposta || "")
+    .replace(/\s*\([^)]*\)\s*\.?$/, "")
+    .replace(/\s+[—–-]\s+.*$/, "")
+    .replace(/[.,;:!?]+$/, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  const palavras = limpa.split(" ").filter(Boolean);
+  if (!tokensDaSigla.length || tokensDaSigla.length !== palavras.length) return false;
+  let iniciais = 0;
+  for (let i = 0; i < tokensDaSigla.length; i++) {
+    const s = tokensDaSigla[i];
+    const w = palavras[i];
+    if (/^\d+$/.test(s)) {
+      if (s !== w.replace(/[^\d]/g, "") || !/^\d+$/.test(w.replace(/[.,]$/, ""))) return false;
+    } else if (/^\p{Lu}\.?$/u.test(s)) {
+      if (normalizarTexto(w).charAt(0) !== normalizarTexto(s).charAt(0)) return false;
+      iniciais++;
+    } else if (normalizarTexto(s) !== normalizarTexto(w)) return false;
+  }
+  return iniciais > 0;
+}
+
+// Verdadeiro ou falso: a resposta tem de começar com "Verdadeiro" ou "Falso". Devolve { valor: "V" | "F", texto: "Verdadeiro. …" } ou null.
+export function respostaVF(resposta) {
+  const t = String(resposta || "").replace(/\s+/g, " ").trim();
+  const m = t.match(/^(verdadeir[oa]|fals[oa])(?![\p{L}])[\s.,:;!—–-]*/iu);
+  if (!m) return null;
+  const valor = /^v/i.test(m[1]) ? "V" : "F";
+  const resto = t.slice(m[0].length).trim();
+  return { valor, texto: `${valor === "V" ? "Verdadeiro" : "Falso"}.${resto ? ` ${resto.charAt(0).toUpperCase()}${resto.slice(1)}` : ""}` };
+}
+
+const TITULOS_DE_PESSOAS = new Set("rei rainha profeta profetisa apostolo sacerdote juiz juiza filho filha esposa marido mae pai irmao irma servo serva anjo".split(" "));
+// Palavras curtas que podem vir com maiúscula no começo da resposta e não são nomes (os nomes de 2 letras, como "Jó" e "Ló", contam).
+const CURTAS_QUE_NAO_SAO_NOMES = new Set("os as um em da de do no na ao eu tu ele ela se ou".split(" "));
+// Os nomes próprios de uma resposta ("Rei Josias" -> ["josias"]; "Abigail, esposa de Nabal" -> ["abigail", "nabal"]; "Jó" -> ["jo"]), sem os títulos.
+export function nomesDaResposta(resposta) {
+  return [...String(resposta || "").matchAll(/\p{Lu}[\p{L}\p{M}]+/gu)]
+    .map((m) => normalizarTexto(m[0]))
+    .filter((n) => n && !TITULOS_DE_PESSOAS.has(n) && !CURTAS_QUE_NAO_SAO_NOMES.has(n));
+}
+const temPalavra = (texto, palavra) => ` ${normalizarTexto(texto)} `.includes(` ${palavra} `);
+
+// Quem sou eu?: exatamente 3 dicas ("Dica 1: … Dica 2: … Dica 3: …") e nenhum nome da resposta na pergunta.
+export function quemSouEuValida(rodada) {
+  const r = rodada && typeof rodada === "object" ? rodada : {};
+  const dicas = (String(r.pergunta || "").match(/Dica\s*\d+\s*:/gi) || []).length;
+  if (dicas !== 3) return false;
+  const nomes = nomesDaResposta(r.resposta);
+  return nomes.length > 0 && !nomes.some((n) => temPalavra(r.pergunta, n));
+}
+
+// Quem disse isso?: a fala não pode trazer o nome de quem disse (entregaria a resposta).
+export function falaSemONome(fala, quem) {
+  return !nomesDaResposta(quem).some((n) => temPalavra(fala, n));
+}
+
+// A Dica 2 do Quem disse isso?: "Está em {livro}", ou, quando o livro tem o nome de quem disse (Jó, Rute, Ester…), a parte das Escrituras.
+export function dicaDoLivro(livro, quem = "") {
+  const nome = semNumeroDoLivro(livro);
+  if (!nome) return "";
+  return nomesDaResposta(quem).includes(nome) ? `Está nas ${parteDasEscrituras(livro)}` : `Está em ${livro}`;
 }

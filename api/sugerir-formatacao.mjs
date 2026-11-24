@@ -43,26 +43,39 @@ import { artigosDoTopicoDoGuia, buscarNosLivros, buscarVerbete, buscarVersiculos
 import { JOGOS_FAMILIA, QUADROS_FAMILIA, minutosDosQuadros, quadrosDoPedido } from "./_familiaQuadros.mjs";
 import {
   MIN_CARACTERES_ARTIGO,
+  MIN_RODADAS_PARA_MANTER_O_TIPO,
   QUADROS_GERADOS,
+  RODADAS_DO_JOGO,
   candidatosArtigos,
   candidatosPrincipio,
   chaveDoTrecho,
+  chavesDosVersiculos,
+  confereAbreviacao,
   cortarNoFimDaFrase,
   datasPermitidas,
+  dicaDoLivro,
   embaralhar,
   escolhasValidas,
   eventosDoApendiceB,
+  falaEntreAspas,
+  falaSemONome,
   fonteDoPrincipio,
   idDaEscolha,
+  idDoJogo,
+  lacunaNoVersiculo,
   lankDoLink,
   linkDeConsultaWol,
+  livroDaReferencia,
+  nomesDaResposta,
   normalizarEvitar,
   normalizarTexto,
   normalizarUsados,
   palavrasDoTema,
   pontuarPorTema,
+  quemSouEuValida,
   referenciasDoPrincipio,
   repeticoesDaParte,
+  respostaVF,
   semDatasForaDoApendice,
   semMarcasDeFigura,
   semMarcasDoTexto,
@@ -3241,9 +3254,10 @@ const CONSULTAS_CRIADOR = Object.freeze([
 ]);
 const chaveDoTrechoCriador = (l) => chaveDoTrecho(l.trecho);
 
-// 6.12.73: o mínimo do jogo (rodadas nos jogos de pergunta e resposta; acontecimentos na Ordem e data).
-const MIN_RODADAS_JOGO = 8;
+// 6.12.73: o mínimo do jogo; 6.12.76: as rodadas de cada tipo ficam em RODADAS_DO_JOGO (_familiaGeracao.mjs), ajustadas aos 10 minutos.
 const MIN_EVENTOS_JOGO = 6;
+// 6.12.76: as Lições da vida de Jesus trazem um EPISÓDIO narrado (o que Jesus fez ou viveu), não só um ensino: com menos versículos, refaz uma vez.
+const MIN_VERSOS_EPISODIO = 3;
 
 // Jogos de pergunta e resposta: as regras quando a IA não as escreveu.
 const REGRAS_PADRAO_JOGO = "Quem dirige mostra uma rodada por vez; quem acertar primeiro marca um ponto. Depois de cada rodada, leiam a resposta e o texto bíblico.";
@@ -3333,7 +3347,9 @@ const PREPARAR_QUADRO_FAMILIA = {
           ? { titulo: limparLinha(e.pergunta || e.subverbete || e.verbete, 200), fonte: limparLinha(fonteDoPrincipio(e), 200), paragrafos: "", texto: leituraLimpa(e.texto), url: "", rotulo: "Princípios Bíblicos para a Vida Cristã" }
           : null;
         const textos = e ? await textosBiblicosFamilia(referenciasDoPrincipio(e, 4), 4) : [];
-        return { descricao: descricaoFamilia(o.descricao), leitura, textos, perguntas: ctx.quadro.perguntasPadrao.slice(), memoria: e ? { principios: [e.id] } : {} };
+        // 6.12.76: os versículos achados entram também na memória "relatos" (a próxima noite não os repete na Abertura, no Personagem e em Jesus).
+        const relatos = textos.filter((t) => t.texto && t.referencia).map((t) => t.referencia);
+        return { descricao: descricaoFamilia(o.descricao), leitura, textos, perguntas: ctx.quadro.perguntasPadrao.slice(), memoria: e ? { principios: [e.id], ...(relatos.length ? { relatos } : {}) } : {} };
       },
     };
   },
@@ -3397,6 +3413,10 @@ const PREPARAR_QUADRO_FAMILIA = {
         if (!perguntas.length) perguntas = [`Que lição aprendemos de Jesus em ${textos[0]?.referencia || "este relato"}?`];
         const qualidade = linhaFamilia(o.qualidade, 80);
         const descricao = descricaoFamilia(o.descricao);
+        // 6.12.76: o quadro traz um EPISÓDIO (um acontecimento narrado), não só um ensino: a passagem achada com menos de 3 versículos faz
+        // refazer uma vez.
+        const versos = textos[0] && textos[0].texto ? chavesDosVersiculos(textos[0].referencia).length : 0;
+        const falta = versos && versos < MIN_VERSOS_EPISODIO ? `a passagem ${textos[0].referencia} tem só ${versos} ${versos === 1 ? "versículo" : "versículos"}: escolha um EPISÓDIO narrado da vida de Jesus (o que ele fez ou viveu, do começo ao fim, com pelo menos ${MIN_VERSOS_EPISODIO} versículos), não só um ensino ou uma frase` : "";
         return {
           nome: episodio ? `${ctx.quadro.nome}: ${episodio}` : ctx.quadro.nome,
           descricao: qualidade && !normalizarTexto(descricao).includes(normalizarTexto(qualidade)) ? `${descricao} (Qualidade: ${qualidade}.)`.trim() : descricao,
@@ -3404,6 +3424,7 @@ const PREPARAR_QUADRO_FAMILIA = {
           leitura: leituraDoTrecho(il >= 0 ? livros[il] : null),
           perguntas,
           memoria: { ...(episodio ? { jesus: [episodio] } : {}), ...memoriaDaPassagem(textos) },
+          falta,
         };
       },
     };
@@ -3559,18 +3580,35 @@ const PREPARAR_QUADRO_FAMILIA = {
 
   // Jogo bíblico: o servidor sorteia o tipo da noite entre os aceitos (de preferência um que não foi usado nas últimas semanas). Na Ordem e
   // data dos acontecimentos, a IA só escolhe os acontecimentos [B#] do Apêndice B da Bíblia de Estudo e o servidor põe as datas e embaralha;
-  // nos outros tipos, as rodadas com alguma data fora do Apêndice B saem, e no Complete o versículo, as que a resposta não está no versículo.
+  // nos outros tipos, as rodadas com alguma data fora do Apêndice B saem.
+  // 6.12.76: cada tipo tem a sua quantidade de rodadas (RODADAS_DO_JOGO, para caber nos 10 minutos) e a sua conferência: Quem sou eu? com 3
+  // dicas sem o nome; Verdadeiro ou falso com a resposta "Verdadeiro."/"Falso." (pelo menos 3 de cada); Abreviações com a sigla conferida
+  // letra por letra. No Complete o versículo e no Quem disse isso?, a IA só escolhe a referência (e a palavra, ou quem disse) e o SERVIDOR
+  // transcreve o versículo e monta a pergunta (a lacuna, ou a fala entre aspas). A referência de cada rodada fica para a hora da resposta (na
+  // sessão compartilhada, só no servidor). jogo.idTipo = o identificador fixo do tipo. Com menos de MIN_RODADAS_PARA_MANTER_O_TIPO rodadas
+  // conferidas num tipo montado pelo servidor, o quadro pede a troca do tipo (trocarTipo; ver gerarQuadroFamilia).
   async jogo(ctx) {
-    const textoApendice = fontesConfiguradas() ? (await lerTextoDoLivro("apendiceBBibliaEstudo").catch(() => null)) || "" : "";
+    const comBiblia = fontesConfiguradas();
+    const textoApendice = comBiblia ? (await lerTextoDoLivro("apendiceBBibliaEstudo").catch(() => null)) || "" : "";
     const eventos = eventosDoApendiceB(textoApendice).slice(0, 80);
     const permitidas = datasPermitidas(textoApendice);
-    const tipo = tipoDoJogo(ctx.perfil.jogos, JOGOS_FAMILIA, { semente: ctx.semente, evitar: ctx.evitar.jogos, comApendice: eventos.length >= 8 });
-    const ordem = /^ordem e data/i.test(tipo);
+    // Sem a Bíblia no servidor, o Complete o versículo e o Quem disse isso? (montados com o texto transcrito) ficam de fora; na troca do
+    // tipo (jogoFora), o tipo que não deu certo também.
+    const pode = (j) => (comBiblia || !["complete_versiculo", "quem_disse"].includes(idDoJogo(j))) && (!ctx.jogoFora || idDoJogo(j) !== idDoJogo(ctx.jogoFora));
+    const tipo = tipoDoJogo(ctx.perfil.jogos.filter(pode), JOGOS_FAMILIA.filter(pode), { semente: ctx.semente, evitar: ctx.evitar.jogos, comApendice: eventos.length >= 8 });
+    const idTipo = idDoJogo(tipo);
+    const ordem = idTipo === "ordem_data";
+    const limite = RODADAS_DO_JOGO[idTipo] || { pedir: 10, min: 8, max: 12 };
+    const montadoPeloServidor = idTipo === "complete_versiculo" || idTipo === "quem_disse";
     const listas =
       `\nTIPO DO JOGO DESTA NOITE (use só este): ${tipo}\n` +
-      (ordem ? `\nACONTECIMENTOS DO APÊNDICE B DA BÍBLIA DE ESTUDO (data — acontecimento; escolha de 6 a 8 em "eventos" pelo identificador):\n${eventos.map((e, i) => `[B${i + 1}] ${e.data} — ${e.evento}`).join("\n")}\n` : "");
+      (ordem
+        ? `\nACONTECIMENTOS DO APÊNDICE B DA BÍBLIA DE ESTUDO (data — acontecimento; escolha de 6 a 8 em "eventos" pelo identificador):\n${eventos.map((e, i) => `[B${i + 1}] ${e.data} — ${e.evento}`).join("\n")}\n`
+        : `QUANTIDADE: mande ${limite.pedir} rodadas (no mínimo ${limite.min}; ficam até ${limite.max}).\n` +
+          (montadoPeloServidor ? listaEvitar("versículos dos jogos", ctx.evitar.jogo_versiculos) : ""));
     return {
       sistema: "jogo",
+      tipo,
       schema: SAIDAS_QUADRO_FAMILIA.jogo,
       listas,
       contagens: { eventos: eventos.length },
@@ -3579,6 +3617,8 @@ const PREPARAR_QUADRO_FAMILIA = {
         let jogo = null;
         let tiradas = 0;
         let falta = "";
+        let trocarTipo = "";
+        let versiculosDoJogo = [];
         if (ordem) {
           const porData = (e) => valorDaData(e.data);
           const escolhidos = semRepetirFamilia(escolhasValidas(o.eventos, "B", eventos.length, 8).map((i) => eventos[i]), porData);
@@ -3594,6 +3634,7 @@ const PREPARAR_QUADRO_FAMILIA = {
           const regras = limparTextoGerado(o.comoJogar, 600) || "Ponham os acontecimentos na ordem em que aconteceram e digam a data de cada um.";
           jogo = {
             tipo,
+            idTipo,
             nome,
             comoJogar: `${regras} Ordem certa (datas do Apêndice B da Bíblia de Estudo): ${certa.map((e, i) => `${i + 1}. ${e.data} — ${e.evento}`).join("; ")}.`.slice(0, 2400),
             material: "",
@@ -3602,27 +3643,106 @@ const PREPARAR_QUADRO_FAMILIA = {
             ordem: certa.map((e) => ({ data: e.data, evento: e.evento })),
           };
         } else {
-          jogo = jogoDaFamilia([tipo], { tipo, nome, comoJogar: limparTextoGerado(o.comoJogar, 1200) || REGRAS_PADRAO_JOGO, rodadas: o.rodadas, itens: [] });
-          if (jogo) {
-            const antes = jogo.rodadas.length;
-            jogo.rodadas = semDatasForaDoApendice(jogo.rodadas, (r) => `${r.pergunta} ${r.resposta}`, permitidas);
-            if (/^complete/i.test(tipo) && fontesConfiguradas()) {
-              const conferidas = await Promise.all(
-                jogo.rodadas.map(async (r) => {
-                  if (!r.referencia) return null;
-                  const v = (await buscarVersiculos([r.referencia], 1).catch(() => []))[0];
-                  return !v || normalizarTexto(v.texto).includes(normalizarTexto(r.resposta)) ? r : null;
-                })
-              );
-              jogo.rodadas = conferidas.filter(Boolean);
+          const brutas = (Array.isArray(o.rodadas) ? o.rodadas : []).filter((r) => r && typeof r === "object").slice(0, 25);
+          // Os versículos que não podem voltar: os dos jogos das últimas semanas (memória "jogo_versiculos"), os dos outros quadros desta noite
+          // e os das rodadas já aceitas neste jogo.
+          const versiculosFora = new Set([...ctx.evitar.jogo_versiculos.flatMap((r) => chavesDosVersiculos(r)), ...ctx.jaUsados.versiculos]);
+          const versiculoNovo = (ref) => {
+            const chaves = chavesDosVersiculos(ref);
+            if (chaves.some((k) => versiculosFora.has(k))) return false;
+            chaves.forEach((k) => versiculosFora.add(k));
+            return true;
+          };
+          const aspasSimples = (t) => String(t).replace(/“/g, "‘").replace(/”/g, "’");
+          // O texto do versículo, transcrito da Bíblia do servidor (em paralelo; a conferência vem depois, na ordem das rodadas).
+          const opcoesDaLeitura = { complete_versiculo: { maxVersiculos: 2, maxChars: 320 }, quem_disse: { maxVersiculos: 3, maxChars: 900 }, abreviacoes: { maxVersiculos: 3, maxChars: 600 } }[idTipo];
+          const lidos = await Promise.all(
+            brutas.map(async (r) => {
+              const ref = linhaFamilia(r.referencia, 120);
+              if (!opcoesDaLeitura || !ref || !comBiblia) return null;
+              return (await buscarVersiculos([ref], 1, opcoesDaLeitura).catch(() => []))[0] || null;
+            })
+          );
+          let conferidas = [];
+          const chavesDasRodadas = new Set();
+          const novaRodada = (chave) => Boolean(chave) && !chavesDasRodadas.has(chave) && Boolean(chavesDasRodadas.add(chave));
+          brutas.forEach((b, i) => {
+            const v = lidos[i];
+            const resposta = limparTextoGerado(b.resposta, 300);
+            if (idTipo === "complete_versiculo") {
+              if (!v) return;
+              const livro = livroDaReferencia(v.referencia);
+              const lacuna = lacunaNoVersiculo(v.texto, resposta, livro);
+              if (!lacuna) return;
+              const pergunta = `Complete a palavra que falta. Dica 1: “${aspasSimples(lacuna.texto)}” Dica 2: Está em ${livro}.`;
+              if (pergunta.length > 400 || chavesDasRodadas.has(`p:${normalizarTexto(lacuna.resposta)}`) || !versiculoNovo(v.referencia)) return;
+              novaRodada(`p:${normalizarTexto(lacuna.resposta)}`);
+              conferidas.push({ pergunta, resposta: lacuna.resposta, referencia: v.referencia });
+            } else if (idTipo === "quem_disse") {
+              if (!v || !resposta) return;
+              const fala = falaEntreAspas(v.texto, 300);
+              const dica2 = dicaDoLivro(livroDaReferencia(v.referencia), resposta);
+              if (!fala || !dica2 || !falaSemONome(fala, resposta) || !versiculoNovo(v.referencia)) return;
+              conferidas.push({ pergunta: `Quem disse isso? Dica 1: “${aspasSimples(fala)}” Dica 2: ${dica2}.`, resposta, referencia: v.referencia });
+            } else {
+              const r = { pergunta: limparTextoGerado(b.pergunta, 400), resposta, referencia: linhaFamilia(b.referencia, 120) };
+              if (!r.pergunta || !r.resposta) return;
+              if (idTipo === "quem_sou_eu") {
+                if (!quemSouEuValida(r) || !novaRodada(nomesDaResposta(r.resposta).join(" "))) return;
+              } else if (idTipo === "verdadeiro_falso") {
+                const vf = respostaVF(r.resposta);
+                if (!vf || !novaRodada(normalizarTexto(r.pergunta))) return;
+                r.resposta = vf.texto.slice(0, 300);
+              } else if (idTipo === "abreviacoes") {
+                // A pergunta traz só a sigla (sem "O que significa?" e sem "Dica 1:", que o servidor põe).
+                const sigla = r.pergunta
+                  .replace(/^.*?Dica\s*1\s*:\s*/i, "")
+                  .replace(/\s*Dica\s*2\s*:.*$/i, "")
+                  .replace(/^o que significa\s*\??\s*/i, "")
+                  .replace(/[?]+$/, "")
+                  .trim();
+                const livro = v ? livroDaReferencia(v.referencia) : comBiblia ? "" : livroDaReferencia(r.referencia);
+                if (!sigla || !livro || !confereAbreviacao(sigla, r.resposta) || !novaRodada(normalizarTexto(sigla))) return;
+                r.pergunta = `O que significa? Dica 1: ${sigla} Dica 2: Está em ${livro}.`;
+                if (v) r.referencia = v.referencia;
+              } else if (!novaRodada(normalizarTexto(r.pergunta))) return;
+              conferidas.push(r);
             }
-            tiradas = antes - jogo.rodadas.length;
-          }
-          // 6.12.73: pelo menos 8 rodadas válidas (com menos, o servidor pede de novo uma vez).
+          });
+          const antesDasDatas = conferidas.length;
+          conferidas = semDatasForaDoApendice(conferidas, (r) => `${r.pergunta} ${r.resposta}`, permitidas);
+          const semData = antesDasDatas - conferidas.length;
+          jogo = jogoDaFamilia([tipo], { tipo, nome, comoJogar: limparTextoGerado(o.comoJogar, 1200) || REGRAS_PADRAO_JOGO, rodadas: conferidas.slice(0, limite.max), itens: [] });
+          if (jogo) jogo.idTipo = idTipo;
+          tiradas = brutas.length - conferidas.length;
+          // 6.12.73/6.12.76: com menos rodadas válidas que o mínimo do tipo, o servidor pede de novo uma vez, dizendo o que faltou.
           const validas = jogo ? jogo.rodadas.length : 0;
-          if (validas < MIN_RODADAS_JOGO) falta = `vieram ${validas} rodadas válidas; mande de ${MIN_RODADAS_JOGO} a 12 rodadas, em nível de adulto batizado${/^complete/i.test(tipo) ? ", com a resposta nas palavras exatas do versículo" : ""}${tiradas ? " e sem datas fora do Apêndice B" : ""}`;
+          const exigencia = {
+            quem_sou_eu: "cada rodada com exatamente 3 dicas (Dica 1: … Dica 2: … Dica 3: …) e sem o nome da resposta nas dicas",
+            verdadeiro_falso: 'a resposta começando com "Verdadeiro." ou "Falso.", com pelo menos 3 de cada',
+            quem_disse: "a referência de um versículo com a fala entre aspas, sem o nome de quem disse na fala, e versículos diferentes dos já usados",
+            complete_versiculo: "a referência de 1 versículo e, na resposta, uma palavra exata dele (pelo menos 4 letras, uma vez só no versículo; nunca Jeová, Deus, número nem o nome do livro), e versículos diferentes dos já usados",
+            abreviacoes: "a sigla na pergunta conferindo palavra por palavra com a resposta, e a referência do versículo onde está",
+          }[idTipo];
+          const faltas = [];
+          if (validas < limite.min) faltas.push(`vieram ${validas} rodadas válidas; mande ${limite.pedir} rodadas (no mínimo ${limite.min}), em nível de adulto batizado${exigencia ? `, ${exigencia}` : ""}${semData ? ", e sem datas fora do Apêndice B" : ""}`);
+          if (idTipo === "verdadeiro_falso" && validas) {
+            const verdadeiras = jogo.rodadas.filter((r) => /^Verdadeiro\b/.test(r.resposta)).length;
+            if (verdadeiras < 3 || validas - verdadeiras < 3) faltas.push(`vieram ${verdadeiras} verdadeiras e ${validas - verdadeiras} falsas; mande pelo menos 3 verdadeiras e 3 falsas`);
+          }
+          falta = faltas.join("; ");
+          if (montadoPeloServidor && validas < MIN_RODADAS_PARA_MANTER_O_TIPO) trocarTipo = tipo;
+          if (montadoPeloServidor && jogo) versiculosDoJogo = jogo.rodadas.map((r) => r.referencia).filter(Boolean);
         }
-        return { descricao: descricaoFamilia(o.descricao), jogo, perguntas: [], memoria: { jogos: [tipo] }, falta, contagens: { tiradas, rodadas: jogo ? (ordem ? jogo.itens.length : jogo.rodadas.length) : 0 } };
+        return {
+          descricao: descricaoFamilia(o.descricao),
+          jogo,
+          perguntas: [],
+          memoria: { jogos: [tipo], ...(versiculosDoJogo.length ? { jogo_versiculos: versiculosDoJogo } : {}) },
+          falta,
+          trocarTipo,
+          contagens: { tiradas, rodadas: jogo ? (ordem ? jogo.itens.length : jogo.rodadas.length) : 0, idTipo },
+        };
       },
     };
   },
@@ -3673,6 +3793,8 @@ export async function montarPedidoQuadroFamilia(body, P) {
     semente: Number.isInteger(body.semente) ? body.semente : Math.floor(Math.random() * 1e9),
     evitar: normalizarEvitar(body.evitar),
     jaUsados: normalizarUsados(body.jaUsados),
+    // 6.12.76: na troca do tipo do jogo (gerarQuadroFamilia), o tipo que não teve rodadas suficientes conferidas fica de fora.
+    jogoFora: textoLivre(body.jogoFora, 80),
   };
   const prep = await PREPARAR_QUADRO_FAMILIA[id](ctx);
   const tituloPlano = textoLivre(plano.titulo, 120);
@@ -3705,23 +3827,24 @@ async function gerarQuadroFamilia(res, body, P) {
   try {
     const pedido = await montarPedidoQuadroFamilia(body, P);
     if (pedido.erro) return erro(res, ...pedido.erro);
-    const { ctx, quadro, prep, sistema } = pedido;
+    const { ctx, quadro, prep } = pedido;
     const id = quadro.id;
     const client = criarClienteIa({ maxRetries: 0, timeout: 120_000 }, P.ia.provedorTarefa);
     const inicio = Date.now();
     let entrada = 0;
     let saida = 0;
-    const gerarUma = async (mensagem) => {
+    // pd: o pedido montado (o do quadro, ou o da troca do tipo do jogo, 6.12.76).
+    const gerarUma = async (mensagem, pd = pedido) => {
       const resposta = await chamarIa(
         client,
         P,
-        { max_tokens: P.ia.provedorTarefa === "gemini" ? 16000 : 6000, system: sistema, messages: [{ role: "user", content: mensagem }] },
-        { schema: prep.schema, tarefa: "adoracao-familia" }
+        { max_tokens: P.ia.provedorTarefa === "gemini" ? 16000 : 6000, system: pd.sistema, messages: [{ role: "user", content: mensagem }] },
+        { schema: pd.prep.schema, tarefa: "adoracao-familia" }
       );
       entrada += resposta.usage?.input_tokens || 0;
       saida += resposta.usage?.output_tokens || 0;
       if (resposta.stop_reason === "refusal" || !resposta.parsed_output) return null;
-      const { contagens, memoria, falta, ...montado } = await prep.montar(resposta.parsed_output);
+      const { contagens, memoria, falta, trocarTipo, ...montado } = await pd.prep.montar(resposta.parsed_output);
       const parte = {
         nome: quadro.nome,
         minutos: quadro.minutos,
@@ -3744,7 +3867,7 @@ async function gerarQuadroFamilia(res, body, P) {
       // 6.12.75: um texto bíblico que a Bíblia do servidor não achou (referência errada, mal escrita ou de outro livro) faz refazer uma vez.
       const semTexto = fontesConfiguradas() ? parte.textos.filter((t) => t && t.referencia && !t.texto).map((t) => t.referencia) : [];
       const faltaTexto = semTexto.length ? `o texto bíblico ${semTexto.join("; ")} não foi achado na Bíblia (confira o livro, o capítulo e os versículos)` : "";
-      return { parte, memoria: memoriaCompacta(memoria), usados, repeticoes: repeticoesDaParte(usados, ctx.jaUsados, evitarDaParte), falta: [falta, faltaTexto].filter(Boolean).join("; "), contagens: contagens || {} };
+      return { parte, memoria: memoriaCompacta(memoria), usados, repeticoes: repeticoesDaParte(usados, ctx.jaUsados, evitarDaParte), falta: [falta, faltaTexto].filter(Boolean).join("; "), trocarTipo: trocarTipo || "", contagens: contagens || {} };
     };
     let r = await gerarUma(pedido.mensagem);
     if (!r) return erro(res, 502, `A IA não conseguiu preparar o quadro ${quadro.nome}. Tente de novo.`);
@@ -3757,7 +3880,24 @@ async function gerarQuadroFamilia(res, body, P) {
       const r2 = await gerarUma(`${pedido.mensagem}\n${pedidoDeNovo}\n`).catch(() => null);
       if (r2 && problemas(r2).length <= problemas(r).length) r = r2;
     }
-    const aviso = problemas(r).length ? `${quadro.nome}: ${problemas(r).join("; ")}.` : "";
+    // 6.12.76: o Complete o versículo e o Quem disse isso? são montados pelo servidor com o texto da Bíblia; se, mesmo depois de refazer,
+    // ficaram com menos de MIN_RODADAS_PARA_MANTER_O_TIPO rodadas conferidas, o jogo é feito de novo com outro tipo aceito pela família.
+    let trocado = "";
+    if (id === "jogo" && r.trocarTipo && body.refazerRepetido !== true) {
+      const aceitos = ctx.perfil.jogos.length ? ctx.perfil.jogos : JOGOS_FAMILIA;
+      if (aceitos.some((j) => idDoJogo(j) && idDoJogo(j) !== idDoJogo(r.trocarTipo))) {
+        const pedido2 = await montarPedidoQuadroFamilia({ ...body, jogoFora: r.trocarTipo }, P);
+        const tipoNovo = pedido2.erro ? "" : pedido2.prep.tipo || "";
+        if (tipoNovo && idDoJogo(tipoNovo) !== idDoJogo(r.trocarTipo)) {
+          const r3 = await gerarUma(pedido2.mensagem, pedido2).catch(() => null);
+          if (r3 && r3.parte.jogo && !r3.trocarTipo) {
+            trocado = `o jogo ${r.trocarTipo} não teve rodadas suficientes conferidas na Bíblia; foi trocado por ${tipoNovo}`;
+            r = r3;
+          }
+        }
+      }
+    }
+    const aviso = problemas(r).length || trocado ? `${quadro.nome}: ${[trocado, ...problemas(r)].filter(Boolean).join("; ")}.` : "";
     console.log("Adoração em Família (quadro):", JSON.stringify({ modelo: P.ia.modelo, quadro: id, ...prep.contagens, ...r.contagens, leitura: Boolean(r.parte.leitura), textos: r.parte.textos.length, refeito, repeticoes: r.repeticoes.length, falta: r.falta ? 1 : 0, segundosIa: Math.round((Date.now() - inicio) / 100) / 10, entrada, saida }));
     return res.status(200).json({ parte: r.parte, quadro: id, usados: r.usados, memoria: r.memoria, aviso, refeito, modelo: nomeDoModelo(P.ia.modelo), data: new Date().toISOString() });
   } catch (e) {

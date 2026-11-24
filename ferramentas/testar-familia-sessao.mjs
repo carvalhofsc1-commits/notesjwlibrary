@@ -36,7 +36,7 @@ const programa = {
     {
       nome: "Jogo", minutos: 15, descricao: "Quem sou eu?",
       jogo: {
-        tipo: "Quem sou eu?", nome: "Quem sou eu?", comoJogar: "Leia as pistas.", material: null,
+        tipo: "Quem sou eu?", idTipo: "quem_sou_eu", nome: "Quem sou eu?", comoJogar: "Leia as pistas.", material: null,
         rodadas: [
           { pergunta: "Abri o mar Vermelho com a vara.", resposta: RESPOSTAS[0], referencia: "Êxodo 14:21" },
           { pergunta: "Venci o gigante com uma funda.", resposta: RESPOSTAS[1], referencia: "1 Samuel 17:49" },
@@ -86,7 +86,12 @@ try {
   assert.equal(p1.status, 200, JSON.stringify(p1.dados)); assert.equal(p2.status, 200);
   semResposta(p1.dados, "entrar (Ana)"); semResposta(p2.dados, "entrar (Pedro)");
   assert.equal(p1.dados.programa.partes[2].jogo.rodadas[0].pergunta, "Abri o mar Vermelho com a vara.");
-  assert.equal(p1.dados.programa.partes[2].jogo.rodadas[0].referencia, "Êxodo 14:21");
+  // 6.12.76: a referência da rodada (o texto que confirma a resposta) também fica só em respostas.json até a rodada ser revelada.
+  assert.ok(!("referencia" in p1.dados.programa.partes[2].jogo.rodadas[0]));
+  assert.deepEqual(Object.keys(p1.dados.programa.partes[2].jogo.rodadas[0]), ["pergunta"]);
+  for (const [rotulo, s] of [["programa.json", programaArq], ["entrar", JSON.stringify(p1.dados)]]) assert.ok(!s.includes("Êxodo 14:21") && !s.includes("1 Samuel 17:49"), rotulo);
+  assert.deepEqual(JSON.parse(respostasArq).referencias, { 2: ["Êxodo 14:21", "1 Samuel 17:49", "Jonas 1:17"] });
+  assert.equal(p1.dados.programa.partes[2].jogo.idTipo, "quem_sou_eu"); passo("referências das rodadas só em respostas.json (nem no programa nem no entrar); idTipo do jogo guardado");
   assert.equal(p1.dados.dirigente, false);
   assert.ok(!("extras" in p1.dados) && !("participantes" in p1.dados)); passo("participantes entram sem receber respostas, extras do dirigente nem a lista");
   const volta = await chamar({ acao: "entrar", sessao, nome: "Aninha", participanteId: p1.dados.participanteId });
@@ -147,6 +152,13 @@ try {
   const e4 = await chamar({ acao: "estado", sessao, versao: "" });
   const s4 = JSON.stringify(e4.dados);
   assert.ok(s4.includes("Davi") && !s4.includes("Moisés") && !s4.includes("Verdadeiro")); passo("revelar mostra só a resposta escolhida");
+  assert.equal(e4.dados.estado.referenciasReveladas[2][1], "1 Samuel 17:49");
+  assert.ok(!s4.includes("Êxodo 14:21") && !s4.includes("Jonas 1:17")); passo("revelar mostra a referência só da rodada revelada (estado.referenciasReveladas)");
+  const esp = await chamar({ acao: "espiar", sessao, chave, parte: 2, rodada: 0 });
+  assert.deepEqual(esp.dados, { resposta: "Moisés", referencia: "Êxodo 14:21" });
+  assert.ok(!JSON.stringify((await chamar({ acao: "estado", sessao, versao: "" })).dados).includes("Êxodo 14:21")); passo("espiar devolve resposta e referência só a quem dirige, sem gravar no estado");
+  const rei = await chamar({ acao: "reiniciar", sessao, chave, parte: 2, rodada: 1 });
+  assert.ok(!(1 in (rei.dados.estado.referenciasReveladas[2] || {})) && !(1 in (rei.dados.estado.reveladas[2] || {}))); passo("reiniciar esconde de novo a resposta e a referência");
   assert.equal((await chamar({ acao: "revelar", sessao, chave, parte: 2, rodada: 7 })).status, 400); passo("rodada inexistente recusada");
 
   // Dicas (6.11.96): uma de cada vez, no máximo as que a pergunta tem (3 na rodada 2; a rodada 0 não tem marcadores e vale 1)

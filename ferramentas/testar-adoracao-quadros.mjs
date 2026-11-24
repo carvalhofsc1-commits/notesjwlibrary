@@ -4,6 +4,8 @@
 // Fase 3a (6.12.71): candidatos (princípios e artigos), escolhas da IA, formatos zod, montagem no app, fases no servidor e prompts.
 // Fase 3b (6.12.72): quadros próprios (Vídeo, Criador, Saiba responder, Ame o ministério, Jogo, Cânticos), memória "evitar", repetição,
 // datas do Apêndice B, corte no fim da frase e o item interno da memória no app.
+// Patch 6.12.76: jogos conferidos pelo servidor (idTipo, quantidade por tipo, Complete o versículo e Quem disse isso? montados com a Bíblia,
+// troca do tipo, memória jogo_versiculos), Princípio em "relatos" e Jesus com um episódio.
 // Com FONTES_DIR, confere também as fontes reais (principios.json e as referências abreviadas na Bíblia).
 // Uso: node ferramentas/testar-adoracao-quadros.mjs
 import assert from "node:assert/strict";
@@ -503,7 +505,7 @@ teste("Apêndice B: acontecimentos (4 formatos), valor das datas, datas permitid
 
 teste("memória evitar: categorias conhecidas, até 40 por categoria e 120 caracteres, sem repetir", () => {
   assert.equal(ger.MAX_EVITAR_POR_CATEGORIA, 40);
-  assert.deepEqual([...ger.CATEGORIAS_EVITAR], ["assuntos", "personagens", "principios", "jesus", "saiba", "ministerio", "criador", "artigos", "canticos", "jogos", "videos", "leituras", "relatos"]);
+  assert.deepEqual([...ger.CATEGORIAS_EVITAR], ["assuntos", "personagens", "principios", "jesus", "saiba", "ministerio", "criador", "artigos", "canticos", "jogos", "videos", "leituras", "relatos", "jogo_versiculos"]);
   const muitos = Array.from({ length: 60 }, (_, i) => "Personagem " + i);
   const e = ger.normalizarEvitar({ personagens: [...muitos, "personagem 0"], assuntos: ["x".repeat(300)], intruso: ["a"], canticos: [12, "12", { n: 1 }] });
   assert.equal(e.personagens.length, 40);
@@ -760,7 +762,7 @@ teste("6.12.73: prompts do Personagem (ângulo), do Jogo (8 a 12, sem respostas 
   assert.match(s.personagem, /ILUSTRE CLARAMENTE O ÂNGULO/);
   assert.match(s.personagem, /pouco conhecido SÓ quando a ligação com o ângulo for clara/);
   assert.match(s.personagem, /EPISÓDIO INTEIRO, do começo ao desfecho/);
-  assert.match(s.jogo, /de 8 a 12 "rodadas" \(no mínimo 8/);
+  assert.match(s.jogo, /QUANTIDADE: mande o número de "rodadas" pedido na linha QUANTIDADE/);
   assert.match(s.jogo, /SEM RESPOSTAS ÓBVIAS/);
   assert.match(s.jogo, /de 6 a 8 identificadores \[B#\]/);
   assert.match(s.ministerio, /SÓ sobre COMO PROCEDER/);
@@ -773,15 +775,23 @@ teste("6.12.73: prompts do Personagem (ângulo), do Jogo (8 a 12, sem respostas 
   assert.match(QUADROS_FAMILIA.find((q) => q.id === "personagem").saida, /ilustre o ângulo/);
 });
 
-teste("6.12.73: jogo pede de novo quando faltam rodadas (8) ou acontecimentos (6)", async () => {
+teste("6.12.73/6.12.76: jogo pede de novo quando faltam rodadas (mínimo do tipo) ou acontecimentos (6)", async () => {
   const pedido = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "jogo", jogos: ["Verdadeiro ou falso"] }), montados);
   assert.ok(!pedido.erro);
-  const rodada = (i) => ({ pergunta: `Afirmação ${i}`, resposta: i % 2 ? "Verdadeiro" : "Falso", referencia: "Gênesis 1:1" });
+  assert.match(pedido.mensagem, /QUANTIDADE: mande 12 rodadas \(no mínimo 10; ficam até 12\)\./);
+  const rodada = (i) => ({ pergunta: `Afirmação ${i}`, resposta: i % 2 ? "Verdadeiro. Está no relato." : "falso, foi outro", referencia: "Gênesis 1:1" });
   const curta = await pedido.prep.montar({ descricao: "d", nome: "V ou F", comoJogar: "Regras.", rodadas: [1, 2, 3].map(rodada), eventos: [] });
-  assert.match(curta.falta, /^vieram 3 rodadas válidas; mande de 8 a 12 rodadas, em nível de adulto batizado/);
-  const cheia = await pedido.prep.montar({ descricao: "d", nome: "V ou F", comoJogar: "Regras.", rodadas: [1, 2, 3, 4, 5, 6, 7, 8].map(rodada), eventos: [] });
+  assert.match(curta.falta, /^vieram 3 rodadas válidas; mande 12 rodadas \(no mínimo 10\), em nível de adulto batizado/);
+  const cheia = await pedido.prep.montar({ descricao: "d", nome: "V ou F", comoJogar: "Regras.", rodadas: Array.from({ length: 13 }, (_, i) => rodada(i + 1)), eventos: [] });
   assert.equal(cheia.falta, "");
-  assert.equal(cheia.contagens.rodadas, 8);
+  assert.equal(cheia.contagens.rodadas, 12, "ficam até 12");
+  assert.equal(cheia.jogo.rodadas[1].resposta, "Falso. Foi outro", "resposta normalizada");
+  assert.equal(cheia.jogo.idTipo, "verdadeiro_falso");
+  assert.equal(cheia.trocarTipo, "", "Verdadeiro ou falso não troca de tipo");
+  const soVerdadeiras = await pedido.prep.montar({ descricao: "d", nome: "V ou F", comoJogar: "R.", rodadas: Array.from({ length: 10 }, (_, i) => ({ pergunta: `A ${i}`, resposta: "Verdadeiro." })), eventos: [] });
+  assert.match(soVerdadeiras.falta, /^vieram 10 verdadeiras e 0 falsas; mande pelo menos 3 verdadeiras e 3 falsas$/);
+  const semVF = await pedido.prep.montar({ descricao: "d", nome: "V ou F", comoJogar: "R.", rodadas: [{ pergunta: "A", resposta: "Talvez" }, { pergunta: "B", resposta: "Verdadeiramente" }], eventos: [] });
+  assert.equal(semVF.contagens.rodadas, 0, "resposta sem Verdadeiro/Falso sai");
   if (!comFontes) return console.log("      (sem FONTES_DIR: Ordem e data pulada)");
   const ordem = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "jogo", jogos: ["Ordem e data dos acontecimentos"] }), montados);
   assert.match(ordem.mensagem, /escolha de 6 a 8 em "eventos"/);
@@ -1009,6 +1019,164 @@ teste("6.12.75: passagens entre capítulos na Bíblia do servidor (Princípios e
   assert.ok(jesus.memoria.jesus && jesus.memoria.jesus.length === 1);
   const sem = await pedido.prep.montar({ nome: "Fulano", referencia: "Livro Inventado 3:1-5", descricao: "d", escolha: null, verbete: null });
   assert.ok(!sem.memoria.relatos, "passagem não achada não entra na memória");
+});
+
+// ---------- Patch 6.12.76: jogos conferidos pelo servidor (tipo, quantidade, referência secreta, Complete e Quem disse montados pelo servidor) ----------
+
+teste("6.12.76: idTipo dos 6 jogos, quantidade de rodadas por tipo e categoria jogo_versiculos", () => {
+  assert.deepEqual(Object.keys(ger.ID_DOS_JOGOS).sort(), JOGOS_FAMILIA.slice().sort());
+  for (const nome of JOGOS_FAMILIA) assert.equal(ger.idDoJogo(nome), ger.ID_DOS_JOGOS[nome], nome);
+  assert.equal(ger.idDoJogo("Mímica"), "");
+  assert.deepEqual(Object.keys(ger.RODADAS_DO_JOGO).sort(), Object.values(ger.ID_DOS_JOGOS).sort());
+  for (const [id, l] of Object.entries(ger.RODADAS_DO_JOGO)) assert.ok(l.min <= l.pedir && l.min <= l.max && l.max <= 12, id);
+  assert.equal(ger.RODADAS_DO_JOGO.quem_sou_eu.min, 6, "Quem sou eu? (3 dicas por rodada): 6 cabem nos 10 minutos");
+  assert.equal(ger.MIN_RODADAS_PARA_MANTER_O_TIPO, 6);
+  assert.ok(ger.CATEGORIAS_EVITAR.includes("jogo_versiculos"));
+  assert.deepEqual(ger.normalizarEvitar({ jogo_versiculos: ["Provérbios 15:1", "Provérbios 15:1"] }).jogo_versiculos, ["Provérbios 15:1"]);
+  assert.match(appJs, /FAMILIA_EVITAR_CATEGORIAS = \[[^\]]*'jogo_versiculos'/);
+});
+
+teste("6.12.76: conferências dos jogos (fala entre aspas, lacuna, sigla, Verdadeiro/Falso, Quem sou eu?, Dica 2 do livro)", () => {
+  assert.equal(ger.livroDaReferencia("1 Samuel 17:45"), "1 Samuel");
+  assert.equal(ger.livroDaReferencia("Gênesis"), "");
+  assert.equal(ger.parteDasEscrituras("1 João"), "Escrituras Gregas Cristãs");
+  assert.equal(ger.parteDasEscrituras("Rute"), "Escrituras Hebraicas");
+  // Fala entre aspas: aberta e sem fechar (continua no versículo seguinte), só com o fechamento, sem aspas, curta demais.
+  const rute = "Mas Rute disse: “Não insista comigo para abandoná-la, para deixar de acompanhá-la; pois, aonde a senhora for, eu irei.";
+  assert.equal(ger.falaEntreAspas(rute), "Não insista comigo para abandoná-la, para deixar de acompanhá-la; pois, aonde a senhora for, eu irei.");
+  assert.equal(ger.falaEntreAspas("Mas Agripa disse a Paulo: “Em pouco tempo você me persuadiria a me tornar cristão.” E ele saiu."), "Em pouco tempo você me persuadiria a me tornar cristão.");
+  assert.equal(ger.falaEntreAspas("o nosso Deus pode nos livrar da fornalha ardente.” Então o rei se irou."), "o nosso Deus pode nos livrar da fornalha ardente.");
+  assert.equal(ger.falaEntreAspas("Embora vocês quisessem me fazer o mal, Deus quis que as coisas acabassem bem."), "", "sem aspas: a rodada sai");
+  assert.equal(ger.falaEntreAspas("Então José disse: “Aproximem-se, por favor.” E eles se aproximaram."), "", "menos de 4 palavras");
+  // Lacuna do Complete o versículo.
+  const prov = "Uma resposta branda acalma o furor, Mas uma palavra dura atiça a ira.";
+  assert.deepEqual(ger.lacunaNoVersiculo(prov, "branda", "Provérbios"), { texto: "Uma resposta ______ acalma o furor, Mas uma palavra dura atiça a ira.", resposta: "branda" });
+  assert.deepEqual(ger.lacunaNoVersiculo(prov, "Furor.", "Provérbios"), { texto: "Uma resposta branda acalma o ______, Mas uma palavra dura atiça a ira.", resposta: "furor" });
+  const miq = "E o que Jeová pede de você? Apenas que ande modestamente com o seu Deus! Os 12 dias.";
+  for (const p of ["Jeová", "Deus", "ira", "12", "seu Deus", "palavrão", "uma"]) assert.equal(ger.lacunaNoVersiculo(`${miq} ${prov}`, p, "Miqueias"), null, p);
+  assert.equal(ger.lacunaNoVersiculo("Os provérbios de Salomão, filho de Davi.", "provérbios", "Provérbios"), null, "o nome do livro (a Dica 2)");
+  assert.equal(ger.lacunaNoVersiculo("perdoar uns aos outros liberalmente; Jeová os perdoou liberalmente.", "liberalmente", "Colossenses"), null, "palavra repetida no versículo");
+  // Sigla das Abreviações bíblicas.
+  assert.equal(ger.confereAbreviacao("Os 12 A de C", "Os 12 Apóstolos de Cristo"), true);
+  assert.equal(ger.confereAbreviacao("Os 12 A de C", "Os Doze Apóstolos de Cristo"), false);
+  assert.equal(ger.confereAbreviacao("A.T.", "Antigo Testamento"), true);
+  assert.equal(ger.confereAbreviacao("N de J", "Nome de Jeová (Isaías 42:8)."), true, "parênteses no fim não contam");
+  assert.equal(ger.confereAbreviacao("A de C", "Apóstolos do Cristo"), false);
+  assert.equal(ger.confereAbreviacao("de", "de"), false, "precisa de ao menos uma inicial");
+  // Verdadeiro ou falso.
+  assert.deepEqual(ger.respostaVF("verdadeiro, ele voltou"), { valor: "V", texto: "Verdadeiro. Ele voltou" });
+  assert.deepEqual(ger.respostaVF("Falsa — foram sete dias"), { valor: "F", texto: "Falso. Foram sete dias" });
+  assert.equal(ger.respostaVF("Talvez"), null);
+  assert.equal(ger.respostaVF("Verdadeiramente"), null);
+  // Quem sou eu? e Quem disse isso?
+  assert.equal(ger.quemSouEuValida({ pergunta: "Dica 1: a. Dica 2: b. Dica 3: c.", resposta: "Rei Josias" }), true);
+  assert.equal(ger.quemSouEuValida({ pergunta: "Dica 1: a. Dica 2: Josias reinou. Dica 3: c.", resposta: "Rei Josias" }), false, "nome na dica");
+  assert.equal(ger.quemSouEuValida({ pergunta: "Dica 1: a. Dica 2: b.", resposta: "Josias" }), false, "2 dicas");
+  assert.deepEqual(ger.nomesDaResposta("Abigail, esposa de Nabal"), ["abigail", "nabal"]);
+  assert.deepEqual(ger.nomesDaResposta("Os irmãos de Jó"), ["jo"], "nome de 2 letras conta; \"Os\" não");
+  assert.equal(ger.falaSemONome("Eu sou José, seu irmão", "José, a seus irmãos"), false);
+  assert.equal(ger.falaSemONome("Aproximem-se de mim", "José, a seus irmãos"), true);
+  assert.equal(ger.dicaDoLivro("Jó", "Jó"), "Está nas Escrituras Hebraicas", "o livro tem o nome de quem disse");
+  assert.equal(ger.dicaDoLivro("1 João", "João, aos irmãos"), "Está nas Escrituras Gregas Cristãs");
+  assert.equal(ger.dicaDoLivro("Atos", "Agripa, a Paulo"), "Está em Atos");
+});
+
+teste("6.12.76: prompts (Jesus traz um episódio; Jogo com QUANTIDADE e o servidor transcrevendo) e MONTAGEM; troca do tipo no servidor", async () => {
+  const s = montados.sistemaFamiliaQuadro;
+  assert.match(s.jesus, /EPISÓDIO/);
+  assert.match(s.jogo, /o SERVIDOR transcreve a fala/);
+  assert.match(s.jogo, /o SERVIDOR transcreve o versículo e põe a lacuna/);
+  assert.match(s.jogo, /nunca "Jeová", "Deus", um número ou o nome do livro/);
+  assert.match(s.jogo, /NÍVEL DE ADULTO BATIZADO/);
+  assert.match(s.jogo, /NENHUMA PERGUNTA QUE UMA CRIANÇA RESPONDERIA/);
+  assert.doesNotMatch(prompts.PARTES.find((x) => x.id === "adoracao_q_jogo").padrao, /\bcultos?\b/i);
+  const promptsJs = await readFile(new URL("api/_prompts.mjs", raiz), "utf8");
+  assert.match(promptsJs, /6\.12\.76: /);
+  assert.match(promptsJs, /memória "jogo_versiculos"/);
+  assert.match(promptsJs, /a resposta e a referência de cada rodada ficam só no servidor \(respostas\.json\)/);
+  assert.match(servidorJs, /jogoFora: textoLivre\(body\.jogoFora, 80\)/);
+  assert.match(servidorJs, /não teve rodadas suficientes conferidas na Bíblia; foi trocado por/);
+  // jogoFora: o tipo que não deu certo fica fora do sorteio.
+  const fora = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "jogo", jogos: ["Verdadeiro ou falso", "Quem sou eu? (personagens bíblicos)"], jogoFora: "Verdadeiro ou falso" }), montados);
+  assert.equal(fora.prep.tipo, "Quem sou eu? (personagens bíblicos)");
+  assert.match(fora.mensagem, /QUANTIDADE: mande 8 rodadas \(no mínimo 6; ficam até 8\)\./);
+  // Sem a Bíblia no servidor, nada de Complete o versículo nem Quem disse isso?
+  const complete = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "jogo", jogos: ["Complete o versículo"] }), montados);
+  if (comFontes) assert.equal(complete.prep.tipo, "Complete o versículo");
+  else assert.ok(!["complete_versiculo", "quem_disse"].includes(ger.idDoJogo(complete.prep.tipo)), complete.prep.tipo);
+});
+
+teste("6.12.76: Quem sou eu? e Abreviações conferidos pelo servidor; Princípio guarda os versículos em relatos", async () => {
+  const qse = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "jogo", jogos: ["Quem sou eu? (personagens bíblicos)"] }), montados);
+  const nomes = ["Josias", "Abigail", "Mefibosete", "Gideão", "Débora", "Barnabé"];
+  const boas = nomes.map((n, i) => ({ pergunta: `Dica 1: fato ${i}. Dica 2: outro ${i}. Dica 3: mais ${i}.`, resposta: n, referencia: "Juízes 4:4" }));
+  const ruins = [
+    { pergunta: "Dica 1: Josias reinou. Dica 2: b. Dica 3: c.", resposta: "Rei Josias" },
+    { pergunta: "Dica 1: a. Dica 2: b.", resposta: "Ester" },
+    { pergunta: "Dica 1: x. Dica 2: y. Dica 3: z.", resposta: "Gideão" },
+  ];
+  const p1 = await qse.prep.montar({ descricao: "d", nome: "Quem sou eu?", comoJogar: "R.", rodadas: [...boas, ...ruins], eventos: [] });
+  assert.equal(p1.contagens.rodadas, 6);
+  assert.equal(p1.falta, "", "6 é o mínimo do Quem sou eu?");
+  assert.equal(p1.contagens.tiradas, 3);
+  assert.equal(p1.jogo.idTipo, "quem_sou_eu");
+  assert.deepEqual(p1.memoria, { jogos: ["Quem sou eu? (personagens bíblicos)"] });
+  const ab = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "jogo", jogos: ["Abreviações bíblicas (ex.: Os 12 A de C)"] }), montados);
+  const p2 = await ab.prep.montar({ descricao: "d", nome: "Siglas", comoJogar: "R.", rodadas: [{ pergunta: "Os 12 A de C", resposta: "Os 12 Apóstolos de Cristo", referencia: "Mateus 10:2" }, { pergunta: "O que significa? Os 12 A de C", resposta: "Os 12 Apóstolos de Cristo", referencia: "Mateus 10:2" }, { pergunta: "R de D", resposta: "Reino dos Céus", referencia: "Mateus 5:3" }], eventos: [] });
+  assert.equal(p2.contagens.rodadas, 1, "sigla repetida e sigla que não confere saem");
+  assert.equal(p2.jogo.rodadas[0].pergunta, "O que significa? Dica 1: Os 12 A de C Dica 2: Está em Mateus.");
+  assert.match(p2.falta, /^vieram 1 rodadas válidas; mande 10 rodadas \(no mínimo 8\)/);
+  assert.equal(p2.trocarTipo, "", "Abreviações não troca de tipo");
+  if (!comFontes) return console.log("      (sem FONTES_DIR: Princípio pulado)");
+  const pr = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "principio", assunto: "perdão", evitar: {} }), montados);
+  const parte = await pr.prep.montar({ descricao: "d", escolha: "PR1" });
+  assert.deepEqual(parte.memoria.relatos, parte.textos.filter((t) => t.texto).map((t) => t.referencia));
+  assert.ok(parte.memoria.relatos.length >= 1);
+  // Jesus: um episódio narrado (pelo menos 3 versículos); uma frase só faz o servidor refazer com "FALTOU".
+  const jp = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "jesus", assunto: "perdoar os irmãos", angulo: "perdoar sempre", evitar: {} }), montados);
+  const curta = await jp.prep.montar({ episodio: "Perdoar sete vezes", referencia: "Lucas 17:3, 4", qualidade: "paciência", escolha: null, descricao: "d", perguntas: ["?"] });
+  assert.match(curta.falta, /^a passagem Lucas 17:3, 4 tem só 2 versículos: escolha um EPISÓDIO narrado/);
+  const longa = await jp.prep.montar({ episodio: "O escravo que não perdoou", referencia: "Mateus 18:21-35", qualidade: "misericórdia", escolha: null, descricao: "d", perguntas: ["?"] });
+  assert.ok(!longa.falta, longa.falta);
+});
+
+teste("6.12.76: Complete o versículo e Quem disse isso? montados pelo servidor com o texto da Bíblia; troca do tipo com poucas rodadas (com FONTES_DIR)", async () => {
+  if (!comFontes) return console.log("      (sem FONTES_DIR: pulado)");
+  const boas = [["Provérbios 15:1", "branda"], ["Mateus 5:9", "pacificadores"], ["Colossenses 3:13", "queixa"], ["Provérbios 17:9", "transgressão"], ["Efésios 4:32", "compassivos"], ["Provérbios 19:11", "perspicácia"], ["Miqueias 6:8", "modestamente"], ["Salmo 86:5", "invocam"]];
+  const ruins = [["Miqueias 6:8", "Jeová"], ["Mateus 6:14", "Pai"], ["Colossenses 3:13", "liberalmente"], ["Gênesis 50:20", "palavra"], ["Livro Inventado 3:1", "nada"]];
+  const rodadas = [...ruins, ...boas, ["Provérbios 15:1", "furor"]].map(([referencia, resposta]) => ({ pergunta: "", resposta, referencia }));
+  const cp = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "jogo", jogos: ["Complete o versículo"], evitar: { jogo_versiculos: ["Lucas 23:34"] } }), montados);
+  assert.match(cp.mensagem, /QUANTIDADE: mande 12 rodadas \(no mínimo 8; ficam até 10\)\./);
+  assert.match(cp.mensagem, /EVITAR \(versículos dos jogos usados nas últimas semanas — escolha outros\): Lucas 23:34/);
+  const c1 = await cp.prep.montar({ descricao: "d", nome: "Complete", comoJogar: "R.", rodadas, eventos: [] });
+  assert.equal(c1.contagens.rodadas, 8, JSON.stringify(c1.jogo && c1.jogo.rodadas));
+  assert.equal(c1.falta, "");
+  assert.equal(c1.trocarTipo, "");
+  assert.equal(c1.jogo.idTipo, "complete_versiculo");
+  assert.deepEqual(c1.jogo.rodadas[0], { pergunta: "Complete a palavra que falta. Dica 1: “Uma resposta ______ acalma o furor, Mas uma palavra dura atiça a ira.” Dica 2: Está em Provérbios.", resposta: "branda", referencia: "Provérbios 15:1" });
+  assert.match(c1.jogo.rodadas[1].pergunta, /Dica 1: “‘Felizes os ______, porque/, "as aspas do versículo viram aspas simples");
+  assert.deepEqual(c1.memoria.jogo_versiculos, boas.map(([r]) => (r === "Salmo 86:5" ? "Salmos 86:5" : r)));
+  for (const r of c1.jogo.rodadas) assert.match(r.pergunta, /^Complete a palavra que falta\. Dica 1: “.+” Dica 2: Está em .+\.$/);
+  // Versículos das últimas semanas e os já usados nesta noite saem; com menos de 6, o servidor pede a troca do tipo.
+  const cp2 = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "jogo", jogos: ["Complete o versículo"], evitar: { jogo_versiculos: ["Provérbios 15:1", "Mateus 5:9"] }, jaUsados: { versiculos: ["efesios 4:32"] } }), montados);
+  const c2 = await cp2.prep.montar({ descricao: "d", nome: "Complete", comoJogar: "R.", rodadas: boas.map(([referencia, resposta]) => ({ pergunta: "", resposta, referencia })), eventos: [] });
+  assert.equal(c2.contagens.rodadas, 5);
+  assert.match(c2.falta, /^vieram 5 rodadas válidas; mande 12 rodadas \(no mínimo 8\)/);
+  assert.equal(c2.trocarTipo, "Complete o versículo");
+  // Quem disse isso?: a fala transcrita entre aspas; sem fala entre aspas (ou curta), a rodada sai.
+  const qd = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "jogo", jogos: ["Quem disse isso? (frases da Bíblia)"] }), montados);
+  const falas = [["Rute 1:16", "Rute, a Noemi"], ["Atos 26:28", "Agripa, a Paulo"], ["Gênesis 50:20", "José, a seus irmãos"], ["Gênesis 45:4", "José, a seus irmãos"], ["Lucas 2:49", "Jesus, a seus pais"], ["Jó 1:21", "Jó"], ["Ester 4:16", "Ester, a Mardoqueu"], ["Mateus 5:9", "Jesus, aos discípulos"], ["Lucas 23:34", "Jesus, ao Pai"], ["Mateus 6:14", "Jesus, no Sermão do Monte"]];
+  const q1 = await qd.prep.montar({ descricao: "d", nome: "Quem disse?", comoJogar: "R.", rodadas: falas.map(([referencia, resposta]) => ({ pergunta: "", resposta, referencia })), eventos: [] });
+  assert.equal(q1.contagens.rodadas, 8, JSON.stringify(q1.jogo && q1.jogo.rodadas.map((r) => r.referencia)));
+  assert.equal(q1.contagens.tiradas, 2, "Gênesis 50:20 sem aspas e Gênesis 45:4 com fala curta");
+  assert.equal(q1.jogo.idTipo, "quem_disse");
+  assert.equal(q1.falta, "");
+  assert.match(q1.jogo.rodadas[0].pergunta, /^Quem disse isso\? Dica 1: “Não insista comigo para abandoná-la, .+” Dica 2: Está nas Escrituras Hebraicas\.$/);
+  assert.equal(q1.jogo.rodadas[1].pergunta, "Quem disse isso? Dica 1: “Em pouco tempo você me persuadiria a me tornar cristão.” Dica 2: Está em Atos.");
+  assert.match(q1.jogo.rodadas.find((r) => r.referencia === "Jó 1:21").pergunta, /Dica 2: Está nas Escrituras Hebraicas\.$/);
+  assert.equal(q1.jogo.rodadas[1].referencia, "Atos 26:28");
+  assert.equal(q1.memoria.jogo_versiculos.length, 8);
+  for (const r of q1.jogo.rodadas) assert.ok(r.pergunta.length <= 400, r.referencia);
 });
 
 for (const [nome, fn] of testes) {
