@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.15
+
+### Adoração em Família: tempo total na linha do plano
+
+Na lista de andamento da preparação, a primeira linha ("🗺️ Plano da noite (tempo total)") mostra a soma do tempo das atividades; quando uma atividade fica pronta, entra o tempo real dela (o Vídeo, por exemplo, pode passar de 10 para 15 min). A coluna do tempo ficou um pouco mais larga para caber "105 min" sem desalinhar (conferido a 375 px: todas as linhas com o tempo e o nome nas mesmas posições).
+
 ## 6.13.14
 
 ### Adoração em Família: campo Assunto mostra todos os temas escolhidos

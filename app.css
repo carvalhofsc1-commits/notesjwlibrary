@@ -16920,7 +16920,7 @@ button.secondary.fam-atalho-ativo { background: color-mix(in srgb, #3b82f6 18%, 
 .fam-prog-card[open] > summary.fam-prog-titulo { margin-bottom: 8px; }
 .fam-prog-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; min-width: 0; text-align: left; }
 .fam-prog-item { display: grid; gap: 6px; min-width: 0; font-size: .92rem; text-align: left; }
-.fam-prog-linha { display: grid; grid-template-columns: 1.4em 4.2em 1.6em minmax(0, 1fr); column-gap: 6px; align-items: baseline; justify-items: start; min-width: 0; text-align: left; }
+.fam-prog-linha { display: grid; grid-template-columns: 1.4em 4.8em 1.6em minmax(0, 1fr); column-gap: 6px; align-items: baseline; justify-items: start; min-width: 0; text-align: left; }
 .fam-prog-icone { text-align: center; justify-self: center; }
 .fam-prog-tempo { font-variant-numeric: tabular-nums; white-space: nowrap; justify-self: end; opacity: .85; }
 .fam-prog-emoji { justify-self: center; }

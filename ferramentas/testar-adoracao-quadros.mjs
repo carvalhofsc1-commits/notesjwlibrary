@@ -1883,7 +1883,7 @@ teste("6.13.08: andamento à esquerda com o tempo alinhado; ao terminar a lista 
   assert.ok(appJs.includes("if (ger.exibido) familiaRenderOpcoes([op], undefined, ger.itemId);"), "a programação só aparece depois de Exibir");
   assert.ok(!/const falhas = familiaFalhasTexto\(ger\);\s*if \(!falhas\) familiaProgressoLimpar\(\);/.test(appJs), "a lista não fecha mais ao terminar");
   assert.ok(css.includes(".fam-prog-lista > .fam-prog-item.ok { display: grid; width: auto; margin: 0; text-align: left; }"));
-  assert.ok(/\.fam-prog-linha \{[^}]*grid-template-columns: 1\.4em 4\.2em 1\.6em minmax\(0, 1fr\)/.test(css));
+  assert.ok(/\.fam-prog-linha \{[^}]*grid-template-columns: 1\.4em 4\.8em 1\.6em minmax\(0, 1fr\)/.test(css));
 });
 
 teste("6.13.09: fonte exata em todo o módulo (busca no wol sem pontuação, só na mesma publicação, verbete e lição com página)", async () => {
