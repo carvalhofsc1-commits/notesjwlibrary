@@ -1676,6 +1676,23 @@ teste("6.12.81 (2): o jogo de Abreviações tira as siglas longas e o pedido de 
   assert.match(r.falta, /a sigla na pergunta curta \(no máximo 4 iniciais\), de uma expressão bíblica conhecida \(nome, título ou grupo, nunca um pedaço de frase de versículo\)/);
 });
 
+teste("6.12.85: Abertura — matéria antes do relato e local exato da fonte (capítulo, parágrafo, página)", async () => {
+  const { paginasDosCapitulos, localDoTrecho } = await import(new URL("api/_fontes.mjs", raiz));
+  const sumario = ["Capítulo", "1 “Vejam! Este é o nosso Deus!” 7", "2 É mesmo possível ‘achegar-se a Deus’? 16", "SEÇÃO 1 — “Atemorizante poder”", "3 “Santo, santo, santo é Jeová” 26", "4 “Jeová é . . . grande em poder” 37"];
+  const mapa = paginasDosCapitulos(sumario);
+  assert.equal(mapa.get(2), 16);
+  assert.equal(mapa.get(4), 37);
+  assert.equal(paginasDosCapitulos(["1 Um 5", "2 Dois 9"]).size, 0, "menos de 3 capítulos: não vale");
+  assert.equal(localDoTrecho({ capitulo: 5, numero: 3, pagina: 37 }), "cap. 5, par. 3, o capítulo começa na pág. 37");
+  assert.equal(localDoTrecho({ numero: 12 }), "par. 12");
+  assert.equal(localDoTrecho({}), "");
+  assert.ok(servidorJs.includes("if (leitura) leitura.primeiro = true;"));
+  assert.ok(servidorJs.includes("fonte: localDoTrecho(l) || l.livro, paragrafos: l.numero"));
+  assert.ok(sessaoJs.includes("primeiro: p.leitura.primeiro === true"));
+  assert.ok(appJs.includes("if (parte.leitura && parte.leitura.primeiro) montarLeitura();"));
+  assert.ok(appJs.indexOf("montarLeitura(); // 6.12.85") < appJs.indexOf("addLista('📖 Textos'"));
+});
+
 for (const [nome, fn] of testes) {
   try {
     await fn();

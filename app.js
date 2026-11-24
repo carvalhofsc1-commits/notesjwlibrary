@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.12.84'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.12.85'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -26989,6 +26989,7 @@ function saveTemplatesToStorage() {
         bloco.appendChild(secao);
       };
       // aoVivo (Adoração compartilhada, 6.11.56): { texto(li, t), video(li, v, indice) } acrescentam o áudio dos versículos e o vídeo com a transcrição.
+      if (parte.leitura && parte.leitura.primeiro) montarLeitura(); // 6.12.85: Abertura — a matéria antes do relato bíblico
       addLista('📖 Textos', parte.textos, (li, t) => {
         if (aoVivo && aoVivo.texto) {
           // Ao vivo: ▶️ áudio do texto (botão fino) na mesma linha, antes do texto; referência em negrito e o texto entre aspas, em itálico.
@@ -27012,7 +27013,10 @@ function saveTemplatesToStorage() {
         }
       });
       // 6.12.48: a leitura de um trecho de uma matéria (os parágrafos que o servidor leu no wol.jw.org).
-      if (parte.leitura && parte.leitura.texto) {
+      // 6.12.85: na Abertura (leitura.primeiro) a matéria vem antes do relato bíblico; nas outras atividades, depois dos textos.
+      if (!(parte.leitura && parte.leitura.primeiro)) montarLeitura();
+      function montarLeitura() {
+        if (!(parte.leitura && parte.leitura.texto)) return;
         const lei = document.createElement('div');
         lei.className = 'fam-secao-bloco fam-leitura';
         const lt = document.createElement('p');

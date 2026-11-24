@@ -39,7 +39,7 @@ import {
   textoDasFontesDoCampo,
   trechosBe,
 } from "./_servicoCampo.mjs";
-import { artigosDoTopicoDoGuia, buscarNosLivros, buscarVerbete, buscarVersiculos, versiculosDoCapitulo, fontesConfiguradas, lerCanticos, lerEnsinosBiblicos, lerPrincipios, lerTextoDoLivro, lerVerbeteCompleto, nomeDoLivro, precarregarFontes, referenciaPadrao, referenciasNoTexto, resolvedorDeLivros, textoDeGruposBiblicos } from "./_fontes.mjs";
+import { artigosDoTopicoDoGuia, buscarNosLivros, buscarVerbete, buscarVersiculos, versiculosDoCapitulo, fontesConfiguradas, lerCanticos, lerEnsinosBiblicos, lerPrincipios, lerTextoDoLivro, lerVerbeteCompleto, localDoTrecho, nomeDoLivro, precarregarFontes, referenciaPadrao, referenciasNoTexto, resolvedorDeLivros, textoDeGruposBiblicos } from "./_fontes.mjs";
 import { JOGOS_FAMILIA, QUADROS_FAMILIA, minutosDosQuadros, quadrosDoPedido } from "./_familiaQuadros.mjs";
 import {
   JOGOS_CONFERIDOS_NA_BIBLIA,
@@ -3235,9 +3235,10 @@ async function trechosDosLivrosDoQuadro(quadro, consulta, { max = 6, maxChars = 
 const listaDeTrechos = (livros, titulo = "TRECHOS DE LIVROS (escolha pelo identificador)") =>
   livros.length ? `\n${titulo}:\n${livros.map((l, i) => `[L${i + 1}] ${l.livro}: ${l.trecho}`).join("\n\n")}\n` : "";
 // 6.12.73: sem as marcas "##" e "•" de alguns livros guardados.
-const leituraDoTrecho = (l) => (l ? { titulo: l.livro, fonte: l.livro, paragrafos: "", texto: leituraLimpa(semMarcasDoTexto(l.trecho)), url: "", rotulo: "Trecho do livro" } : null);
+// 6.12.85: o local exato do trecho (capítulo, parágrafo e página inicial do capítulo, quando o arquivo do livro os traz) para o usuário achar a fonte.
+const leituraDoTrecho = (l) => (l ? { titulo: l.livro, fonte: localDoTrecho(l) || l.livro, paragrafos: l.numero ? String(l.numero) : "", texto: leituraLimpa(semMarcasDoTexto(l.trecho)), url: linkDeConsultaWol(l.trecho), rotulo: "Trecho do livro" } : null);
 // A publicação do trecho, com o link da busca da frase no wol.jw.org (o endereço do livro no wol não é conhecido).
-const publicacaoDoTrecho = (l) => (l ? [{ titulo: l.livro, fonte: "", url: linkDeConsultaWol(l.trecho) }] : []);
+const publicacaoDoTrecho = (l) => (l ? [{ titulo: l.livro, fonte: localDoTrecho(l), url: linkDeConsultaWol(l.trecho) }] : []);
 // Um artigo do catálogo lido no wol pelo docId; null se não abrir ou vier com menos de MIN_CARACTERES_ARTIGO.
 async function leituraDoArtigoFamilia(a, rotulo = "Trecho do artigo") {
   const url = urlWolDoDocId(a?.docId);
@@ -3336,6 +3337,8 @@ const PREPARAR_QUADRO_FAMILIA = {
         if (docId) memoria.artigos = [docId];
         if (trechoLido) memoria.leituras = [chaveDoTrecho(trechoLido.trecho)];
         if (textos.length) memoria.relatos = [textos[0].referencia];
+        // 6.12.85: na Abertura a matéria vem primeiro e o relato bíblico depois (marca "primeiro" na leitura).
+        if (leitura) leitura.primeiro = true;
         return { descricao: descricaoFamilia(o.descricao), leitura, textos, perguntas, memoria, contagens: { artigoLido } };
       },
     };

@@ -2,6 +2,14 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.85
+
+### Adoração em Família: Abertura com a matéria primeiro e o local exato da fonte
+
+- **Matéria antes do relato:** na atividade 1 (Abertura) o trecho da matéria a ser lida agora vem primeiro, e o relato bíblico (Textos) depois, na tela e na sessão compartilhada. As outras atividades ficam como estavam.
+- **Local exato da fonte:** o servidor passa a guardar, para cada parágrafo dos livros, o capítulo (linha "CAPÍTULO N"), o número do parágrafo (o número que abre o texto) e a página em que o capítulo começa (pelo Sumário do livro). A Abertura mostra, por exemplo, "Parágrafo 9 · cap. 5, par. 9, o capítulo começa na pág. 47" e um link para abrir o trecho no wol.jw.org.
+- Nada é inventado: os livros não trazem marcas de página no corpo, então a página é a do começo do capítulo (dita assim); livros sem numeração de capítulo ou parágrafo no arquivo mostram só o título e o link de busca no wol.
+
 ## 6.12.84
 
 ### Revisão do módulo Adoração em Família: contraste no tema escuro

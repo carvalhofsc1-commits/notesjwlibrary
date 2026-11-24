@@ -635,8 +635,15 @@ function carregarLivros() {
           console.error(`Fonte indisponível (${LIVROS[i].chave}): ${ARQUIVOS[LIVROS[i].chave]}`, resultado.reason?.message || resultado.reason);
           return;
         }
-        for (const bruto of resultado.value.split(/\r?\n\s*\r?\n/)) {
+        // 6.12.85: o local de cada parágrafo (capítulo, número do parágrafo e página inicial do capítulo), para o usuário achar a fonte.
+        // Só vale o que está explícito no arquivo: "CAPÍTULO N", o número que abre o parágrafo e a página do Sumário; nada é deduzido.
+        const blocos = resultado.value.split(/\r?\n\s*\r?\n/);
+        const paginas = paginasDosCapitulos(blocos);
+        let capitulo = 0;
+        for (const bruto of blocos) {
           const texto = bruto.replace(/\s+/g, " ").trim();
+          const cap = texto.match(/^CAPÍTULO (\d{1,3})$/i);
+          if (cap) { capitulo = Number(cap[1]); continue; }
           if (texto.length < 80 || (texto.length < 200 && /\?$/.test(texto))) continue; // fora: sobras de quadro e perguntas soltas
           if (CABECALHO_DA_EDICAO.test(texto)) continue;
           const sequencia = palavrasDe(texto);
@@ -647,7 +654,8 @@ function carregarLivros() {
           const pares = new Set();
           for (let k = 1; k < sequencia.length; k++) pares.add(sequencia[k - 1] + " " + sequencia[k]);
           const paresInicio = new Set(sequencia.slice(0, 12).map((w, k, s) => (k ? s[k - 1] + " " + w : "")).filter(Boolean));
-          paragrafos.push({ livro: LIVROS[i].nome, texto, palavras, pares, paresInicio });
+          const num = texto.match(/^(\d{1,3}) (?=[A-ZÀ-Ú“‘"])/);
+          paragrafos.push({ livro: LIVROS[i].nome, texto, palavras, pares, paresInicio, capitulo, numero: num ? Number(num[1]) : 0, pagina: capitulo ? paginas.get(capitulo) || 0 : 0 });
         }
       });
       return { paragrafos, df };
@@ -692,8 +700,31 @@ export async function buscarNosLivros(consulta, { max = 4, maxChars = 1500, livr
   return pontuados.slice(0, max).map(({ p }) => {
     let trecho = p.texto;
     if (trecho.length > maxChars) { const corte = trecho.lastIndexOf(". ", maxChars); trecho = trecho.slice(0, corte > 300 ? corte + 1 : maxChars); }
-    return { livro: p.livro, trecho };
+    return { livro: p.livro, trecho, capitulo: p.capitulo || 0, numero: p.numero || 0, pagina: p.pagina || 0 };
   });
+}
+
+// O Sumário do começo do livro ("5 Poder criativo — … 37"): número do capítulo -> página em que ele começa. Só aceita números em sequência desde 1.
+export function paginasDosCapitulos(blocos) {
+  const mapa = new Map();
+  const linhas = [];
+  for (const b of blocos.slice(0, 150)) for (const l of String(b).split(/\r?\n/)) linhas.push(l.replace(/\s+/g, " ").trim());
+  let esperado = 1;
+  for (const l of linhas) {
+    const m = l.match(/^(\d{1,2}) .{3,160}? (\d{1,3})$/);
+    if (m && Number(m[1]) === esperado) { mapa.set(esperado, Number(m[2])); esperado++; }
+  }
+  return mapa.size >= 3 ? mapa : new Map();
+}
+
+// "cap. 5, par. 3, a partir da pág. 37": só as partes que se conhecem.
+export function localDoTrecho(t) {
+  if (!t) return "";
+  const partes = [];
+  if (t.capitulo) partes.push(`cap. ${t.capitulo}`);
+  if (t.numero) partes.push(`par. ${t.numero}`);
+  if (t.pagina) partes.push(`o capítulo começa na pág. ${t.pagina}`);
+  return partes.join(", ");
 }
 
 // ---------- Brochuras do ministério, lição por lição (6.11.53) ----------

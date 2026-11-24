@@ -218,7 +218,7 @@ function limparPrograma(op) {
       perguntas: lista(p.perguntas, 15, (q) => texto(q, 500)),
       // 6.12.48: o trecho da matéria que o servidor leu no wol para a leitura da atividade.
       leitura: p.leitura && typeof p.leitura === "object" && texto(p.leitura.texto, 4000)
-        ? { titulo: texto(p.leitura.titulo, 200), fonte: texto(p.leitura.fonte, 120), paragrafos: texto(p.leitura.paragrafos, 20), texto: texto(p.leitura.texto, 4000), rotulo: texto(p.leitura.rotulo, 80), url: /^https:\/\/wol\.jw\.org\//i.test(String(p.leitura.url || "")) ? texto(p.leitura.url, 500) : "" }
+        ? { titulo: texto(p.leitura.titulo, 200), fonte: texto(p.leitura.fonte, 240), primeiro: p.leitura.primeiro === true, paragrafos: texto(p.leitura.paragrafos, 20), texto: texto(p.leitura.texto, 4000), rotulo: texto(p.leitura.rotulo, 80), url: /^https:\/\/wol\.jw\.org\//i.test(String(p.leitura.url || "")) ? texto(p.leitura.url, 500) : "" }
         : null,
       transicao: texto(p.transicao, 600),
       jogo: null,
