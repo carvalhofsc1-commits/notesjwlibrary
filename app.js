@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.13.06'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.13.07'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -26373,6 +26373,15 @@ function saveTemplatesToStorage() {
         const rot = i.closest('.fam-check');
         if (rot) rot.classList.toggle('fam-check-off', !livre);
       });
+      // 6.13.07: cada seção (card recolhível) mostra no título quantos itens dela estão marcados.
+      caixa.querySelectorAll('details.fam-circ-secao').forEach(sec => {
+        const n = sec.querySelectorAll('input[type="checkbox"]:checked').length;
+        const sm = sec.querySelector(':scope > summary');
+        if (!sm) return;
+        let marca = sm.querySelector('.fam-circ-marcadas');
+        if (!marca) { marca = document.createElement('span'); marca.className = 'fam-circ-marcadas'; sm.appendChild(marca); }
+        marca.textContent = n ? ' · ✓ ' + n + (n === 1 ? ' marcado' : ' marcados') : '';
+      });
     }
 
     function familiaChecksMarcar(caixa, valores) {
@@ -26422,7 +26431,7 @@ function saveTemplatesToStorage() {
       if (progEl) {
         const nQuadros = perfil.quadros.filter(id => QUADROS_FAMILIA.find(q => q.id === id).minutos).length;
         const nCirc = perfil.circunstancias.length + (perfil.outrasCircunstancias ? 1 : 0);
-        progEl.textContent = [nQuadros + (nQuadros === 1 ? ' quadro' : ' quadros'), familiaTotalTexto(perfil.quadros), nCirc ? nCirc + (nCirc === 1 ? ' circunstância' : ' circunstâncias') : ''].filter(Boolean).join(' · ');
+        progEl.textContent = [nQuadros + (nQuadros === 1 ? ' quadro' : ' quadros'), familiaTotalTexto(perfil.quadros), nCirc ? nCirc + (nCirc === 1 ? ' assunto ou situação' : ' assuntos ou situações') : ''].filter(Boolean).join(' · ');
       }
       const convEl = document.getElementById('familiaConvidadosResumo');
       if (convEl) {
@@ -26457,6 +26466,8 @@ function saveTemplatesToStorage() {
       const circNovas = { 'Filho adolescente': 'Lidar com filhos adolescentes', 'Criança pequena': 'Educação de filhos pequenos', 'Parente que não serve a Jeová': 'Lidar com familiares descrentes', 'Dificuldades com relacionamentos (família, amigos, trabalho, irmãos)': 'Cultivar bons relacionamentos (família, amigos, trabalho, irmãos)' };
       familiaChecksMarcar(document.getElementById('familiaCircunstancias'), (salvo.circunstancias || []).map(c => circNovas[c] || c));
       familiaCircAplicarLimite(null); // 6.13.06: no máximo 2, relacionadas
+      // 6.13.07: as seções com algo marcado já abrem; as outras ficam recolhidas.
+      document.querySelectorAll('#familiaCircunstancias details.fam-circ-secao').forEach(d => { d.open = Boolean(d.querySelector('input:checked')); });
       if (typeof salvo.outrasCircunstancias === 'string') familiaOutrasCircEl.value = salvo.outrasCircunstancias;
       // 6.12.70: quadros, cânticos e jogos; o perfil antigo (atividades, duracao, quantidade, jogoPapel) é convertido por familiaQuadrosMigrados.
       familiaQuadrosAplicar(familiaQuadrosMigrados(salvo));
@@ -30101,7 +30112,7 @@ function saveTemplatesToStorage() {
       // 6.13.06: é preciso um assunto (com pelo menos uma palavra de verdade) ou pelo menos uma circunstância marcada (ou escrita em Outras).
       const assuntoValido = /\p{L}{3,}/u.test(perfil.assunto);
       if (!assuntoValido && !perfil.circunstancias.length && !perfil.outrasCircunstancias) {
-        familiaStatus('Escreva o assunto desta semana ou marque pelo menos uma circunstância (em Programação → 💛 Circunstâncias).', 'erro');
+        familiaStatus('Escreva o assunto desta semana ou marque pelo menos um item em Programação → 💛 Assuntos e situações abrangidas.', 'erro');
         try { familiaAssuntoEl.focus(); } catch (e) { /* sem foco */ }
         return;
       }

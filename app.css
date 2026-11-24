@@ -16744,6 +16744,14 @@ input[type="time"].fam-campo::-webkit-date-and-time-value { text-align: left; mi
 }
 /* 6.12.99: circunstâncias em subgrupos */
 .fam-circ-grupos { display: grid; gap: 6px; min-width: 0; }
+/* 6.13.07: cada seção de "Assuntos e situações abrangidas" é um card recolhível, mostrando só o tema */
+.fam-circ-secao { border: 1px solid var(--line, #cbd5e1); border-radius: 10px; padding: 0 10px; background: var(--card); min-width: 0; }
+.fam-circ-secao > summary { cursor: pointer; min-height: 42px; display: flex; align-items: center; flex-wrap: wrap; gap: 4px; font-weight: 700; }
+.fam-circ-secao[open] { padding-bottom: 10px; }
+.fam-circ-secao[open] > summary { margin-bottom: 6px; }
+.fam-circ-marcadas { font-weight: 600; font-size: .85rem; color: color-mix(in srgb, #3b82f6 60%, var(--text)); }
+.fam-circ-secao > .fam-subsecao { margin: 10px 0 4px; font-size: .86rem; }
+.fam-circ-secao > .fam-subsecao:first-of-type { margin-top: 2px; }
 .fam-check.fam-check-off { opacity: .42; cursor: not-allowed; } /* 6.13.06: circunstância que não combina com a já marcada (ou já há 2 marcadas) */
 .fam-subgrupo-titulo { margin: 8px 0 0; font-size: .9rem; font-weight: 700; color: color-mix(in srgb, #3b82f6 55%, var(--text)); }
 .fam-circ-grupos > .fam-subgrupo-titulo:first-child { margin-top: 2px; }

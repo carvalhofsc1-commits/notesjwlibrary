@@ -3054,7 +3054,7 @@ function mensagemDoPerfilFamilia(perfil) {
       ? `USO OPCIONAL DA SITUAÇÃO ESPIRITUAL E DOS PRIVILÉGIOS (dos membros e dos convidados): leve em conta quando ajudar, principalmente havendo CRIANÇAS (por exemplo, quem é batizado ou tem privilégios pode conduzir ou ajudar mais, e os que estão começando, como o publicador não batizado e o estudante da Bíblia, podem ser incentivados com carinho e sem pressão; para as crianças, escolha atividades e exemplos que valorizem o bom exemplo dos mais experientes). "Removido" e "Descrente" pedem muito tato: nunca exponha, cobre ou designe parte que constranja, e não os diferencie dos demais nas tarefas. Nunca escreva a situação espiritual ou os privilégios de ninguém no texto das opções. Se não ajudar, ignore.\n`
       : "") +
     (perfil.anosCasados !== null ? `ANOS DE CASADOS: ${perfil.anosCasados}\n` : "") +
-    (circunstancias.length ? `CIRCUNSTÂNCIAS QUE O CHEFE QUIS INFORMAR (trate com tato, nunca exponha ninguém):\n${circunstancias.map((c) => `- ${circunstanciaParaIa(c)}`).join("\n")}\n` : "")
+    (circunstancias.length ? `ASSUNTOS E SITUAÇÕES QUE O CHEFE QUIS ABRANGER (circunstâncias, uma qualidade cristã ou um personagem bíblico; trate com tato, nunca exponha ninguém):\n${circunstancias.map((c) => `- ${circunstanciaParaIa(c)}`).join("\n")}\n` : "")
   );
 }
 
@@ -3069,7 +3069,7 @@ function resumoDaFamiliaParaQuadro(perfil) {
     (temConvidados
       ? `CONVIDADOS NA NOITE (participam, sem tarefas): ${[cv.membros.map((m) => pessoa(m, "convidado")).join("; "), cv.formacao, cv.familia].filter(Boolean).join(" — ") || "sim"}${cv.anotacoes ? `; anotações do chefe (trate com tato): ${cv.anotacoes}` : ""}\n`
       : "") +
-    (circ.length ? `CIRCUNSTÂNCIAS (trate com tato, nunca exponha ninguém): ${circ.map(circunstanciaParaIa).join("; ")}\n` : "")
+    (circ.length ? `ASSUNTOS E SITUAÇÕES ABRANGIDAS (trate com tato, nunca exponha ninguém): ${circ.map(circunstanciaParaIa).join("; ")}\n` : "")
   );
 }
 
