@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.01
+
+### Adoração em Família: relacionamentos em Vida cristã
+
+"Cultivar bons relacionamentos (família, amigos, trabalho, irmãos)" e "Promover a paz nos nossos relacionamentos" passaram de 🏠 Vida familiar para 📖 Vida cristã.
+
 ## 6.13.00
 
 ### Adoração em Família: três circunstâncias novas
