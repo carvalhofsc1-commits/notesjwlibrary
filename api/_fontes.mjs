@@ -609,6 +609,15 @@ const LIVROS = [
   { chave: "origemDaVida", nome: "A Origem da Vida — Cinco Perguntas Que Merecem Resposta (lf)" },
 ];
 
+// 6.13.09: a sigla da publicação no wol ("kr", "rr", "th"…), para conferir que a busca no wol achou o trecho na MESMA publicação.
+const SIGLAS_SEM_NOME = { adoracaoPura: "rr", reinoDeDeus: "kr", principiosBiblicos: "scl", raciocinios: "rs", beneficieEscola: "be", organizados: "od" };
+export function siglaDoLivro(nome) {
+  const m = String(nome || "").match(/\(([a-z0-9-]{1,6})\)\s*$/i);
+  if (m) return m[1].toLowerCase();
+  const l = LIVROS.find((x) => x.nome === nome);
+  return (l && SIGLAS_SEM_NOME[l.chave]) || "";
+}
+
 // O nome de um livro da busca pela chave (ex.: "beneficieEscola"), para filtrar os resultados de buscarNosLivros.
 export function nomeDoLivro(chave) {
   return (LIVROS.find((l) => l.chave === chave) || {}).nome || "";

@@ -824,12 +824,12 @@ teste("6.12.73: Personagem com a passagem inteira e o sentido certo do Perspicaz
   const pedido = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "personagem", assunto: "perdoar os irmãos", angulo: "bondade leal", evitar: {} }), montados);
   const mefi = await pedido.prep.montar({ nome: "Mefibosete", referencia: "2 Samuel 9:1-13", descricao: "d", escolha: null, verbete: "Mefibosete" });
   assert.equal(mefi.textos[0].referencia, "2 Samuel 9:1-13", "o episódio inteiro (13 versículos)");
-  assert.match(mefi.leitura.fonte, /\(sentido 2\)$/);
+  assert.match(mefi.leitura.fonte, /\(sentido 2\)( · pág\. \d+)?$/);
   assert.match(mefi.leitura.texto, /^Filho de Jonatã/);
   assert.equal(mefi.contagens.sentido, 2);
   const abigail = await pedido.prep.montar({ nome: "Abigail", referencia: "1 Samuel 25:14-35", descricao: "d", escolha: null, verbete: "Abigail" });
   assert.equal(abigail.textos[0].referencia, "1 Samuel 25:14-35");
-  assert.match(abigail.leitura.fonte, /\(sentido 1\)$/);
+  assert.match(abigail.leitura.fonte, /\(sentido 1\)( · pág\. \d+)?$/);
   const semSentido = await pedido.prep.montar({ nome: "Mefibosete", referencia: "Gênesis 1:1-5", descricao: "d", escolha: null, verbete: "Mefibosete" });
   assert.notEqual(semSentido.leitura && semSentido.leitura.rotulo, "Verbete do Perspicaz", "sem sentido que cite a passagem, o verbete sai");
   assert.equal(semSentido.contagens.sentido, -1);
@@ -1818,7 +1818,7 @@ teste("6.13.02: Ame o ministério sem raciocínio longo e leitura com a lição/
 teste("6.13.03: seção do livro pelo wol (capítulo, páginas e parágrafos), mínimo de 3 parágrafos, e vídeos alternando formatos", async () => {
   const wolJs = await readFile(new URL("api/_wol.mjs", raiz), "utf8");
   assert.ok(wolJs.includes("export async function secaoDoWolPelaFrase(frase"));
-  assert.ok(servidorJs.includes("secaoDoWolPelaFrase(l.trecho, { timeoutMs: 8000, minParagrafos: 3, maxChars: 4500 })"));
+  assert.ok(servidorJs.includes("secaoDoWolPelaFrase(l.trecho, { timeoutMs: 8000, minParagrafos: 3, maxChars: 4500, sigla: siglaDoLivro(l.livro) })"));
   assert.ok(servidorJs.includes("const FORMATOS_VIDEO_FAMILIA = Object.freeze(["));
   assert.ok(servidorJs.includes("FORMATO DESTA NOITE:"));
   assert.ok(servidorJs.includes('["Programas e Eventos › Adorações Matinais", 15], ["Entrevistas e Casos Reais", 15]'));
@@ -1871,6 +1871,22 @@ teste("6.13.08: andamento à esquerda com o tempo alinhado; ao terminar a lista 
   assert.ok(!/const falhas = familiaFalhasTexto\(ger\);\s*if \(!falhas\) familiaProgressoLimpar\(\);/.test(appJs), "a lista não fecha mais ao terminar");
   assert.ok(css.includes(".fam-prog-lista > .fam-prog-item.ok { display: grid; width: auto; margin: 0; text-align: left; }"));
   assert.ok(/\.fam-prog-linha \{[^}]*grid-template-columns: 1\.4em 4\.2em 1\.6em minmax\(0, 1fr\)/.test(css));
+});
+
+teste("6.13.09: fonte exata em todo o módulo (busca no wol sem pontuação, só na mesma publicação, verbete e lição com página)", async () => {
+  const wol = await import(new URL("api/_wol.mjs", raiz));
+  const fontes = await import(new URL("api/_fontes.mjs", raiz));
+  // frases sem pontuação (com vírgula a busca exata do wol não acha) e sem palavras quebradas do arquivo
+  assert.deepEqual(wol.frasesParaBuscaNoWol("17 Primeiro, nos alegramos ao ver a mão de Jeová na obra. Quando pregamos a mensagem do Reino, estamos lançando sementes.", 2), ["Primeiro nos alegramos ao ver a mão de", "Quando pregamos a mensagem do Reino estamos lançando"]);
+  assert.ok(!wol.frasesParaBuscaNoWol("Jeová não deseja que ningué m seja destruído por nada. Outra frase com cinco palavras aqui.", 3).some((f) => /ningué m/.test(f)));
+  assert.equal(fontes.siglaDoLivro("O Reino de Deus Já Governa!"), "kr");
+  assert.equal(fontes.siglaDoLivro("Mantenha-se no Amor de Deus (lv)"), "lv");
+  assert.equal(fontes.siglaDoLivro("Raciocínios à Base das Escrituras"), "rs");
+  assert.ok(servidorJs.includes("async function leituraDoVerbete(verbete, texto, sentido = 0)"));
+  assert.ok(servidorJs.includes("(local não confirmado no wol.jw.org)"));
+  assert.ok(servidorJs.includes("w.outraPublicacao"));
+  assert.ok(servidorJs.includes("publicacoes: publicacaoDaLeitura(leitura, l)"));
+  assert.ok(sessaoJs.includes("fonte: texto(u.fonte, 240)"));
 });
 
 for (const [nome, fn] of testes) {

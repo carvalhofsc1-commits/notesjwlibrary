@@ -1032,18 +1032,98 @@ export async function pesquisarNoWol(tema, timeoutMs, maximo = MAX_RESULTADOS_PE
 // seção (sem as perguntas de estudo nem as legendas), os números dos parágrafos, a página de cada um e a citação do capítulo.
 // Se a seção tiver menos de minParagrafos, junta a seção seguinte (até maxChars). null = a frase não foi achada ou o capítulo não abriu.
 // { url, citacao: "rr cap. 18 págs. 189-199", capitulo: 18, tituloCapitulo, subtitulo, paginas: "193-194", paragrafos: "13-15", texto }
-export async function secaoDoWolPelaFrase(frase, { timeoutMs = 8000, minParagrafos = 3, maxChars = 6500 } = {}) {
-  // até 10 palavras, parando no fim da primeira frase se ela já tiver 5 (a busca exata não atravessa de uma frase para outra)
-  const todas = String(frase || "").replace(/["“”«»]/g, "").replace(/^\d{1,3}\s+/, "").replace(/\s+/g, " ").trim().split(" ").slice(0, 10);
-  const fim = todas.findIndex((p, k) => k >= 4 && /[.!?]$/.test(p));
-  const palavras = (fim >= 0 ? todas.slice(0, fim + 1) : todas).join(" ").replace(/[.,;:!?…—–-]+$/, "");
-  if (palavras.split(" ").length < 5) return null;
-  const busca = (await baixar(`${BASE}/pt/wol/s/r5/lp-t?q=${encodeURIComponent(`"${palavras}"`)}&p=par&r=occ&st=a`, timeoutMs)).replace(/&lrm;/g, "");
-  const bloco = busca.split('<ul class="results resultContentDocument">')[1];
-  if (!bloco) return null;
-  const cab = bloco.match(/<a class="lnk" href="\/pt\/wol\/d\/r5\/lp-t\/(\d+)[^"]*"[^>]*>([\s\S]*?)<\/a>/);
-  if (!cab) return null;
-  const citacao = textoDe((bloco.match(/<li class="ref">([\s\S]*?)<\/li>/) || [])[1] || "").split(" - ")[0].trim();
+// 6.13.09: frases para a busca exata no wol, tiradas de um trecho: de cada frase do texto, até 8 palavras SEM pontuação (a busca exata do wol
+// não acha a frase com vírgula, ponto e vírgula, aspas…) e sem palavras quebradas do arquivo ("ningué m"). Até `max` frases, a primeira antes.
+export function frasesParaBuscaNoWol(texto, max = 3) {
+  const limpo = String(texto || "").replace(/^\s*#{1,3}\s+/gm, "").replace(/^\s*\d{1,3}\s+/gm, "").replace(/\s+/g, " ").trim();
+  const frases = limpo.split(/(?<=[.!?…])\s+(?=["“‘(]?\p{Lu})/u);
+  const saida = [];
+  for (const f of frases) {
+    const palavras = f.replace(/\([^)]*\)/g, " ").replace(/[“”"«»‘’'.,;:!?…()[\]—–-]+/g, " ").replace(/\s+/g, " ").trim().split(" ").filter(Boolean);
+    const oito = palavras.slice(0, 8);
+    if (oito.length < 5) continue;
+    // palavra quebrada no arquivo ("ningué m", "desobedeç am"): uma letra solta que não é palavra (a, e, o, à, é) ou um pedaço sem vogal
+    if (oito.some((p) => (/^\p{Ll}$/u.test(p) && !["a", "e", "o", "à", "é"].includes(p)) || (/^\p{Ll}{2,3}$/u.test(p) && !/[aeiouáéíóúâêôãõ]/.test(p)))) continue;
+    saida.push(oito.join(" "));
+    if (saida.length >= max) break;
+  }
+  return saida;
+}
+
+// A busca exata de uma frase no wol: o 1.º resultado { docId, titulo, citacao } ou null. Com `sigla` ("kr", "it", "th"…), só vale um resultado
+// dessa publicação (a mesma frase pode estar numa Sentinela antiga, e a fonte seria de outra publicação).
+async function primeiroResultadoNoWol(frase, timeoutMs, sigla = "") {
+  const busca = (await baixar(`${BASE}/pt/wol/s/r5/lp-t?q=${encodeURIComponent(`"${frase}"`)}&p=par&r=occ&st=a`, timeoutMs)).replace(/&lrm;/g, "");
+  const s = String(sigla || "").trim().toLowerCase();
+  for (const bloco of busca.split('<ul class="results resultContentDocument">').slice(1)) {
+    const cab = bloco.match(/<a class="lnk" href="\/pt\/wol\/d\/r5\/lp-t\/(\d+)[^"]*"[^>]*>([\s\S]*?)<\/a>/);
+    if (!cab) continue;
+    const ref = textoDe((bloco.match(/<li class="ref">([\s\S]*?)<\/li>/) || [])[1] || "");
+    const citacao = ref.split(" - ")[0].trim();
+    // a sigla pode ter uma letra a mais na edição revisada ("lv" → "lvs") e o volume ("it" → "it-2")
+    if (s && !new RegExp(`^${s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}[a-z]?(?:-\\d)?\\b`, "i").test(citacao)) continue;
+    return { docId: cab[1], titulo: textoDe(cab[2]), citacao, publicacao: ref.split(" - ").slice(1).join(" - ").trim() };
+  }
+  return null;
+}
+
+// 6.13.09: só a citação de onde está um texto (verbete do Perspicaz, lição de brochura…): tenta até 3 frases. { url, titulo, citacao } ou null.
+export async function citacaoNoWol(texto, { timeoutMs = 8000, sigla = "" } = {}) {
+  for (const frase of frasesParaBuscaNoWol(texto, 3)) {
+    const r = await primeiroResultadoNoWol(frase, timeoutMs, sigla).catch(() => null);
+    if (!r || !r.citacao) continue;
+    const url = `${BASE}/pt/wol/d/r5/lp-t/${r.docId}`;
+    // Sem página na citação ("it-2 “Reino”"): abre o documento e acha a página do parágrafo da frase.
+    if (!/\bp(?:ágs?|p)?\.\s*\d/i.test(r.citacao)) {
+      const html = await baixar(url, timeoutMs).catch(() => "");
+      const { blocos } = blocosDoDocumento(html);
+      const alvo = normalizarFrase(frase);
+      const b = blocos.find((x) => x.tag === "p" && normalizarFrase(x.texto).includes(alvo));
+      if (b && b.pagina) return { url: `${url}#p${b.pid}`, titulo: r.titulo, citacao: `${r.citacao} pág. ${b.pagina}` };
+    }
+    return { url, titulo: r.titulo, citacao: r.citacao };
+  }
+  return null;
+}
+
+// Os blocos (p, h1, h2, h3) de um documento do wol em ordem, com a página em que cada um começa.
+function blocosDoDocumento(html) {
+  const blocos = [];
+  let pagina = 0;
+  for (const m of String(html || "").matchAll(/<span[^>]*class="pageNum"[^>]*data-no="(\d+)"[^>]*>|<(p|h1|h2|h3)\b([^>]*)data-pid="(\d+)"([^>]*)>([\s\S]*?)<\/\2>/g)) {
+    if (m[1]) { pagina = Number(m[1]); continue; }
+    const conteudo = m[6];
+    const marcas = [...conteudo.matchAll(/class="pageNum"[^>]*data-no="(\d+)"/g)];
+    const antes = marcas.length ? textoDe(conteudo.slice(0, marcas[0].index).replace(/<span[^>]*$/, "")) : "x";
+    if (marcas.length && !antes) pagina = Number(marcas[0][1]);
+    const classe = ((m[3] + m[5]).match(/class="([^"]*)"/) || [])[1] || "";
+    blocos.push({ tag: m[2], classe, pid: Number(m[4]), pagina, texto: textoDe(conteudo) });
+    if (marcas.length) pagina = Number(marcas[marcas.length - 1][1]);
+  }
+  return { blocos };
+}
+
+export async function secaoDoWolPelaFrase(frase, { timeoutMs = 8000, minParagrafos = 3, maxChars = 6500, sigla = "" } = {}) {
+  // 6.13.09: até 3 frases do trecho, sem pontuação (com vírgula a busca exata do wol não acha nada), só na publicação da sigla
+  let achado = null;
+  let palavras = "";
+  const frases = frasesParaBuscaNoWol(frase, 3);
+  for (const f of frases) {
+    achado = await primeiroResultadoNoWol(f, timeoutMs, sigla).catch(() => null);
+    if (achado) { palavras = f; break; }
+  }
+  // 6.13.09: o trecho não está na publicação esperada (há arquivos com matérias de outras publicações misturadas): vale a publicação em que o
+  // wol realmente achou o texto, e o resultado diz isso (outraPublicacao), para a fonte nunca apontar o lugar errado.
+  let outraPublicacao = false;
+  if (!achado && sigla) {
+    for (const f of frases) {
+      achado = await primeiroResultadoNoWol(f, timeoutMs, "").catch(() => null);
+      if (achado) { palavras = f; outraPublicacao = true; break; }
+    }
+  }
+  if (!achado) return null;
+  const cab = [null, achado.docId, achado.titulo];
+  const citacao = achado.citacao;
   const url = `${BASE}/pt/wol/d/r5/lp-t/${cab[1]}`;
   const html = await baixar(url, timeoutMs);
   // Os blocos em ordem, com a página em que cada um começa (as marcas de página vêm dentro dos parágrafos ou soltas entre eles).
@@ -1063,29 +1143,63 @@ export async function secaoDoWolPelaFrase(frase, { timeoutMs = 8000, minParagraf
   const i = blocos.findIndex((b) => b.tag === "p" && normalizarFrase(b.texto).includes(alvo));
   if (i < 0) return null;
   const ehSubtitulo = (b) => b.tag === "h2" || b.tag === "h3";
-  const ehParagrafo = (b) => b.tag === "p" && /^\d{1,3}\s/.test(b.texto) && !/\bqu\b/.test(b.classe);
+  // Livros com parágrafos numerados (os de estudo) e, nos outros (brochuras, livros sem número), os parágrafos do corpo do texto.
+  const numeradoNoTexto = (b) => b.tag === "p" && /^\d{1,3}\s/.test(b.texto) && !/\bqu\b/.test(b.classe);
+  const temNumerados = blocos.filter(numeradoNoTexto).length >= 3;
+  const ehParagrafo = (b) =>
+    temNumerados ? numeradoNoTexto(b) : b.tag === "p" && b.texto.length >= 60 && !/\b(qu|sc|fn|figcaption|themeScrp|contextTtl|sa|sm|se)\b/.test(b.classe);
   let ini = i;
   while (ini > 0 && !ehSubtitulo(blocos[ini - 1]) && blocos[ini - 1].tag !== "h1") ini--;
   const subtitulo = ini > 0 && ehSubtitulo(blocos[ini - 1]) ? blocos[ini - 1].texto : "";
-  const escolhidos = [];
-  let total = 0;
+  // A seção inteira (e as seguintes, até ter minParagrafos), sem perguntas de estudo, legendas e quadros.
+  const secao = [];
   let paragrafos = 0;
   for (let k = ini; k < blocos.length; k++) {
     const b = blocos[k];
     if (ehSubtitulo(b)) {
       if (k > i && paragrafos >= minParagrafos) break; // a seção acabou e já tem o mínimo
-      escolhidos.push({ ...b, subtitulo: true });
+      secao.push({ ...b, subtitulo: true, k });
       continue;
     }
     if (b.tag !== "p") continue;
     const numerado = ehParagrafo(b);
-    const primeiro = /\bsb\b/.test(b.classe) && !numerado && !escolhidos.some((e) => !e.subtitulo); // o 1.º parágrafo do capítulo não tem número
-    if (!numerado && !primeiro) continue; // perguntas de estudo, legendas, quadros
-    if (total + b.texto.length > maxChars && k > i) break;
-    escolhidos.push(b);
-    total += b.texto.length;
+    const primeiro = temNumerados && /\bsb\b/.test(b.classe) && !numerado && !secao.some((e) => !e.subtitulo); // o 1.º parágrafo do capítulo não tem número
+    if (!numerado && !primeiro && k !== i) continue;
+    secao.push({ ...b, k });
     paragrafos++;
   }
+  // 6.13.09: no fim do capítulo a seção pode ter menos que o mínimo: entram os parágrafos anteriores (e o subtítulo deles), até o mínimo.
+  if (paragrafos < minParagrafos) {
+    for (let k = ini - 1; k >= 0 && paragrafos < minParagrafos; k--) {
+      const b = blocos[k];
+      if (b.tag === "h1") break;
+      if (ehSubtitulo(b)) { secao.unshift({ ...b, subtitulo: true, k }); continue; }
+      if (b.tag !== "p" || !ehParagrafo(b)) continue;
+      secao.unshift({ ...b, k });
+      paragrafos++;
+    }
+  }
+  // 6.13.09: seção longa demais (capítulos sem subtítulos): fica uma janela em volta do parágrafo achado (o anterior, ele e os seguintes),
+  // até maxChars, com pelo menos minParagrafos.
+  let escolhidos = secao;
+  const tamanho = (lista) => lista.reduce((s, b) => s + (b.subtitulo ? 0 : b.texto.length), 0);
+  if (tamanho(secao) > maxChars) {
+    const pos = Math.max(0, secao.findIndex((b) => b.k === i));
+    let inicio = pos;
+    let n = 0;
+    for (let k = pos - 1; k >= 0 && n < 1; k--) { inicio = k; if (!secao[k].subtitulo) n++; }
+    const janela = [];
+    let total = 0;
+    let qtd = 0;
+    for (let k = inicio; k < secao.length; k++) {
+      const b = secao[k];
+      if (!b.subtitulo && total + b.texto.length > maxChars && qtd >= minParagrafos && k > pos) break;
+      janela.push(b);
+      if (!b.subtitulo) { total += b.texto.length; qtd++; }
+    }
+    escolhidos = janela;
+  }
+  escolhidos = escolhidos.slice();
   while (escolhidos.length && escolhidos[escolhidos.length - 1].subtitulo) escolhidos.pop();
   const pars = escolhidos.filter((b) => !b.subtitulo);
   if (!pars.length) return null;
@@ -1095,8 +1209,10 @@ export async function secaoDoWolPelaFrase(frase, { timeoutMs = 8000, minParagraf
   return {
     url: `${url}#p${pars[0].pid}`,
     citacao,
+    publicacao: achado.publicacao || "",
+    outraPublicacao,
     capitulo: Number((citacao.match(/\bcap\.\s*(\d{1,3})/) || [])[1]) || 0,
-    tituloCapitulo: textoDe(cab[2]),
+    tituloCapitulo: cab[2],
     subtitulo,
     paginas: pags.length ? (pags.length > 1 ? `${Math.min(...pags)}-${Math.max(...pags)}` : String(pags[0])) : "",
     paragrafos: nums.length ? (nums.length > 1 && nums[nums.length - 1] !== nums[0] ? `${nums[0]}-${nums[nums.length - 1]}` : String(nums[0])) : "",

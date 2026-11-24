@@ -2,6 +2,19 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.09
+
+### Adoração em Família: fonte exata em todo o módulo (publicação, capítulo, seção e página)
+
+- **Por que ainda vinha só "Parágrafo 17 · O Reino de Deus Já Governa!":** a busca exata no wol.jw.org (6.13.03) usava a frase com a pontuação, e o wol não acha frases com vírgula; sem resultado, a leitura caía no trecho do arquivo, sem capítulo nem página. Agora a busca usa até 3 frases do parágrafo, sem pontuação e sem as palavras quebradas do arquivo ("ningué m"). O exemplo sai: "O Reino de Deus Já Governa! · cap. 9 — Resultados da pregação — “Os campos… estão brancos para a colheita” · págs. 92-93", seção "Por que todos os servos de Jeová têm motivo para se alegrar", parágrafos 16-19.
+- **Só a mesma publicação:** a busca aceita só o resultado da publicação do livro (pela sigla: kr, rr, lv/lvs, th, it…). Alguns arquivos do servidor têm matérias de outras publicações misturadas (o de "Mantenha-se no Amor de Deus" tem um artigo de A Sentinela de 1988); nesse caso a fonte passa a ser a publicação real em que o wol achou o texto ("A Sentinela — 1988 · w88 15/11 págs. 15-20 · “Ajudemos outros a adorar a Deus”").
+- **Formato da fonte:** publicação · capítulo (número e título) · páginas; o título da leitura é a seção (subtítulo); a linha mostra os parágrafos. Seção longa demais (capítulo sem subtítulos) vira uma janela em volta do parágrafo achado; no fim do capítulo, entram os parágrafos anteriores até 3.
+- **Perspicaz** (Personagem e Saiba responder): "Estudo Perspicaz das Escrituras, volume 2 · verbete “REINO” · pág. 808", com o link do verbete (o wol não traz a página na busca: o servidor abre o verbete e acha a página do parágrafo).
+- **Lições** (Ame as Pessoas, Melhore Sua Leitura): com a página ("Melhore Sua Leitura e Seu Ensino (th), lição 7, pág. 10") e o link da lição.
+- **Publicações citadas** na parte (Criador, Saiba responder, Ame o ministério) usam a mesma fonte e o mesmo link da leitura.
+- Se o wol estiver fora do ar ou não achar o texto, a fonte diz "(local não confirmado no wol.jw.org)", para nunca passar uma fonte errada por certa.
+- Artigos (A Sentinela, Despertai!) e Princípios Bíblicos já traziam publicação, edição e página.
+
 ## 6.13.08
 
 ### Adoração em Família: andamento alinhado à esquerda, com o tempo de cada atividade, e botões ao terminar

@@ -259,7 +259,7 @@ function limparPrograma(op) {
       textos: lista(p.textos, 12, (t) => (t && typeof t === "object" ? { referencia: texto(t.referencia, 120), texto: texto(t.texto, 2000) } : null)),
       videos: lista(p.videos, 8, (v) => (v && typeof v === "object" ? { titulo: texto(v.titulo, 200), duracao: texto(v.duracao, 20), link: /^https:\/\//i.test(String(v.link || "")) ? texto(v.link, 500) : "" } : null)),
       canticos: lista(p.canticos, 6, (c) => (c && Number.isInteger(Number(c.numero)) ? { numero: Number(c.numero), titulo: texto(c.titulo, 150) } : null)),
-      publicacoes: lista(p.publicacoes, 8, (u) => (u && typeof u === "object" ? { titulo: texto(u.titulo, 200), fonte: texto(u.fonte, 120), url: /^https:\/\//i.test(String(u.url || "")) ? texto(u.url, 500) : "" } : null)),
+      publicacoes: lista(p.publicacoes, 8, (u) => (u && typeof u === "object" ? { titulo: texto(u.titulo, 200), fonte: texto(u.fonte, 240), url: /^https:\/\//i.test(String(u.url || "")) ? texto(u.url, 500) : "" } : null)),
       perguntas: lista(p.perguntas, 15, (q) => texto(q, 500)),
       // 6.12.88: quantas das primeiras perguntas são da leitura (vêm logo depois dela, antes dos textos bíblicos).
       perguntasLeitura: Math.max(0, Math.min(15, Math.round(Number(p.perguntasLeitura) || 0))),

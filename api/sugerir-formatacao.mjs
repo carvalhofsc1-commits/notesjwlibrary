@@ -39,7 +39,7 @@ import {
   textoDasFontesDoCampo,
   trechosBe,
 } from "./_servicoCampo.mjs";
-import { artigosDoTopicoDoGuia, buscarNosLivros, buscarVerbete, buscarVersiculos, versiculosDoCapitulo, fontesConfiguradas, lerCanticos, lerEnsinosBiblicos, lerPrincipios, lerTextoDoLivro, lerVerbeteCompleto, localDoTrecho, materiaDoTrecho, nomeDoLivro, precarregarFontes, referenciaPadrao, referenciasNoTexto, resolvedorDeLivros, textoDeGruposBiblicos } from "./_fontes.mjs";
+import { artigosDoTopicoDoGuia, buscarNosLivros, buscarVerbete, buscarVersiculos, versiculosDoCapitulo, fontesConfiguradas, lerCanticos, lerEnsinosBiblicos, lerPrincipios, lerTextoDoLivro, lerVerbeteCompleto, localDoTrecho, materiaDoTrecho, nomeDoLivro, siglaDoLivro, precarregarFontes, referenciaPadrao, referenciasNoTexto, resolvedorDeLivros, textoDeGruposBiblicos } from "./_fontes.mjs";
 import { JOGOS_FAMILIA, QUADROS_FAMILIA, minutosDosQuadros, quadrosDoPedido } from "./_familiaQuadros.mjs";
 import {
   JOGOS_CONFERIDOS_NA_BIBLIA,
@@ -107,6 +107,7 @@ import {
   lerCamposDoDocumento,
   lerArtigoDoWol,
   secaoDoWolPelaFrase,
+  citacaoNoWol,
   lerReuniaoDaSemana,
   lerEstudoDaSemana,
   lerEstudoDireto,
@@ -3245,6 +3246,29 @@ const leituraDoTrecho = (l) => (l ? { titulo: l.livro, fonte: [l.livro, localDoT
 // A publicação do trecho, com o link da busca da frase no wol.jw.org (o endereço do livro no wol não é conhecido).
 const publicacaoDoTrecho = (l) => (l ? [{ titulo: l.livro, fonte: localDoTrecho(l), url: linkDeConsultaWol(l.trecho) }] : []);
 // 6.13.02: a leitura com a matéria inteira (a lição toda, no lmd e no th, ou o parágrafo e os seguintes do capítulo), e não um parágrafo solto.
+// "págs. 189-199" / "pág. 117" de uma citação do wol ("rr cap. 18 págs. 189-199", "it-1 pág. 1234"); "" se não houver.
+function paginasDaCitacao(citacao) {
+  const m = String(citacao || "").match(/\bp(?:ágs?|p?)\.\s*(\d{1,4}(?:\s*-\s*\d{1,4})?)/i);
+  return m ? (m[1].includes("-") ? `págs. ${m[1].replace(/\s+/g, "")}` : `pág. ${m[1]}`) : "";
+}
+// A publicação citada na parte, com a mesma fonte e o mesmo link da leitura (nunca uma fonte genérica).
+function publicacaoDaLeitura(leitura, l) {
+  if (leitura && leitura.fonte) return [{ titulo: leitura.titulo || (l && l.livro) || "", fonte: leitura.fonte, url: leitura.url || "" }];
+  return publicacaoDoTrecho(l);
+}
+// 6.13.09: o verbete do Perspicaz com a página ("it-1 pág. 1234", pela citação do wol) e o link do verbete.
+async function leituraDoVerbete(verbete, texto, sentido = 0) {
+  const c = await citacaoNoWol(texto, { sigla: "it" }).catch(() => null);
+  const pag = paginasDaCitacao(c && c.citacao);
+  return {
+    titulo: limparLinha(verbete.verbete, 120),
+    fonte: [`Estudo Perspicaz das Escrituras${verbete.volume ? `, volume ${verbete.volume}` : ""}`, `verbete “${limparLinha(verbete.verbete, 80)}”${sentido ? ` (sentido ${sentido})` : ""}`, pag].filter(Boolean).join(" · "),
+    paragrafos: "",
+    texto: leituraLimpa(texto),
+    url: (c && c.url) || linkDeConsultaWol(texto),
+    rotulo: "Verbete do Perspicaz",
+  };
+}
 // 6.13.03: nos livros, a SEÇÃO inteira do wol.jw.org (o subtítulo em que o parágrafo está, com pelo menos 3 parágrafos), com o capítulo, as páginas
 // e os números dos parágrafos exatos ("A Adoração Pura… (rr), cap. 18, págs. 193-194", parágrafos 13-15) e o link direto para o parágrafo.
 async function leituraCompletaDoTrecho(l) {
@@ -3252,23 +3276,32 @@ async function leituraCompletaDoTrecho(l) {
   if (!base) return null;
   const m = await materiaDoTrecho(l).catch(() => null);
   if (m && m.local) {
-    return { ...base, titulo: m.titulo, fonte: `${l.livro}, ${m.local}`, paragrafos: "", texto: m.texto, rotulo: "Lição da brochura" };
+    // 6.13.09: a página da lição, pela citação do wol ("th lição 1 pág. 4")
+    const c = await citacaoNoWol(m.texto, { sigla: siglaDoLivro(l.livro) }).catch(() => null);
+    const pag = paginasDaCitacao(c && c.citacao);
+    return { ...base, titulo: m.titulo, fonte: [`${l.livro}, ${m.local}`, pag].filter(Boolean).join(", "), paragrafos: "", texto: m.texto, url: (c && c.url) || base.url, rotulo: "Lição da brochura" };
   }
-  const w = await secaoDoWolPelaFrase(l.trecho, { timeoutMs: 8000, minParagrafos: 3, maxChars: 4500 }).catch(() => null);
+  const w = await secaoDoWolPelaFrase(l.trecho, { timeoutMs: 8000, minParagrafos: 3, maxChars: 4500, sigla: siglaDoLivro(l.livro) }).catch(() => null);
   if (w && w.texto) {
     const paginas = w.paginas ? (w.paginas.includes("-") ? `págs. ${w.paginas}` : `pág. ${w.paginas}`) : "";
     return {
       ...base,
-      titulo: w.tituloCapitulo || base.titulo,
-      fonte: [l.livro, w.capitulo ? `cap. ${w.capitulo}` : "", paginas].filter(Boolean).join(", "),
+      // 6.13.09: a fonte diz exatamente de onde é: publicação · capítulo (número e título) · páginas; o título é a seção (subtítulo) ou o capítulo.
+      titulo: w.subtitulo || w.tituloCapitulo || base.titulo,
+      // Se o wol achou o texto em OUTRA publicação (arquivo com matérias misturadas), a fonte é a publicação real ("A Sentinela — 1988 · w88 15/11…").
+      fonte: w.outraPublicacao
+        ? [w.publicacao, w.citacao, w.tituloCapitulo ? `“${w.tituloCapitulo}”` : "", paginas ? (paginas.startsWith("págs.") ? `parágrafos nas ${paginas}` : `parágrafos na ${paginas}`) : ""].filter(Boolean).join(" · ")
+        : [l.livro, w.capitulo ? `cap. ${w.capitulo}${w.tituloCapitulo ? ` — ${w.tituloCapitulo}` : ""}` : w.tituloCapitulo, paginas || paginasDaCitacao(w.citacao)].filter(Boolean).join(" · "),
       paragrafos: w.paragrafos || "",
       texto: w.texto,
       url: w.url || base.url,
       rotulo: "Trecho do livro",
     };
   }
-  if (m) return { ...base, texto: m.texto };
-  return base;
+  // Sem o wol (fora do ar ou texto não achado): a fonte diz que o local não foi confirmado, para não passar por certo.
+  const naoConfirmado = (b) => ({ ...b, fonte: `${b.fonte} (local não confirmado no wol.jw.org)` });
+  if (m) return naoConfirmado({ ...base, texto: m.texto });
+  return naoConfirmado(base);
 }
 // Um artigo do catálogo lido no wol pelo docId; null se não abrir ou vier com menos de MIN_CARACTERES_ARTIGO.
 async function leituraDoArtigoFamilia(a, rotulo = "Trecho do artigo") {
@@ -3484,14 +3517,7 @@ const PREPARAR_QUADRO_FAMILIA = {
           const s = verbete && livroDe ? sentidoQueCitaAPassagem(verbete.texto, textos[0].referencia, livroDe) : null;
           if (s) {
             sentido = s.numero;
-            leitura = {
-              titulo: limparLinha(verbete.verbete, 120),
-              fonte: `Estudo Perspicaz das Escrituras${verbete.volume ? `, volume ${verbete.volume}` : ""}${s.numero ? ` (sentido ${s.numero})` : ""}`,
-              paragrafos: "",
-              texto: leituraLimpa(s.texto.replace(/^\d{1,2}\.\s+/, "")),
-              url: "",
-              rotulo: "Verbete do Perspicaz",
-            };
+            leitura = await leituraDoVerbete(verbete, s.texto.replace(/^\d{1,2}\.\s+/, ""), s.numero);
           }
         }
         if (!leitura) {
@@ -3617,7 +3643,7 @@ const PREPARAR_QUADRO_FAMILIA = {
           const l = il >= 0 ? livros[il] : livros[0];
           if (l) {
             leitura = await leituraCompletaDoTrecho(l);
-            publicacoes = publicacaoDoTrecho(l);
+            publicacoes = publicacaoDaLeitura(leitura, l);
             chave = chaveDoTrechoCriador(l);
           }
         }
@@ -3649,14 +3675,14 @@ const PREPARAR_QUADRO_FAMILIA = {
         const leitura = l
           ? await leituraCompletaDoTrecho(l)
           : verbete
-            ? { titulo: limparLinha(verbete.verbete, 120), fonte: `Estudo Perspicaz das Escrituras${verbete.volume ? `, volume ${verbete.volume}` : ""}`, paragrafos: "", texto: leituraLimpa(verbete.trecho), url: "", rotulo: "Verbete do Perspicaz" }
+            ? await leituraDoVerbete(verbete, verbete.trecho)
             : null;
         return {
           nome: pergunta ? `${ctx.quadro.nome}: ${cortarNaPalavra(pergunta)}` : ctx.quadro.nome, // a pergunta inteira fica em "perguntas"
           descricao: descricaoFamilia(o.descricao),
           textos,
           leitura,
-          publicacoes: publicacaoDoTrecho(l),
+          publicacoes: l ? publicacaoDaLeitura(leitura, l) : [],
           perguntas: pergunta ? [pergunta] : [],
           memoria: pergunta ? { saiba: [pergunta] } : {},
         };
@@ -3685,8 +3711,7 @@ const PREPARAR_QUADRO_FAMILIA = {
           nome: cenario ? `${ctx.quadro.nome}: ${cortarNaPalavra(cenario)}` : ctx.quadro.nome,
           // Se o título cortou o cenário, a situação inteira abre a descrição.
           descricao: descricaoFamilia(cenario && cortarNaPalavra(cenario) !== cenario ? `Situação: ${cenario.replace(/[.\s]+$/, "")}. ${o.descricao || ""}` : o.descricao),
-          leitura: await leituraCompletaDoTrecho(l),
-          publicacoes: publicacaoDoTrecho(l),
+          ...(await (async () => { const leitura = await leituraCompletaDoTrecho(l); return { leitura, publicacoes: publicacaoDaLeitura(leitura, l) }; })()),
           perguntas,
           memoria: cenario ? { ministerio: [cenario] } : {},
         };
