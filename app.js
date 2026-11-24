@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.12.90'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.12.91'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -27030,11 +27030,9 @@ function saveTemplatesToStorage() {
         if (!(parte.leitura && parte.leitura.texto)) return;
         const lei = document.createElement('div');
         lei.className = 'fam-secao-bloco fam-leitura';
-        const lt = document.createElement('p');
-        lt.className = 'fam-secao-titulo';
-        // 6.12.51: o tema da matéria, a referência do trecho (parágrafos e publicação), o link específico do trecho e o conteúdo num campo recolhido (como a transcrição do vídeo).
-        lt.textContent = '📰 ' + (parte.leitura.titulo || parte.leitura.fonte || 'Matéria');
-        lei.appendChild(lt);
+        // 6.12.51: a referência do trecho (parágrafos e publicação), o link específico do trecho e o conteúdo num campo recolhido (como a transcrição do vídeo).
+        // 6.12.91: o título da matéria foi para dentro do campo "Trecho para considerar", antes do texto: o 🔊 lê só o que está no campo (título e depois o texto).
+        const tituloMateria = String(parte.leitura.titulo || parte.leitura.fonte || 'Matéria');
         const ref = document.createElement('p');
         ref.className = 'fam-leitura-ref';
         ref.textContent = (parte.leitura.paragrafos ? (/[-–]/.test(parte.leitura.paragrafos) ? 'Parágrafos ' : 'Parágrafo ') + parte.leitura.paragrafos : (parte.leitura.rotulo || 'Trecho inicial da matéria')) + (parte.leitura.fonte ? ' · ' + parte.leitura.fonte : '');
@@ -27044,18 +27042,25 @@ function saveTemplatesToStorage() {
           a.href = parte.leitura.url;
           a.target = '_blank';
           a.rel = 'noopener noreferrer';
+          a.className = 'fam-link-moldura'; // 6.12.91: todo link numa moldura fininha, na largura toda
           a.textContent = 'Abrir este trecho no wol.jw.org ↗';
           lei.appendChild(a);
         }
         // 6.12.86: botão 🔊 do trecho (adoração ao vivo), fora do campo recolhido, e o texto em parágrafos com os subtítulos ("## ") em negrito.
         const linhas = parte.leitura.texto.split(/\n+/).map(x => x.trim()).filter(Boolean);
-        const pedacosVoz = aoVivo && aoVivo.leitura ? [parte.leitura.titulo, ...linhas.map(x => x.replace(/^#{1,2}\s+/, ''))].filter(Boolean) : [];
+        const pedacosVoz = aoVivo && aoVivo.leitura ? [tituloMateria, ...linhas.map(x => x.replace(/^#{1,2}\s+/, ''))].filter(Boolean) : [];
         const det = document.createElement('details'); // sempre recolhido ao montar; abre ao tocar
         det.className = 'fam-leitura-trecho';
         const sm = document.createElement('summary');
         sm.textContent = '📖 Trecho para considerar';
         if (pedacosVoz.length) sm.prepend(aoVivo.leitura(pedacosVoz)); // 6.12.89: o ícone 🔊 dentro da moldura do campo, na mesma linha de "Trecho para considerar"
         det.appendChild(sm);
+        const ptm = document.createElement('p');
+        ptm.className = 'fam-leitura-par fam-leitura-materia';
+        const ftm = document.createElement('strong');
+        ftm.textContent = '📰 ' + tituloMateria;
+        ptm.appendChild(ftm);
+        det.appendChild(ptm);
         linhas.forEach(par => {
           // 6.12.90: "# " = título do quadro ou da experiência (maior, em destaque); "## " = subtítulo (negrito)
           const nivel = (par.match(/^(#{1,2})\s+/) || [])[1] || '';
@@ -27107,6 +27112,7 @@ function saveTemplatesToStorage() {
         a.href = pub.url || ('https://wol.jw.org/pt/wol/s/r5/lp-t?q=' + encodeURIComponent([pub.titulo, pub.fonte].filter(Boolean).join(' ')) + '&p=par&r=occ');
         a.target = '_blank';
         a.rel = 'noopener noreferrer';
+        a.className = 'fam-link-moldura'; // 6.12.91
         a.textContent = (rotulo || pub.url || 'Matéria') + (pub.url ? ' ↗' : ' ↗ procurar no wol.jw.org');
         li.appendChild(a);
         if (aoVivo && aoVivo.publicacao) aoVivo.publicacao(li, pub, idx); // ao vivo: 📖 Exibir a matéria na tela (recolhido)

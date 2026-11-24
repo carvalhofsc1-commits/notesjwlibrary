@@ -2,6 +2,13 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.91
+
+### Adoração em Família: título da matéria dentro do campo e links em moldura fininha
+
+- **Título dentro do campo:** o título da matéria saiu do alto do bloco e passou para dentro do campo "Trecho para considerar", antes do texto. O 🔊 lê só o que está no campo: primeiro o título e depois o restante da matéria.
+- **Links em moldura:** o link "Abrir este trecho no wol.jw.org" e os links das publicações ficam numa moldura bem fininha, na largura toda, com fundo cinza clarinho.
+
 ## 6.12.90
 
 ### Adoração em Família: artigo inteiro, experiência formatada e perguntas de revisão do texto lido

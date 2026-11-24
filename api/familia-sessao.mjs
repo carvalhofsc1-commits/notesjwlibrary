@@ -154,7 +154,7 @@ export async function textoDaSessaoParaLer(codigo, texto, origem = null) {
     const l = p && p.leitura;
     if (!l || typeof l !== "object") return false;
     const linhas = String(l.texto || "").split(/\r?\n/).map((x) => x.replace(/^#{1,2}\s+/, "").trim());
-    return [String(l.titulo || "").trim(), ...linhas].includes(lido.replace(/^#{1,2}\s+/, ""));
+    return [String(l.titulo || "").trim(), String(l.fonte || "").trim(), ...linhas].includes(lido.replace(/^#{1,2}\s+/, ""));
   };
   if (programa.partes.some((p) => p && ((Array.isArray(p.perguntas) && p.perguntas.some((q) => String(q).trim() === lido)) || daLeitura(p)))) return true;
   // 6.12.88: textos que o servidor abre sob demanda (matéria na tela, transcrição do vídeo, letra do cântico): o pedaço lido tem de estar no texto

@@ -17463,6 +17463,9 @@ input[type="date"].fam-campo::-webkit-calendar-picker-indicator { margin: 0; pad
 .fam-materia-tela { margin-top: 6px; }
 .fam-materia-corpo { display: grid; gap: 8px; font-size: .92rem; min-width: 0; }
 .fam-materia-corpo .fam-leitura-par { margin: 0; }
+/* 6.12.91: todo link da Adoração numa moldura bem fininha, na largura toda, com fundo cinza clarinho */
+.fam-leitura-materia { margin-bottom: 4px; }
+a.fam-link-moldura { display: block; box-sizing: border-box; width: 100%; padding: 7px 10px; border: 1px solid var(--line, #cbd5e1); border-radius: 8px; background: color-mix(in srgb, #94a3b8 12%, var(--card)); text-align: left; text-decoration: none; }
 .fam-leitura > a { overflow-wrap: anywhere; font-size: .9rem; color: color-mix(in srgb, var(--accent) 60%, var(--text)); } /* 6.12.84: o azul padrão do navegador não se lia no tema escuro */
 /* 6.12.38: ao entrar, só as boas-vindas e o programa, com o botão Entrar (fora da tela grande, onde o dirigente avança). */
 body:not(.fam-tela-grande) #participarSessao.fam-so-boasvindas > :not(.fam-boasvindas) { display: none !important; }
