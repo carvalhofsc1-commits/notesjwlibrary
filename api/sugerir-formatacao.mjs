@@ -3253,8 +3253,9 @@ function paginasDaCitacao(citacao) {
   return m ? (m[1].includes("-") ? `págs. ${m[1].replace(/\s+/g, "")}` : `pág. ${m[1]}`) : "";
 }
 // A publicação citada na parte, com a mesma fonte e o mesmo link da leitura (nunca uma fonte genérica).
+// 6.13.16: uma matéria só por parte: quando já há a matéria para ler (leitura), a lista "Publicações" fica vazia (repetia a mesma matéria).
 function publicacaoDaLeitura(leitura, l) {
-  if (leitura && leitura.fonte) return [{ titulo: leitura.titulo || (l && l.livro) || "", fonte: leitura.fonte, url: leitura.url || "" }];
+  if (leitura && leitura.texto) return [];
   return publicacaoDoTrecho(l);
 }
 // 6.13.09: o verbete do Perspicaz com a página ("it-1 pág. 1234", pela citação do wol) e o link do verbete.
@@ -3282,7 +3283,7 @@ async function leituraCompletaDoTrecho(l) {
     const pag = paginasDaCitacao(c && c.citacao);
     return { ...base, titulo: m.titulo, fonte: [`${l.livro}, ${m.local}`, pag].filter(Boolean).join(", "), paragrafos: "", texto: m.texto, url: (c && c.url) || base.url, rotulo: "Lição da brochura" };
   }
-  const w = await secaoDoWolPelaFrase(l.trecho, { timeoutMs: 8000, minParagrafos: 3, maxChars: 4500, sigla: siglaDoLivro(l.livro) }).catch(() => null);
+  const w = await secaoDoWolPelaFrase(l.trecho, { timeoutMs: 8000, minParagrafos: 3, maxParagrafos: 5, maxChars: 3500, sigla: siglaDoLivro(l.livro) }).catch(() => null);
   if (w && w.texto) {
     const paginas = w.paginas ? (w.paginas.includes("-") ? `págs. ${w.paginas}` : `pág. ${w.paginas}`) : "";
     return {
@@ -3305,14 +3306,14 @@ async function leituraCompletaDoTrecho(l) {
   return naoConfirmado(base);
 }
 // Um artigo do catálogo lido no wol pelo docId; null se não abrir ou vier com menos de MIN_CARACTERES_ARTIGO.
-async function leituraDoArtigoFamilia(a, rotulo = "Trecho do artigo") {
+async function leituraDoArtigoFamilia(a, rotulo = "Trecho do artigo", maxChars = 7000) {
   const url = urlWolDoDocId(a?.docId);
   if (!url) return null;
   const lido = await lerArtigoDoWol(url, { timeoutMs: 8000, maxCaracteres: 12000, estruturado: true }).catch(() => null);
   if (!lido || String(lido.texto || "").length < MIN_CARACTERES_ARTIGO) return null;
   // 6.12.86: os dados da publicação (revista, edição e página) no lugar da seção do catálogo, e o texto em parágrafos com os subtítulos ("## ").
   const fonte = [lido.publicacao, lido.citacao].filter(Boolean).join(" · ") || a.secao || "Ensinos Bíblicos";
-  return { titulo: limparLinha(lido.titulo || a.titulo, 200), fonte: limparLinha(fonte, 240), paragrafos: "", texto: leituraEmParagrafos(lido.texto), url: lido.url || url, rotulo };
+  return { titulo: limparLinha(lido.titulo || a.titulo, 200), fonte: limparLinha(fonte, 240), paragrafos: "", texto: leituraEmParagrafos(lido.texto, maxChars), url: lido.url || url, rotulo };
 }
 // 6.12.94: a matéria do Princípios Bíblicos em linhas: "## Versículos citados" e cada referência em negrito ("**Col 1:9**") numa linha; "## Relatos
 // bíblicos importantes" e, em cada linha, a referência em negrito, o travessão e o resumo. Sem versículos nem relatos estruturados, vale o texto corrido.
@@ -3691,7 +3692,7 @@ const PREPARAR_QUADRO_FAMILIA = {
         const ia = idDaEscolha(o.escolha, "A", artigos.length);
         const il = idDaEscolha(o.escolha, "L", livros.length);
         if (ia >= 0) {
-          leitura = await leituraDoArtigoFamilia(artigos[ia]);
+          leitura = await leituraDoArtigoFamilia(artigos[ia], "Trecho do artigo", 3500); // 6.13.16: matéria curta no Criador
           if (leitura) {
             artigoLido = 1;
             chave = String(artigos[ia].docId);

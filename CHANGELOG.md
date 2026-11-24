@@ -2,6 +2,13 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.16
+
+### Adoração em Família: uma matéria só por seção, e curta
+
+- **Sem matéria duplicada:** Fé no Criador, Saiba responder e Ame o ministério mostravam a matéria para ler e, embaixo, a mesma matéria de novo em "📚 Publicações" (com outro "Exibir e ler esta matéria aqui", que abria o texto longo e cortado). Agora, quando a parte já tem a matéria para ler, a lista "Publicações" não aparece: uma matéria só por seção.
+- **Matéria curta:** a seção do livro lida no wol vai até 5 parágrafos (cerca de 3.500 caracteres), com no mínimo 3; se o parágrafo achado está no fim da seção, entram os anteriores até completar 3. No Criador, o artigo dos Ensinos Bíblicos também vai até cerca de 3.500 caracteres. Vale para a Abertura (livros), Personagem, Jesus, Criador, Saiba responder e Ame o ministério.
+
 ## 6.13.15
 
 ### Adoração em Família: tempo total na linha do plano

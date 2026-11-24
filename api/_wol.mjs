@@ -1103,7 +1103,7 @@ function blocosDoDocumento(html) {
   return { blocos };
 }
 
-export async function secaoDoWolPelaFrase(frase, { timeoutMs = 8000, minParagrafos = 3, maxChars = 6500, sigla = "" } = {}) {
+export async function secaoDoWolPelaFrase(frase, { timeoutMs = 8000, minParagrafos = 3, maxParagrafos = 99, maxChars = 6500, sigla = "" } = {}) {
   // 6.13.09: até 3 frases do trecho, sem pontuação (com vírgula a busca exata do wol não acha nada), só na publicação da sigla
   let achado = null;
   let palavras = "";
@@ -1183,7 +1183,9 @@ export async function secaoDoWolPelaFrase(frase, { timeoutMs = 8000, minParagraf
   // até maxChars, com pelo menos minParagrafos.
   let escolhidos = secao;
   const tamanho = (lista) => lista.reduce((s, b) => s + (b.subtitulo ? 0 : b.texto.length), 0);
-  if (tamanho(secao) > maxChars) {
+  // 6.13.16: também quando a seção tem parágrafos demais (a matéria da noite é curta: até maxParagrafos)
+  const qtdParagrafos = (lista) => lista.filter((b) => !b.subtitulo).length;
+  if (tamanho(secao) > maxChars || qtdParagrafos(secao) > maxParagrafos) {
     const pos = Math.max(0, secao.findIndex((b) => b.k === i));
     let inicio = pos;
     let n = 0;
@@ -1193,9 +1195,14 @@ export async function secaoDoWolPelaFrase(frase, { timeoutMs = 8000, minParagraf
     let qtd = 0;
     for (let k = inicio; k < secao.length; k++) {
       const b = secao[k];
-      if (!b.subtitulo && total + b.texto.length > maxChars && qtd >= minParagrafos && k > pos) break;
+      if (!b.subtitulo && (total + b.texto.length > maxChars || qtd >= maxParagrafos) && qtd >= minParagrafos && k > pos) break;
       janela.push(b);
       if (!b.subtitulo) { total += b.texto.length; qtd++; }
+    }
+    // perto do fim da seção, completa o mínimo com os parágrafos anteriores
+    for (let k = inicio - 1; k >= 0 && qtd < minParagrafos; k--) {
+      janela.unshift(secao[k]);
+      if (!secao[k].subtitulo) qtd++;
     }
     escolhidos = janela;
   }

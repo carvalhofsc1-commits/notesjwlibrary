@@ -860,7 +860,9 @@ teste("6.12.73: Criador sem marcas de figura e Saiba responder sem \"##\" e \"�
     const parte = await s.prep.montar({ pergunta: "Perdoar é esquecer?", descricao: "d", escolha: `L${i}`, verbete: null, textos: ["Colossenses 3:13"] });
     // 6.13.03: "## " no começo da linha é o subtítulo da seção (vindo do wol ou da lição) e sai em negrito; marcas soltas dos arquivos não
     assert.doesNotMatch(parte.leitura.texto, /(^|\n)\s*•|(^|\n)##(?! \S)|#{3,}|\S ##/);
-    assert.doesNotMatch(decodeURIComponent(parte.publicacoes[0].url), /##|•/);
+    // 6.13.16: uma matéria só por parte: com a leitura, a lista de publicações fica vazia; o link é o da leitura
+    assert.equal(parte.publicacoes.length, 0);
+    assert.doesNotMatch(decodeURIComponent(parte.leitura.url), /##|•/);
   }
 });
 
@@ -1712,7 +1714,7 @@ teste("6.12.86: artigo da Abertura com dados da publicação, parágrafos e subt
   assert.ok(wolJs.includes('estruturado ? (caixa ? "# " : tag !== "p" || curtoSemPonto ? "## " : "") + texto : texto'));
   assert.ok(wolJs.includes('documentCitationInformation'));
   assert.ok(servidorJs.includes("estruturado: true"));
-  assert.ok(servidorJs.includes("texto: leituraEmParagrafos(lido.texto)"));
+  assert.ok(servidorJs.includes("texto: leituraEmParagrafos(lido.texto, maxChars)"));
   assert.ok(sessaoJs.includes("daLeitura"));
   assert.ok(appJs.includes("leitura: (pedacos, abrirRefs) => participarLeituraVozBotao(pedacos, undefined, abrirRefs)"));
   assert.ok(appJs.includes("fam-leitura-par fam-leitura-sub"));
@@ -1831,7 +1833,7 @@ teste("6.13.02: Ame o ministério sem raciocínio longo e leitura com a lição/
 teste("6.13.03: seção do livro pelo wol (capítulo, páginas e parágrafos), mínimo de 3 parágrafos, e vídeos alternando formatos", async () => {
   const wolJs = await readFile(new URL("api/_wol.mjs", raiz), "utf8");
   assert.ok(wolJs.includes("export async function secaoDoWolPelaFrase(frase"));
-  assert.ok(servidorJs.includes("secaoDoWolPelaFrase(l.trecho, { timeoutMs: 8000, minParagrafos: 3, maxChars: 4500, sigla: siglaDoLivro(l.livro) })"));
+  assert.ok(servidorJs.includes("secaoDoWolPelaFrase(l.trecho, { timeoutMs: 8000, minParagrafos: 3, maxParagrafos: 5, maxChars: 3500, sigla: siglaDoLivro(l.livro) })"));
   assert.ok(servidorJs.includes("const FORMATOS_VIDEO_FAMILIA = Object.freeze(["));
   assert.ok(servidorJs.includes("FORMATO DESTA NOITE:"));
   assert.ok(servidorJs.includes('["Programas e Eventos › Adorações Matinais", 15], ["Entrevistas e Casos Reais", 15]'));
