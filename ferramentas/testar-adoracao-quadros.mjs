@@ -1693,6 +1693,18 @@ teste("6.12.85: Abertura — matéria antes do relato e local exato da fonte (ca
   assert.ok(appJs.indexOf("montarLeitura(); // 6.12.85") < appJs.indexOf("addLista('📖 Textos'"));
 });
 
+teste("6.12.86: artigo da Abertura com dados da publicação, parágrafos e subtítulos, e botão de leitura do trecho", async () => {
+  const wolJs = await readFile(new URL("api/_wol.mjs", raiz), "utf8");
+  assert.ok(wolJs.includes('estruturado && tag !== "p" ? "## " + texto : texto'));
+  assert.ok(wolJs.includes('documentCitationInformation'));
+  assert.ok(servidorJs.includes("estruturado: true"));
+  assert.ok(servidorJs.includes("texto: leituraEmParagrafos(lido.texto)"));
+  assert.ok(sessaoJs.includes("daLeitura"));
+  assert.ok(appJs.includes("leitura: pedacos => participarLeituraVozBotao(pedacos)"));
+  assert.ok(appJs.includes("fam-leitura-par fam-leitura-sub"));
+  assert.ok(appJs.includes("aoVivo.leitura(pedacos)"));
+});
+
 for (const [nome, fn] of testes) {
   try {
     await fn();

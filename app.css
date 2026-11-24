@@ -17452,6 +17452,8 @@ input[type="date"].fam-campo::-webkit-calendar-picker-indicator { margin: 0; pad
 .fam-leitura-trecho[open] { padding-bottom: 10px; }
 .fam-leitura-trecho[open] > summary { margin-bottom: 6px; }
 .fam-leitura-trecho > .fam-leitura-par + .fam-leitura-par { margin-top: 8px; }
+.fam-leitura-trecho > .fam-leitura-sub { margin-top: 14px !important; } /* 6.12.86: subtítulo do artigo em negrito, com folga antes */
+.fam-leitura-voz { width: 100%; margin: 6px 0; } /* 6.12.86: botão 🔊 do trecho ocupa a linha toda */
 .fam-materia-tela { margin-top: 6px; }
 .fam-materia-corpo { display: grid; gap: 8px; font-size: .92rem; min-width: 0; }
 .fam-materia-corpo .fam-leitura-par { margin: 0; }

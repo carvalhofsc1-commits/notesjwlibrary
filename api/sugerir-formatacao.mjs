@@ -3243,9 +3243,30 @@ const publicacaoDoTrecho = (l) => (l ? [{ titulo: l.livro, fonte: localDoTrecho(
 async function leituraDoArtigoFamilia(a, rotulo = "Trecho do artigo") {
   const url = urlWolDoDocId(a?.docId);
   if (!url) return null;
-  const lido = await lerArtigoDoWol(url, { timeoutMs: 8000, maxCaracteres: 6000 }).catch(() => null);
+  const lido = await lerArtigoDoWol(url, { timeoutMs: 8000, maxCaracteres: 6000, estruturado: true }).catch(() => null);
   if (!lido || String(lido.texto || "").length < MIN_CARACTERES_ARTIGO) return null;
-  return { titulo: limparLinha(lido.titulo || a.titulo, 200), fonte: limparLinha(a.secao || "Ensinos Bíblicos", 120), paragrafos: "", texto: leituraLimpa(lido.texto), url: lido.url || url, rotulo };
+  // 6.12.86: os dados da publicação (revista, edição e página) no lugar da seção do catálogo, e o texto em parágrafos com os subtítulos ("## ").
+  const fonte = [lido.publicacao, lido.citacao].filter(Boolean).join(" · ") || a.secao || "Ensinos Bíblicos";
+  return { titulo: limparLinha(lido.titulo || a.titulo, 200), fonte: limparLinha(fonte, 240), paragrafos: "", texto: leituraEmParagrafos(lido.texto), url: lido.url || url, rotulo };
+}
+// Mantém um parágrafo por linha e os subtítulos ("## ") e corta no fim de um parágrafo ou de uma frase.
+function leituraEmParagrafos(bruto, max = 2600) {
+  const saida = [];
+  let total = 0;
+  for (const linha of String(bruto || "").split(/\r?\n/)) {
+    const subtitulo = /^##\s+/.test(linha);
+    const limpo = limparTextoGerado(linha.replace(/^##\s+/, ""), 1800);
+    if (!limpo) continue;
+    if (total + limpo.length > max) {
+      const resto = max - total;
+      if (!subtitulo && resto > 250) saida.push(cortarNoFimDaFrase(limpo, resto));
+      break;
+    }
+    saida.push((subtitulo ? "## " : "") + limpo);
+    total += limpo.length;
+  }
+  while (saida.length && saida[saida.length - 1].startsWith("## ")) saida.pop(); // sem subtítulo solto no fim
+  return saida.join("\n");
 }
 const listaDeArtigos = (titulo, artigos) =>
   artigos.length

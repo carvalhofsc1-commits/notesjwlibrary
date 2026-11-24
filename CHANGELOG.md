@@ -2,6 +2,14 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.12.86
+
+### Adoração em Família: trecho do artigo com dados da publicação, parágrafos e subtítulos, e botão de leitura
+
+- **Dados da publicação:** o trecho de artigo da Abertura mostra agora a revista, a edição e a página, lidas do rodapé do wol (ex.: "A Sentinela Anunciando o Reino de Jeová (Público) — 2020 · wp20 N.° 3 pág. 10"), no lugar da seção do catálogo.
+- **Formatação:** o texto do trecho mantém os parágrafos e os subtítulos do artigo, em negrito (antes saía tudo num bloco só).
+- **🔊 Ouvir o trecho:** botão em todo campo "Trecho para considerar" na adoração ao vivo (fora do campo recolhido); lê o título e cada parágrafo pela voz do Google, sem código de leitura e sem créditos (uso "familia"; o servidor só lê o que está na programação da sessão). Se o Google falhar, continua na voz do aparelho.
+
 ## 6.12.85
 
 ### Adoração em Família: Abertura com a matéria primeiro e o local exato da fonte

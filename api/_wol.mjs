@@ -1030,7 +1030,9 @@ export async function pesquisarNoWol(tema, timeoutMs, maximo = MAX_RESULTADOS_PE
 // Um artigo do wol.jw.org pelo endereço (colado pelo orador no card Outros esboços): título, texto (até maxCaracteres) e textos bíblicos.
 // Só aceita endereços do próprio wol (/pt/wol/d/r5/lp-t/<número do documento>; com "#h=7:0-9:0" na ponta, só os parágrafos daquela faixa).
 // null = não é um endereço de artigo do wol ou o artigo não tem texto.
-export async function lerArtigoDoWol(endereco, { timeoutMs = 8000, maxCaracteres = MAX_CARACTERES_ARTIGO } = {}) {
+// 6.12.86: com "estruturado", os subtítulos (h2/h3) saem com "## " na frente (um por linha, como os parágrafos) e o resultado traz os dados da
+// publicação do rodapé do wol ("A Sentinela … — 2020" e "wp20 N.° 3 pág. 10").
+export async function lerArtigoDoWol(endereco, { timeoutMs = 8000, maxCaracteres = MAX_CARACTERES_ARTIGO, estruturado = false } = {}) {
   let url;
   try {
     url = new URL(String(endereco || "").trim());
@@ -1049,17 +1051,25 @@ export async function lerArtigoDoWol(endereco, { timeoutMs = 8000, maxCaracteres
   const titulo = textoDe((html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/) || [])[1] || "") || daAba;
   const partes = [];
   const brutos = [];
-  for (const [, , pid, conteudo] of html.matchAll(/<(p|h2|h3)\b[^>]*data-pid="(\d+)"[^>]*>([\s\S]*?)<\/\1>/g)) {
+  for (const [, tag, pid, conteudo] of html.matchAll(/<(p|h2|h3)\b[^>]*data-pid="(\d+)"[^>]*>([\s\S]*?)<\/\1>/g)) {
     const n = Number(pid);
     if (de !== null && (n < de || n > ate)) continue;
     const texto = textoDe(conteudo);
     if (texto) {
-      partes.push(texto);
+      partes.push(estruturado && tag !== "p" ? "## " + texto : texto);
       brutos.push(conteudo);
     }
   }
   if (!partes.length) return null;
-  return { titulo, texto: partes.join("\n").slice(0, maxCaracteres), referencias: referenciasDe(brutos.join(" ")).slice(0, 40), url: BASE + "/pt/wol/d/r5/lp-t/" + doc[1] };
+  const rodape = (html.match(/<div id="documentCitationInformation">([\s\S]{0,600}?<\/strong>)/) || [])[1] || "";
+  const divs = [textoDe((rodape.match(/<div>(?!<)([\s\S]*?)<\/div>/) || [])[1] || ""), textoDe((rodape.match(/<strong>([\s\S]*?)<\/strong>/) || [])[1] || "")];
+  return {
+    titulo,
+    texto: partes.join("\n").slice(0, maxCaracteres),
+    referencias: referenciasDe(brutos.join(" ")).slice(0, 40),
+    url: BASE + "/pt/wol/d/r5/lp-t/" + doc[1],
+    ...(estruturado ? { publicacao: divs[0] || "", citacao: divs[1] || "" } : {}),
+  };
 }
 
 // Lê o discurso curto da semana (a fonte, a lição do th e, se a fonte só traz o tema e textos, a pesquisa no wol). null = a semana

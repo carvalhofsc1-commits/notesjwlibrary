@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.12.85'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.12.86'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -27036,15 +27036,26 @@ function saveTemplatesToStorage() {
           a.textContent = 'Abrir este trecho no wol.jw.org ↗';
           lei.appendChild(a);
         }
+        // 6.12.86: botão 🔊 do trecho (adoração ao vivo), fora do campo recolhido, e o texto em parágrafos com os subtítulos ("## ") em negrito.
+        const linhas = parte.leitura.texto.split(/\n+/).map(x => x.trim()).filter(Boolean);
+        if (aoVivo && aoVivo.leitura) {
+          const pedacos = [parte.leitura.titulo, ...linhas.map(x => x.replace(/^##\s+/, ''))].filter(Boolean);
+          if (pedacos.length) lei.appendChild(aoVivo.leitura(pedacos));
+        }
         const det = document.createElement('details'); // sempre recolhido ao montar; abre ao tocar
         det.className = 'fam-leitura-trecho';
         const sm = document.createElement('summary');
         sm.textContent = '📖 Trecho para considerar';
         det.appendChild(sm);
-        parte.leitura.texto.split(/\n+/).filter(Boolean).forEach(par => {
+        linhas.forEach(par => {
+          const sub = /^##\s+/.test(par);
           const pp = document.createElement('p');
-          pp.className = 'fam-leitura-par';
-          pp.textContent = par;
+          pp.className = sub ? 'fam-leitura-par fam-leitura-sub' : 'fam-leitura-par';
+          if (sub) {
+            const forte = document.createElement('strong');
+            forte.textContent = par.replace(/^##\s+/, '');
+            pp.appendChild(forte);
+          } else pp.textContent = par;
           det.appendChild(pp);
         });
         lei.appendChild(det);
@@ -28091,8 +28102,69 @@ function saveTemplatesToStorage() {
       clearTimeout(perguntaVoz.timer);
       if (perguntaVoz.el) { try { perguntaVoz.el.onended = perguntaVoz.el.onerror = null; perguntaVoz.el.pause(); } catch (e) { /* sem áudio */ } }
       try { if ('speechSynthesis' in window) window.speechSynthesis.cancel(); } catch (e) { /* sem voz */ }
-      if (perguntaVoz.botao) { perguntaVoz.botao.textContent = '🔊'; perguntaVoz.botao.setAttribute('aria-pressed', 'false'); }
+      if (perguntaVoz.botao) { perguntaVoz.botao.textContent = perguntaVoz.botao.dataset.rotulo || '🔊'; perguntaVoz.botao.setAttribute('aria-pressed', 'false'); }
       perguntaVoz.botao = null;
+    }
+    // 6.12.86: 🔊 do trecho da matéria (campo "Trecho para considerar"): lê o título e cada parágrafo, um pedaço por vez, pela voz do Google
+    // (uso "familia", sem código e sem créditos); o próximo pedaço já vai sendo preparado. Se o Google falhar, continua na voz do aparelho.
+    function participarLeituraVozBotao(pedacos) {
+      const botao = document.createElement('button');
+      botao.type = 'button';
+      botao.className = 'secondary fam-fino fam-leitura-voz';
+      botao.dataset.rotulo = '🔊 Ouvir o trecho';
+      botao.textContent = botao.dataset.rotulo;
+      botao.title = 'Ouvir o trecho da matéria';
+      botao.setAttribute('aria-pressed', 'false');
+      botao.addEventListener('click', () => {
+        if (perguntaVoz.botao === botao) { perguntaVozParar(); return; }
+        perguntaVozParar();
+        participarAudioParar();
+        document.querySelectorAll('#participarSessao video').forEach(v => v.pause());
+        perguntaVoz.botao = botao;
+        botao.textContent = '⏹️ Parar';
+        botao.setAttribute('aria-pressed', 'true');
+        if (!perguntaVoz.el) perguntaVoz.el = new Audio();
+        const el = perguntaVoz.el;
+        el.src = vozSilencio();
+        const p0 = el.play();
+        if (p0 && p0.catch) p0.catch(() => { /* sem permissão: cai na voz do aparelho */ });
+        const ativo = () => perguntaVoz.botao === botao;
+        let feitos = 0;
+        const tocar = entrada => new Promise((ok, falha) => {
+          el.onended = ok;
+          el.onerror = () => falha(new Error('áudio'));
+          el.src = entrada.uri;
+          const p = el.play();
+          if (p && p.catch) p.catch(falha);
+        });
+        const reserva = () => { // voz do aparelho, a partir do pedaço em que parou
+          if (!ativo()) return;
+          if (!('speechSynthesis' in window)) { perguntaVozParar(); return; }
+          const restantes = pedacos.slice(feitos);
+          const falar = k => {
+            if (!ativo()) return;
+            if (k >= restantes.length) { perguntaVozParar(); return; }
+            const u = perguntaVozFalar(restantes[k]);
+            u.onend = () => falar(k + 1);
+            u.onerror = () => perguntaVozParar();
+            window.speechSynthesis.speak(u);
+          };
+          falar(0);
+        };
+        (async () => {
+          let proximo = vozBuscar(pedacos[0], null, 'familia');
+          for (let i = 0; i < pedacos.length; i++) {
+            const entrada = await proximo;
+            if (!ativo()) return;
+            proximo = i + 1 < pedacos.length ? vozBuscar(pedacos[i + 1], null, 'familia') : null;
+            if (proximo) proximo.catch(() => { /* o erro aparece ao esperar por ele */ });
+            await tocar(entrada);
+            if (!ativo()) return;
+            feitos = i + 1;
+          }
+        })().then(() => { if (ativo()) perguntaVozParar(); }, () => reserva());
+      });
+      return botao;
     }
     function perguntaVozFalar(texto) {
       const u = new SpeechSynthesisUtterance(texto);
@@ -28301,7 +28373,7 @@ function saveTemplatesToStorage() {
       });
       li.appendChild(det);
     }
-    const participarMidia = i => ({ publicacao: (li, pub, k) => participarMateriaMidia(li, pub, k, i), texto: t => participarTextoMidia(t), video: (li, v, k) => participarVideoMidia(li, v, k, i), cantico: (li, c, k) => participarVideoMidia(li, c, k, i, true) });
+    const participarMidia = i => ({ leitura: pedacos => participarLeituraVozBotao(pedacos), publicacao: (li, pub, k) => participarMateriaMidia(li, pub, k, i), texto: t => participarTextoMidia(t), video: (li, v, k) => participarVideoMidia(li, v, k, i), cantico: (li, c, k) => participarVideoMidia(li, c, k, i, true) });
 
     // ---- A sessão na tela: cabeçalho, painel do dirigente e uma seção por parte ----
     function participarMontar() {
