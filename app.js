@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.13.30'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.13.31'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -28272,7 +28272,7 @@ function saveTemplatesToStorage() {
       sessao: document.getElementById('participarSessao'),
       status: document.getElementById('participarStatus')
     };
-    const participarVazio = () => ({ cod: '', chave: '', programa: null, dirigente: false, participanteId: '', nome: '', versao: '', estado: null, participantes: [], extras: null, offset: 0, secoes: [], dir: null, semConexao: false, jogos: new Map(), cron: null });
+    const participarVazio = () => ({ cod: '', chave: '', programa: null, dirigente: false, participanteId: '', nome: '', versao: '', estado: null, participantes: [], extras: null, offset: 0, secoes: [], dir: null, semConexao: false, jogos: new Map(), cron: null, presentes: [], nomesVistos: [], painel: null, ultimaPresenca: 0 });
     const participar = Object.assign(participarVazio(), { timer: 0, cronTimer: 0, consultando: false, fila: Promise.resolve(), voltarPara: 'inicio', nomeCod: '' });
 
     const participarCodigoLimpo = v => String(v || '').toUpperCase().replace(/[^0-9A-Z]/g, '');
@@ -28309,6 +28309,7 @@ function saveTemplatesToStorage() {
       participarVista(participarEls.nomePasso.hidden ? 'entrada' : 'nome');
     }
     function participarAoSair() {
+      participarSairAvisar(); // 6.13.31: sai do painel de participantes
       participarLimpar();
       participarStatus('');
       participarVista('entrada');
@@ -28890,6 +28891,7 @@ function saveTemplatesToStorage() {
       participar.cron = { linha: cron };
       cab.append(h, meta, grande);
       caixa.appendChild(cab); // sem o texto de resumo da programação (retirado na 6.11.76)
+      caixa.appendChild(participarPainelMontar()); // 6.13.31: 👥 quem está participando (todos veem)
       if (participar.dirigente) caixa.appendChild(participarDirigenteMontar());
       else {
         const dica = document.createElement('p');
@@ -29137,6 +29139,7 @@ function saveTemplatesToStorage() {
       if (d.versao != null) participar.versao = String(d.versao);
       if (Number(d.agora)) participar.offset = Number(d.agora) - Date.now();
       if (Array.isArray(d.participantes)) participar.participantes = d.participantes;
+      if (Array.isArray(d.presentes)) { participar.presentes = d.presentes; participarPresentesPintar(); } // 6.13.31
       if (d.estado) {
         const antes = participar.estado;
         participar.estado = d.estado;
@@ -29404,6 +29407,63 @@ function saveTemplatesToStorage() {
     // REGRA FIXA: nunca macaco (🐒 🐵 🦍 🦧 🙈 🙉 🙊), veado ou parecido (🦌 🫎 🐐), cavalo (🐴 🐎 🦄 🏇) nem burro/jumento (🫏) nesta lista; os demais animais podem entrar à vontade.
     const PLACAR_ANIMAIS = ['🦅', '🐦', '🦉', '🐧', '🦆', '🐢', '🐘', '🦒', '🦊', '🐻', '🐼', '🐨', '🦁', '🐯', '🦜', '🐬', '🐙', '🦋', '🐝', '🐞', '🐇', '🦔', '🐿️', '🦦', '🐳', '🦩', '🦢', '🐄', '🐑', '🐓'];
     const PLACAR_CORES = ['#c2410c', '#1d4ed8', '#7e22ce', '#be123c', '#a21caf', '#a16207', '#0369a1', '#854d0e', '#4338ca', '#475569'];
+    // 6.13.31: todos os nomes já vistos nesta adoração (os informados ao compartilhar primeiro, depois quem entrou, na ordem): os bichinhos são
+    // escolhidos sobre esta lista, que só cresce, para o painel, o placar e o sorteio mostrarem o mesmo bicho e ele não mudar quando alguém sai.
+    function participarNomesVistos(extra) {
+      const lista = participar.nomesVistos || (participar.nomesVistos = []);
+      [...((participar.programa && participar.programa.nomes) || []), ...(extra || [])].forEach(n => { if (n && !lista.includes(n)) lista.push(n); });
+      return lista;
+    }
+    // 6.13.31: painel "👥 Quem está participando", no topo da tela da adoração, para todos: o bichinho e o nome de cada um que está presente.
+    function participarPainelMontar() {
+      const box = document.createElement('div');
+      box.className = 'fam-sessao-presentes';
+      const titulo = document.createElement('p');
+      titulo.className = 'fam-sessao-presentes-titulo';
+      const lista = document.createElement('ul');
+      lista.className = 'fam-sessao-presentes-lista';
+      lista.setAttribute('aria-live', 'polite');
+      box.append(titulo, lista);
+      participar.painel = { box, titulo, lista };
+      participarPresentesPintar();
+      return box;
+    }
+    function participarPresentesPintar() {
+      const p = participar.painel;
+      if (!p) return;
+      const nomes = [...new Set((participar.presentes || []).map(x => x && x.nome).filter(Boolean))];
+      const mascotes = participarMascotes(participarNomesVistos(nomes));
+      p.titulo.textContent = '👥 Quem está participando (' + nomes.length + ')';
+      p.lista.replaceChildren(...nomes.map(n => {
+        const li = document.createElement('li');
+        li.className = 'fam-sessao-presente' + (n === participar.nome ? ' eu' : '');
+        const bicho = document.createElement('span');
+        bicho.className = 'fam-sessao-presente-bicho';
+        bicho.setAttribute('aria-hidden', 'true');
+        bicho.textContent = (mascotes[n] && mascotes[n].animal) || '🙂';
+        const nome = document.createElement('span');
+        nome.className = 'fam-sessao-presente-nome';
+        nome.textContent = n + (n === participar.nome ? ' (você)' : '');
+        if (mascotes[n]) nome.style.color = mascotes[n].cor;
+        li.append(bicho, nome);
+        return li;
+      }));
+      if (!nomes.length) {
+        const vazio = document.createElement('li');
+        vazio.className = 'fam-sessao-presente-vazio';
+        vazio.textContent = 'Ninguém entrou com nome ainda.';
+        p.lista.appendChild(vazio);
+      }
+    }
+    // 6.13.31: ao sair da tela da adoração (ou fechar o app), avisa o servidor: o nome sai do painel (os pontos e as respostas continuam).
+    function participarSairAvisar() {
+      if (!participar.cod || !participar.participanteId) return;
+      const corpo = { acao: 'sair', sessao: participar.cod, participanteId: participar.participanteId };
+      const id = aparelhoId();
+      if (id) corpo.aparelhoId = id;
+      try { fetch(FAMILIA_SESSAO_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo), keepalive: true }).catch(() => {}); } catch (e) { /* sem rede */ }
+    }
+    window.addEventListener('pagehide', () => { if (currentScreen() === 'participar') participarSairAvisar(); });
     function participarMascotes(nomes) {
       const hash = txt => { let h = 2166136261; for (const c of String(txt)) { h ^= c.codePointAt(0); h = Math.imul(h, 16777619) >>> 0; } return h; };
       const usadosA = new Set();
@@ -29915,7 +29975,8 @@ function saveTemplatesToStorage() {
       const dadas = (e.dicas && e.dicas[i]) || {};
       const acertos = (e.acertos && e.acertos[i]) || {};
       // Os nomes do jogo: os cadastrados ao compartilhar, quem entrou (visto pelo dirigente) e quem já pontuou.
-      const nomes = [...new Set([...(participar.programa.nomes || []), ...(participar.participantes || []).map(p => p.nome), ...Object.values(acertos).map(a => a.nome)].filter(Boolean))];
+      // 6.13.31: com quem está presente (todos recebem essa lista)
+      const nomes = [...new Set([...(participar.programa.nomes || []), ...(participar.participantes || []).map(p => p.nome), ...(participar.presentes || []).map(p => p.nome), ...Object.values(acertos).map(a => a.nome)].filter(Boolean))];
       const total = {};
       nomes.forEach(n => { total[n] = 0; });
       Object.values(acertos).forEach(a => { if (a.nome) total[a.nome] = (total[a.nome] || 0) + (Number(a.pts) || 0); });
@@ -29927,7 +29988,7 @@ function saveTemplatesToStorage() {
         const cab = document.createElement('tr');
         ['Participante', 'Pontos'].forEach(h => { const th = document.createElement('th'); th.textContent = h; cab.appendChild(th); });
         tabela.appendChild(cab);
-        const mascotes = participarMascotes(nomes);
+        const mascotes = participarMascotes(participarNomesVistos(nomes)); // 6.13.31: os mesmos bichos do painel de participantes
         [...nomes].sort((a, b) => total[b] - total[a] || a.localeCompare(b, 'pt-BR')).forEach(n => {
           const tr = document.createElement('tr');
           const td1 = document.createElement('td');
@@ -30098,7 +30159,7 @@ function saveTemplatesToStorage() {
       ref.cardSorteio.hidden = !vale && !valeQ && !participar.dirigente; // quem não dirige só vê o card quando há algo sorteado
       if (!vale) { ref.resumoSorteio.textContent = valeQ ? '🎯 ' + textoQ : '🎲 Sorteio de jogadores (opcional)'; return; }
       // O sorteado aparece como no placar: o mesmo bichinho e a mesma cor, em negrito. Com o card recolhido, o título já mostra de quem é a vez.
-      const mascote = participarMascotes(nomes.includes(s.nome) ? nomes : [...nomes, s.nome])[s.nome];
+      const mascote = participarMascotes(participarNomesVistos([...nomes, s.nome]))[s.nome];
       const vezDe = () => {
         const sp = document.createElement('span');
         sp.className = 'fam-placar-nome fam-sorteado-nome';
@@ -30176,6 +30237,9 @@ function saveTemplatesToStorage() {
       participar.consultando = true;
       const corpo = { acao: 'estado', sessao: cod, versao: participar.versao };
       if (participar.dirigente) corpo.chave = participar.chave;
+      // 6.13.31: o sinal de presença (participanteId) e, a cada 30 s, a lista de presentes mesmo sem mudança (tira do painel quem fechou o app)
+      if (participar.participanteId) corpo.participanteId = participar.participanteId;
+      if (Date.now() - (participar.ultimaPresenca || 0) > 30000) { corpo.presenca = true; participar.ultimaPresenca = Date.now(); }
       let r;
       try { r = await familiaSessaoPedir(corpo); } finally { participar.consultando = false; }
       if (cod !== participar.cod) return; // saiu ou trocou de adoração enquanto esperava

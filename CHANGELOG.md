@@ -2,6 +2,20 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.31
+
+### Adoração compartilhada: painel "Quem está participando"
+
+- No topo da tela da adoração, logo abaixo do título, todos veem o painel **👥 Quem está participando (N)**, com o bichinho e o nome de cada um na cor do placar. O próprio nome aparece com "(você)".
+- **Atualização:**
+  - quem entra aparece para todos na próxima consulta (a versão de todos passou a contar os participantes);
+  - quem sai da tela da adoração (Voltar ou fechar o app) avisa o servidor (`sair`) e some do painel;
+  - quem fecha o app sem avisar some depois de cerca de 2 minutos e meio sem sinal: cada consulta manda o sinal de presença, gravado no máximo a cada 60 s, e a lista vem a cada 30 s mesmo sem mudança.
+- Os bichinhos são escolhidos sobre todos os nomes já vistos na adoração, então o painel, o placar e o sorteio mostram o mesmo bicho, e ele não muda quando alguém sai.
+- Quem participa também vê no placar quem está presente.
+- Segurança: a lista com os ids dos participantes passou a ir só para o presidente da reunião; antes, ela também ia para quem enviava uma resposta. Os outros recebem só os nomes.
+- Os pontos e as respostas de quem sai continuam, pelo nome.
+
 ## 6.13.30
 
 ### Adoração compartilhada: o presidente da reunião é identificado pelo cadastro do aparelho

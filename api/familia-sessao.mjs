@@ -112,8 +112,13 @@ async function lerEstado(cod) {
 async function lerParticipantes(cod) {
   const { blobs } = await list({ prefix: `${PASTA}${cod}/participantes/` });
   const itens = await Promise.all(blobs.map((b) => lerJson(b.pathname)));
-  return itens.filter((p) => p && p.id && p.nome).sort((a, b) => (a.entrouEm || 0) - (b.entrouEm || 0)).map((p) => ({ id: p.id, nome: p.nome }));
+  return itens.filter((p) => p && p.id && p.nome).sort((a, b) => (a.entrouEm || 0) - (b.entrouEm || 0)).map((p) => ({ id: p.id, nome: p.nome, vistoEm: p.vistoEm || p.entrouEm || 0 }));
 }
+// 6.13.31: quem está na adoração agora (painel "Quem está participando", visível para todos): só o nome, sem o id, e só quem deu sinal nos
+// últimos PRESENCA_MS (o app manda o sinal a cada consulta; o arquivo do participante é regravado no máximo a cada SINAL_MS).
+const PRESENCA_MS = 150_000;
+const SINAL_MS = 60_000;
+const presentes = (lista) => lista.filter((p) => Date.now() - (p.vistoEm || 0) <= PRESENCA_MS).map((p) => ({ nome: p.nome }));
 async function contarParticipantes(cod) {
   const { blobs } = await list({ prefix: `${PASTA}${cod}/participantes/` });
   return blobs.length;
@@ -428,8 +433,11 @@ export default async function handler(req, res) {
       estado.versao = (Number(estado.versao) || 0) + 1;
       estado.atualizadoEm = Date.now();
       await gravarJson(caminho(cod, "estado.json"), estado);
-      const qtd = await contarParticipantes(cod);
-      return res.status(200).json({ versao: versaoDe(estado, qtd), estado: estadoPublico(estado), participantes: await lerParticipantes(cod), agora: Date.now() });
+      const lista = await lerParticipantes(cod);
+      // 6.13.31: a lista com os ids só vai para o presidente da reunião; todos recebem os presentes (só os nomes)
+      const saida = { versao: versaoDe(estado, lista.length), estado: estadoPublico(estado), presentes: presentes(lista), agora: Date.now() };
+      if (await ehDirigente()) saida.participantes = lista.map(({ id, nome }) => ({ id, nome }));
+      return res.status(200).json(saida);
     };
 
     // ----- entrar: a programação sem respostas, o estado e o id do participante (o dirigente pode entrar sem nome) -----
@@ -458,28 +466,44 @@ export default async function handler(req, res) {
           if ((await contarParticipantes(cod)) >= MAX_PARTICIPANTES) return erro(res, 409, `Esta adoração já tem ${MAX_PARTICIPANTES} participantes.`);
           participanteId = randomBytes(12).toString("base64url");
         }
-        await gravarJson(caminho(cod, `participantes/${participanteId}.json`), { id: participanteId, nome, entrouEm: existente ? existente.entrouEm : Date.now() });
+        await gravarJson(caminho(cod, `participantes/${participanteId}.json`), { id: participanteId, nome, entrouEm: existente ? existente.entrouEm : Date.now(), vistoEm: Date.now() });
       } else if (!dirigente) {
         // Sem nome: só confere o código e devolve o título e os nomes informados, para a pessoa escolher o dela (não entra ainda).
         return res.status(200).json({ sessao: cod, precisaNome: true, titulo: programa.titulo, emoji: programa.emoji, nomes: programa.nomes || [] });
       }
       const resposta = { sessao: cod, programa, participanteId, dirigente, agora: Date.now(), ...(participanteId ? { nome } : {}) };
-      if (dirigente) {
-        const qtd = await contarParticipantes(cod);
-        Object.assign(resposta, { versao: versaoDe(estado, qtd), estado: estadoPublico(estado), participantes: await lerParticipantes(cod), extras: segredo.extras || null });
-      } else Object.assign(resposta, { versao: versaoDe(estado), estado: estadoPublico(estado) });
+      // 6.13.31: todos recebem quem está presente (painel "Quem está participando"); a versão de todos conta os participantes (quem entra ou sai
+      // muda a versão e todos atualizam).
+      const lista = await lerParticipantes(cod);
+      Object.assign(resposta, { versao: versaoDe(estado, lista.length), estado: estadoPublico(estado), presentes: presentes(lista) });
+      if (dirigente) Object.assign(resposta, { participantes: lista.map(({ id, nome: n }) => ({ id, nome: n })), extras: segredo.extras || null });
       return res.status(200).json(resposta);
     }
 
     // ----- estado: só o número da versão quando nada mudou -----
+    // 6.13.31: com o participanteId, o aparelho dá sinal de presença (o arquivo é regravado no máximo a cada SINAL_MS); com presenca: true
+    // (o app manda de tempos em tempos), a resposta traz a lista de presentes mesmo sem mudança, para tirar do painel quem fechou o app.
     if (acao === "estado") {
       const dirigente = await ehDirigente();
-      const qtd = dirigente ? await contarParticipantes(cod) : null;
+      const pid = idLimpo(corpo.participanteId);
+      if (pid) {
+        const eu = await lerJson(caminho(cod, `participantes/${pid}.json`)).catch(() => null);
+        if (eu && eu.id && Date.now() - (eu.vistoEm || 0) > SINAL_MS) await gravarJson(caminho(cod, `participantes/${pid}.json`), { ...eu, vistoEm: Date.now() });
+      }
+      const qtd = await contarParticipantes(cod);
       const versao = versaoDe(estado, qtd);
-      if (String(corpo.versao || "") === versao) return res.status(200).json({ versao, agora: Date.now() });
-      const r = { versao, estado: estadoPublico(estado), agora: Date.now() };
-      if (dirigente) r.participantes = await lerParticipantes(cod);
+      if (String(corpo.versao || "") === versao && corpo.presenca !== true) return res.status(200).json({ versao, agora: Date.now() });
+      const lista = await lerParticipantes(cod);
+      const r = { versao, estado: estadoPublico(estado), agora: Date.now(), presentes: presentes(lista) };
+      if (dirigente) r.participantes = lista.map(({ id, nome }) => ({ id, nome }));
       return res.status(200).json(r);
+    }
+
+    // ----- sair (6.13.31): quem sai da tela da adoração sai do painel de participantes (os pontos e as respostas, pelo nome, continuam) -----
+    if (acao === "sair") {
+      const pid = idLimpo(corpo.participanteId);
+      if (pid && (await lerJson(caminho(cod, `participantes/${pid}.json`)).catch(() => null))) await del([caminho(cod, `participantes/${pid}.json`)]);
+      return res.status(200).json({ ok: true });
     }
 
     // ----- video (6.11.56): o vídeo de uma parte para tocar na tela da adoração, com a transcrição (a legenda publicada). Vale para quem tem o
@@ -660,7 +684,8 @@ export default async function handler(req, res) {
           estado.atualizadoEm = Date.now();
           await gravarJson(caminho(cod, "estado.json"), estado);
         }
-        Object.assign(saida, { versao: versaoDe(estado, await contarParticipantes(cod)), estado: estadoPublico(estado), participantes: await lerParticipantes(cod), agora: Date.now() });
+        const todos = await lerParticipantes(cod);
+        Object.assign(saida, { versao: versaoDe(estado, todos.length), estado: estadoPublico(estado), presentes: presentes(todos), participantes: todos.map(({ id, nome }) => ({ id, nome })), agora: Date.now() });
       }
       return res.status(200).json(saida);
     }

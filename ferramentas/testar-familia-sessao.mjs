@@ -341,6 +341,19 @@ try {
     const bloq = await chamar({ acao: "responder", sessao: s4.sessao, participanteId: pres.dados.participanteId, parte: 2, rodada: 2, texto: "qualquer" });
     assert.equal(bloq.status, 403);
     assert.match(bloq.dados.erro, /Ver só para mim/); passo("presidente que viu a resposta (Ver só para mim) não responde mais àquela questão");
+    // 6.13.31: painel de quem está participando, para todos (só os nomes), atualizado quando alguém entra ou sai
+    const est1 = await chamar({ acao: "estado", sessao: s4.sessao, participanteId: id4 });
+    assert.deepEqual(est1.dados.presentes.map((p) => p.nome).sort(), ["Ana", "Pai"]);
+    assert.ok(!("participantes" in est1.dados), "a lista com os ids não vai para quem participa");
+    const bia = (await chamar({ acao: "entrar", sessao: s4.sessao, nome: "Bia" })).dados;
+    assert.deepEqual(bia.presentes.map((p) => p.nome).sort(), ["Ana", "Bia", "Pai"]);
+    const est2 = await chamar({ acao: "estado", sessao: s4.sessao, participanteId: id4, versao: est1.dados.versao });
+    assert.ok(est2.dados.estado && est2.dados.presentes.length === 3, "quem entra muda a versão de todos"); passo("todos veem quem está participando (entrou alguém: a versão muda)");
+    await chamar({ acao: "sair", sessao: s4.sessao, participanteId: bia.participanteId });
+    const est3 = await chamar({ acao: "estado", sessao: s4.sessao, participanteId: id4, versao: est2.dados.versao });
+    assert.deepEqual(est3.dados.presentes.map((p) => p.nome).sort(), ["Ana", "Pai"]); passo("quem sai some do painel (a versão muda)");
+    const est4 = await chamar({ acao: "estado", sessao: s4.sessao, participanteId: id4, versao: est3.dados.versao, presenca: true });
+    assert.ok(Array.isArray(est4.dados.presentes), "com presenca: true a lista vem mesmo sem mudança"); passo("a lista de presentes vem de tempos em tempos (presenca)");
     await chamar({ acao: "encerrar", sessao: s4.sessao, chave: s4.chave });
   }
 

@@ -17042,6 +17042,15 @@ button.secondary.fam-atalho-ativo { background: color-mix(in srgb, #3b82f6 18%, 
 .fam-sessao-jogar-linha { display: flex; gap: 6px; min-width: 0; align-items: stretch; }
 .fam-sessao-jogar-linha > .fam-campo { flex: 1 1 auto; min-width: 0; margin: 0; }
 .fam-sessao-jogar-linha > button { flex: 0 0 auto; margin: 0; }
+/* 6.13.31: painel "Quem está participando", no topo da tela da adoração, para todos */
+#participarSessao .fam-sessao-presentes { margin: 10px 0; padding: 10px 12px; border: 1.5px solid #93b4f0; border-radius: 12px; background: color-mix(in srgb, #3b82f6 6%, var(--card, #fff)); min-width: 0; }
+#participarSessao p.fam-sessao-presentes-titulo { margin: 0 0 8px; font-weight: 700; font-size: .95rem; }
+#participarSessao ul.fam-sessao-presentes-lista { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+#participarSessao li.fam-sessao-presente { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid #d6e2f3; border-radius: 999px; background: var(--card, #fff); max-width: 100%; }
+#participarSessao li.fam-sessao-presente.eu { border-color: #93b4f0; box-shadow: 0 0 0 1px #93b4f0 inset; }
+#participarSessao .fam-sessao-presente-bicho { font-size: 1.15rem; line-height: 1; }
+#participarSessao .fam-sessao-presente-nome { font-weight: 700; overflow-wrap: anywhere; }
+#participarSessao li.fam-sessao-presente-vazio { color: var(--muted, #666); font-size: .9rem; }
 /* 6.13.27: na questão do jogo, a resposta (fundo branco, moldura azul) separada dos controles do presidente da reunião (fundo lilás claro) */
 #participarSessao .fam-sessao-resp-box,
 #participarSessao .fam-sessao-ctrl-box { display: grid; gap: 0; min-width: 0; margin: 10px 0 0; padding: 10px; border-radius: 10px; box-sizing: border-box; }
