@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.05
+
+### Adoração em Família: três circunstâncias de preparo para o casamento (rótulo discreto, descrição para a IA)
+
+Em 🏠 Vida familiar: "Preparar-se para formar uma família", "Apoiar os filhos jovens rumo à vida adulta" e "Namoro e casamento segundo os padrões de Jeová". O rótulo na tela é curto e discreto; quando marcada, a circunstância vai para a IA com uma descrição completa entre parênteses (qualidades que o jovem cultiva e mostra, convívio sadio com outros jovens cristãos, paciência; o papel dos pais, sem superproteção nem pressão; padrões de Jeová para o namoro), sempre com a ordem de tratar com muito tato e não expor ninguém. As descrições ficam em `api/_prompts.mjs` (DETALHES_CIRCUNSTANCIAS_FAMILIA) e aparecem na tela de prompts ("Detalhes das circunstâncias").
+
 ## 6.13.04
 
 ### Adoração em Família: duas circunstâncias novas em Vida cristã

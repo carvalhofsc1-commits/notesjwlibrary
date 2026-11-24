@@ -1829,6 +1829,21 @@ teste("6.13.03: seção do livro pelo wol (capítulo, páginas e parágrafos), m
   assert.equal(videosQueCabem([{ duracao: "15:40" }], 10, 5).length, 1, "um vídeo longo sozinho fica");
 });
 
+teste("6.13.05: circunstâncias de preparo para o casamento com rótulo discreto e descrição para a IA (visível na tela de prompts)", async () => {
+  const prompts = await import(new URL("api/_prompts.mjs", raiz));
+  const html = await readFile(new URL("index.html", raiz), "utf8");
+  for (const rotulo of ["Preparar-se para formar uma família", "Apoiar os filhos jovens rumo à vida adulta", "Namoro e casamento segundo os padrões de Jeová"]) {
+    assert.ok(html.includes(`value="${rotulo}"`), "na tela: " + rotulo);
+    assert.ok(rotulo.length <= 80, "cabe no limite de 80 caracteres do servidor");
+    assert.ok(prompts.DETALHES_CIRCUNSTANCIAS_FAMILIA[rotulo], "descrição para a IA: " + rotulo);
+  }
+  assert.match(prompts.DETALHES_CIRCUNSTANCIAS_FAMILIA["Apoiar os filhos jovens rumo à vida adulta"], /sem superproteção/);
+  const travado = prompts.travadosDe({}).find((x) => x.id === "detalhes_circunstancias_familia");
+  assert.ok(travado && /Preparar-se para formar uma família:/.test(travado.texto), "visível na tela de prompts");
+  assert.ok(servidorJs.includes("circunstancias.map((c) => `- ${circunstanciaParaIa(c)}`)"));
+  assert.ok(servidorJs.includes("circ.map(circunstanciaParaIa).join"));
+});
+
 for (const [nome, fn] of testes) {
   try {
     await fn();
