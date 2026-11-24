@@ -265,7 +265,7 @@ function limparPrograma(op) {
       perguntasLeitura: Math.max(0, Math.min(15, Math.round(Number(p.perguntasLeitura) || 0))),
       // 6.12.48: o trecho da matéria que o servidor leu no wol para a leitura da atividade.
       leitura: p.leitura && typeof p.leitura === "object" && texto(p.leitura.texto, 8000)
-        ? { titulo: texto(p.leitura.titulo, 200), fonte: texto(p.leitura.fonte, 240).replace(/\s+/g, " "), primeiro: p.leitura.primeiro === true, paragrafos: texto(p.leitura.paragrafos, 20), texto: texto(p.leitura.texto, 8000), rotulo: texto(p.leitura.rotulo, 80), url: /^https:\/\/wol\.jw\.org\//i.test(String(p.leitura.url || "")) ? texto(p.leitura.url, 500) : "" }
+        ? { titulo: texto(p.leitura.titulo, 200), fonte: texto(p.leitura.fonte, 240).replace(/\s+/g, " "), primeiro: p.leitura.primeiro === true, objetivo: texto(p.leitura.objetivo, 400), paragrafos: texto(p.leitura.paragrafos, 20), texto: texto(p.leitura.texto, 8000), rotulo: texto(p.leitura.rotulo, 80), url: /^https:\/\/wol\.jw\.org\//i.test(String(p.leitura.url || "")) ? texto(p.leitura.url, 500) : "" }
         : null,
       transicao: texto(p.transicao, 600),
       jogo: null,

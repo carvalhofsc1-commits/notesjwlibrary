@@ -2,6 +2,13 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.10
+
+### Adoração em Família: tempo do quadro Vídeo pela duração dos vídeos e "Objetivo da matéria"
+
+- **Tempo do Vídeo:** a parte ficava sempre com os 10 minutos do quadro, mesmo com um vídeo de 10:50. Agora o tempo é a soma das durações dos vídeos mais 1 minuto por pergunta, arredondada para cima de 5 em 5 minutos, nunca menos que os 10 do quadro (10:50 com 3 perguntas = 15 min). O total da programação e a lista de andamento mostram o tempo real.
+- **Objetivo da matéria:** toda parte com uma matéria para ler (Abertura, Princípio, Personagem, Jesus, Criador, Saiba responder, Ame o ministério) mostra, depois da fonte e do título, "**Objetivo da matéria:** …" — por que ela foi escolhida e o que se quer atingir em relação ao tema da noite (ex.: "Considerem esta matéria, que vai ajudá-los a ver a importância da perseverança no trabalho de pregação"). A IA escreve o objetivo com o texto inteiro da matéria, o tema, o ângulo e o plano da noite à frente: na Abertura e no Criador junto com as perguntas de revisão; nos outros quadros numa chamada curta, sem o raciocínio longo. A regra está na parte de prompt "Perguntas de revisão da leitura" (tela de prompts). Vale também na adoração compartilhada.
+
 ## 6.13.09
 
 ### Adoração em Família: fonte exata em todo o módulo (publicação, capítulo, seção e página)

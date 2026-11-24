@@ -1889,6 +1889,23 @@ teste("6.13.09: fonte exata em todo o módulo (busca no wol sem pontuação, só
   assert.ok(sessaoJs.includes("fonte: texto(u.fonte, 240)"));
 });
 
+teste("6.13.10: tempo do quadro Vídeo pela duração dos vídeos e \"Objetivo da matéria\" em toda leitura", async () => {
+  const prompts = await import(new URL("api/_prompts.mjs", raiz));
+  // um vídeo de 10:50 com 3 perguntas: 10,8 + 3 = 13,8 → 15 minutos; um de 4:00 com 2 perguntas: fica nos 10 do quadro
+  const mins = (seg, perg, base = 10) => Math.max(base, Math.ceil((seg / 60 + perg) / 5) * 5);
+  assert.equal(mins(650, 3), 15);
+  assert.equal(mins(240, 2), 10);
+  assert.ok(servidorJs.includes("const minutosVideo = Math.max(ctx.quadro.minutos, Math.ceil((segundosVideos / 60 + perguntasVideo.length) / 5) * 5);"));
+  assert.ok(servidorJs.includes("return { minutos: minutosVideo,"));
+  assert.ok(servidorJs.includes("if (montado.leitura && montado.leitura.texto && !montado.leitura.objetivo) await perguntarLeituraFamilia(montado.leitura, [], 0);"));
+  assert.ok(servidorJs.includes("if (objetivo) leitura.objetivo = objetivo;"));
+  assert.ok(servidorJs.includes("export const SaidaRevisaoLeitura = z.object({ objetivo: z.string(), perguntas: z.array(z.string()) });"));
+  assert.match(prompts.PARTES.find((x) => x.id === "adoracao_q_revisao").padrao, /"objetivo": UMA frase/);
+  assert.ok(sessaoJs.includes("objetivo: texto(p.leitura.objetivo, 400)"));
+  assert.ok(appJs.includes("rot.textContent = 'Objetivo da matéria:';"));
+  assert.ok(appJs.indexOf("lei.appendChild(lt);") < appJs.indexOf("rot.textContent = 'Objetivo da matéria:';"), "o objetivo vem depois da fonte e do título");
+});
+
 for (const [nome, fn] of testes) {
   try {
     await fn();

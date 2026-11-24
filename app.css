@@ -17497,6 +17497,7 @@ input[type="date"].fam-campo::-webkit-calendar-picker-indicator { margin: 0; pad
 /* 6.12.91: todo link da Adoração numa moldura bem fininha, na largura toda, com fundo cinza clarinho */
 a.fam-link-moldura { display: block; box-sizing: border-box; width: 100%; padding: 7px 10px; border: 1px solid var(--line, #cbd5e1); border-radius: 8px; background: color-mix(in srgb, #94a3b8 12%, var(--card)); text-align: center; text-decoration: none; overflow-wrap: anywhere; } /* 6.12.92: texto centralizado dentro da moldura */
 .fam-secao-textos > .fam-secao-titulo { margin-bottom: 1.2em; } /* 6.12.93: linha em branco entre "Textos para considerar" e o texto */
+.fam-leitura-objetivo { margin: 4px 0 6px; line-height: 1.45; overflow-wrap: anywhere; } /* 6.13.10: "Objetivo da matéria:" em negrito + o texto */
 .fam-pub-nome { margin: 0 0 4px; font-weight: 600; overflow-wrap: anywhere; }
 /* 6.12.92: título da matéria dentro do campo: mesmo fundo cinza clarinho do link, 🔊 no começo da linha e uma linha separando do texto */
 .fam-leitura-trecho > .fam-leitura-materia { position: relative; display: flex; align-items: center; justify-content: center; text-align: center; margin: 0 -10px 10px; padding: 8px 44px; min-height: 40px; background: color-mix(in srgb, #94a3b8 12%, var(--card)); border-top: 1px solid var(--line, #cbd5e1); border-bottom: 1px solid var(--line, #cbd5e1); } /* 6.12.95: título centralizado; o 🔊 fica no começo da linha */

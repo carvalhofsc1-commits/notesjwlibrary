@@ -95,6 +95,7 @@ import {
   usadosDaParte,
   valorDaData,
   videosQueCabem,
+  duracaoEmSegundos,
 } from "./_familiaGeracao.mjs";
 import { DETALHES_CIRCUNSTANCIAS_FAMILIA, familiaTemCasal, prioridadesAplicaveis } from "./_prompts.mjs";
 // 6.13.05: a circunstância marcada com a descrição que ela tem para a IA (o rótulo na tela fica curto e discreto).
@@ -3115,7 +3116,7 @@ export const SAIDAS_QUADRO_FAMILIA = {
 
 // 6.12.78: a conferência dos jogos escritos pela IA (Verdadeiro ou falso e Quem sou eu?) com o texto da Bíblia: uma entrada por rodada
 // ("n" a partir de 1). O veredito é texto livre (confere, contradiz ou nao_consta; o servidor normaliza): só "contradiz" tira a rodada.
-export const SaidaRevisaoLeitura = z.object({ perguntas: z.array(z.string()) });
+export const SaidaRevisaoLeitura = z.object({ objetivo: z.string(), perguntas: z.array(z.string()) });
 export const SaidaConferenciaJogo = z.object({
   rodadas: z.array(z.object({ n: z.number(), veredito: z.string(), motivo: z.string() })),
 });
@@ -3591,7 +3592,12 @@ const PREPARAR_QUADRO_FAMILIA = {
         const cabem = videosQueCabem(lista, ctx.quadro.minutos, 5); // 6.13.03: até 15 min ao todo
         const videosCortados = lista.length - cabem.length;
         lista = cabem;
-        return { descricao: descricaoFamilia(o.descricao), videos: lista, perguntas: perguntasLimpas(o.perguntas, 3), memoria: { videos: lista.map((v) => lankDoLink(v.link)).filter(Boolean) }, contagens: { videosCortados } };
+        // 6.13.10: o tempo da parte acompanha os vídeos: a soma das durações mais 1 minuto por pergunta, arredondada para cima de 5 em 5 minutos,
+        // nunca menos que os minutos do quadro (um vídeo de 10:50 com 3 perguntas dá 15 minutos).
+        const perguntasVideo = perguntasLimpas(o.perguntas, 3);
+        const segundosVideos = lista.reduce((s, v) => s + (Number.isFinite(duracaoEmSegundos(v.duracao)) ? duracaoEmSegundos(v.duracao) : 0), 0);
+        const minutosVideo = Math.max(ctx.quadro.minutos, Math.ceil((segundosVideos / 60 + perguntasVideo.length) / 5) * 5);
+        return { minutos: minutosVideo, descricao: descricaoFamilia(o.descricao), videos: lista, perguntas: perguntasVideo, memoria: { videos: lista.map((v) => lankDoLink(v.link)).filter(Boolean) }, contagens: { videosCortados } };
       },
     };
   },
@@ -3960,6 +3966,7 @@ export async function montarPedidoQuadroFamilia(body, P) {
   const prep = await PREPARAR_QUADRO_FAMILIA[id](ctx);
   const tituloPlano = textoLivre(plano.titulo, 120);
   const objetivoPlano = textoLivre(plano.objetivo, 400);
+  ctx.plano = { titulo: tituloPlano, objetivo: objetivoPlano }; // 6.13.10: para o objetivo da matéria
   // 6.12.74: "🔄 Trocar este quadro" (troca: true): o app manda em jaUsados também o que a versão anterior deste quadro usou, e pode mandar uma
   // instrução curta de quem dirige (opcional, até 300 caracteres, sem a palavra proibida). A instrução é um dado do pedido: vale se não contrariar as regras.
   const trocaDoQuadro = body.troca === true;
@@ -4045,19 +4052,27 @@ async function gerarQuadroFamilia(res, body, P) {
     const perguntarLeituraFamilia = async (leitura, jaEscritas, quantas) => {
       try {
         if (!leitura || !leitura.texto || !P.sistemaFamiliaRevisao || !comTempo()) return null;
+        quantas = Math.max(0, Number(quantas) || 0);
+        // 6.13.10: o tema, o ângulo e o plano da noite, para o OBJETIVO DA MATÉRIA (por que foi escolhida); com 0 perguntas, só o objetivo.
+        const c = pedido.ctx;
         const mensagem =
-          `QUANTIDADE: escreva exatamente ${quantas} perguntas.\n\n` +
+          `TEMA DA NOITE: ${c.assunto || "livre"}\nÂNGULO DESTE QUADRO: ${c.angulo || c.quadro.nome}\n` +
+          (c.plano && (c.plano.titulo || c.plano.objetivo) ? `PLANO DA NOITE: ${[c.plano.titulo, c.plano.objetivo].filter(Boolean).join(" — ")}\n` : "") +
+          `QUANTIDADE: ${quantas ? `escreva exatamente ${quantas} perguntas` : "0 perguntas (\"perguntas\" vazio; escreva só o objetivo)"}.\n\n` +
           (jaEscritas.length ? `PERGUNTAS JÁ ESCRITAS (não repita):\n${jaEscritas.map((q) => `- ${q}`).join("\n")}\n\n` : "") +
           `TEXTO DA LEITURA — ${leitura.titulo || "sem título"}${leitura.fonte ? ` (${leitura.fonte})` : ""}:\n${leitura.texto.split("\n").map((l) => l.replace(/^### /, "# ")).join("\n")}\n`;
         const resposta = await chamarIa(
           clienteComPrazo(),
           P,
           { max_tokens: P.ia.provedorTarefa === "gemini" ? 8000 : 1500, system: P.sistemaFamiliaRevisao, messages: [{ role: "user", content: mensagem }] },
-          { schema: SaidaRevisaoLeitura, tarefa: "adoracao-familia" }
+          { schema: SaidaRevisaoLeitura, semPensar: quantas === 0, tarefa: "adoracao-familia" }
         );
         entrada += resposta.usage?.input_tokens || 0;
         saida += resposta.usage?.output_tokens || 0;
         if (resposta.stop_reason === "refusal" || !resposta.parsed_output) return null;
+        const objetivo = limparTextoGerado(resposta.parsed_output.objetivo || "", 400);
+        if (objetivo) leitura.objetivo = objetivo;
+        if (!quantas) return null;
         const lista = perguntasLimpas(resposta.parsed_output.perguntas, quantas);
         return lista.length >= Math.min(2, quantas) ? lista : null;
       } catch (e) {
@@ -4080,6 +4095,9 @@ async function gerarQuadroFamilia(res, body, P) {
       pd.ctx.conferirJogo = conferirJogoFamilia;
       pd.ctx.perguntarLeitura = perguntarLeituraFamilia;
       const { contagens, memoria, falta, trocarTipo, ...montado } = await pd.prep.montar(resposta.parsed_output);
+      // 6.13.10: toda matéria para ler leva o "Objetivo da matéria" (por que foi escolhida, ligado ao tema); a Abertura e o Criador já o recebem
+      // junto com as perguntas de revisão.
+      if (montado.leitura && montado.leitura.texto && !montado.leitura.objetivo) await perguntarLeituraFamilia(montado.leitura, [], 0);
       const parte = {
         nome: quadro.nome,
         minutos: quadro.minutos,

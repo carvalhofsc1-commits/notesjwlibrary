@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.13.09'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.13.10'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -27114,6 +27114,15 @@ function saveTemplatesToStorage() {
         lt.className = 'fam-secao-titulo fam-leitura-titulo-fora';
         lt.textContent = '📰 ' + tituloMateria;
         lei.appendChild(lt);
+        // 6.13.10: depois da fonte e do título, o objetivo da matéria (por que foi escolhida, ligado ao tema da noite).
+        if (parte.leitura.objetivo) {
+          const obj = document.createElement('p');
+          obj.className = 'fam-leitura-objetivo';
+          const rot = document.createElement('strong');
+          rot.textContent = 'Objetivo da matéria:';
+          obj.append(rot, ' ' + parte.leitura.objetivo);
+          lei.appendChild(obj);
+        }
         if (parte.leitura.url) {
           const a = document.createElement('a');
           a.href = parte.leitura.url;
@@ -29835,7 +29844,7 @@ function saveTemplatesToStorage() {
       item(ger.plano ? 'ok' : 'gerando', 'Plano da noite', '', null, 0, '🗺️');
       for (const id of ger.ids || []) {
         const q = QUADROS_FAMILIA.find(x => x.id === id);
-        item(ger.estado[id] || 'fila', (q ? q.nome : id), ger.estado[id] === 'erro' ? ger.erros[id] || '' : ger.avisos && ger.avisos[id] ? '⚠️ ' + ger.avisos[id] : '', id, q ? q.minutos : 0, q ? q.emoji : '');
+        item(ger.estado[id] || 'fila', (q ? q.nome : id), ger.estado[id] === 'erro' ? ger.erros[id] || '' : ger.avisos && ger.avisos[id] ? '⚠️ ' + ger.avisos[id] : '', id, (ger.partes && ger.partes[id] && Number(ger.partes[id].minutos)) || (q ? q.minutos : 0), q ? q.emoji : ''); // 6.13.10: o tempo real da parte (o Vídeo acompanha a duração)
       }
       card.appendChild(lista);
       // 6.13.08: pronto: os botões para exibir a programação montada ou já iniciar a adoração (gerar o código para compartilhar).
