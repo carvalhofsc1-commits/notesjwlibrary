@@ -1792,6 +1792,28 @@ teste("6.12.97: programações salvas com só o título à vista, detalhes recol
   assert.ok(appJs.indexOf("art.appendChild(det);") < appJs.indexOf("art.appendChild(acoes);", appJs.indexOf("art.appendChild(det);")));
 });
 
+teste("6.13.02: Ame o ministério sem raciocínio longo e leitura com a lição/matéria inteira (com FONTES_DIR)", async () => {
+  assert.ok(servidorJs.includes("semPensar: true,"), "o quadro Ame o ministério pede sem raciocínio");
+  assert.ok(servidorJs.includes("semPensar: pd.prep.semPensar === true"), "a geração do quadro respeita o pedido");
+  assert.ok(servidorJs.includes("async function leituraCompletaDoTrecho(l)"));
+  assert.equal(servidorJs.split("await leituraCompletaDoTrecho(").length - 1 >= 6, true, "abertura (2), personagem, jesus, criador, saiba e ministério");
+  if (!comFontes) return console.log("      (sem FONTES_DIR: matéria real pulada)");
+  const fontes = await import(new URL("api/_fontes.mjs", raiz));
+  const nomes = ["ameAsPessoas", "testemunhoCabal", "melhoreLeitura", "beneficieEscola", "raciocinios"].map(fontes.nomeDoLivro);
+  const r = await fontes.buscarNosLivros("pessoa com pressa ministério conversa pregação", { livros: nomes, max: 6, maxChars: 1200 });
+  const th = r.find((l) => l.livro.includes("(th)"));
+  if (th) {
+    const m = await fontes.materiaDoTrecho(th);
+    assert.ok(m && /^Lição \d+ — /.test(m.titulo), "a lição inteira do th");
+    assert.ok(m.texto.length > th.trecho.length, "mais que o parágrafo solto");
+    assert.ok(!/^## .*\d+:\d+/m.test(m.texto), "referência bíblica não vira subtítulo");
+  }
+  for (const l of r) {
+    const m = await fontes.materiaDoTrecho(l);
+    if (m) assert.ok(!/^\^ /m.test(m.texto), "sem notas de rodapé");
+  }
+});
+
 for (const [nome, fn] of testes) {
   try {
     await fn();

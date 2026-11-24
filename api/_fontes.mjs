@@ -682,7 +682,7 @@ export async function buscarNosLivros(consulta, { max = 4, maxChars = 1500, livr
     .map((par) => [par, par.split(" ").reduce((s, w) => s + peso(w), 0)])
     .filter(([, p]) => p > 0);
   const pontuados = [];
-  for (const p of paragrafos) {
+  for (const [pos, p] of paragrafos.entries()) {
     if (soEstes && !soEstes.includes(p.livro)) continue;
     let pontos = 0;
     let achadas = 0;
@@ -694,13 +694,13 @@ export async function buscarNosLivros(consulta, { max = 4, maxChars = 1500, livr
       if (p.paresInicio.has(par)) pontos += p2 * 3;
       else if (p.pares.has(par)) pontos += p2 * 0.6;
     }
-    pontuados.push({ p, pontos });
+    pontuados.push({ p, pontos, pos });
   }
   pontuados.sort((a, b) => b.pontos - a.pontos || a.p.texto.length - b.p.texto.length);
-  return pontuados.slice(0, max).map(({ p }) => {
+  return pontuados.slice(0, max).map(({ p, pos }) => {
     let trecho = p.texto;
     if (trecho.length > maxChars) { const corte = trecho.lastIndexOf(". ", maxChars); trecho = trecho.slice(0, corte > 300 ? corte + 1 : maxChars); }
-    return { livro: p.livro, trecho, capitulo: p.capitulo || 0, numero: p.numero || 0, pagina: p.pagina || 0 };
+    return { livro: p.livro, trecho, capitulo: p.capitulo || 0, numero: p.numero || 0, pagina: p.pagina || 0, pos };
   });
 }
 
@@ -801,6 +801,53 @@ export function separarLicoes(conteudo, { sigla = "", numeroNoFim = false } = {}
     licoes.push({ sigla, licao: item.licao, nome: item.nome.replace(/[,\s]+$/, ""), texto: corpo.join("\n") });
   });
   return licoes;
+}
+
+// 6.13.02: a matéria inteira de um trecho achado por buscarNosLivros, para a leitura da Adoração não ser um parágrafo solto:
+//  - nas brochuras com lições (lmd e th), a LIÇÃO inteira que contém o trecho, em linhas; os títulos curtos ("O QUE VOCÊ DEVE FAZER:",
+//    "O que Jesus fez", "NA PREGAÇÃO:" sozinho) saem com "## ";
+//  - nos outros livros, o parágrafo e os seguintes do mesmo capítulo (até 4 parágrafos e maxChars).
+// Devolve { titulo, local, texto } ou null (sem como ampliar: vale o trecho como veio).
+export async function materiaDoTrecho(l, { maxChars = 4000 } = {}) {
+  if (!l || !l.trecho || !fontesConfiguradas()) return null;
+  const chave = Object.keys(BROCHURAS).find((k) => nomeDoLivro(k) === l.livro);
+  if (chave) {
+    const licoes = await licoesDaBrochura(chave).catch(() => []);
+    const alvo = normalizar(l.trecho).slice(0, 80);
+    const lic = alvo.length >= 20 ? licoes.find((x) => normalizar(x.texto).includes(alvo)) : null;
+    if (lic) {
+      const linhas = [];
+      let total = 0;
+      for (const bruta of String(lic.texto).split(/\n/)) {
+        const linha = bruta.replace(/^\s*[•▪●◦‣]\s*/, "").trim();
+        if (!linha) continue;
+        if (total + linha.length > maxChars) break;
+        // título: curto, sem ponto no fim, começando com maiúscula; nunca uma referência bíblica ("Atos 17:22") nem um item numerado
+        const titulo = linha.length <= 60 && !/[.!?…”’"»;,)]$/.test(linha) && !/^\d+\.\s/.test(linha) && !/\d+:\d+/.test(linha) && /^\p{Lu}/u.test(linha);
+        linhas.push((titulo ? "## " : "") + linha);
+        total += linha.length;
+      }
+      while (linhas.length && linhas[linhas.length - 1].startsWith("## ")) linhas.pop();
+      if (linhas.length) return { titulo: `Lição ${lic.licao} — ${lic.nome}`, local: `lição ${lic.licao}`, texto: linhas.join("\n") };
+    }
+  }
+  if (!Number.isInteger(l.pos)) return null;
+  const { paragrafos } = await carregarLivros();
+  const base = paragrafos[l.pos];
+  if (!base || base.livro !== l.livro) return null;
+  const partes = [base.texto];
+  let total = base.texto.length;
+  for (let k = l.pos + 1; k < paragrafos.length && partes.length < 4; k++) {
+    const p = paragrafos[k];
+    if (p.livro !== base.livro || p.capitulo !== base.capitulo) break;
+    if (/^\^\s/.test(p.texto)) continue; // notas de rodapé do arquivo ("^ parágrafo 3 Êxo. 31:18 …"): não são matéria
+    // começo de outro estudo/capítulo: as primeiras palavras em maiúsculas ("OS ORADORES experientes…", "JÁ FICOU alguma vez…")
+    if (/^[A-ZÀ-Ý]{2,}(?:\s+[A-ZÀ-Ý]{2,})*\s+[a-zà-ÿ]/.test(p.texto) && !/^[A-ZÀ-Ý]+:/.test(p.texto)) break;
+    if (total + p.texto.length > maxChars) break;
+    partes.push(p.texto);
+    total += p.texto.length;
+  }
+  return partes.length > 1 ? { titulo: base.livro, local: "", texto: partes.join("\n") } : null;
 }
 
 // As lições de uma brochura (chave "ameAsPessoas" ou "melhoreLeitura"): [{ sigla, licao, nome, texto }]. [] se o arquivo não estiver disponível.

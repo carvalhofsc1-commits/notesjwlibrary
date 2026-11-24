@@ -2,6 +2,13 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.02
+
+### Adoração em Família: "Ame o ministério" mais rápido e matérias inteiras
+
+- **Demora:** nos registros do servidor, o quadro "Ame o ministério" levava de 76 a 160 s no Gemini 4 Argon (e, na última vez, estourou o limite de 170 s, erro 504), enquanto os outros saíam em 5 a 15 s. A IA lia pouco (cerca de 3 mil tokens) e escrevia pouco (cerca de 200): o tempo ia no raciocínio do modelo. Como o quadro é simples (uma situação, 1 a 3 frases e 1 ou 2 perguntas), ele passa a ser pedido sem o raciocínio longo.
+- **Matéria cortada:** a leitura dos quadros com livros era um parágrafo solto (por exemplo, só o quadro "NA PREGAÇÃO:" de duas linhas, sem a lição). Agora vem a matéria inteira: nas brochuras com lições (Ame as Pessoas e Melhore Sua Leitura e Seu Ensino), a LIÇÃO toda, com o título ("Lição 1 — Comece bem") e os subtítulos ("COMO VOCÊ PODE FAZER ISSO:") em negrito; nos outros livros, o parágrafo e os seguintes do mesmo estudo (até 4), sem as notas de rodapé e sem passar para o estudo seguinte. Vale para Ame o ministério, Abertura, Personagem, Jesus, Fé no Criador e Saiba responder.
+
 ## 6.13.01
 
 ### Adoração em Família: relacionamentos em Vida cristã

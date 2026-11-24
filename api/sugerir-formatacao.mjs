@@ -39,7 +39,7 @@ import {
   textoDasFontesDoCampo,
   trechosBe,
 } from "./_servicoCampo.mjs";
-import { artigosDoTopicoDoGuia, buscarNosLivros, buscarVerbete, buscarVersiculos, versiculosDoCapitulo, fontesConfiguradas, lerCanticos, lerEnsinosBiblicos, lerPrincipios, lerTextoDoLivro, lerVerbeteCompleto, localDoTrecho, nomeDoLivro, precarregarFontes, referenciaPadrao, referenciasNoTexto, resolvedorDeLivros, textoDeGruposBiblicos } from "./_fontes.mjs";
+import { artigosDoTopicoDoGuia, buscarNosLivros, buscarVerbete, buscarVersiculos, versiculosDoCapitulo, fontesConfiguradas, lerCanticos, lerEnsinosBiblicos, lerPrincipios, lerTextoDoLivro, lerVerbeteCompleto, localDoTrecho, materiaDoTrecho, nomeDoLivro, precarregarFontes, referenciaPadrao, referenciasNoTexto, resolvedorDeLivros, textoDeGruposBiblicos } from "./_fontes.mjs";
 import { JOGOS_FAMILIA, QUADROS_FAMILIA, minutosDosQuadros, quadrosDoPedido } from "./_familiaQuadros.mjs";
 import {
   JOGOS_CONFERIDOS_NA_BIBLIA,
@@ -3240,6 +3240,22 @@ const listaDeTrechos = (livros, titulo = "TRECHOS DE LIVROS (escolha pelo identi
 const leituraDoTrecho = (l) => (l ? { titulo: l.livro, fonte: localDoTrecho(l) || l.livro, paragrafos: l.numero ? String(l.numero) : "", texto: leituraLimpa(semMarcasDoTexto(l.trecho)), url: linkDeConsultaWol(l.trecho), rotulo: "Trecho do livro" } : null);
 // A publicação do trecho, com o link da busca da frase no wol.jw.org (o endereço do livro no wol não é conhecido).
 const publicacaoDoTrecho = (l) => (l ? [{ titulo: l.livro, fonte: localDoTrecho(l), url: linkDeConsultaWol(l.trecho) }] : []);
+// 6.13.02: a leitura com a matéria inteira (a lição toda, no lmd e no th, ou o parágrafo e os seguintes do capítulo), e não um parágrafo solto.
+async function leituraCompletaDoTrecho(l) {
+  const base = leituraDoTrecho(l);
+  if (!base) return null;
+  const m = await materiaDoTrecho(l).catch(() => null);
+  if (!m) return base;
+  const licao = Boolean(m.local);
+  return {
+    ...base,
+    titulo: licao ? m.titulo : base.titulo,
+    fonte: licao ? `${l.livro}, ${m.local}` : base.fonte,
+    paragrafos: licao ? "" : base.paragrafos,
+    texto: m.texto,
+    rotulo: licao ? "Lição da brochura" : "Trecho do livro",
+  };
+}
 // Um artigo do catálogo lido no wol pelo docId; null se não abrir ou vier com menos de MIN_CARACTERES_ARTIGO.
 async function leituraDoArtigoFamilia(a, rotulo = "Trecho do artigo") {
   const url = urlWolDoDocId(a?.docId);
@@ -3366,14 +3382,14 @@ const PREPARAR_QUADRO_FAMILIA = {
             }
           } else if (il >= 0) {
             trechoLido = livros[il];
-            leitura = leituraDoTrecho(trechoLido);
+            leitura = await leituraCompletaDoTrecho(trechoLido);
             break;
           }
         }
         // O artigo escolhido não abriu (ou a IA não escolheu): vale o trecho de livro mais ligado ao tema.
         if (!leitura && livros.length) {
           trechoLido = livros[0];
-          leitura = leituraDoTrecho(trechoLido);
+          leitura = await leituraCompletaDoTrecho(trechoLido);
         }
         const relato = o.relato && typeof o.relato === "object" ? o.relato : null;
         const textos = relato ? await textosBiblicosFamilia([relato.referencia], 1) : [];
@@ -3459,7 +3475,7 @@ const PREPARAR_QUADRO_FAMILIA = {
         }
         if (!leitura) {
           const porNome = il < 0 && nome ? await trechosDosLivrosDoQuadro(ctx.quadro, nome, { max: 1, maxChars: 1200 }) : [];
-          leitura = leituraDoTrecho(il >= 0 ? livros[il] : porNome[0] || null);
+          leitura = await leituraCompletaDoTrecho(il >= 0 ? livros[il] : porNome[0] || null);
         }
         const pergunta = String(ctx.quadro.perguntasPadrao[0] || "Que lições aprendemos da história de [nome]?").replace("[nome]", nome || "este personagem");
         // 6.12.75: a passagem também entra na memória "relatos", para a próxima noite não repetir o relato (nem na Abertura).
@@ -3492,7 +3508,7 @@ const PREPARAR_QUADRO_FAMILIA = {
           nome: episodio ? `${ctx.quadro.nome}: ${cortarNaPalavra(episodio)}` : ctx.quadro.nome,
           descricao: qualidade && !normalizarTexto(descricao).includes(normalizarTexto(qualidade)) ? `${descricao} (Qualidade: ${qualidade}.)`.trim() : descricao,
           textos,
-          leitura: leituraDoTrecho(il >= 0 ? livros[il] : null),
+          leitura: await leituraCompletaDoTrecho(il >= 0 ? livros[il] : null),
           perguntas,
           memoria: { ...(episodio ? { jesus: [episodio] } : {}), ...memoriaDaPassagem(textos) },
           falta,
@@ -3577,7 +3593,7 @@ const PREPARAR_QUADRO_FAMILIA = {
           // A brochura escolhida (ou, se o artigo não abriu, o primeiro trecho achado).
           const l = il >= 0 ? livros[il] : livros[0];
           if (l) {
-            leitura = leituraDoTrecho(l);
+            leitura = await leituraCompletaDoTrecho(l);
             publicacoes = publicacaoDoTrecho(l);
             chave = chaveDoTrechoCriador(l);
           }
@@ -3608,7 +3624,7 @@ const PREPARAR_QUADRO_FAMILIA = {
         const verbete = !l && nomeVerbete && fontesConfiguradas() ? await buscarVerbete([nomeVerbete]).catch(() => null) : null;
         const textos = await textosBiblicosFamilia(o.textos, 2);
         const leitura = l
-          ? leituraDoTrecho(l)
+          ? await leituraCompletaDoTrecho(l)
           : verbete
             ? { titulo: limparLinha(verbete.verbete, 120), fonte: `Estudo Perspicaz das Escrituras${verbete.volume ? `, volume ${verbete.volume}` : ""}`, paragrafos: "", texto: leituraLimpa(verbete.trecho), url: "", rotulo: "Verbete do Perspicaz" }
             : null;
@@ -3631,6 +3647,9 @@ const PREPARAR_QUADRO_FAMILIA = {
     return {
       sistema: "ministerio",
       schema: SAIDAS_QUADRO_FAMILIA.ministerio,
+      // 6.13.02: tarefa simples (uma situação, 1 a 3 frases e 1 ou 2 perguntas): sem o raciocínio longo do modelo, que levava de 76 s a mais de 170 s
+      // (504) no Gemini 4 Argon, enquanto os outros quadros saíam em 5 a 15 s.
+      semPensar: true,
       listas: listaEvitar("situações", ctx.evitar.ministerio) + (listaDeTrechos(livros) || `\nTRECHOS DE LIVROS: nenhum disponível agora ("escolha" = null).\n`),
       contagens: { livros: livros.length },
       async montar(o) {
@@ -3643,7 +3662,7 @@ const PREPARAR_QUADRO_FAMILIA = {
           nome: cenario ? `${ctx.quadro.nome}: ${cortarNaPalavra(cenario)}` : ctx.quadro.nome,
           // Se o título cortou o cenário, a situação inteira abre a descrição.
           descricao: descricaoFamilia(cenario && cortarNaPalavra(cenario) !== cenario ? `Situação: ${cenario.replace(/[.\s]+$/, "")}. ${o.descricao || ""}` : o.descricao),
-          leitura: leituraDoTrecho(l),
+          leitura: await leituraCompletaDoTrecho(l),
           publicacoes: publicacaoDoTrecho(l),
           perguntas,
           memoria: cenario ? { ministerio: [cenario] } : {},
@@ -4005,7 +4024,7 @@ async function gerarQuadroFamilia(res, body, P) {
         // 6.12.78: o jogo (Quem sou eu? com 10 rodadas de 3 dicas, Verdadeiro ou falso com 14) escreve bastante: com 6000 a saída chegou a ser cortada
         // no meio do JSON; o limite é só um teto (o custo é o que a IA realmente escreve).
         { max_tokens: P.ia.provedorTarefa === "gemini" ? 16000 : id === "jogo" ? 10000 : 6000, system: pd.sistema, messages: [{ role: "user", content: mensagem }] },
-        { schema: pd.prep.schema, tarefa: "adoracao-familia" }
+        { schema: pd.prep.schema, semPensar: pd.prep.semPensar === true, tarefa: "adoracao-familia" }
       );
       entrada += resposta.usage?.input_tokens || 0;
       saida += resposta.usage?.output_tokens || 0;
