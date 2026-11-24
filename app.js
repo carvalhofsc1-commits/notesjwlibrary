@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.13.19'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.13.20'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -29716,7 +29716,10 @@ function saveTemplatesToStorage() {
           (erradas[k] || []).forEach(x => linhas.push(['errada', '❌ ' + x.nome + ': “' + x.texto + '”']));
           if (env && env.status === 'certa') linhas.push(['certa', '🎉 ' + env.nome + ' acertou: “' + env.texto + '”' + (ac && ac.nome === env.nome ? ' · +' + ac.pts + (ac.pts === 1 ? ' ponto' : ' pontos') : '')]);
           else if (pend) linhas.push(['pendente', '⏳ ' + env.nome + ' respondeu: “' + env.texto + '” — aguardando o julgamento de quem dirige']);
-          if (ac && ac.ninguem) linhas.push(['ninguem', '🚫 Ninguém acertou']); // quem dirige marcou "Ninguém acertou": no lugar de quem acertou, em laranja claro
+          // 6.13.20: resposta que esperava julgamento quando a questão foi revelada (sessões de antes desta versão): conta como errada
+          if (env && env.status === 'pendente' && (revK || ac) && !(ac && ac.nome === env.nome)) linhas.push(['errada', '❌ ' + env.nome + ': “' + env.texto + '”']);
+          // "Ninguém acertou": marcado por quem dirige, ou a resposta revelada sem ninguém pontuar — no lugar de quem acertou, em laranja claro
+          if ((ac && ac.ninguem) || (revK && !ac)) linhas.push(['ninguem', '🚫 Ninguém acertou']);
           r.envioEl.replaceChildren(...linhas.map(([tipo, txt]) => {
             const s = document.createElement('span');
             s.className = 'fam-sessao-envio-linha fam-sessao-envio-' + tipo;

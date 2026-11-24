@@ -405,6 +405,21 @@ export default async function handler(req, res) {
         e.referenciasReveladas[parte] = { ...(e.referenciasReveladas[parte] || {}), [rodada]: ref };
       }
     };
+    // 6.13.20: a questão foi fechada por quem dirige (Revelar ou Pontuar): a resposta enviada que esperava julgamento vira certa, se foi de quem
+    // pontuou, ou entra na lista das erradas (antes ela sumia da tela, e parecia que a pessoa tinha respondido uma vez só).
+    const fecharEnvio = (e, parte, rodada, nomeQueAcertou) => {
+      const env = ((e.envios || {})[parte] || {})[rodada];
+      if (!env || env.status !== "pendente") return;
+      if (nomeQueAcertou && env.nome === nomeQueAcertou) {
+        e.envios[parte] = { ...e.envios[parte], [rodada]: { ...env, status: "certa" } };
+        return;
+      }
+      e.erradas = e.erradas || {};
+      e.erradas[parte] = { ...(e.erradas[parte] || {}), [rodada]: [...(((e.erradas[parte] || {})[rodada]) || []), { nome: env.nome, texto: env.texto }].slice(-10) };
+      const copia = { ...e.envios[parte] };
+      delete copia[rodada];
+      e.envios = { ...e.envios, [parte]: copia };
+    };
     const gravarEstado = async (mudar) => {
       mudar(estado);
       estado.versao = (Number(estado.versao) || 0) + 1;
@@ -600,6 +615,7 @@ export default async function handler(req, res) {
         e.reveladas = e.reveladas || {};
         e.reveladas[parte] = { ...(e.reveladas[parte] || {}), [rodada]: respostas[rodada] };
         revelarReferencia(e, parte, rodada);
+        fecharEnvio(e, parte, rodada, "");
       });
     }
 
@@ -672,6 +688,7 @@ export default async function handler(req, res) {
         e.reveladas = e.reveladas || {};
         e.reveladas[parte] = { ...(e.reveladas[parte] || {}), [rodada]: respostas[rodada] };
         revelarReferencia(e, parte, rodada);
+        fecharEnvio(e, parte, rodada, ninguem ? "" : nome);
       });
     }
 

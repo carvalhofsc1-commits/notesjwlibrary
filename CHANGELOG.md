@@ -2,6 +2,16 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.20
+
+### Adoração em Família: todas as tentativas aparecem e "Ninguém acertou" também ao revelar
+
+Pelo estado da sessão de teste (SPXHRK): na questão 6, José respondeu "Elias" (julgada errada) e depois "Elizeu", que ainda esperava o julgamento quando a resposta foi revelada pelo "Revelar resposta"; essa segunda tentativa sumia da tela. Na questão 5, a resposta foi revelada sem ninguém pontuar, e a faixa "Ninguém acertou" só aparecia quando quem dirige escolhia "Ninguém acertou" no Pontuar.
+
+- Ao revelar a resposta (ou pontuar outra pessoa), a tentativa que esperava julgamento entra na lista das erradas (fundo vermelho claro); se quem dirige pontuar a própria pessoa que respondeu, ela vira certa (verde claro). Assim cada tentativa, certa ou errada, aparece na questão.
+- "🚫 Ninguém acertou" (laranja claro) aparece também quando a resposta é revelada sem ninguém ganhar os pontos. Nas sessões já abertas, a tentativa que ficou esperando aparece como errada.
+- Teste da sessão compartilhada: 2 casos novos (72 verificações).
+
 ## 6.13.19
 
 ### Adoração em Família: resposta certa em verde claro e errada em vermelho claro

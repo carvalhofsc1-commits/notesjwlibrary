@@ -313,6 +313,25 @@ try {
     assert.ok(!("1" in (rei.dados.estado.envios["2"] || {})) && !("1" in (rei.dados.estado.erradas["2"] || {}))); passo("reiniciar a questão apaga as respostas enviadas e as erradas");
     await chamar({ acao: "encerrar", sessao: s3.sessao, chave: s3.chave });
   }
+  // 6.13.20: revelar ou pontuar com uma resposta esperando julgamento
+  {
+    const s4 = (await chamar({ acao: "criar", programa, codigo: "codigo-de-teste" })).dados;
+    const id4 = (await chamar({ acao: "entrar", sessao: s4.sessao, nome: "Ana" })).dados.participanteId;
+    await chamar({ acao: "liberar", sessao: s4.sessao, chave: s4.chave, parte: 2 });
+    await chamar({ acao: "responder", sessao: s4.sessao, participanteId: id4, parte: 2, rodada: 0, texto: "Arão" });
+    await chamar({ acao: "julgar", sessao: s4.sessao, chave: s4.chave, parte: 2, rodada: 0, certo: false });
+    await chamar({ acao: "responder", sessao: s4.sessao, participanteId: id4, parte: 2, rodada: 0, texto: "Josué" });
+    const rv = await chamar({ acao: "revelar", sessao: s4.sessao, chave: s4.chave, parte: 2, rodada: 0 });
+    assert.deepEqual(rv.dados.estado.erradas["2"]["0"], [{ nome: "Ana", texto: "Arão" }, { nome: "Ana", texto: "Josué" }]);
+    assert.ok(!("0" in (rv.dados.estado.envios["2"] || {}))); passo("revelar com resposta esperando julgamento: ela entra nas erradas (todas as tentativas aparecem)");
+    await chamar({ acao: "responder", sessao: s4.sessao, participanteId: id4, parte: 2, rodada: 1, texto: "o pastor" });
+    const pt = await chamar({ acao: "pontuar", sessao: s4.sessao, chave: s4.chave, parte: 2, rodada: 1, nome: "Ana" });
+    assert.equal(pt.status, 400, "pontuar ainda pede a 1ª dica nas rodadas de dicas");
+    await chamar({ acao: "dica", sessao: s4.sessao, chave: s4.chave, parte: 2, rodada: 1 });
+    const pt2 = await chamar({ acao: "pontuar", sessao: s4.sessao, chave: s4.chave, parte: 2, rodada: 1, nome: "Ana" });
+    assert.equal(pt2.dados.estado.envios["2"]["1"].status, "certa"); passo("pontuar quem tinha a resposta esperando: ela vira certa");
+    await chamar({ acao: "encerrar", sessao: s4.sessao, chave: s4.chave });
+  }
 
   // Encerrar
   const outra = (await chamar({ acao: "criar", programa, codigo: "codigo-de-teste" })).dados;
