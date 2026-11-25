@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.35
+
+- Programações salvas (Adoração em Família): o tema não é mais cortado. O cartão mostra a data numa linha discreta (cinza, menor) e, embaixo, o tema inteiro em roxo e negrito. O tema completo passa a ser guardado com a programação (`familiaAssunto`); nas salvas antes desta versão, cujo tema foi gravado cortado em 60 letras, aparece o título inteiro da programação.
+
 ## 6.13.34
 
 ### Respostas do estudo: mais espaço entre a linha separadora e a resposta seguinte
