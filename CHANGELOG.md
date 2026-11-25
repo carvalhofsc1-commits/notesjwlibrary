@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.72
+
+- Título "Preparar para comentar" (e das outras páginas de Reuniões): **no centro exato** da página (a barra agora é uma grade de 3 colunas, com o botão "📝 ↓" mais estreito e um espaço igual do outro lado) e com a mesma fonte dos demais títulos (17,9 px, antes 16 px). O ajuste de fonte dos títulos passou a medir a largura do texto de fato, e não o scrollWidth, que vinha maior no título de Reuniões e o encolhia à toa.
+
 ## 6.13.71
 
 - Títulos do alto das telas **sempre numa linha só**: na página de Reuniões ("Preparar para comentar") o título ficava espremido em 3 linhas por causa de um espaço reservado que eu tinha posto na 6.13.64; saiu. Em todo o app os títulos não quebram: se o texto não couber, a letra diminui (mínimo 11 px) e só então entram reticências. Conferido em 340 px em 14 telas.

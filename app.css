@@ -17905,3 +17905,19 @@ body[data-screen="inicio"] .voltar-topo { visibility: hidden; }
 .fam-titulo { display: block; flex-wrap: nowrap; }
 .reunioes-topo .reunioes-pagina-titulo { flex: 1 1 auto; min-width: 0; width: 100%; justify-content: center; flex-wrap: nowrap; }
 #participarTitulo.fam-titulo-jogo { display: flex; justify-content: center; }
+
+/* 6.13.72: página de Reuniões: título no centro exato, em uma linha e com a mesma fonte dos outros títulos; o botão "📝 ↓" mais estreito e um espaço igual à esquerda (no lugar do Voltar, que foi para a barra do topo) */
+.reunioes-topo #reunioesCampoBtn { flex: 0 0 2.6rem; width: 2.6rem; min-width: 0; padding: 8px 0; }
+.reunioes-topo::before, .reunioes-topo:has(> #reunioesCampoBtn:not([hidden]))::before { content: ""; flex: 0 0 2.6rem; }
+body:not([data-reunioes="hub"]) .reunioes-topo { gap: 6px; }
+.reunioes-topo .reunioes-pagina-titulo { font-size: 1.15rem; }
+.reunioes-topo .reunioes-pagina-icone { font-size: 1.6rem; }
+.reunioes-topo #reunioesCampoBtn { flex-basis: 2.3rem; width: 2.3rem; }
+.reunioes-topo::before, .reunioes-topo:has(> #reunioesCampoBtn:not([hidden]))::before { flex-basis: 2.3rem; }
+.reunioes-topo .reunioes-pagina-icone { font-size: 1.4rem; }
+.reunioes-topo .reunioes-pagina-titulo { gap: 4px; }
+/* grade de 3 colunas iguais nas pontas: o título fica exatamente no centro da página */
+body:not([data-reunioes="hub"]) .reunioes-topo { display: grid; grid-template-columns: 2.3rem minmax(0, 1fr) 2.3rem; align-items: center; column-gap: 6px; }
+.reunioes-topo::before, .reunioes-topo:has(> #reunioesCampoBtn:not([hidden]))::before { content: ""; width: 2.3rem; flex: none; }
+.reunioes-topo .reunioes-pagina-titulo { width: auto; justify-self: stretch; }
+.reunioes-topo #reunioesCampoBtn { width: 2.3rem; justify-self: end; }
