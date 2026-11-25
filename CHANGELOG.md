@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.73
+
+- Espaços do topo das telas voltaram ao padrão da tela Anotações também em Reuniões: o botão "📝 ↓" (40 px) deixava a barra mais alta e afastava o título da linha (13 px); agora ele não aumenta a barra e a linha fica a 7 px do título, com 10 px até o início da página, igual às outras telas.
+
 ## 6.13.72
 
 - Título "Preparar para comentar" (e das outras páginas de Reuniões): **no centro exato** da página (a barra agora é uma grade de 3 colunas, com o botão "📝 ↓" mais estreito e um espaço igual do outro lado) e com a mesma fonte dos demais títulos (17,9 px, antes 16 px). O ajuste de fonte dos títulos passou a medir a largura do texto de fato, e não o scrollWidth, que vinha maior no título de Reuniões e o encolhia à toa.

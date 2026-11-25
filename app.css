@@ -17921,3 +17921,6 @@ body:not([data-reunioes="hub"]) .reunioes-topo { display: grid; grid-template-co
 .reunioes-topo::before, .reunioes-topo:has(> #reunioesCampoBtn:not([hidden]))::before { content: ""; width: 2.3rem; flex: none; }
 .reunioes-topo .reunioes-pagina-titulo { width: auto; justify-self: stretch; }
 .reunioes-topo #reunioesCampoBtn { width: 2.3rem; justify-self: end; }
+/* 6.13.73: o botão "📝 ↓" (40 px) não aumenta a altura da barra de Reuniões: a linha fica a 7 px do título, como nas Anotações */
+.reunioes-topo #reunioesCampoBtn { align-self: center; margin-top: -9px; margin-bottom: -9px; }
+body:not([data-reunioes="hub"]) .reunioes-topo { padding-bottom: 11px; }
