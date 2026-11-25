@@ -876,6 +876,53 @@ export function perguntaDaAbreviacao(sigla, resposta, onde, pistas = []) {
   return `O que significa a sigla “${sigla}”? Dica 1: ${d1} Dica 2: ${d2} Dica 3: O começo de cada palavra: “${comecoDasPalavras(resposta)}”.`;
 }
 
+// 6.14.02: a expressão cortada: a resposta "O Rio da Vida" para Apocalipse 22:1, que diz "um rio de ÁGUA da vida". É cortada quando as palavras
+// da resposta estão no versículo, na mesma ordem e na mesma frase (sem pontuação nem "e" no meio), mas com outra palavra importante entre
+// elas, e em nenhum lugar do texto aparecem juntas. Artigos e preposições não contam; singular e plural valem como iguais. Um título formado a
+// partir do relato ("Daniel na Cova dos Leões") ou que o texto não traz ("Os 12 Apóstolos de Cristo") não é considerado cortado.
+const PALAVRAS_DE_LIGACAO = new Set(["a", "as", "o", "os", "um", "uma", "uns", "umas", "de", "da", "do", "das", "dos", "d", "e", "em", "no", "na", "nos", "nas", "num", "numa", "ao", "aos", "com", "por", "pelo", "pela", "para", "que", "se"]);
+export function expressaoCortada(resposta, textoDoVersiculo) {
+  // cada palavra importante, com a marca de quebra quando há pontuação ou "e" desde a palavra importante anterior
+  const importantes = (t) => {
+    const lista = [];
+    let quebra = false;
+    const pecas = String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().match(/[a-z0-9]+|[.,;:!?"“”‘’()—–]/g) || [];
+    for (const w of pecas) {
+      if (!/[a-z0-9]/.test(w) || w === "e") quebra = true;
+      else if (!PALAVRAS_DE_LIGACAO.has(w)) {
+        lista.push({ w: w.length > 3 ? w.replace(/s$/, "") : w, quebra });
+        quebra = false;
+      }
+    }
+    return lista;
+  };
+  const alvo = importantes(String(resposta || "").replace(/\s*\([^)]*\)\s*\.?$/, "")).map((x) => x.w);
+  const texto = importantes(textoDoVersiculo);
+  if (alvo.length < 2 || texto.length < alvo.length) return false;
+  let cortada = false;
+  for (let i = 0; i < texto.length; i++) {
+    if (texto[i].w !== alvo[0]) continue;
+    let p = i;
+    let intrusas = 0;
+    let quebrada = false;
+    let achou = true;
+    for (let k = 1; k < alvo.length; k++) {
+      // a próxima palavra da resposta, logo adiante (no máximo 2 palavras importantes no meio)
+      const j = [1, 2, 3].map((d) => p + d).find((x) => texto[x]?.w === alvo[k]);
+      if (j === undefined) { achou = false; break; }
+      if (j - p > 1) {
+        intrusas += j - p - 1;
+        if (texto.slice(p + 1, j + 1).some((x) => x.quebra)) quebrada = true;
+      }
+      p = j;
+    }
+    if (!achou) continue;
+    if (intrusas === 0) return false; // a expressão está inteira no texto
+    if (!quebrada) cortada = true;
+  }
+  return cortada;
+}
+
 // A rodada de Abreviações vale se a sigla é curta e confere, palavra por palavra, com a resposta.
 export function abreviacaoJogavel(sigla, resposta) {
   return siglaCurta(sigla) && confereAbreviacao(sigla, resposta);

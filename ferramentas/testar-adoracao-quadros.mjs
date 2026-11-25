@@ -1722,6 +1722,20 @@ teste("6.14.01: Abreviações: duas pistas do significado sem a resposta, sem a 
   }
 });
 
+teste("6.14.02: Abreviações: a expressão cortada (\"O Rio da Vida\") não entra no jogo", () => {
+  const apoc = "E ele me mostrou um rio de água da vida, límpido como cristal, que saía do trono de Deus e do Cordeiro";
+  assert.equal(ger.expressaoCortada("O Rio da Vida", apoc), true);
+  assert.equal(ger.expressaoCortada("O Rio de Água da Vida", apoc), false);
+  assert.equal(ger.expressaoCortada("A Água da Vida", apoc), false);
+  assert.equal(ger.expressaoCortada("O Pão do Céu", "Eu sou o pão vivo que desceu do céu."), true);
+  // Não é corte: "e" ou pontuação no meio (título formado a partir do relato) ou expressão que o texto não traz.
+  assert.equal(ger.expressaoCortada("Reino de Deus", "Persistam em buscar primeiro o Reino e a justiça de Deus."), false);
+  assert.equal(ger.expressaoCortada("Testemunhas de Jeová", "“Vocês são as minhas testemunhas”, diz Jeová"), false);
+  assert.equal(ger.expressaoCortada("Daniel na Cova dos Leões", "trouxeram Daniel e o lançaram na cova dos leões."), false);
+  assert.equal(ger.expressaoCortada("Os 12 Apóstolos de Cristo", "Os nomes dos 12 apóstolos são estes"), false);
+  assert.match(servidorJs, /expressaoCortada\(r\.resposta, v\.texto\)/);
+});
+
 teste("6.12.81 (2): o jogo de Abreviações tira as siglas longas e o pedido de novo diz o que fazer", async () => {
   const ab = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "jogo", jogos: ["Abreviações bíblicas (ex.: Os 12 A de C)"] }), montados);
   assert.ok(!ab.erro);

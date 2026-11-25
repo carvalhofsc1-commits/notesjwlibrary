@@ -2,6 +2,13 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.02
+
+- Jogo **Abreviações**: a expressão da resposta tem de ser a que o versículo traz. Corrigido o caso de "O Rio da Vida" para Apocalipse 22:1, que diz "um rio de **água** da vida": o servidor compara com o texto e tira a rodada com a expressão cortada (outra expressão é pedida no lugar).
+- O pedido à IA agora manda usar as palavras exatas da Tradução do Novo Mundo, sem tirar, trocar nem resumir.
+- As siglas fixas do app foram conferidas contra o texto bíblico: nenhuma está cortada.
+- Jogos já preparados continuam com a pergunta antiga; é só preparar o jogo de novo.
+
 ## 6.14.01
 
 - Jogo ao vivo: botão **"▶ Próxima questão"** no pé de cada questão (menos a última), abaixo de "Enviar resposta" e "Não sei", na largura toda. No jogo em grupo, quando é o administrador (com o 👥 ligado), leva todos junto.
