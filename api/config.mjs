@@ -48,7 +48,7 @@ const MAX_CHARS_CONVITE = 1500;
 const CHAVE_TIPOS_AUDIO = "audio_tipos_todos";
 // Limites do Áudio em texto: duração máxima, em minutos, do arquivo escolhido na pasta do aparelho e da gravação feita ao vivo no app, e quantos arquivos cabem na lista.
 const CHAVE_AUDIO_LIMITES = "audio_limites";
-const AUDIO_LIMITES_PADRAO = { arquivoMin: 60, gravacaoMin: 30, maxArquivos: 5, pedacoMin: 10 };
+const AUDIO_LIMITES_PADRAO = { arquivoMin: 90, gravacaoMin: 30, maxArquivos: 5, pedacoMin: 10 };
 const AUDIO_LIMITE_MIN = 5;
 const AUDIO_LIMITE_MAX = 180;
 

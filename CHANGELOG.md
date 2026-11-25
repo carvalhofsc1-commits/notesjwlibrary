@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.49
+
+- Áudio em texto: o limite padrão de duração do arquivo passa de 60 para 90 minutos (no app e no servidor). Quem já salvou outro valor em Ajustes (administrador) continua com o valor salvo, que pode ser mudado lá (até 180 min).
+
 ## 6.13.48
 
 - Questões dos jogos (Adoração e Jogos bíblicos): a questão respondida (resposta revelada) fica com fundo verde claro e ganha um botão ▾/▸ no alto, ao lado do 🔄, para recolhê-la: recolhida, fica só o título, a resposta e quem acertou. Reiniciar a questão a devolve ao estado original.
