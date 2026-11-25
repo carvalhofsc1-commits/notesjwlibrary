@@ -17942,3 +17942,13 @@ body[data-screen="reunioes"]:not(.texto-chegou) #reunioesCampoBtn { display: non
 
 /* 6.13.75: todos os títulos do alto das telas com a MESMA fonte (1,15 rem); só diminuem, sozinhos, se o texto não couber numa linha */
 body :is(.fam-titulo, #anotacoesTitulo, #salvasTitulo, .formatar-titulo, .pesq-titulo, #backupCard > h2, .leitura-topo h2, .ajustes-grupo-titulo, .reunioes-topo .reunioes-pagina-titulo) { font-size: 1.15rem; }
+
+/* 6.13.76: Anotações: o título ocupa a largura toda (antes ficava espremido entre colunas de 5 rem e era cortado); os botões "Trocar de evento" e "Programa", quando aparecem, ficam nas pontas, menores, sem aumentar a barra */
+.anotacoes-topo { display: block; position: relative; }
+.anotacoes-topo h2 { grid-column: auto; grid-row: auto; width: 100%; }
+.anotacoes-topo #anotacoesTrocarTopo, .anotacoes-topo #anotacoesProgramaTopo { position: absolute; top: -4px; height: 30px; min-height: 0; padding: 0 8px; line-height: 1.05; font-size: .75rem; white-space: nowrap; }
+.anotacoes-topo #anotacoesTrocarTopo { left: 0; width: 4.6rem; }
+.anotacoes-topo #anotacoesProgramaTopo { right: 0; left: auto; width: 5.8rem; }
+.anotacoes-topo #anotacoesTrocarTopo, .anotacoes-topo #anotacoesProgramaTopo { height: 30px !important; min-height: 0 !important; padding: 0 6px !important; font-size: 12px !important; }
+.anotacoes-topo #anotacoesTrocarTopo { width: 76px !important; }
+.anotacoes-topo #anotacoesProgramaTopo { width: 92px !important; }

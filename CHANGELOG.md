@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.76
+
+- Anotações (menu, Reunião, Assembleia e Congresso): o título aparecia pequeno e cortado ("Anotações · Assembl…") porque ficava espremido numa coluna estreita entre as colunas dos botões. Agora ele usa a largura toda, com a fonte padrão dos títulos (18,4 px), e o texto ficou mais curto ("📝 Reunião", "📝 Assembleia", "📝 Congresso"). Os botões "Trocar de evento" e "Programa", quando aparecem, ficam nas pontas, menores (30 px de altura), sem aumentar a barra nem tocar o título.
+
 ## 6.13.75
 
 - Todos os títulos do alto das telas (Anotações, Pesquisas salvas, Assistente de pesquisas, Leitura diária, Assistente de leitura, Áudio em texto, Backup, Formatar, Ajustes, Adoração, Jogos, Reuniões…) com a **mesma fonte** (1,15 rem = 18,4 px); antes variavam de 15 a 21 px (as Anotações eram a menor). A letra só diminui, sozinha, se o título não couber em uma linha (ex.: "Preparação de discursos e esboços", 17,9 px).
