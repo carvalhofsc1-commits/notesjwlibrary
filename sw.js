@@ -31,6 +31,7 @@ const PRECACHE = [
   'leitura-biblia-programa.js',
   'biblia-versiculos.js',
   'exportar-pagina.js',
+  'barra-topo.js',
   'defaults.json',
   'manifest.webmanifest',
   // Os ícones vão com ?v=3 (o mesmo endereço usado no HTML e no manifesto) para trocar os antigos guardados.

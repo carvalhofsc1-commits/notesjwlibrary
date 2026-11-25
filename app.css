@@ -17960,3 +17960,34 @@ body :is(.fam-titulo, #anotacoesTitulo, #salvasTitulo, .formatar-titulo, .pesq-t
 #participarSessao .fam-sessao-qnum { flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 6px; }
 .fam-sessao-pergunta.fam-perfil-tipo { justify-content: center; text-align: center; }
 .fam-sessao-pergunta.fam-perfil-tipo .fam-perfil-emojis { font-size: 1.9rem; }
+
+/* 6.13.79: Perfil bíblico: o tipo da carta sem quebrar linha */
+.fam-sessao-pergunta.fam-perfil-tipo { flex-wrap: nowrap; }
+.fam-sessao-pergunta.fam-perfil-tipo .fam-perfil-emojis { flex: 0 0 auto; white-space: nowrap; }
+.fam-sessao-pergunta.fam-perfil-tipo .fam-perfil-palavra { flex: 0 1 auto; white-space: nowrap; min-width: 0; }
+/* 6.13.79: o placar com a metade da altura (troféu e título na mesma linha, margens e linhas da tabela menores) */
+#participarSessao .fam-sessao-placar { margin: 0 0 6px; padding: 4px 10px; }
+#participarSessao .fam-placar-titulo { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 0 0 2px; }
+#participarSessao .fam-placar-trofeu { gap: 4px; }
+#participarSessao .fam-placar-copa { font-size: 1.7rem; }
+#participarSessao .fam-placar-estrela { font-size: .9rem; }
+#participarSessao .fam-placar-rotulo { margin: 0; font-size: .95rem; }
+#participarSessao .fam-sessao-placar-tabela th, #participarSessao .fam-sessao-placar-tabela td { padding: 2px 8px; }
+.fam-placar-solo { margin: 0; font-size: 1.25rem; }
+details.fam-placar-card > summary { padding: 4px 8px; }
+details.fam-placar-card[open] > summary { margin-bottom: 2px; }
+/* 6.13.79: sem a barra de andamento embaixo do placar (as setas e as bolinhas das questões já mostram onde o jogo está) */
+#participarSessao .fam-sessao-progresso { display: none; }
+/* 6.13.79: a barra das setas e dos números das questões menor na vertical e mais discreta */
+.fam-sessao-nav { margin: 2px 0 6px; gap: 6px; }
+.fam-sessao-nav-seta { flex: 0 0 40px; width: 40px; min-width: 40px; min-height: 28px !important; height: 28px; font-size: .95rem; background: transparent; border-color: #d1d5db; color: #6b7280; }
+.fam-sessao-nav-bolinhas { gap: 4px; }
+.fam-sessao-nav-bolinha { width: 22px; height: 22px; min-width: 22px; min-height: 0 !important; font-size: .7rem; border-width: 1px; background: transparent; color: #6b7280; border-color: #d1d5db; }
+.fam-sessao-nav-bolinha.respondida { background: color-mix(in srgb, #4ade80 22%, #fff); border-color: #86efac; color: #166534; }
+.fam-sessao-nav-bolinha.atual { background: #6366f1; border-color: #6366f1; color: #fff; transform: none; }
+/* 6.13.79: placar em grupo com metade da altura: sem o troféu repetido dentro do card (o título já traz 🏆), título e linhas mais baixos */
+#participarSessao .fam-placar-card .fam-placar-titulo { display: none; }
+details.fam-placar-card > summary { min-height: 0 !important; padding: 3px 8px !important; line-height: 1.2; font-size: .95rem; }
+#participarSessao .fam-sessao-placar-tabela th, #participarSessao .fam-sessao-placar-tabela td { padding: 1px 8px; line-height: 1.15; font-size: .9rem; }
+#participarSessao .fam-placar-bicho { font-size: 1em; width: 1.5em; }
+.fam-placar-medalha { min-width: 1.2em; }

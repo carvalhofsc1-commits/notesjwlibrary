@@ -2,6 +2,14 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.79
+
+- Perfil bíblico: o tipo da carta (Coisa, Lugar, Pessoa, Ano) voltou a ficar numa linha só, sem quebrar o texto ("Cois/a") nem empilhar os emojis; conferido nas 4 categorias.
+- Sobre, Termos de uso e Política de privacidade: barra do topo sempre à vista (grudada ao rolar), com o menu à esquerda (Início do app, Sobre, Termos, Privacidade), o logo no centro e a seta Voltar à direita. Arquivo novo `barra-topo.js` (também na cache offline).
+- Placar do jogo em grupo com cerca da metade da altura (de 212 para 133 px com 3 jogadores; o troféu repetido dentro do card saiu, e título e linhas ficaram mais baixos).
+- Saiu a barra de andamento ("0 de 4 respondidas") embaixo do placar: as setas e bolinhas das questões já mostram onde o jogo está.
+- Barra das setas e números das questões menor na vertical (28 px, antes 44 px; bolinhas de 22 px, antes 30 px) e mais discreta (fundo transparente e cores suaves).
+
 ## 6.13.78
 
 - Jogo ao vivo: o cabeçalho da questão ("Questão 1 de 4" e "⭐ vale N pontos") fica centralizado, um embaixo do outro.
