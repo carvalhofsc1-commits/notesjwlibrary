@@ -17803,3 +17803,9 @@ details.jogos-grupo-card > .jogos-grupo { padding: 10px; }
 /* 6.13.56: setinha do "Jogar em grupo": para baixo recolhido, para cima aberto */
 details.jogos-grupo-card > summary::after { content: "▾"; margin-left: 8px; font-size: 1.1em; }
 details.jogos-grupo-card[open] > summary::after { content: "▴"; }
+
+/* 6.13.57: placar em grupo: card recolhível, medalhas e líder em destaque */
+details.fam-placar-card > summary { cursor: pointer; font-weight: 800; padding: 8px 10px; text-align: center; overflow-wrap: anywhere; }
+details.fam-placar-card[open] > summary { border-bottom: 1px solid var(--line); margin-bottom: 6px; }
+.fam-placar-medalha { display: inline-block; min-width: 1.4em; text-align: center; }
+tr.fam-placar-lider td { background: color-mix(in srgb, #f59e0b 18%, var(--card)); font-weight: 800; }

@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.57
+
+- Placar do jogo em grupo: vira um card que abre e recolhe (o estado se mantém nas atualizações; recolhido, o título mostra quem lidera e os pontos); medalhas 🥇🥈🥉 para as três primeiras posições (empates dividem a posição; só com pontos) e a linha do líder em destaque.
+- Jogo pronto: saiu o "Rodadas e respostas (só para o administrador do jogo)"; fica só "Preparado em… · N rodadas".
+
 ## 6.13.56
 
 - "Jogar em grupo": setinha ao lado do título, para baixo com o card recolhido e para cima com ele aberto.

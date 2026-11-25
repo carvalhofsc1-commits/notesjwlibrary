@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.13.56'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.13.57'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -30189,18 +30189,28 @@ function saveTemplatesToStorage() {
         ['Participante', 'Pontos'].forEach(h => { const th = document.createElement('th'); th.textContent = h; cab.appendChild(th); });
         tabela.appendChild(cab);
         const mascotes = participarMascotes(participarNomesVistos(nomes)); // 6.13.31: os mesmos bichos do painel de participantes
-        [...nomes].sort((a, b) => total[b] - total[a] || a.localeCompare(b, 'pt-BR')).forEach(n => {
+        // 6.13.57: medalhas 🥇🥈🥉 (empates dividem a posição; só com pontos) e o líder em destaque
+        const ordenados = [...nomes].sort((a, b) => total[b] - total[a] || a.localeCompare(b, 'pt-BR'));
+        const posicao = n => 1 + new Set(ordenados.filter(x => total[x] > total[n]).map(x => total[x])).size;
+        const MEDALHAS = ['🥇', '🥈', '🥉'];
+        ordenados.forEach(n => {
           const tr = document.createElement('tr');
+          const pos = total[n] > 0 ? posicao(n) : 0;
+          if (pos === 1) tr.className = 'fam-placar-lider';
           const td1 = document.createElement('td');
           td1.className = 'fam-placar-nome';
           td1.style.setProperty('--cor-nome', mascotes[n].cor);
+          const medalha = document.createElement('span');
+          medalha.className = 'fam-placar-medalha';
+          medalha.setAttribute('aria-hidden', 'true');
+          medalha.textContent = pos >= 1 && pos <= 3 ? MEDALHAS[pos - 1] : '';
           const bicho = document.createElement('span');
           bicho.className = 'fam-placar-bicho';
           bicho.setAttribute('aria-hidden', 'true');
           bicho.textContent = mascotes[n].animal;
           const nomeEl = document.createElement('strong');
           nomeEl.textContent = n;
-          td1.append(bicho, nomeEl);
+          td1.append(medalha, bicho, nomeEl);
           const td2 = document.createElement('td');
           td2.textContent = String(total[n]);
           tr.append(td1, td2);
@@ -30216,7 +30226,16 @@ function saveTemplatesToStorage() {
         rotulo.className = 'fam-placar-rotulo';
         rotulo.textContent = 'Placar';
         titulo.append(trofeu, rotulo);
-        ref.placar.replaceChildren(titulo, tabela);
+        // 6.13.57: o placar é um card que abre e recolhe (o estado se mantém nas atualizações); recolhido, o título mostra quem lidera
+        const card = document.createElement('details');
+        card.className = 'fam-placar-card';
+        card.open = ref.placarAberto !== false;
+        card.addEventListener('toggle', () => { ref.placarAberto = card.open; });
+        const resumo = document.createElement('summary');
+        const lider = ordenados.filter(n => total[n] > 0 && total[n] === total[ordenados[0]]);
+        resumo.textContent = '🏆 Placar' + (lider.length ? ' · 🥇 ' + lider.join(', ') + ' (' + total[lider[0]] + (total[lider[0]] === 1 ? ' ponto)' : ' pontos)') : '');
+        card.append(resumo, titulo, tabela);
+        ref.placar.replaceChildren(card);
       }
       // Andamento: as perguntas já respondidas (resposta revelada) e as que faltam.
       const totalPerg = ref.rodadas.length;
@@ -30794,18 +30813,6 @@ function saveTemplatesToStorage() {
         caixa.appendChild(av);
       }
       const parte = item.op.partes[0];
-      const textos = familiaJogoTextos(parte.jogo);
-      if (textos.length) {
-        const det = document.createElement('details');
-        det.className = 'fam-jogos-box';
-        const sm = document.createElement('summary');
-        sm.textContent = '🔐 Rodadas e respostas (só para o administrador do jogo)';
-        const ol = document.createElement('ol');
-        ol.className = 'fam-lista';
-        textos.forEach(tx => { const li = document.createElement('li'); li.textContent = tx; ol.appendChild(li); });
-        det.append(sm, ol);
-        caixa.appendChild(det);
-      }
       // 6.13.50: "Jogar sozinho" é o padrão (botão Iniciar partida); o grupo fica num bloco recolhido.
       const soloEl = jogosSoloMontar(item);
       caixa.appendChild(soloEl);
