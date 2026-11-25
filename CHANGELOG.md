@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.00
+
+- **Jogo em grupo: todos na mesma questão.** Quando quem administra o jogo troca de questão (setas ou números), todos os aparelhos vão para a questão escolhida. Cada jogador pode depois mudar a própria tela; na próxima troca do administrador, todos são levados de novo. Quem entra no meio do jogo já abre na questão em foco. Novo botão **👥** na barra das questões (só para o administrador, ligado ao abrir): desligado, as trocas dele não levam ninguém; ao religar, leva todos à questão atual.
+- Servidor: ação `foco` (só quem administra) em `api/familia-sessao.mjs`; o estado público traz `foco: { parte: { rodada, n } }`, e o `n` muda a cada escolha, para os aparelhos seguirem só uma escolha nova. 3 testes novos (103 verificações).
+
 ## 6.13.99
 
 - Jogo ao vivo (participante): saiu o aviso "As partes se abrem aqui quando o administrador do jogo liberar. Deixe esta tela aberta.", porque o jogo já abre sozinho. Na Adoração em Família o aviso continua.

@@ -149,6 +149,8 @@ function estadoPublico(e) {
     // 6.13.46: Perfil bíblico com dicas sorteadas: a ordem em que as dicas saíram ({ parte: { rodada: [índices] } }) e as partes em modo sorteio ({ parte: true }).
     dicasOrdem: e.dicasOrdem && typeof e.dicasOrdem === "object" ? e.dicasOrdem : {},
     sorteioDicas: e.sorteioDicas && typeof e.sorteioDicas === "object" ? e.sorteioDicas : {},
+    // 6.14.00: a questão em foco que quem administra o jogo escolheu para todos ({ parte: { rodada, n } }; n muda a cada escolha)
+    foco: e.foco && typeof e.foco === "object" ? e.foco : {},
   };
 }
 // O dirigente recebe também a lista de quem entrou; a versão dele inclui a quantidade de participantes (muda quando alguém entra).
@@ -676,7 +678,7 @@ export default async function handler(req, res) {
 
     // ----- Daqui em diante, só o dirigente -----
     if (!(await exigirDirigente())) return;
-    const programa = ["liberar", "bloquear", "revelar", "revelar-ordem", "dica", "pontuar", "reiniciar", "sortear", "sortear-questao", "limpar-sorteio", "cronometro", "julgar", "sortear-dica", "modo-dicas", "julgamento-ia"].includes(acao) ? await lerJson(caminho(cod, "programa.json")) : null;
+    const programa = ["liberar", "bloquear", "revelar", "revelar-ordem", "dica", "pontuar", "reiniciar", "sortear", "sortear-questao", "limpar-sorteio", "cronometro", "julgar", "sortear-dica", "modo-dicas", "julgamento-ia", "foco"].includes(acao) ? await lerJson(caminho(cod, "programa.json")) : null;
     const parteValida = (i) => programa && Number.isInteger(i) && i >= 0 && i < programa.partes.length;
     // 6.12.76: a referência secreta da rodada (respostas.json; sessões antigas não a têm) e a revelação dela junto com a resposta.
     const referenciaDaRodada = (parte, rodada) => String((((segredo && segredo.referencias) || {})[parte] || [])[rodada] || "");
@@ -986,6 +988,20 @@ export default async function handler(req, res) {
         } else {
           e.erradas[parte][rodada] = lista.map((x, i) => (i === indice ? { ...x, ia: comentario || "A IA manteve o julgamento." } : x));
         }
+      });
+    }
+
+    // ----- foco (6.14.00): quem administra o jogo escolhe a questão que todos veem; cada jogador pode mudar a sua tela depois, mas a próxima escolha
+    // de quem administra leva todos para ela de novo (o "n" muda a cada escolha, e os aparelhos só seguem um "n" novo) -----
+    if (acao === "foco") {
+      const parte = Number(corpo.parte);
+      const rodada = Number(corpo.rodada);
+      if (!parteValida(parte)) return erro(res, 400, "Parte inválida.");
+      const rodadas = (programa.partes[parte].jogo && programa.partes[parte].jogo.rodadas) || [];
+      if (!Number.isInteger(rodada) || rodada < 0 || rodada >= rodadas.length) return erro(res, 400, "Questão inválida.");
+      return gravarEstado((e) => {
+        const f = e.foco && typeof e.foco === "object" ? e.foco : {};
+        e.foco = { ...f, [parte]: { rodada, n: (Number((f[parte] || {}).n) || 0) + 1 } };
       });
     }
 

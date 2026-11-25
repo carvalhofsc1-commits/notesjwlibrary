@@ -7958,7 +7958,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.13.99'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.14.00'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -30141,7 +30141,11 @@ function saveTemplatesToStorage() {
         if (rodadas.length > 1) {
           const nav = document.createElement('div');
           nav.className = 'fam-sessao-nav';
-          const mover = (passo) => { ref.atual = Math.max(0, Math.min(rodadas.length - 1, ref.atual + passo)); participarJogoPintar(parteIdx, false); };
+          // 6.14.00: no jogo em grupo, as trocas de questão de quem administra levam todos os aparelhos junto (ação "foco"); cada jogador ainda pode
+          // mudar a própria tela, e a próxima troca de quem administra leva todos de novo. O botão 👥 liga e desliga isso (ligado ao abrir).
+          const emGrupoAdmin = participar.dirigente && !(participar.programa && participar.programa.solo);
+          const levar = () => { if (emGrupoAdmin && ref.sync !== false) participarAcao({ acao: 'foco', parte: parteIdx, rodada: ref.atual }, null); };
+          const mover = (passo) => { ref.atual = Math.max(0, Math.min(rodadas.length - 1, ref.atual + passo)); participarJogoPintar(parteIdx, false); levar(); };
           const ant = document.createElement('button');
           ant.type = 'button';
           ant.className = 'secondary fam-sessao-nav-seta';
@@ -30164,11 +30168,27 @@ function saveTemplatesToStorage() {
             b.className = 'fam-sessao-nav-bolinha';
             b.textContent = String(k + 1);
             b.title = 'Ir para a questão ' + (k + 1);
-            b.addEventListener('click', () => { ref.atual = k; participarJogoPintar(parteIdx, false); });
+            b.addEventListener('click', () => { ref.atual = k; participarJogoPintar(parteIdx, false); levar(); });
             bolinhas.appendChild(b);
             return b;
           });
-          nav.append(ant, bolinhas, prox);
+          let sync = null;
+          if (emGrupoAdmin) {
+            sync = document.createElement('button');
+            sync.type = 'button';
+            sync.className = 'secondary fam-sessao-nav-sync';
+            sync.textContent = '👥';
+            const rotuloSync = () => {
+              const ligado = ref.sync !== false;
+              sync.setAttribute('aria-pressed', String(ligado));
+              sync.classList.toggle('ligado', ligado);
+              sync.title = ligado ? 'Todos acompanham a questão que você escolhe (toque para desligar)' : 'Cada um vê a sua questão (toque para levar todos à questão atual)';
+              sync.setAttribute('aria-label', sync.title);
+            };
+            rotuloSync();
+            sync.addEventListener('click', () => { ref.sync = ref.sync === false; rotuloSync(); if (ref.sync !== false) levar(); });
+          }
+          nav.append(ant, ...(sync ? [sync] : []), bolinhas, prox);
           ref.nav = { ant, prox, pontos };
           caixa.appendChild(nav);
         }
@@ -30388,6 +30408,12 @@ function saveTemplatesToStorage() {
         if (sq0 && sq0.parte === i && ref.rodadas[sq0.rodada] && !respK(sq0.rodada)) {
           const chaveSq = sq0.rodada + ':' + (sq0.n || '');
           if (ref.sqVisto !== chaveSq) { ref.sqVisto = chaveSq; ref.atual = sq0.rodada; }
+        }
+        // 6.14.00: a questão em foco que quem administra escolheu: os participantes vão para ela (uma vez por escolha nova; depois cada um é livre)
+        const fo = (e.foco && e.foco[i]) || null;
+        if (fo && ref.focoVisto !== fo.n) {
+          ref.focoVisto = fo.n;
+          if (!participar.dirigente && ref.rodadas[fo.rodada]) ref.atual = fo.rodada;
         }
         ref.atual = Math.max(0, Math.min(Math.max(0, ref.rodadas.length - 1), ref.atual));
       }

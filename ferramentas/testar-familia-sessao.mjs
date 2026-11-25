@@ -378,6 +378,20 @@ try {
     await chamar({ acao: "encerrar", sessao: ss.sessao, chave: ss.chave });
   }
 
+  // 6.14.00: a questão em foco: só quem administra escolhe; "n" muda a cada escolha; questão inválida recusada
+  {
+    const sf = (await chamar({ acao: "criar", programa: { ...programa, modo: "jogos" }, codigo: "codigo-de-teste" })).dados;
+    await chamar({ acao: "liberar", sessao: sf.sessao, chave: sf.chave, parte: 2 });
+    const f1 = await chamar({ acao: "foco", sessao: sf.sessao, chave: sf.chave, parte: 2, rodada: 1 });
+    assert.deepEqual(f1.dados.estado.foco["2"], { rodada: 1, n: 1 });
+    const f2 = await chamar({ acao: "foco", sessao: sf.sessao, chave: sf.chave, parte: 2, rodada: 1 });
+    assert.deepEqual(f2.dados.estado.foco["2"], { rodada: 1, n: 2 }); passo("foco: quem administra escolhe a questão e o n muda a cada escolha (mesmo repetida)");
+    assert.equal((await chamar({ acao: "foco", sessao: sf.sessao, chave: sf.chave, parte: 2, rodada: 99 })).status, 400); passo("foco: questão inexistente recusada");
+    const estPart = await chamar({ acao: "estado", sessao: sf.sessao });
+    assert.deepEqual(estPart.dados.estado.foco["2"], { rodada: 1, n: 2 }); passo("foco: todos os aparelhos recebem a questão em foco no estado");
+    await chamar({ acao: "encerrar", sessao: sf.sessao, chave: sf.chave });
+  }
+
   // 6.13.17: responder pelo app e julgar
   {
     const s3 = (await chamar({ acao: "criar", programa, codigo: "codigo-de-teste" })).dados;
