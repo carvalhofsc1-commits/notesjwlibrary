@@ -202,6 +202,46 @@ export async function textoDaSessaoParaLer(codigo, texto, origem = null) {
   return Boolean(alvo) && norm(fonte).includes(alvo);
 }
 
+// 6.13.60: a chave de quem administra o jogo vale para esta sessão? (api/transcrever.mjs, "trecho-jogo": a resposta falada de quem administra
+// o jogo ou joga sozinho não pede código de texto nem gasta créditos: o custo é do app.)
+export async function chaveDeDirigenteValida(sessao, chave) {
+  const cod = codigoLimpo(sessao);
+  if (!cod || !blobConfigurado() || typeof chave !== "string" || chave.length < 20 || chave.length > 100) return false;
+  const [estado, segredo] = await Promise.all([lerEstado(cod), lerJson(caminho(cod, "respostas.json"))]);
+  if (!estado || !segredo || !Array.isArray(segredo.chaves)) return false;
+  const h = hash(chave);
+  return segredo.chaves.some((c) => textosIguais(h, c));
+}
+
+// 6.13.60: "🤖 Apelar para a IA": quem dirige (administrador do jogo ou quem joga sozinho) pede à IA que julgue de novo uma resposta que ficou
+// como errada. api/sugerir-formatacao.mjs (fase "apelar") chama esta função: confere a chave de quem dirige e devolve a pergunta, a resposta
+// esperada (com a referência) e a resposta dada, que ficam só no servidor. Devolve { erro: [status, mensagem] } ou os dados.
+export async function dadosDaApelacao(corpo) {
+  const cod = codigoLimpo(corpo && corpo.sessao);
+  if (!cod || !blobConfigurado()) return { erro: [400, "Código do jogo inválido."] };
+  const chave = corpo.chave;
+  if (typeof chave !== "string" || chave.length < 20 || chave.length > 100) return { erro: [403, "Só quem administra o jogo pode apelar para a IA."] };
+  const [estado, programa, segredo] = await Promise.all([lerEstado(cod), lerJson(caminho(cod, "programa.json")), lerJson(caminho(cod, "respostas.json"))]);
+  if (!estado || !programa || !segredo) return { erro: [404, "Não encontrei este jogo (ou ele já terminou)."] };
+  const h = hash(chave);
+  if (!Array.isArray(segredo.chaves) || !segredo.chaves.some((c) => textosIguais(h, c))) return { erro: [403, "Só quem administra o jogo pode apelar para a IA."] };
+  const parte = Number(corpo.parte);
+  const rodada = Number(corpo.rodada);
+  const indice = Number(corpo.indice);
+  const jogo = Number.isInteger(parte) && programa.partes && programa.partes[parte] && programa.partes[parte].jogo;
+  const r = jogo && Number.isInteger(rodada) ? (jogo.rodadas || [])[rodada] : null;
+  if (!r) return { erro: [400, "Questão inválida."] };
+  if (jogo.idTipo === "verdadeiro_falso") return { erro: [400, "No Verdadeiro ou falso só há duas respostas: não há o que apelar."] };
+  if (((estado.reveladas || {})[parte] || {})[rodada] || ((estado.acertos || {})[parte] || {})[rodada]) return { erro: [409, "Esta questão já foi respondida."] };
+  const item = (((estado.erradas || {})[parte] || {})[rodada] || [])[indice];
+  if (!item) return { erro: [400, "Não encontrei essa resposta errada."] };
+  if (item.ia) return { erro: [409, "A IA já julgou esta resposta."] };
+  const certa = String((((segredo.respostas || {})[parte] || [])[rodada]) || "");
+  if (!certa) return { erro: [400, "Esta questão não tem resposta para comparar."] };
+  const referencia = String((((segredo.referencias || {})[parte] || [])[rodada]) || "");
+  return { pergunta: String(r.pergunta || ""), certa, referencia, idTipo: String(jogo.idTipo || ""), tipo: String(jogo.tipo || jogo.nome || ""), nome: item.nome, texto: item.texto };
+}
+
 // O texto de uma publicação citada na parte: o endereço do wol da própria publicação ou o primeiro resultado da pesquisa pelo nome dela.
 async function lerMateriaDaPublicacao(pub) {
   let url = /^https:\/\/wol\.jw\.org\/pt\/wol\/d\/r5\/lp-t\/\d{5,12}/i.test(String(pub.url || "")) ? pub.url.split("#")[0] : "";
@@ -617,6 +657,14 @@ export default async function handler(req, res) {
           }
         });
       }
+      // 6.13.60: partida sozinho: não há quem julgue, então o servidor julga na hora: errou, a resposta vai para a lista das erradas e a questão
+      // continua aberta (dá para tentar de novo, apelar para a IA ou revelar).
+      if (programa.solo && certa && !confere) {
+        return gravarEstado((e) => {
+          e.erradas = e.erradas || {};
+          e.erradas[parte] = { ...(e.erradas[parte] || {}), [rodada]: [...(((e.erradas[parte] || {})[rodada]) || []), { nome: quem.nome, texto: textoResp }].slice(-10) };
+        });
+      }
       return gravarEstado((e) => {
         e.envios = e.envios || {};
         e.envios[parte] = { ...(e.envios[parte] || {}), [rodada]: { nome: quem.nome, texto: textoResp, em: Date.now(), status: confere ? "certa" : "pendente" } };
@@ -626,7 +674,7 @@ export default async function handler(req, res) {
 
     // ----- Daqui em diante, só o dirigente -----
     if (!(await exigirDirigente())) return;
-    const programa = ["liberar", "bloquear", "revelar", "revelar-ordem", "dica", "pontuar", "reiniciar", "sortear", "sortear-questao", "limpar-sorteio", "cronometro", "julgar", "sortear-dica", "modo-dicas"].includes(acao) ? await lerJson(caminho(cod, "programa.json")) : null;
+    const programa = ["liberar", "bloquear", "revelar", "revelar-ordem", "dica", "pontuar", "reiniciar", "sortear", "sortear-questao", "limpar-sorteio", "cronometro", "julgar", "sortear-dica", "modo-dicas", "julgamento-ia"].includes(acao) ? await lerJson(caminho(cod, "programa.json")) : null;
     const parteValida = (i) => programa && Number.isInteger(i) && i >= 0 && i < programa.partes.length;
     // 6.12.76: a referência secreta da rodada (respostas.json; sessões antigas não a têm) e a revelação dela junto com a resposta.
     const referenciaDaRodada = (parte, rodada) => String((((segredo && segredo.referencias) || {})[parte] || [])[rodada] || "");
@@ -905,6 +953,34 @@ export default async function handler(req, res) {
           const copia = { ...e.envios[parte] };
           delete copia[rodada];
           e.envios = { ...e.envios, [parte]: copia };
+        }
+      });
+    }
+
+    // ----- julgamento-ia (6.13.60): o resultado do "🤖 Apelar para a IA" sobre uma resposta da lista das erradas (indice). Certo: a resposta passa a
+    // valer (pontos, resposta revelada). Errado: a resposta fica na lista, marcada como já julgada pela IA (só uma apelação por resposta).
+    // O comentário divertido da IA fica junto, para todos verem. Quem dirige é quem pede (a IA é consultada em api/sugerir-formatacao.mjs). -----
+    if (acao === "julgamento-ia") {
+      const parte = Number(corpo.parte);
+      const rodada = Number(corpo.rodada);
+      const indice = Number(corpo.indice);
+      if (!parteValida(parte)) return erro(res, 400, "Parte inválida.");
+      const r = programa.partes[parte].jogo && (programa.partes[parte].jogo.rodadas || [])[rodada];
+      const lista = ((estado.erradas || {})[parte] || {})[rodada] || [];
+      const item = lista[indice];
+      if (!r || !item) return erro(res, 400, "Não encontrei essa resposta errada.");
+      if (item.ia) return erro(res, 409, "A IA já julgou esta resposta.");
+      if (((estado.reveladas || {})[parte] || {})[rodada] || ((estado.acertos || {})[parte] || {})[rodada]) return erro(res, 409, "Esta questão já foi respondida.");
+      const comentario = texto(corpo.comentario, 240).replace(/\s+/g, " ");
+      const respostas = (segredo.respostas || {})[parte] || [];
+      return gravarEstado((e) => {
+        if (corpo.certo === true) {
+          e.erradas[parte][rodada] = lista.filter((_, i) => i !== indice);
+          e.envios = e.envios || {};
+          e.envios[parte] = { ...(e.envios[parte] || {}), [rodada]: { nome: item.nome, texto: item.texto, em: Date.now(), status: "certa", ia: comentario || "A IA aceitou a resposta." } };
+          darPontos(e, parte, rodada, r, item.nome, respostas[rodada]);
+        } else {
+          e.erradas[parte][rodada] = lista.map((x, i) => (i === indice ? { ...x, ia: comentario || "A IA manteve o julgamento." } : x));
         }
       });
     }

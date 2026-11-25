@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.13.59'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.13.60'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -28492,8 +28492,8 @@ function saveTemplatesToStorage() {
       participarMontar();
       participarAplicar(d);
       participarVista('sessao');
-      // 6.13.52: partida sozinho: cai direto no jogo aberto, com as perguntas
-      if (d.programa.solo && participar.secoes && participar.secoes[0] && !participar.secoes[0].aberta) participarSecaoAbrir(0, true);
+      // 6.13.52: partida sozinho: cai direto no jogo aberto, com as perguntas (6.13.60: também no jogo em grupo, já que o título da seção sumiu)
+      if (d.programa.modo === 'jogos' && participar.secoes && participar.secoes[0] && !participar.secoes[0].aberta) participarSecaoAbrir(0, true);
       participarAgendar();
     }
 
@@ -28974,6 +28974,7 @@ function saveTemplatesToStorage() {
       const lista = document.createElement('div');
       lista.className = 'fam-sessao-secoes';
       if (solo) caixa.classList.add('fam-sessao-solo');
+      caixa.classList.toggle('fam-sessao-jogo-avulso', p.modo === 'jogos'); // 6.13.60: o nome do jogo só no título de cima (a seção não repete)
       // A Oração inicial não é uma parte para liberar: aparece só como uma linha de texto (sem card, sem descrição) e a numeração das partes segue sem ela.
       participar.oracao = new Set();
       // Também as partes só de boas-vindas (sem textos, vídeos nem jogo) deixam de ser seção: viram uma linha de texto.
@@ -29820,7 +29821,8 @@ function saveTemplatesToStorage() {
           envioEl.setAttribute('aria-live', 'polite');
           envioEl.hidden = true;
           li.appendChild(envioEl);
-          let area = null, areaNota = null, campoResp = null, respBox = null, ctrlBox = null;
+          let area = null, areaNota = null, campoResp = null, respBox = null, ctrlBox = null, btnRevelarSolo = null;
+          const solo = Boolean(participar.programa && participar.programa.solo); // 6.13.60: partida sozinho: sem controles do administrador
           if (participar.participanteId) { // 6.13.26: também o presidente da reunião (ou o administrador do jogo) que entrou no jogo com um nome
             area = document.createElement('div');
             area.className = 'fam-sessao-responder';
@@ -29864,7 +29866,24 @@ function saveTemplatesToStorage() {
               b.textContent = '📨 Enviar resposta';
               b.addEventListener('click', () => enviar(campoResp.value, b));
               campoResp.addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); enviar(campoResp.value, b); } });
-              area.append(campoResp, b);
+              // 6.13.60: o administrador e quem joga sozinho podem responder falando: 🎤 no campo (grava, transcreve e põe o texto no campo)
+              const linhaCampo = document.createElement('div');
+              linhaCampo.className = 'fam-sessao-resp-linha';
+              linhaCampo.appendChild(campoResp);
+              if (participar.dirigente) linhaCampo.appendChild(participarMicMontar(campoResp));
+              area.append(linhaCampo);
+              if (solo) { // sozinho: Enviar resposta e Revelar (revelar = ninguém acertou) lado a lado
+                btnRevelarSolo = document.createElement('button');
+                btnRevelarSolo.type = 'button';
+                btnRevelarSolo.className = 'secondary fam-fino fam-sessao-revelar';
+                btnRevelarSolo.innerHTML = ICONE_OLHO + ' Revelar';
+                btnRevelarSolo.title = 'Mostrar a resposta (conta como ninguém acertou)';
+                btnRevelarSolo.addEventListener('click', () => participarAcao({ acao: 'pontuar', parte: parteIdx, rodada: k, ninguem: true }, btnRevelarSolo));
+                const duas = document.createElement('div');
+                duas.className = 'fam-acoes-dupla';
+                duas.append(b, btnRevelarSolo);
+                area.append(duas);
+              } else area.append(b);
             }
             // 6.13.27: a resposta (campo e Enviar) num quadro próprio, com fundo diferente dos controles do presidente da reunião
             respBox = document.createElement('div');
@@ -29882,10 +29901,11 @@ function saveTemplatesToStorage() {
             const rotCtrl = document.createElement('p');
             rotCtrl.className = 'fam-sessao-box-rotulo';
             rotCtrl.textContent = '👑 Controles do ' + participarPapel() + '';
+            if (solo) { rotCtrl.style.display = 'none'; ctrlBox.classList.add('fam-sessao-ctrl-solo'); } // sozinho: só o botão das dicas, sem moldura nem rótulo
             ctrlBox.appendChild(rotCtrl);
           }
           let julgarEl = null;
-          if (participar.dirigente) {
+          if (participar.dirigente && !solo) {
             julgarEl = document.createElement('div');
             julgarEl.className = 'fam-sessao-julgar fam-acoes-dupla';
             julgarEl.hidden = true;
@@ -29929,7 +29949,8 @@ function saveTemplatesToStorage() {
               btnDica.className = 'secondary fam-fino fam-sessao-revelar fam-sessao-dar-dica';
               btnDica.addEventListener('click', () => participarAcao({ acao: (participar.estado && participar.estado.sorteioDicas && participar.estado.sorteioDicas[parteIdx]) ? 'sortear-dica' : 'dica', parte: parteIdx, rodada: k }, btnDica));
               ctrlBox.appendChild(btnDica);
-              // Quem acertou: escolhe o nome e pontua (os pontos de agora); a resposta é revelada junto.
+              // Quem acertou: escolhe o nome e pontua (os pontos de agora); a resposta é revelada junto. (Sozinho não há "quem acertou".)
+              if (!solo) {
               linhaAcerto = document.createElement('div');
               linhaAcerto.className = 'fam-sessao-acerto';
               sel = document.createElement('select');
@@ -29948,7 +29969,9 @@ function saveTemplatesToStorage() {
               sel.addEventListener('change', () => { btnPontuar.title = sel.value === NINGUEM_ACERTOU ? 'Salvar: ninguém acertou (revela a resposta)' : 'Salvar: dá os pontos a quem acertou e revela a resposta'; });
               linhaAcerto.append(sel, btnPontuar);
               ctrlBox.appendChild(linhaAcerto);
+              }
             }
+            if (!solo) {
             btn = document.createElement('button');
             btn.type = 'button';
             btn.className = 'secondary fam-fino fam-sessao-revelar';
@@ -29986,6 +30009,7 @@ function saveTemplatesToStorage() {
             linhaVer.className = 'fam-sessao-ver-linha';
             linhaVer.append(btnEspiar, btn);
             ctrlBox.append(linhaVer, espiada);
+            }
             // 6.13.29: os controles do presidente da reunião primeiro; "Sua resposta" logo embaixo
             if (respBox) li.insertBefore(ctrlBox, respBox);
             else li.appendChild(ctrlBox);
@@ -30001,7 +30025,7 @@ function saveTemplatesToStorage() {
             participarJogoPintar(parteIdx, false);
           });
           li.appendChild(btnRecolher);
-          ref.rodadas.push({ btnRecolher, recolhida: false, li, respBox, ctrlBox, linhaAcerto, sel, btnPontuar, btnEspiar, btnReiniciar, espiada, sig: null, resp, btn, btnDica, dicasEls, aguarda, pontos, total: dicas.length, referencia: r.referencia || '', envioEl, area, areaNota, julgarEl, temIntro: Boolean(intro) });
+          ref.rodadas.push({ btnRecolher, recolhida: false, li, respBox, ctrlBox, linhaAcerto, sel, btnPontuar, btnEspiar, btnReiniciar, espiada, sig: null, resp, btn: btn || btnRevelarSolo, btnDica, dicasEls, aguarda, pontos, total: dicas.length, referencia: r.referencia || '', envioEl, area, areaNota, julgarEl, temIntro: Boolean(intro) });
           ol.appendChild(li);
         });
         caixa.appendChild(ol);
@@ -30106,6 +30130,89 @@ function saveTemplatesToStorage() {
           if (r.btnDica) r.btnDica.disabled = false;
         }, 1200);
       }, 2200);
+    }
+
+    // 6.13.60: 🤖 Apelar para a IA: o juiz (IA) julga de novo uma resposta que ficou errada (essência certa, erro só de grafia ou conectivo).
+    // Quem dirige pede; o resultado (com o comentário bem-humorado) entra na sessão e todos veem. Uma apelação por resposta.
+    async function participarApelarIa(parteIdx, k, indice) {
+      const ref = participar.jogos.get(parteIdx);
+      const r = ref && ref.rodadas[k];
+      if (!r || r.apelando != null) return;
+      const codigo = codigoAcessoSalvo();
+      if (!codigo) { participarStatus('Para apelar para a IA, informe o código de pesquisa em Ajustes → 🔐 Autorização de acessos.', 'erro'); return; }
+      const cod = participar.cod;
+      r.apelando = indice;
+      participarJogoPintar(parteIdx, false);
+      let rr = null;
+      try {
+        rr = await postStudy({ tarefa: 'adoracao-familia', fase: 'apelar', codigo, sessao: cod, chave: participar.chave, parte: parteIdx, rodada: k, indice }, 90000);
+      } catch (e) { rr = null; }
+      if (cod !== participar.cod) return;
+      if (!rr || !rr.ok || !rr.data || !rr.data.veredito) {
+        r.apelando = null;
+        participarStatus((rr && rr.data && rr.data.erro) || 'A IA não conseguiu julgar agora. Tente de novo.', 'erro');
+        participarJogoPintar(parteIdx, false);
+        return;
+      }
+      const dados = await participarAcao({ acao: 'julgamento-ia', parte: parteIdx, rodada: k, indice, certo: rr.data.veredito === 'certa', comentario: rr.data.comentario || '' }, null);
+      r.apelando = null;
+      if (!dados) participarJogoPintar(parteIdx, false);
+    }
+
+    // 6.13.60: o 🎤 do campo de resposta (só quem administra o jogo ou joga sozinho): grava até 25 s, o servidor transcreve (o mesmo modelo do
+    // Áudio em texto, sem código de texto: o custo é do app) e o texto vai para o campo, que continua editável.
+    function participarMicMontar(campo) {
+      const bt = document.createElement('button');
+      bt.type = 'button';
+      bt.className = 'secondary fam-fino fam-sessao-mic';
+      bt.textContent = '🎤';
+      bt.title = 'Responder falando';
+      bt.setAttribute('aria-label', 'Responder falando');
+      let gravador = null, fluxo = null, pedacos = [], parar = null, timer = 0;
+      const limpar = () => { clearTimeout(timer); if (fluxo) fluxo.getTracks().forEach(t => t.stop()); fluxo = null; gravador = null; };
+      const pronto = () => { bt.disabled = false; bt.textContent = '🎤'; bt.classList.remove('gravando'); bt.title = 'Responder falando'; };
+      const transcrever = async blob => {
+        bt.disabled = true;
+        bt.textContent = '⏳';
+        try {
+          const amostras = await trDecodificar(blob);
+          const util = amostras.subarray(0, TRANSCRICAO_TAXA * 25);
+          const { base64, pico } = trParaBase64(util);
+          if (pico < 0.005) { participarStatus('Não ouvi nada. Toque no 🎤 e fale perto do microfone.', 'erro'); return; }
+          const r = await trPost({ acao: 'trecho-jogo', sessao: participar.cod, chave: participar.chave, audio: base64 });
+          if (!r.ok) { participarStatus(trMensagem(r, 'Não consegui transcrever a sua voz agora.'), 'erro'); return; }
+          const falado = String((r.dados && r.dados.texto) || '').replace(/\s+/g, ' ').trim().replace(/[.!?…]+$/, '');
+          if (!falado) { participarStatus('Não entendi o que você disse. Tente de novo.', 'erro'); return; }
+          participarStatus('');
+          campo.value = falado.slice(0, 200);
+          campo.focus();
+        } catch (e) {
+          participarStatus('Não consegui processar o áudio neste aparelho. Escreva a resposta.', 'erro');
+        } finally { pronto(); }
+      };
+      bt.addEventListener('click', async () => {
+        if (gravador && gravador.state === 'recording') { parar(); return; }
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) { participarStatus('Este aparelho ou navegador não permite gravar áudio aqui. Escreva a resposta.', 'erro'); return; }
+        try { fluxo = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch (e) { participarStatus('Não consegui usar o microfone. Libere o acesso no navegador ou escreva a resposta.', 'erro'); return; }
+        const mime = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus'].find(t => MediaRecorder.isTypeSupported(t)) || '';
+        try { gravador = new MediaRecorder(fluxo, mime ? { mimeType: mime } : undefined); } catch (e) { limpar(); participarStatus('Não consegui gravar áudio neste aparelho. Escreva a resposta.', 'erro'); return; }
+        pedacos = [];
+        gravador.addEventListener('dataavailable', ev => { if (ev.data && ev.data.size) pedacos.push(ev.data); });
+        gravador.addEventListener('stop', () => {
+          const tipo = (gravador && gravador.mimeType) || mime || 'audio/webm';
+          limpar();
+          if (!pedacos.length) { pronto(); return; }
+          transcrever(new Blob(pedacos, { type: tipo }));
+        });
+        parar = () => { try { gravador.stop(); } catch (e) { /* já parou */ } };
+        gravador.start();
+        bt.textContent = '⏹️';
+        bt.classList.add('gravando');
+        bt.title = 'Parar e transcrever';
+        participarStatus('🎤 Gravando… fale a resposta e toque no ⏹️.');
+        timer = setTimeout(parar, 25000);
+      });
+      return bt;
     }
 
     // Respostas reveladas e o nome sorteado, a cada mudança do estado.
@@ -30251,17 +30358,34 @@ function saveTemplatesToStorage() {
           const pend = Boolean(env && env.status === 'pendente' && !revK && !ac);
           // 6.13.19: cada resposta numa linha própria: a certa com fundo verde claro, as erradas com fundo vermelho claro, a que espera em cinza.
           const linhas = [];
-          (erradas[k] || []).forEach(x => linhas.push(['errada', '❌ ' + x.nome + ': “' + x.texto + '”']));
-          if (env && env.status === 'certa') linhas.push(['certa', '🎉 ' + env.nome + ' acertou: “' + env.texto + '”' + (ac && ac.nome === env.nome ? ' · +' + ac.pts + (ac.pts === 1 ? ' ponto' : ' pontos') : '')]);
+          // 6.13.60: na partida sozinho o nome não aparece; o 🤖 do juiz (IA) fica junto da resposta errada ou da certa
+          const solo = Boolean(participar.programa && participar.programa.solo);
+          (erradas[k] || []).forEach((x, idx) => linhas.push(['errada', '❌ ' + (solo ? '' : x.nome + ': ') + '“' + x.texto + '”', { idx, ia: x.ia || '' }]));
+          if (env && env.status === 'certa') linhas.push(['certa', '🎉 ' + (solo ? 'Você acertou' : env.nome + ' acertou') + ': “' + env.texto + '”' + (ac && ac.nome === env.nome ? ' · +' + ac.pts + (ac.pts === 1 ? ' ponto' : ' pontos') : ''), { ia: env.ia || '' }]);
           else if (pend) linhas.push(['pendente', '⏳ ' + env.nome + ' respondeu: “' + env.texto + '” — aguardando o julgamento do ' + participarPapel() + '']);
           // 6.13.20: resposta que esperava julgamento quando a questão foi revelada (sessões de antes desta versão): conta como errada
           if (env && env.status === 'pendente' && (revK || ac) && !(ac && ac.nome === env.nome)) linhas.push(['errada', '❌ ' + env.nome + ': “' + env.texto + '”']);
           // "Ninguém acertou": marcado por quem dirige, ou a resposta revelada sem ninguém pontuar — no lugar de quem acertou, em laranja claro
           if ((ac && ac.ninguem) || (revK && !ac)) linhas.push(['ninguem', '🚫 Ninguém acertou']);
-          r.envioEl.replaceChildren(...linhas.map(([tipo, txt]) => {
+          const podeApelar = participar.dirigente && !revK && !ac && (((participar.programa.partes[i] || {}).jogo || {}).idTipo) !== 'verdadeiro_falso';
+          r.envioEl.replaceChildren(...linhas.map(([tipo, txt, extra]) => {
             const s = document.createElement('span');
             s.className = 'fam-sessao-envio-linha fam-sessao-envio-' + tipo;
             s.textContent = txt;
+            if (extra && extra.ia) { // o comentário do juiz (IA), logo abaixo da resposta
+              const c = document.createElement('span');
+              c.className = 'fam-sessao-ia-comentario';
+              c.textContent = '🤖 ' + extra.ia;
+              s.appendChild(c);
+            } else if (tipo === 'errada' && extra && podeApelar) { // ainda não apelou: o botão "Apelar para a IA" (só quem dirige)
+              const bt = document.createElement('button');
+              bt.type = 'button';
+              bt.className = 'secondary fam-fino fam-sessao-apelar';
+              bt.textContent = r.apelando === extra.idx ? '🤖 O juiz está analisando… ⚖️' : '🤖 Apelar para a IA';
+              bt.disabled = r.apelando != null;
+              bt.addEventListener('click', () => participarApelarIa(i, k, extra.idx));
+              s.appendChild(bt);
+            }
             return s;
           }));
           r.envioEl.hidden = !linhas.length;

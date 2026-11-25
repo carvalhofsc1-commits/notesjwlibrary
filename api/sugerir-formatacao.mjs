@@ -106,6 +106,7 @@ import {
   perguntaDoPerfil,
   sentidosDoVerbete,
 } from "./_familiaGeracao.mjs";
+import { dadosDaApelacao } from "./familia-sessao.mjs";
 import { DICA_DO_TIPO_DA_SIGLA, PERFIL_CANDIDATOS, PERFIL_CARTAS_PRONTAS, SIGLAS_BANCO } from "./_jogosBanco.mjs";
 import { DETALHES_CIRCUNSTANCIAS_FAMILIA, familiaTemCasal, prioridadesAplicaveis } from "./_prompts.mjs";
 // 6.13.05: a circunstância marcada com a descrição que ela tem para a IA (o rótulo na tela fica curto e discreto).
@@ -4338,6 +4339,35 @@ async function gerarQuadroFamilia(res, body, P) {
   }
 }
 
+// 6.13.60: "🤖 Apelar para a IA": quem administra o jogo (ou joga sozinho) pede que a IA julgue de novo uma resposta que ficou errada. O servidor
+// busca a pergunta, a resposta esperada e a resposta dada pela sessão (dadosDaApelacao, que confere a chave de quem dirige); a IA diz se a
+// ESSÊNCIA está certa (erro de grafia, acento, artigo ou conectivo não muda o sentido) e escreve um comentário bem-humorado. Quem pediu confirma
+// o resultado na sessão (acao "julgamento-ia"). Com "errada", o comentário nunca traz a resposta esperada (o jogo continua).
+export const SaidaApelacaoJogo = z.object({ veredito: z.string(), comentario: z.string() });
+async function apelarParaIaNoJogo(res, body, P) {
+  try {
+    if (!P.sistemaFamiliaApelar) return erro(res, 503, "A apelação para a IA não está disponível agora.");
+    const d = await dadosDaApelacao(body);
+    if (d.erro) return erro(res, ...d.erro);
+    const mensagem = `TIPO DO JOGO: ${d.tipo || d.idTipo}\nPERGUNTA: ${d.pergunta}\nRESPOSTA ESPERADA: ${d.certa}${d.referencia ? ` (${d.referencia})` : ""}\nRESPOSTA DADA: ${d.texto}\n`;
+    const resposta = await chamarIa(
+      criarClienteIa({ maxRetries: 0, timeout: tempoIa(P, 40_000) }, P.ia.provedorTarefa),
+      P,
+      { max_tokens: P.ia.provedorTarefa === "gemini" ? 4000 : 600, system: P.sistemaFamiliaApelar, messages: [{ role: "user", content: mensagem }] },
+      { schema: SaidaApelacaoJogo, semPensar: true, tarefa: "adoracao-familia" }
+    );
+    if (resposta.stop_reason === "refusal" || !resposta.parsed_output) return erro(res, 502, "A IA não conseguiu julgar agora. Tente de novo.");
+    const certa = /^\s*certa/i.test(String(resposta.parsed_output.veredito || ""));
+    let comentario = limparTextoGerado(resposta.parsed_output.comentario, 240);
+    // Errada: o comentário não pode entregar a resposta (o jogo continua).
+    if (!certa && comentario && normalizarTexto(comentario).includes(normalizarTexto(d.certa))) comentario = "";
+    if (!comentario) comentario = certa ? "🎉 A IA aceitou: a essência da resposta está certa!" : "⚖️ A IA analisou com carinho e manteve o julgamento.";
+    return res.status(200).json({ veredito: certa ? "certa" : "errada", comentario, modelo: nomeDoModelo(P.ia.modelo) });
+  } catch (e) {
+    return tratarErro(e, res);
+  }
+}
+
 // Chamada única de antes (versões antigas do app, sem "fase").
 async function responderAdoracaoFamilia(res, body, P) {
   // 6.12.75: o "Ajustar com a IA" da programação montada com partes de duas opções saiu (o app não monta mais programação com partes de duas
@@ -4345,6 +4375,7 @@ async function responderAdoracaoFamilia(res, body, P) {
   if (body.programa) return erro(res, 410, "O ajuste da programação montada saiu do app. Atualize o app (feche e abra de novo) e gere uma programação nova.");
   if (body.fase === "plano") return gerarPlanoFamilia(res, body, P);
   if (body.fase === "quadro") return gerarQuadroFamilia(res, body, P);
+  if (body.fase === "apelar") return apelarParaIaNoJogo(res, body, P);
   const perfil = perfilDaFamilia(body);
   if (!perfil.formacao && !perfil.membros.length) return erro(res, 400, "Descreva a família: a formação e os membros.");
   precarregarFontes({ biblia: true, livros: true });

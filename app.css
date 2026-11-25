@@ -17813,3 +17813,15 @@ tr.fam-placar-lider td { background: color-mix(in srgb, #f59e0b 18%, var(--card)
 /* 6.13.59: tela pequena: o quadro dos controles do administrador não deixa os botões passarem da borda (a coluna da grade não cresce com o conteúdo) */
 #participarSessao .fam-sessao-ctrl-box { grid-template-columns: minmax(0, 1fr); }
 #participarSessao .fam-sessao-ctrl-box > * { min-width: 0; max-width: 100%; box-sizing: border-box; }
+
+/* 6.13.60: nos jogos, o nome só no título de cima (a seção liberada não repete o título); partida sozinho sem moldura nos controles; resposta falada; apelação à IA */
+#participarSessao.fam-sessao-jogo-avulso .fam-sessao-secao:not(.bloqueada) > .fam-sessao-secao-topo { display: none; }
+#participarSessao .fam-sessao-ctrl-box.fam-sessao-ctrl-solo { background: transparent; border: 0; padding: 0; margin: 10px 0 0; }
+.fam-sessao-resp-linha { display: flex; gap: 8px; align-items: stretch; min-width: 0; }
+.fam-sessao-resp-linha > input { flex: 1 1 auto; min-width: 0; width: auto; margin: 0; }
+.fam-sessao-resp-linha > .fam-sessao-mic { flex: 0 0 48px; width: 48px; min-width: 48px; margin: 0; padding: 0; display: inline-flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+.fam-sessao-mic.gravando { background: #fee2e2; border-color: #f87171; animation: mic-gravando 1s ease-in-out infinite; }
+@keyframes mic-gravando { 50% { box-shadow: 0 0 0 4px rgba(248, 113, 113, .35); } }
+@media (prefers-reduced-motion: reduce) { .fam-sessao-mic.gravando { animation: none; } }
+.fam-sessao-envio-linha > .fam-sessao-apelar { display: block; width: 100%; margin: 8px 0 0; box-sizing: border-box; }
+.fam-sessao-ia-comentario { display: block; margin-top: 6px; font-style: italic; overflow-wrap: anywhere; }

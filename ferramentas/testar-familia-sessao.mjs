@@ -347,6 +347,31 @@ try {
     await chamar({ acao: "encerrar", sessao: sp.sessao, chave: sp.chave });
   }
 
+  // 6.13.60: partida sozinho: o servidor julga na hora (errou: lista das erradas, questão aberta); "Apelar para a IA" (julgamento-ia); chave do jogo
+  {
+    const ss = (await chamar({ acao: "criar", programa: { ...programa, modo: "jogos", solo: true }, codigo: "codigo-de-teste" })).dados;
+    await chamar({ acao: "liberar", sessao: ss.sessao, chave: ss.chave, parte: 2 });
+    const eSolo = await chamar({ acao: "entrar", sessao: ss.sessao, chave: ss.chave });
+    const idS = eSolo.dados.participanteId;
+    const e1 = await chamar({ acao: "responder", sessao: ss.sessao, participanteId: idS, parte: 2, rodada: 1, texto: "Golias" });
+    assert.equal(e1.status, 200);
+    assert.deepEqual(e1.dados.estado.erradas["2"]["1"], [{ nome: "Jogador", texto: "Golias" }]);
+    assert.ok(!e1.dados.estado.envios["2"] || !("1" in e1.dados.estado.envios["2"])); passo("sozinho: resposta errada vai direto para as erradas, sem esperar julgamento");
+    const e2 = await chamar({ acao: "responder", sessao: ss.sessao, participanteId: idS, parte: 2, rodada: 1, texto: "Golias de Gate" });
+    assert.equal(e2.dados.estado.erradas["2"]["1"].length, 2); passo("sozinho: a questão continua aberta para outra tentativa");
+    const mant = await chamar({ acao: "julgamento-ia", sessao: ss.sessao, chave: ss.chave, parte: 2, rodada: 1, indice: 0, certo: false, comentario: "Nem de longe!" });
+    assert.equal(mant.dados.estado.erradas["2"]["1"][0].ia, "Nem de longe!"); passo("IA manteve: a resposta fica marcada com o comentário");
+    assert.equal((await chamar({ acao: "julgamento-ia", sessao: ss.sessao, chave: ss.chave, parte: 2, rodada: 1, indice: 0, certo: true })).status, 409); passo("só uma apelação por resposta");
+    const aceita = await chamar({ acao: "julgamento-ia", sessao: ss.sessao, chave: ss.chave, parte: 2, rodada: 1, indice: 1, certo: true, comentario: "Aceito, só errou a grafia!" });
+    assert.equal(aceita.dados.estado.acertos["2"]["1"].nome, "Jogador");
+    assert.equal(aceita.dados.estado.envios["2"]["1"].status, "certa");
+    assert.equal(aceita.dados.estado.envios["2"]["1"].ia, "Aceito, só errou a grafia!");
+    assert.equal(aceita.dados.estado.erradas["2"]["1"].length, 1);
+    assert.ok(aceita.dados.estado.reveladas["2"]["1"]); passo("IA aceitou: pontos, resposta revelada e comentário guardado");
+    assert.equal((await chamar({ acao: "julgamento-ia", sessao: ss.sessao, chave: ss.chave, parte: 2, rodada: 1, indice: 0, certo: true })).status, 409); passo("depois de respondida, a questão não aceita mais apelação");
+    await chamar({ acao: "encerrar", sessao: ss.sessao, chave: ss.chave });
+  }
+
   // 6.13.17: responder pelo app e julgar
   {
     const s3 = (await chamar({ acao: "criar", programa, codigo: "codigo-de-teste" })).dados;

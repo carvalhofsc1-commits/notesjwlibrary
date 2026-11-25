@@ -2,6 +2,13 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.60
+
+- Jogos (sozinho e em grupo): o nome do jogo aparece só no título de cima; a seção liberada não repete o título.
+- Partida sozinho: sem os "Controles do administrador"; ficam o botão de dar a dica, o campo de resposta e dois botões, **Enviar resposta** e **Revelar** (revelar conta como ninguém acertou). O servidor julga na hora: errou, a resposta vai para a lista das erradas e a questão continua aberta (outra tentativa, apelar ou revelar). Sem nomes na tela ("Você acertou").
+- **🤖 Apelar para a IA** (administrador do jogo e quem joga sozinho): numa resposta errada, a IA diz se a essência está certa (erro de grafia, acento, artigo ou conectivo que não muda o sentido) e escreve um comentário bem-humorado, que todos veem. Uma apelação por resposta; não substitui o julgamento do administrador (as duas opções convivem). Não vale no Verdadeiro ou falso. Fase `apelar` em `api/sugerir-formatacao.mjs`, ação `julgamento-ia` em `api/familia-sessao.mjs`, prompt `adoracao_q_apelar` (editável na tela de prompts).
+- **🎤 Resposta falada** (só administrador e quem joga sozinho): botão no campo de resposta; grava até 25 s, o mesmo modelo do Áudio em texto transcreve (ação `trecho-jogo` em `api/transcrever.mjs`, sem código de texto e sem gastar créditos) e o texto vai para o campo, editável.
+
 ## 6.13.59
 
 - Tela pequena: os botões dos controles do administrador (dica, quem acertou, só para mim, revelar) passavam da borda do quadro; a coluna do quadro agora acompanha a largura e os botões ficam dentro (conferido em 340 px).

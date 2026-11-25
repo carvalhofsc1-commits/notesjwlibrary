@@ -14,6 +14,7 @@ import { criarClienteIa, erroSemIa, iaDisponivel } from "./_clienteIa.mjs";
 import { registrarUsoIa } from "./_estatisticas.mjs";
 import { carregarPrompts } from "./_promptsArmazenados.mjs";
 import { buscarVersiculos, fontesConfiguradas, referenciasNoTexto } from "./_fontes.mjs";
+import { chaveDeDirigenteValida } from "./familia-sessao.mjs";
 import { apagarTranscricao, lerTranscricao, listarTranscricoes, salvarTranscricao, transcricoesConfiguradas } from "./_transcricoes.mjs";
 
 // Consumo do aparelho (faturamento): minutos de áudio transcritos e tokens da IA do resumo e da correção. Gravado antes de responder
@@ -42,6 +43,8 @@ function registrarFalhaIa(tarefa, modelo, resposta) {
 const REGIAO = process.env.GOOGLE_STT_REGIAO || "us";
 const MODELO_STT = process.env.GOOGLE_STT_MODELO || "chirp_3";
 const MAX_AUDIO_BASE64 = 3_000_000; // ~2,2 MB de áudio: um trecho de 50 s em PCM 16 kHz mono tem ~1,6 MB (a Vercel aceita até 4,5 MB por pedido)
+const MAX_AUDIO_JOGO_BASE64 = 1_400_000; // 6.13.60: resposta falada no jogo (até ~30 s)
+const LIMITE_TRECHOS_JOGO_POR_HORA = 120; // por IP: cada resposta falada é um trecho curto
 const MAX_CARACTERES_RESUMO = 150_000;
 const LIMITE_TRECHOS_POR_HORA = 200; // ~2,7 horas de áudio por IP por hora
 const LIMITE_RESUMOS_POR_HORA = 80; // textos longos fazem várias partes + 1 final (map-reduce)
@@ -465,11 +468,15 @@ export default async function handler(req, res) {
   await prepararCodigosPessoais();
   const bloqueioSite = await mensagemSeBloqueado({ aparelhoId: corpo.aparelhoId, codigoAdmin: corpo.codigoAdmin });
   if (bloqueioSite) return erro(res, 403, bloqueioSite);
+  // 6.13.60: "trecho-jogo": a resposta falada de quem administra o jogo (ou joga sozinho): vale a chave dele na sessão; sem código de texto e sem
+  // gastar créditos (o custo é do app).
+  const doJogo = corpo.acao === "trecho-jogo";
+  if (doJogo && !(await chaveDeDirigenteValida(corpo.sessao, corpo.chave))) return erro(res, 403, "Só quem administra o jogo pode responder falando.");
   // Guardar, listar, ler e apagar as transcrições salvas não gasta crédito: só a transcrição e a IA são conferidas.
   const soArquivo = /^transcric(ao|oes)-(salvar|listar|ler|apagar)$/.test(String(corpo.acao || ""));
-  const bloqueioCredito = soArquivo ? "" : await mensagemSeSemCredito({ aparelhoId: corpo.aparelhoId, codigoAdmin: corpo.codigoAdmin });
+  const bloqueioCredito = soArquivo || doJogo ? "" : await mensagemSeSemCredito({ aparelhoId: corpo.aparelhoId, codigoAdmin: corpo.codigoAdmin });
   if (bloqueioCredito) return erro(res, 403, bloqueioCredito);
-  if (!recursoCodigoValido("texto", corpo.codigoTexto, corpo.aparelhoId)) {
+  if (!doJogo && !recursoCodigoValido("texto", corpo.codigoTexto, corpo.aparelhoId)) {
     if (!process.env.CODIGO_TEXTO) return erro(res, 503, "O código de texto ainda não está configurado no servidor.");
     return erro(res, 403, "Código de texto inválido. Informe-o em Ajustes → 🔐 Autorização de acessos.");
   }
@@ -497,14 +504,15 @@ export default async function handler(req, res) {
   await prepararConta(); // a conta do Google escolhida pelo administrador (a outra fica de reserva)
 
   try {
-    if (corpo.acao === "trecho") {
+    if (corpo.acao === "trecho" || doJogo) {
       if (!credenciais()) return erro(res, 503, "A transcrição ainda não está configurada no servidor (conta de serviço do Google).");
       const audio = typeof corpo.audio === "string" ? corpo.audio : "";
-      if (!audio || audio.length > MAX_AUDIO_BASE64) return erro(res, 400, "Trecho de áudio inválido ou grande demais.");
-      if (excedeu("trecho", ip, LIMITE_TRECHOS_POR_HORA)) return erro(res, 429, "Muitos trechos transcritos nesta hora. Tente novamente mais tarde.");
+      // A resposta falada é curta (até 25 s de PCM 16 kHz mono ≈ 1,07 MB em base64).
+      if (!audio || audio.length > (doJogo ? MAX_AUDIO_JOGO_BASE64 : MAX_AUDIO_BASE64)) return erro(res, 400, "Trecho de áudio inválido ou grande demais.");
+      if (doJogo ? excedeu("trecho-jogo", ip, LIMITE_TRECHOS_JOGO_POR_HORA) : excedeu("trecho", ip, LIMITE_TRECHOS_POR_HORA)) return erro(res, 429, "Muitos trechos transcritos nesta hora. Tente novamente mais tarde.");
       const cfg = await lerConfigIa();
       const texto = semRepeticoes(cfg.audioMotor === "gemini" ? await reconhecerComGemini(audio, cfg.audioGeminiModelo) : await reconhecer(audio));
-      await registrarConsumo(corpo, { tarefa: "audio", segundos: (audio.length * 0.75) / 32000 });
+      if (!doJogo) await registrarConsumo(corpo, { tarefa: "audio", segundos: (audio.length * 0.75) / 32000 });
       return res.status(200).json({ texto });
     }
 
