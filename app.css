@@ -18075,3 +18075,7 @@ details.fam-placar-card > summary { min-height: 0 !important; padding: 3px 8px !
 #participarSessao.fam-sessao-jogo-avulso .fam-sessao-jogo > * { margin-bottom: 10px !important; }
 #participarSessao.fam-sessao-jogo-avulso .fam-sessao-secao > .fam-sessao-secao-acoes { margin: 0 0 10px; }
 #participarSessao.fam-sessao-jogo-avulso > .fam-sessao-rodape { margin-top: 0; }
+
+/* 6.13.91: lista dos jogos: coluna do emoji com largura fixa (64 px) e o emoji centralizado nela; assim o nome de todos os jogos começa na mesma posição (o emoji maior do Perfil bíblico empurrava o texto) */
+.jogos-card > .jogos-atalho { grid-template-columns: 64px minmax(0, 1fr); column-gap: 10px; }
+.jogos-card .fam-hub-icone { justify-self: center; text-align: center; width: 64px; }

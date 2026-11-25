@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.91
+
+- Lista dos jogos: o nome e a descrição do Perfil bíblico começavam mais à direita porque o emoji dele é maior e alargava a coluna. A coluna do emoji agora tem largura fixa (64 px) em todos os jogos e o emoji fica centralizado nela: todos os nomes e descrições começam no mesmo ponto (conferido nos 7 cards).
+
 ## 6.13.90
 
 - Lista dos jogos: o **Perfil bíblico** é o primeiro; os demais seguem na ordem de antes (Quem sou eu?, Verdadeiro ou falso, Ordem e data, Quem disse isso?, Complete o versículo, Abreviações bíblicas). A ordem vale só para a tela: cada jogo continua com o seu nome, id e cor.
