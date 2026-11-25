@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.66
+
+- A seta Voltar da barra superior ficou menor (30×30 px, com a regra geral de 44 px de altura dos botões vencida) e com moldura mais fina e clara; não encosta mais no alto e no fim da barra (8 a 9 px de folga) e o logo continua no centro exato.
+
 ## 6.13.65
 
 - A seta Voltar da barra superior ganhou moldura fina cinza e fundo fixo (cinza claro).

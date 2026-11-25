@@ -17878,3 +17878,7 @@ header.app-topbar::after { content: none; }
 /* 6.13.65: a seta Voltar da barra superior com moldura discreta e fundo fixo */
 .voltar-topo { border: 1px solid #9ca3af; background: #f1f2f4; color: #4f46e5; }
 .voltar-topo:hover, .voltar-topo:active { background: #e5e7eb; }
+/* 6.13.66: a seta Voltar menor e com moldura mais fina, sem encostar no alto e no fim da barra (os 3 px de cada lado mantêm o logo no centro) */
+.voltar-topo { flex: 0 0 30px; width: 30px; height: 30px; margin: 0 3px; border: 1px solid #c4c9d1; border-radius: 10px; }
+.voltar-topo svg { width: 20px; height: 20px; }
+header.app-topbar .voltar-topo { min-height: 30px; max-height: 30px; min-width: 30px; }
