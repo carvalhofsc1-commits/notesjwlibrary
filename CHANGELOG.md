@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.51
+
+- Jogos bíblicos: a tela inicial tem duas opções, "Entrar em um jogo" e "Montar o meu jogo" (que abre o menu de jogos).
+- Cada jogo é um card só: o título em cima e, ao tocar, as opções logo abaixo no mesmo card, separados por uma linha (título um pouco mais escuro). Com um jogo aberto, os outros ficam escondidos; recolhendo o card, eles voltam. Abrir um jogo de "Jogos preparados" também mostra só ele.
+
 ## 6.13.50
 
 - Jogos bíblicos: saiu o botão "Escolher outro jogo".

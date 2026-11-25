@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.13.50'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.13.51'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -30572,14 +30572,33 @@ function saveTemplatesToStorage() {
         desc.textContent = j.desc;
         b.append(ic, nome, desc);
         b.addEventListener('click', () => jogosAbrir(j, b));
-        return b;
+        // 6.13.51: cada jogo é um card só: o título (o botão) em cima e, ao abrir, o corpo com as opções logo abaixo, dentro do mesmo card.
+        const card = document.createElement('div');
+        card.className = 'jogos-card';
+        card.appendChild(b);
+        return card;
       }));
+    }
+    // 6.13.51: com um jogo aberto, só ele fica à vista; recolhendo o card, os outros voltam.
+    function jogosCardsAtualizar() {
+      const botoes = Array.from(jogosEls.grade.querySelectorAll('.jogos-atalho'));
+      const aberto = botoes.some(b => b.getAttribute('aria-expanded') === 'true');
+      botoes.forEach(b => { b.parentElement.hidden = aberto && b.getAttribute('aria-expanded') !== 'true'; b.parentElement.classList.toggle('aberto', b.getAttribute('aria-expanded') === 'true'); });
+    }
+    // "Montar o meu jogo" mostra (ou esconde) o menu de jogos.
+    function jogosGradeMostrar(sim) {
+      if (!sim) jogosFecharPainel();
+      if (jogosPreparando && !sim) return;
+      jogosEls.grade.hidden = !sim;
+      const bt = document.getElementById('jogosMontarBtn');
+      if (bt) bt.setAttribute('aria-expanded', String(sim));
     }
     function jogosFecharPainel() {
       if (jogosPreparando) return;
       jogosEls.painel.hidden = true;
       jogosEls.painel.replaceChildren();
       jogosEls.grade.querySelectorAll('.jogos-atalho').forEach(b => b.setAttribute('aria-expanded', 'false'));
+      jogosCardsAtualizar();
     }
     // Tocar num jogo abre, logo abaixo dele, o pedido: tema e instrução (opcionais) e "✨ Preparar o jogo".
     function jogosAbrir(j, botao) {
@@ -30638,7 +30657,8 @@ function saveTemplatesToStorage() {
       p.replaceChildren(titulo, rotTema, tema, rotInstr, instr, acoes, aviso);
       botao.after(p);
       p.hidden = false;
-      requestAnimationFrame(() => p.scrollIntoView({ block: 'nearest', behavior: 'smooth' }));
+      jogosCardsAtualizar();
+      requestAnimationFrame(() => botao.scrollIntoView({ block: 'nearest', behavior: 'smooth' }));
     }
     async function jogosPreparar(j, temaBruto, instrBruta, botao, avisoEl) {
       if (jogosPreparando) return;
@@ -30759,7 +30779,9 @@ function saveTemplatesToStorage() {
       p.replaceChildren(caixa);
       if (botao) botao.after(p);
       p.hidden = false;
-      requestAnimationFrame(() => p.scrollIntoView({ block: 'nearest', behavior: 'smooth' }));
+      jogosGradeMostrar(true); // 6.13.51: o jogo aberto dos "Jogos preparados" aparece mesmo com o menu fechado
+      jogosCardsAtualizar();
+      requestAnimationFrame(() => (botao || p).scrollIntoView({ block: 'nearest', behavior: 'smooth' }));
     }
     // Jogar em grupo: os apelidos (opcionais) e "🔗 Criar o código do jogo"; com o código já criado, o código e "▶️ Iniciar o jogo".
     function jogosCompartilharMontar(item, onde) {
@@ -30909,6 +30931,10 @@ function saveTemplatesToStorage() {
     jogosSalvosPintar();
     document.getElementById('jogosVoltar').addEventListener('click', () => showScreen('inicio'));
     document.getElementById('jogosParticiparBtn').addEventListener('click', () => participarAbrir(''));
+    document.getElementById('jogosMontarBtn').addEventListener('click', () => {
+      if (jogosPreparando) { jogosStatus('Espere o jogo em preparação ficar pronto.', 'erro'); return; }
+      jogosGradeMostrar(jogosEls.grade.hidden);
+    });
     // Aberta pelo endereço (#participar ou #participar=CÓDIGO) antes de esta parte do app carregar.
     if (participarInicial) participarAbrir(participarInicial);
     else if (currentScreen() === 'participar') participarAoEntrar();
