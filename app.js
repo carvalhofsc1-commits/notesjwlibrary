@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.13.49'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.13.50'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -28099,7 +28099,8 @@ function saveTemplatesToStorage() {
     }
 
     // Lista de nomes editável (chips com ✕ e um campo para acrescentar): devolve { el, ler }.
-    function familiaNomesEditor(nomes) {
+    function familiaNomesEditor(nomes, opcoes) {
+      const jogador = Boolean(opcoes && opcoes.jogador); // 6.13.50: nos jogos, "Novo jogador" e o botão só com o "+"
       const lista = nomes.slice(0, 20);
       const el = document.createElement('div');
       el.className = 'fam-sessao-nomes';
@@ -28110,13 +28111,14 @@ function saveTemplatesToStorage() {
       const campo = document.createElement('input');
       campo.type = 'text';
       campo.maxLength = 40;
-      campo.placeholder = 'Novo apelido';
-      campo.setAttribute('aria-label', 'Acrescentar um apelido');
+      campo.placeholder = jogador ? 'Novo jogador' : 'Novo apelido';
+      campo.setAttribute('aria-label', jogador ? 'Acrescentar um jogador' : 'Acrescentar um apelido');
       campo.autocomplete = 'off';
       const add = document.createElement('button');
       add.type = 'button';
-      add.className = 'secondary fam-fino';
-      add.textContent = '➕ Acrescentar';
+      add.className = 'secondary fam-fino' + (jogador ? ' fam-add-mais' : '');
+      add.textContent = jogador ? '+' : '➕ Acrescentar';
+      if (jogador) { add.title = 'Acrescentar o jogador'; add.setAttribute('aria-label', 'Acrescentar o jogador'); }
       const pintar = () => {
         chips.textContent = '';
         if (!lista.length) {
@@ -28419,7 +28421,7 @@ function saveTemplatesToStorage() {
         if (dados[cod].chave) {
           const linhaDir = document.createElement('span');
           linhaDir.className = 'fam-recente-dirige';
-          linhaDir.textContent = dados[cod].modo === 'jogos' ? '👑 você administra (toque para reabrir)' : '👑 você preside (toque para reabrir)';
+          linhaDir.textContent = dados[cod].solo ? '🎮 partida sozinho (toque para reabrir)' : dados[cod].modo === 'jogos' ? '👑 você administra (toque para reabrir)' :'👑 você preside (toque para reabrir)';
           b.appendChild(linhaDir);
         }
         b.addEventListener('click', () => participarAbrir(cod));
@@ -28484,7 +28486,7 @@ function saveTemplatesToStorage() {
         nome: d.nome || nomeUsado, participantes: d.participantes || [], extras: d.extras || null
       });
       const titulo = (d.programa.emoji ? d.programa.emoji + ' ' : '') + (d.programa.titulo || 'Adoração em Família');
-      familiaSessaoGuardar(cod, Object.assign({ titulo }, d.programa.modo === 'jogos' ? { modo: 'jogos' } : {}, d.participanteId ? { participanteId: d.participanteId, nome: d.nome || nomeUsado } : {}));
+      familiaSessaoGuardar(cod, Object.assign({ titulo }, d.programa.modo === 'jogos' ? { modo: 'jogos' } : {}, d.programa.solo ? { solo: true } : {},d.participanteId ? { participanteId: d.participanteId, nome: d.nome || nomeUsado } : {}));
       participarStatus('');
       participarTextosModo(); // 6.13.45: adoração ou jogo avulso
       participarMontar();
@@ -28942,7 +28944,7 @@ function saveTemplatesToStorage() {
       h.textContent = (p.emoji ? p.emoji + ' ' : '') + (p.titulo || 'Adoração em Família');
       const meta = document.createElement('p');
       meta.className = 'fam-opcao-meta';
-      meta.textContent = 'Código ' + participar.cod + ' · ' + (participar.dirigente ? '👑 ' + (participar.nome ? participar.nome + ', ' + participarPapel() + '' : (participarEhJogo() ? 'Você administra este jogo' : 'Você preside esta adoração')) : 'Você entrou como ' + participar.nome);
+      meta.textContent = 'Código ' + participar.cod + ' · ' + (participar.dirigente ? '👑 ' + (participar.programa && participar.programa.solo ? 'Partida sozinho' : participar.nome ? participar.nome + ', ' + participarPapel() + '' : (participarEhJogo() ? 'Você administra este jogo' : 'Você preside esta adoração')) : 'Você entrou como ' + participar.nome);
       // ⏱️ O cronômetro da parte (6.11.51), visível para todos, e o 📺 modo tela grande (TV ou notebook).
       const cron = document.createElement('p');
       cron.className = 'fam-sessao-cron-linha';
@@ -29497,6 +29499,7 @@ function saveTemplatesToStorage() {
     function participarPresentesPintar() {
       const p = participar.painel;
       if (!p) return;
+      p.box.style.display = participar.programa && participar.programa.solo ? 'none' : ''; // 6.13.50: sozinho, sem painel de quem participa
       const nomes = [...new Set((participar.presentes || []).map(x => x && x.nome).filter(Boolean))];
       const mascotes = participarMascotes(participarNomesVistos(nomes));
       p.titulo.textContent = '👥 Quem está participando (' + nomes.length + ')';
@@ -29668,7 +29671,7 @@ function saveTemplatesToStorage() {
       const resumoSorteio = document.createElement('summary');
       resumoSorteio.textContent = '🎲 Sorteio de jogadores (opcional)';
       cardSorteio.appendChild(resumoSorteio);
-      cardSorteio.hidden = !participar.dirigente;
+      cardSorteio.hidden = !participar.dirigente || Boolean(participar.programa && participar.programa.solo);
       sorteio.appendChild(cardSorteio);
       if (participar.dirigente) {
         const botoes = document.createElement('div');
@@ -30157,7 +30160,23 @@ function saveTemplatesToStorage() {
       Object.values(acertos).forEach(a => { if (a.nome) total[a.nome] = (total[a.nome] || 0) + (Number(a.pts) || 0); });
       // 🏆 Placar: nomes e pontos, do maior para o menor.
       ref.placar.hidden = !nomes.length;
-      if (nomes.length) {
+      if (participar.programa && participar.programa.solo) { // 6.13.50: partida sozinho: só a pontuação, sem nomes nem bichinhos
+        const pontos = Object.values(total).reduce((s, v) => s + (Number(v) || 0), 0);
+        ref.placar.hidden = false;
+        const titulo = document.createElement('div');
+        titulo.className = 'fam-placar-titulo';
+        const trofeu = document.createElement('div');
+        trofeu.className = 'fam-placar-trofeu';
+        trofeu.innerHTML = '<span class="fam-placar-estrela" aria-hidden="true">✨</span><span class="fam-placar-copa" aria-hidden="true">🏆</span><span class="fam-placar-estrela" aria-hidden="true">✨</span>';
+        const rotulo = document.createElement('div');
+        rotulo.className = 'fam-placar-rotulo';
+        rotulo.textContent = 'Pontuação';
+        titulo.append(trofeu, rotulo);
+        const valor = document.createElement('p');
+        valor.className = 'fam-placar-solo';
+        valor.textContent = pontos + (pontos === 1 ? ' ponto' : ' pontos');
+        ref.placar.replaceChildren(titulo, valor);
+      } else if (nomes.length) {
         const tabela = document.createElement('table');
         tabela.className = 'fam-sessao-placar-tabela';
         const cab = document.createElement('tr');
@@ -30212,7 +30231,7 @@ function saveTemplatesToStorage() {
         o.lista.replaceChildren(...(temOrdem ? revelada : []).map(x => { const li = document.createElement('li'); li.textContent = [x && x.data, x && x.evento].filter(Boolean).join(' — '); return li; }));
         o.aguarda.hidden = temOrdem || participar.dirigente;
         o.resultado.hidden = !ac;
-        o.resultado.textContent = ac ? (ac.ninguem ? '🚫 Ninguém acertou a ordem' : '🏆 ' + ac.nome + ' ganhou ' + ac.pts + (ac.pts === 1 ? ' ponto' : ' pontos')) : '';
+        o.resultado.textContent = ac ? (ac.ninguem ? '🚫 Ninguém acertou a ordem' : '🏆 ' + (participar.programa.solo ? 'Você ganhou ' : ac.nome + ' ganhou ') + ac.pts + (ac.pts === 1 ? ' ponto' : ' pontos')) : '';
         o.card.hidden = !participar.dirigente && !temOrdem && !ac;
         if (participar.dirigente) {
           o.btnRevelar.hidden = temOrdem;
@@ -30303,7 +30322,7 @@ function saveTemplatesToStorage() {
         const acerto = acertos[k];
         // 6.12.76: a referência da rodada só chega com a revelação (estado.referenciasReveladas); nas sessões antigas, a da programação.
         const refRev = ((e.referenciasReveladas && e.referenciasReveladas[i]) || {})[k] || (comDicas ? r.referencia : '');
-        if (revelada) r.resp.textContent = '💡 Resposta: ' + txt + (refRev ? ' (' + refRev + ')' : '') + (acerto ? (acerto.ninguem ? ' · 🚫 Ninguém acertou' : ' · 🏆 ' + acerto.nome + ' ganhou ' + acerto.pts + (acerto.pts === 1 ? ' ponto' : ' pontos')) : '');
+        if (revelada) r.resp.textContent = '💡 Resposta: ' + txt + (refRev ? ' (' + refRev + ')' : '') + (acerto ? (acerto.ninguem ? ' · 🚫 Ninguém acertou' : ' · 🏆 ' + (participar.programa.solo ? 'Você ganhou ' : acerto.nome + ' ganhou ') + acerto.pts + (acerto.pts === 1 ? ' ponto' : ' pontos')) : '');
         else r.resp.innerHTML = ICONE_OLHO_FECHADO + ' Resposta escondida'; // olho só de linhas
         if (r.linhaAcerto) {
           r.linhaAcerto.hidden = Boolean(acerto) || n === 0; // 6.12.04: segue à mostra depois de revelar a resposta, até alguém pontuar
@@ -30348,7 +30367,7 @@ function saveTemplatesToStorage() {
       if (valeQ) ref.questaoTxt.textContent = '🎯 Questão sorteada: ' + textoQ;
       ref.nome.hidden = !vale;
       ref.linhaVez.hidden = !vale;
-      ref.cardSorteio.hidden = !vale && !valeQ && !participar.dirigente; // quem não dirige só vê o card quando há algo sorteado
+      ref.cardSorteio.hidden = (!vale && !valeQ && !participar.dirigente) || Boolean(participar.programa && participar.programa.solo); // quem não dirige só vê o card quando há algo sorteado; sozinho, nunca
       if (!vale) { ref.resumoSorteio.textContent = valeQ ? '🎯 ' + textoQ : '🎲 Sorteio de jogadores (opcional)'; return; }
       // O sorteado aparece como no placar: o mesmo bichinho e a mesma cor, em negrito. Com o card recolhido, o título já mostra de quem é a vez.
       const mascote = participarMascotes(participarNomesVistos([...nomes, s.nome]))[s.nome];
@@ -30726,19 +30745,17 @@ function saveTemplatesToStorage() {
         det.append(sm, ol);
         caixa.appendChild(det);
       }
+      // 6.13.50: "Jogar sozinho" é o padrão (botão Iniciar partida); o grupo fica num bloco recolhido.
+      caixa.appendChild(jogosSoloMontar(item));
+      const detGrupo = document.createElement('details');
+      detGrupo.className = 'fam-jogos-box jogos-grupo-det';
+      const smGrupo = document.createElement('summary');
+      smGrupo.textContent = '🔗 Jogar em grupo — configurações';
       const grupo = document.createElement('div');
       grupo.className = 'jogos-grupo'; // 6.13.45: os itens do "Jogar em grupo" com espaço entre eles
-      caixa.appendChild(grupo);
+      detGrupo.append(smGrupo, grupo);
+      caixa.appendChild(detGrupo);
       jogosCompartilharMontar(item, grupo);
-      const acoes = document.createElement('div');
-      acoes.className = 'fam-acoes';
-      const fechar = document.createElement('button');
-      fechar.type = 'button';
-      fechar.className = 'secondary fam-fino';
-      fechar.textContent = '◀ Escolher outro jogo';
-      fechar.addEventListener('click', jogosFecharPainel);
-      acoes.appendChild(fechar);
-      caixa.appendChild(acoes);
       p.replaceChildren(caixa);
       if (botao) botao.after(p);
       p.hidden = false;
@@ -30751,13 +30768,10 @@ function saveTemplatesToStorage() {
       const desenhar = () => {
         const sessao = familiaSessaoDaProgramacao(progId, titulo);
         if (sessao) { onde.replaceChildren(familiaSessaoCodigoMontar(sessao.cod, titulo, desenhar, 'jogos')); return; }
-        const t = document.createElement('p');
-        t.className = 'fam-secao-titulo';
-        t.textContent = '🔗 Jogar em grupo';
         const dica = document.createElement('p');
         dica.className = 'hint fam-dica';
         dica.textContent = 'Cada jogador entra com o código no próprio celular, escolhe o nome (ou escreve um apelido) e ganha um bichinho. Você é o administrador do jogo: mostra as perguntas, julga as respostas e também pode jogar. Os nomes abaixo são opcionais (aparecem para cada um tocar no seu).';
-        const editor = familiaNomesEditor([]);
+        const editor = familiaNomesEditor([], { jogador: true });
         const acoes = document.createElement('div');
         acoes.className = 'fam-acoes';
         const criar = document.createElement('button');
@@ -30789,9 +30803,56 @@ function saveTemplatesToStorage() {
           jogosSalvosPintar();
         });
         acoes.appendChild(criar);
-        onde.replaceChildren(t, dica, editor.el, acoes, status);
+        onde.replaceChildren(dica, editor.el, acoes, status);
       };
       desenhar();
+    }
+    // 6.13.50: Jogar sozinho (padrão): "▶️ Iniciar partida" cria uma partida nova só para este aparelho (sessão com solo: true; o servidor põe o
+    // administrador no jogo com um nome fixo e o placar mostra só a pontuação) e abre o jogo. A partida anterior deste jogo é encerrada.
+    function jogosSoloMontar(item) {
+      const caixa = document.createElement('div');
+      caixa.className = 'jogos-solo';
+      const dica = document.createElement('p');
+      dica.className = 'hint fam-dica';
+      dica.textContent = 'Jogar sozinho: você vê as perguntas, responde e julga. O placar mostra só a pontuação.';
+      const acoes = document.createElement('div');
+      acoes.className = 'fam-acoes';
+      const iniciar = document.createElement('button');
+      iniciar.type = 'button';
+      iniciar.className = 'fam-fino fam-principal';
+      iniciar.textContent = '▶️ Iniciar partida';
+      const status = document.createElement('p');
+      status.className = 'fam-status';
+      status.setAttribute('role', 'status');
+      status.hidden = true;
+      iniciar.addEventListener('click', async () => {
+        const codigo = codigoAcessoSalvo();
+        if (!codigo) { status.hidden = false; status.className = 'fam-status erro'; status.textContent = 'Para iniciar, informe o código de pesquisa em Ajustes → 🔐 Autorização de acessos.'; return; }
+        iniciar.disabled = true;
+        iniciar.textContent = '⏳ Preparando a partida…';
+        status.hidden = true;
+        const progId = 'jogo-solo:' + item.id;
+        const titulo = (item.op.emoji ? item.op.emoji + ' ' : '') + item.op.titulo;
+        const anterior = familiaSessaoDaProgramacao(progId, titulo);
+        if (anterior) { // a partida anterior deste jogo sai (a pontuação começa do zero)
+          await familiaSessaoPedir({ acao: 'encerrar', sessao: anterior.cod, chave: anterior.chave || '' }).catch(() => null);
+          familiaSessaoGuardar(anterior.cod, null);
+        }
+        const r = await familiaSessaoPedir({ acao: 'criar', programa: Object.assign(familiaProgramaParaCompartilhar(item.op), { solo: true }), nomes: [], codigo });
+        iniciar.disabled = false;
+        iniciar.textContent = '▶️ Iniciar partida';
+        if (!r.ok || !r.data.sessao) {
+          status.hidden = false;
+          status.className = 'fam-status erro';
+          status.textContent = r.erro || 'Não consegui iniciar a partida.';
+          return;
+        }
+        familiaSessaoGuardar(r.data.sessao, { chave: r.data.chave, titulo, progId, modo: 'jogos', solo: true });
+        participarAbrir(r.data.sessao);
+      });
+      acoes.appendChild(iniciar);
+      caixa.append(dica, acoes, status);
+      return caixa;
     }
     // 📂 Jogos preparados (neste aparelho): abrir de novo (o mesmo jogo, para jogar outra vez ou com outro grupo) ou apagar.
     function jogosSalvosPintar() {

@@ -17765,3 +17765,11 @@ body.fam-tela-grande .fam-video-texto { font-size: 1.05em; max-height: 50vh; }
 #participarSessao .fam-sessao-ordem > p { margin: 0; }
 #participarSessao .fam-sessao-ordem .fam-sessao-revelar { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin: 0; }
 #participarSessao .fam-sessao-ordem-resultado { font-weight: 700; }
+
+/* 6.13.50: Jogos bíblicos: nomes dentro de uma moldura, campo do jogador largo e botão só com o "+", grupo recolhido e partida sozinho */
+.jogos-grupo .fam-sessao-nomes { padding: 10px; border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--line)); border-radius: 12px; background: var(--card); }
+.jogos-grupo .fam-sessao-add > .fam-add-mais { flex: 0 0 44px; width: 44px; min-width: 44px; padding: 0; font-size: 1.4rem; font-weight: 700; line-height: 1; display: inline-flex; align-items: center; justify-content: center; }
+.jogos-grupo-det > .jogos-grupo { margin-top: 10px; }
+.jogos-solo { display: grid; gap: 10px; min-width: 0; }
+.jogos-solo > * { margin: 0; }
+.fam-placar-solo { margin: 6px 0 0; text-align: center; font-size: 1.6rem; font-weight: 800; }

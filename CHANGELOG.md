@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.50
+
+- Jogos bíblicos: saiu o botão "Escolher outro jogo".
+- Jogar em grupo: tudo num bloco recolhido ("Jogar em grupo — configurações"); os jogadores ficam dentro de uma moldura, o campo é "Novo jogador" (mais largo) e o botão acrescentar é só o "+".
+- Novo modo **Jogar sozinho**, o padrão: o jogo pronto mostra "▶️ Iniciar partida" (sessão com `solo: true` em `api/familia-sessao.mjs`; o administrador entra jogando como "Jogador"). O placar mostra só a pontuação, sem nomes, bichinhos, painel de participantes nem sorteio de jogadores.
+
 ## 6.13.49
 
 - Áudio em texto: o limite padrão de duração do arquivo passa de 60 para 90 minutos (no app e no servidor). Quem já salvou outro valor em Ajustes (administrador) continua com o valor salvo, que pode ser mudado lá (até 180 min).

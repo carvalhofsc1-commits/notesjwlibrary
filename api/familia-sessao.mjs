@@ -319,6 +319,8 @@ function limparPrograma(op) {
   if (op.versao === 2) programa.versao = 2;
   // 6.13.36: jogo avulso da tela 🎲 Jogos bíblicos (uma parte só, o jogo); a tela ao vivo é a mesma, com os textos de jogo.
   if (op.modo === "jogos") programa.modo = "jogos";
+  // 6.13.50: partida sozinho (só no jogo avulso): quem cria já entra jogando, e o placar mostra só a pontuação.
+  if (op.modo === "jogos" && op.solo === true) programa.solo = true;
   const extras = {
     preparacao: lista(op.preparacao, 20, (t) => texto(t, 400)),
     tarefas: lista(op.tarefas, 20, (t) => (t && typeof t === "object" ? { membro: texto(t.membro, 60), tarefa: texto(t.tarefa, 300) } : null)),
@@ -459,6 +461,8 @@ export default async function handler(req, res) {
       const programa = await lerJson(caminho(cod, "programa.json"));
       if (!programa) return erro(res, 404, "A programação desta adoração não foi encontrada.");
       let nome = nomeLimpo(corpo.nome);
+      // 6.13.50: partida sozinho: o administrador já entra jogando, com um nome fixo (que o placar não mostra).
+      if (!nome && dirigente && programa.solo) nome = "Jogador";
       // 6.13.30: o presidente da reunião que abre a adoração sem nome é identificado pelo cadastro do aparelho (o primeiro nome) e já entra no
       // jogo com ele, como qualquer participante. Sem cadastro (ou testes locais), continua sem nome e pode usar o "🎮 Jogar também".
       if (!nome && dirigente && corpo.aparelhoId) {

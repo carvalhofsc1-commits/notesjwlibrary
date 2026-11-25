@@ -257,6 +257,15 @@ try {
   assert.equal(entAvulso.dados.programa.modo, "jogos");
   assert.deepEqual(entAvulso.dados.estado.liberadas, [0]);
   assert.equal(entAvulso.dados.estado.atual, 0); passo("jogo avulso: modo \"jogos\" guardado e o jogo já liberado e aberto");
+  assert.ok(!entAvulso.dados.programa.solo); passo("jogo em grupo: sem solo");
+  // 6.13.50: partida sozinho: o administrador já entra jogando com o nome fixo "Jogador"; só vale no jogo avulso
+  const solo = (await chamar({ acao: "criar", programa: { modo: "jogos", solo: true, titulo: "Quem sou eu?", emoji: "🕵️", partes: [v2.partes[2]] }, codigo: "codigo-de-teste" })).dados;
+  const entSolo = await chamar({ acao: "entrar", sessao: solo.sessao, chave: solo.chave });
+  assert.equal(entSolo.dados.programa.solo, true);
+  assert.equal(entSolo.dados.nome, "Jogador");
+  assert.ok(entSolo.dados.participanteId); passo("partida sozinho: solo guardado e o administrador entra jogando como Jogador");
+  const naoSolo = (await chamar({ acao: "criar", programa: { solo: true, titulo: "Adoração", partes: [v2.partes[2]] }, codigo: "codigo-de-teste" })).dados;
+  assert.ok(!(await chamar({ acao: "entrar", sessao: naoSolo.sessao, chave: naoSolo.chave })).dados.programa.solo); passo("solo só vale no jogo avulso");
   assert.ok(!("modo" in prog2)); passo("programação da Adoração continua sem modo");
   const progAntigo = JSON.parse(programaArq);
   assert.ok(!("versao" in progAntigo) && progAntigo.partes.every((p) => !("quadro" in p)) && !("ordens" in d.dados.extras)); passo("programação antiga continua sem versao, quadro e ordens");
