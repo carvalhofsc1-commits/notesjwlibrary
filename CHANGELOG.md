@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.95
+
+- Jogo ao vivo, cor do card da questão: **cinza claro** sem responder, **roxo** com a resposta certa e **vermelho claro** com a resposta errada (também quando já houve uma tentativa errada ou ninguém acertou). Saíram o azul de "em andamento" e o verde de "respondida".
+- Espaço entre o campo de texto da resposta e os botões: 10 px (o padrão).
+- Barra das setas e números das questões: fundo **amarelo** (#fef3c7, moldura âmbar) e botões das setas com fundo **roxo** e seta branca (a seta desabilitada, num roxo mais claro).
+
 ## 6.13.94
 
 - Jogo sozinho: o botão "Não sei / Revelar" ficava 6 px mais baixo que o "Enviar resposta" (herdava uma margem de 6 px em cima), embora tivessem a mesma altura. Sem a margem, os dois ficam alinhados pelo topo e pela base (conferido: 647,4 e 687,4 px nos dois).

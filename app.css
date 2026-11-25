@@ -18092,3 +18092,16 @@ details.fam-placar-card > summary { min-height: 0 !important; padding: 3px 8px !
 
 /* 6.13.94: o "Não sei" herdava 6 px de margem em cima (classe fam-sessao-revelar) e ficava mais baixo que o "Enviar resposta": sem margem nos dois, alinhados pelo topo e pela base */
 #participarSessao .fam-sessao-resp-box .fam-acoes-dupla > button { margin: 0 !important; align-self: stretch; }
+
+/* 6.13.95: a cor do card da questão: cinza claro (sem responder), roxo (resposta certa) e vermelho claro (resposta errada ou ninguém acertou) */
+#participarSessao li.fam-sessao-questao, #participarSessao li.fam-sessao-questao.fam-sessao-questao-andamento, #participarSessao li.fam-sessao-questao.fam-sessao-questao-respondida { background: #f1f2f4; border-color: #9ca3af; }
+#participarSessao li.fam-sessao-questao.fam-sessao-questao-certa { background: #ede9fe; border-color: #8b5cf6; }
+#participarSessao li.fam-sessao-questao.fam-sessao-questao-errada { background: #fee2e2; border-color: #f87171; }
+/* 6.13.95: o espaço entre o campo de texto e os botões igual ao padrão (10 px) */
+#participarSessao .fam-sessao-responder { gap: 10px; }
+/* 6.13.95: a barra dos números das questões em amarelo e as setas com fundo roxo */
+.fam-sessao-nav { background: #fef3c7; border-color: #f59e0b; }
+.fam-sessao-nav-seta { background: #7c3aed; border-color: #6d28d9; color: #fff; }
+.fam-sessao-nav-seta:disabled { opacity: .45; }
+.fam-sessao-nav > .fam-sessao-nav-seta { background: #7c3aed !important; border-color: #6d28d9 !important; color: #fff !important; }
+.fam-sessao-nav > .fam-sessao-nav-seta:disabled { background: #a78bfa !important; border-color: #a78bfa !important; opacity: .7; }
