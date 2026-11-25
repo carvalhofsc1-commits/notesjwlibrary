@@ -18112,3 +18112,7 @@ details.fam-placar-card > summary { min-height: 0 !important; padding: 3px 8px !
 #participarSessao .fam-sessao-resp-box .fam-sessao-responder button.fam-principal:disabled { background: #93b4f5 !important; border-color: #93b4f5 !important; opacity: .85; }
 #participarSessao .fam-sessao-resp-box .fam-sessao-responder button.fam-nao-sei:disabled { background: #f29b9b !important; border-color: #f29b9b !important; opacity: .85; }
 #participarSessao .fam-sessao-resp-box .fam-sessao-responder button.fam-nao-sei svg { color: #fff; stroke: currentColor; }
+
+/* 6.13.97: o texto das regras, ao abrir, com margens laterais (antes colava nas bordas do botão aberto) */
+.fam-sessao-rodape > .fam-jogo-enunciado > :not(summary) { margin: 6px 14px 8px !important; text-align: left; line-height: 1.4; }
+.fam-sessao-rodape > .fam-jogo-enunciado[open] { padding-bottom: 6px !important; }

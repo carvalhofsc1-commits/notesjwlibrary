@@ -7958,7 +7958,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.13.96'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.13.97'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -29649,7 +29649,19 @@ function saveTemplatesToStorage() {
       t.className = 'fam-secao-titulo';
       t.textContent = 'Regras'; // 6.13.84: só a palavra "Regras"
       enunciado.appendChild(t);
-      [j.comoJogar, j.material ? '✏️ Material: ' + j.material : ''].filter(Boolean).forEach(txt => {
+      // 6.13.97: partida sozinho: as regras falam de quem joga sozinho (as do jogo em grupo falam de presidente e de quem acerta primeiro)
+      const soloRegras = Boolean(participar.programa && participar.programa.solo);
+      const regrasSolo = (() => {
+        const dicas = ['perfil_biblico', 'quem_sou_eu'].includes(j.idTipo);
+        const base = j.idTipo === 'verdadeiro_falso'
+          ? 'Leia a afirmação e toque em Verdadeiro ou Falso. Acertando, você ganha o ponto; errando, a resposta aparece e a questão termina sem pontos.'
+          : (dicas
+            ? 'Descubra a resposta pelas dicas. Toque em “Dar a 1ª dica” para começar: quanto menos dicas você usar, mais pontos a questão vale (a etiqueta “vale N pontos” mostra o valor de agora). Escreva a resposta (ou toque no 🎤 e fale) e envie.'
+            : 'Leia a questão e escreva a resposta (ou toque no 🎤 e fale), depois envie.');
+        const fim = j.idTipo === 'verdadeiro_falso' ? '' : ' Se errar, tente de novo ou toque em “Apelar para a IA”, que confere se a essência da resposta está certa (um erro de grafia ou um conectivo não muda o sentido). “Não sei” mostra a resposta e a questão não pontua.';
+        return base + fim + ' Use as setas para trocar de questão; sua pontuação aparece no placar.';
+      })();
+      (soloRegras ? [regrasSolo] : [j.comoJogar, j.material ? '✏️ Material: ' + j.material : '']).filter(Boolean).forEach(txt => {
         const p = document.createElement('p');
         p.className = 'fam-parte-desc';
         p.textContent = txt;

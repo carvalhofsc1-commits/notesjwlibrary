@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.97
+
+- Regras do jogo: ao abrir o botão, o texto colava nas bordas (1 px); agora tem margens de 14 px dos lados e espaço em cima e embaixo.
+- Regras para quem joga **sozinho**: um texto próprio (as regras do grupo falavam de presidente da reunião e de "quem acertar primeiro"). Explica as dicas e os pontos, o campo de resposta (inclusive o 🎤), "Apelar para a IA", "Não sei", as setas e o placar; no Verdadeiro ou falso, o texto próprio dele. O jogo em grupo mantém as regras de sempre.
+
 ## 6.13.96
 
 - Ordem e data dos acontecimentos: a descrição na lista dos jogos agora é "Ponha os acontecimentos bíblicos na ordem certa".
