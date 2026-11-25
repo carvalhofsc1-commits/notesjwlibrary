@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.13.63'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.13.64'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -28368,6 +28368,7 @@ function saveTemplatesToStorage() {
         const idJogo = jogo && participar.programa && participar.programa.partes && participar.programa.partes[0] && participar.programa.partes[0].jogo ? participar.programa.partes[0].jogo.idTipo : '';
         const vis = JOGOS_VISUAL[idJogo];
         h.classList.toggle('fam-titulo-jogo', Boolean(vis));
+        if (vis) h.dataset.jogo = idJogo; else delete h.dataset.jogo;
         if (vis) {
           h.style.setProperty('--cor-jogo', vis.cor);
           const ic = document.createElement('span');
@@ -30835,6 +30836,7 @@ function saveTemplatesToStorage() {
         const card = document.createElement('div');
         card.className = 'jogos-card';
         card.style.setProperty('--cor-jogo', j.cor || '#8b5cf6'); // 6.13.62: uma cor para cada jogo
+        if (j.id) card.dataset.jogo = j.id; // 6.13.64: para o emoji do Perfil bíblico (a carta coringa) ficar maior
         card.appendChild(b);
         return card;
       }));

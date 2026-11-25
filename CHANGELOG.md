@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.64
+
+- Os títulos do alto de cada seção ficam **centralizados** (Adoração em família, Jogos bíblicos, Preparar para comentar, Anotações, Pesquisas salvas, Assistente de pesquisas, Leitura diária, Áudio em texto, Backup, Formatar, Ajustes…), conferido pelo centro do texto (188 px numa tela de 375).
+- O emoji do Perfil bíblico (a carta coringa) ficou maior, na lista dos jogos e no título da tela do jogo.
+
 ## 6.13.63
 
 - **Botão Voltar no app inteiro**: agora é uma seta (←, mais completa, só o ícone) fixa na barra superior, à direita do logo (o menu fica à esquerda e o logo continua no centro). Ela aciona o "◀ Voltar" da tela que estiver à vista (Jogos, Adoração em família e seus subpainéis, Reuniões, Pesquisas salvas, Anotações, Formatar e o extrato de consumo); os botões "◀ Voltar" de cada tela ficam fora da vista. Sem para onde voltar (Início e telas do menu), a seta some, guardando o lugar para o logo ficar centralizado.

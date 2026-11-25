@@ -17867,3 +17867,14 @@ header.app-topbar::after { content: none; }
 }
 .voltar-barra { height: 0; min-height: 0; margin: 0 !important; padding: 0 !important; border: 0 !important; overflow: hidden; }
 .fam-topo { grid-template-columns: minmax(0, 1fr); }
+
+/* 6.13.64: os títulos do alto de cada tela (seção) ficam centralizados; o emoji da carta coringa (Perfil bíblico) um pouco maior */
+.fam-titulo, #anotacoesTitulo, #salvasTitulo, .formatar-titulo, .pesq-titulo, #backupCard > h2, .leitura-topo h2, .ajustes-grupo-titulo, .reunioes-topo .reunioes-pagina-titulo { text-align: center; }
+.fam-titulo { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; }
+.leitura-topo, .anotacoes-topo, .salvas-topo { justify-content: center; }
+.anotacoes-topo h2, .leitura-topo h2, #salvasTitulo { width: 100%; }
+.jogos-card[data-jogo="perfil_biblico"] .fam-hub-icone { font-size: 3.7rem; }
+#participarTitulo[data-jogo="perfil_biblico"] .fam-titulo-jogo-emoji { font-size: 3rem; }
+.salvas-topo { grid-template-columns: minmax(0, 1fr); }
+/* Preparar para comentar etc.: com o botão do campo de texto à direita, um espaço igual à esquerda mantém o título no centro exato (o Voltar foi para a barra superior) */
+.reunioes-topo:has(> #reunioesCampoBtn:not([hidden]))::before { content: ""; flex: 0 0 5rem; }
