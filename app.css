@@ -17786,3 +17786,9 @@ body.fam-tela-grande .fam-video-texto { font-size: 1.05em; max-height: 50vh; }
 .jogos-card.pronto > .jogos-atalho { display: none; }
 .jogos-card.pronto > .jogos-painel { border-top: 0; }
 .jogos-grupo[hidden], #jogosHub[hidden], #jogosDica[hidden], #jogosSalvosBox[hidden] { display: none; }
+
+/* 6.13.53: "Jogar em grupo" num card só: recolhido parece um botão; aberto, a moldura abraça o botão e as configurações */
+.jogos-grupo-card { display: grid; gap: 10px; min-width: 0; padding: 0; border: 0; border-radius: 12px; }
+.jogos-grupo-card.aberto { padding: 8px; border: 1px solid color-mix(in srgb, #8b5cf6 55%, var(--line)); background: color-mix(in srgb, #8b5cf6 4%, var(--card)); }
+.jogos-grupo-card > .fam-acoes > button { margin: 0; }
+.jogos-solo button:disabled { opacity: .55; }

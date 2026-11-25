@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.53
+
+- Jogo pronto: o "Iniciar partida" virou "Iniciar partida sozinho". "Jogar em grupo" é um card só: recolhido parece um botão; aberto, uma moldura abraça o botão e todas as configurações, e o "Iniciar partida sozinho" fica desabilitado.
+
 ## 6.13.52
 
 - Jogos bíblicos, por vistas: na tela inicial só "Entrar em um jogo" e "Montar o meu jogo"; em "Montar", só o menu dos jogos; com um jogo aberto, só ele (e os "Jogos preparados" daquele jogo, se houver); com um jogo preparado aberto, só as opções de jogar. "Jogos preparados" some da tela inicial. O Voltar leva sempre à tela das duas opções (e dela, ao Início).
