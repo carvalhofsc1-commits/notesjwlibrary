@@ -17498,6 +17498,12 @@ input[type="date"].fam-campo::-webkit-calendar-picker-indicator { margin: 0; pad
 #participarSessao .fam-sessao-placar-tabela tr:last-child td { border-bottom: 0; }
 #participarSessao .fam-sessao-acerto { display: grid; gap: 6px; margin-top: 6px; }
 #participarSessao .fam-sessao-acerto > select, #participarSessao .fam-sessao-acerto > button { width: 100%; min-width: 0; margin: 0; }
+/* 6.13.43: "Só para mim" e "Revelar" lado a lado, metade da linha cada; some quando os dois estão escondidos */
+#participarSessao .fam-sessao-ver-linha { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; min-width: 0; }
+#participarSessao .fam-sessao-ver-linha > button { width: 100%; min-width: 0; margin: 0; padding-left: 4px; padding-right: 4px; gap: 4px; font-size: .86rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; justify-content: center; }
+#participarSessao .fam-sessao-ver-linha > button[hidden] { display: none; }
+#participarSessao .fam-sessao-ver-linha:has(> button[hidden]) { grid-template-columns: minmax(0, 1fr); }
+#participarSessao .fam-sessao-ver-linha:not(:has(> button:not([hidden]))) { display: none; }
 /* 6.13.42: "Quem acertou?" e o 💾 (salvar) na mesma linha: o campo cresce, o ícone fica pequeno à direita */
 #participarSessao .fam-sessao-acerto:has(> .fam-sessao-salvar) { display: flex; align-items: stretch; gap: 6px; }
 #participarSessao .fam-sessao-acerto > select { flex: 1 1 auto; width: auto; }

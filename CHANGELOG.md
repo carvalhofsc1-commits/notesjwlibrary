@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.43
+
+- Jogos (Adoração e Jogos bíblicos): "Ver só para mim" e "Revelar resposta" numa linha só, metade cada, com rótulos curtos ("Só para mim" e "Revelar", ambos com o olho de linhas; o texto completo fica no título do botão). A resposta que só o administrador vê aparece logo abaixo da linha.
+
 ## 6.13.42
 
 - Jogos (Adoração e Jogos bíblicos): o botão "Pontuar" virou o ícone 💾 (salvar), pequeno, à direita do campo "Quem acertou?", na mesma linha (o campo cresce e ocupa o resto). Faz o mesmo de antes: dá os pontos a quem foi escolhido (ou "Ninguém acertou") e revela a resposta.
