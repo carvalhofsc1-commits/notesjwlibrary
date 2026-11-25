@@ -1189,20 +1189,30 @@ teste("6.12.76: Complete o versículo e Quem disse isso? montados pelo servidor 
   // ouvinte (Gênesis 4:9 "Caim, a Jeová" sai; "Jeová, a Caim" fica).
   const qd = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "jogo", jogos: ["Quem disse isso? (frases da Bíblia)"] }), montados);
   const falas = [["Gênesis 4:9", "Caim, a Jeová"], ["Rute 1:16", "Rute, a Noemi"], ["Atos 26:28", "Agripa, a Paulo"], ["Gênesis 50:20", "José, a seus irmãos"], ["Rute 2:10", "Rute, a Boaz"], ["Lucas 2:49", "Jesus, a seus pais"], ["Jó 1:21", "Jó"], ["Ester 4:16", "Ester, a Mardoqueu"], ["Gênesis 4:9", "Jeová, a Caim"], ["Lucas 23:34", "Jesus, ao Pai"], ["Gênesis 13:8", "Abrão, a Ló"], ["Gênesis 33:9", "Esaú, a Jacó"], ["Números 12:13", "Moisés, a Jeová, em favor de Miriã"], ["Mateus 18:21", "Pedro, a Jesus"], ["Atos 9:13", "Ananias, a Jesus"]];
-  const q1 = await qd.prep.montar({ descricao: "d", nome: "Quem disse?", comoJogar: "R.", rodadas: falas.map(([referencia, resposta]) => ({ pergunta: "", resposta, referencia })), eventos: [] });
+  const q1 = await qd.prep.montar({ descricao: "d", nome: "Quem disse?", comoJogar: "R.", rodadas: falas.map(([referencia, resposta]) => ({ pergunta: referencia === "Atos 26:28" ? "Contexto: Paulo fazia a sua defesa diante de um rei e de um governador, em Cesareia. Opções erradas: Festo; Félix; Herodes; Agripa" : referencia === "Gênesis 13:8" ? "Contexto: Abrão disse que era um bom homem. Opções erradas: Isaque" : "", resposta, referencia })), eventos: [] });
   assert.equal(q1.contagens.rodadas, 9, JSON.stringify(q1.jogo && q1.jogo.rodadas.map((r) => r.referencia)));
   assert.equal(q1.contagens.tiradas, 6, "Caim, a Jeová; Gênesis 50:20 sem aspas; Rute 2:10, Lucas 2:49, Jó 1:21 e Ester 4:16 sem o nome antes da fala");
   assert.equal(q1.jogo.idTipo, "quem_disse");
   assert.equal(q1.falta, "");
-  assert.match(q1.jogo.rodadas[0].pergunta, /^Quem disse isso\? Dica 1: “Não insista comigo para abandoná-la, .+” Dica 2: Está nas Escrituras Hebraicas\.$/);
-  assert.equal(q1.jogo.rodadas[1].pergunta, "Quem disse isso? Dica 1: “Em pouco tempo você me persuadiria a me tornar cristão.” Dica 2: Está em Atos.");
+  // 6.13.39: a frase logo no início (não é dica); Dica 1 = livro e capítulo (no livro com o nome de quem falou, só a parte das Escrituras),
+  // Dica 2 = o contexto da IA (se veio e não tem o nome de quem falou), última dica = 4 nomes para escolher (o certo entre eles).
+  assert.match(q1.jogo.rodadas[0].pergunta, /^Quem disse isso\? “Não insista comigo para abandoná-la, .+” Dica 1: Está nas Escrituras Hebraicas\. Dica 2: Escolha entre: [^;]+; [^;]+; [^;]+; [^;]+\.$/);
+  assert.ok(/Escolha entre: .*\bRute\b/.test(q1.jogo.rodadas[0].pergunta), "a resposta certa está entre as opções");
+  const atos = q1.jogo.rodadas[1].pergunta;
+  assert.match(atos, /^Quem disse isso\? “Em pouco tempo você me persuadiria a me tornar cristão\.” Dica 1: Está em Atos, capítulo 26\. Dica 2: Paulo fazia a sua defesa diante de um rei e de um governador, em Cesareia\. Dica 3: Escolha entre: /);
+  const opcoesAtos = atos.replace(/^.*Escolha entre: /, "").replace(/\.$/, "").split("; ");
+  assert.deepEqual(opcoesAtos.slice().sort(), ["Agripa", "Festo", "Félix", "Herodes"].sort(), "o certo (Agripa, uma vez só) e os 3 errados da IA");
+
   const gn49 = q1.jogo.rodadas.find((r) => r.referencia === "Gênesis 4:9");
   assert.equal(gn49.resposta, "Jeová, a Caim");
-  assert.equal(gn49.pergunta, "Quem disse isso? Dica 1: “Onde está Abel, seu irmão?” Dica 2: Está em Gênesis.");
+  assert.match(gn49.pergunta, /^Quem disse isso\? “Onde está Abel, seu irmão\?” Dica 1: Está em Gênesis, capítulo 4\. Dica 2: Escolha entre: /);
+  const gn13 = q1.jogo.rodadas.find((r) => r.referencia === "Gênesis 13:8");
+  assert.ok(gn13 && !/bom homem/.test(gn13.pergunta) && /Dica 2: Escolha entre: /.test(gn13.pergunta) && /Isaque/.test(gn13.pergunta), "o contexto com o nome de quem falou sai; o nome errado da IA fica e o resto vem da lista");
+  assert.equal(gn13.pergunta.replace(/^.*Escolha entre: /, "").split("; ").length, 4);
   assert.ok(!q1.jogo.rodadas.some((r) => ["Rute 2:10", "Lucas 2:49", "Jó 1:21", "Ester 4:16"].includes(r.referencia)));
   assert.equal(q1.jogo.rodadas[1].referencia, "Atos 26:28");
   assert.equal(q1.memoria.jogo_versiculos.length, 9);
-  for (const r of q1.jogo.rodadas) assert.ok(r.pergunta.length <= 400, r.referencia);
+  for (const r of q1.jogo.rodadas) assert.ok(r.pergunta.length <= 800, r.referencia);
   // 6.12.77: Complete o versículo sem as aspas soltas (Mateus 6:14 começa com “ e Mateus 18:35 e Marcos 11:25 terminam com ”, sem par).
   const cp3 = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "jogo", jogos: ["Complete o versículo"] }), montados);
   const c3 = await cp3.prep.montar({ descricao: "d", nome: "Complete", comoJogar: "R.", rodadas: [["Mateus 6:14", "celestial"], ["Mateus 18:35", "coração"], ["Marcos 11:25", "orando"]].map(([referencia, resposta]) => ({ pergunta: "", resposta, referencia })), eventos: [] });

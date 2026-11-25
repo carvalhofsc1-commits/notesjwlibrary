@@ -901,6 +901,60 @@ export function dicaDoLivro(livro, quem = "") {
   return nomesDaResposta(quem).includes(nome) ? `Está nas ${parteDasEscrituras(livro)}` : `Está em ${livro}`;
 }
 
+// ---------- 6.13.39: Quem disse isso? com a frase à vista e 3 dicas ----------
+
+// Personagens para completar as 4 opções da Dica 3 quando a IA mandou menos de 3 nomes errados.
+export const PERSONAGENS_PARA_OPCOES = Object.freeze([
+  "Abraão", "Sara", "Isaque", "Jacó", "José", "Moisés", "Arão", "Josué", "Calebe", "Débora", "Gideão", "Sansão", "Rute", "Noemi", "Ana",
+  "Samuel", "Saul", "Davi", "Jônatas", "Salomão", "Elias", "Eliseu", "Isaías", "Jeremias", "Ezequiel", "Daniel", "Ester", "Mordecai",
+  "Neemias", "Esdras", "Jonas", "Jó", "Pedro", "João", "Tiago", "Paulo", "Barnabé", "Maria", "Marta", "Lucas", "Timóteo", "Estêvão",
+]);
+const quemFalou = (resposta) => String(resposta || "").split(",")[0].replace(/\s+/g, " ").trim();
+// "Gênesis 22:7" -> "Está em Gênesis, capítulo 22" (no livro com o nome de quem falou, só a parte das Escrituras).
+export function dicaDoLivroECapitulo(referencia, resposta) {
+  const livro = livroDaReferencia(referencia);
+  const base = dicaDoLivro(livro, quemFalou(resposta));
+  if (!base) return "";
+  const cap = (String(referencia || "").match(/\s(\d{1,3}):/) || [])[1];
+  return base.startsWith("Está em ") && cap ? `${base}, capítulo ${cap}` : base;
+}
+// O contexto ("Contexto: …") e os nomes errados ("Opções erradas: A; B; C") que a IA manda em "pergunta". O contexto com o nome de quem
+// falou sai (entregaria a resposta).
+export function partesDoQuemDisse(bruta, resposta) {
+  const t = String(bruta || "").replace(/\s+/g, " ").trim();
+  const quem = quemFalou(resposta);
+  let contexto = (t.match(/contexto\s*:\s*(.*?)(?=\s*op[çc][õo]es(?:\s+erradas)?\s*:|$)/i) || [])[1] || "";
+  contexto = contexto.replace(/[|;\s]+$/, "").replace(/^["“”]+|["“”]+$/g, "").trim();
+  if (contexto && !/[.!?]$/.test(contexto)) contexto += ".";
+  if (contexto.length < 12 || contexto.length > 300 || !falaSemONome(contexto, quem) || /dica\s*\d/i.test(contexto)) contexto = "";
+  const nomesQuem = new Set(nomesDaResposta(resposta));
+  const vistos = new Set();
+  const erradas = String((t.match(/op[çc][õo]es(?:\s+erradas)?\s*:\s*(.*)$/i) || [])[1] || "")
+    .split(/[;,/]|\s+e\s+/)
+    .map((n) => n.replace(/[.()"“”]+/g, "").replace(/\s+/g, " ").trim())
+    .filter((n) => n && n.length <= 40 && /^\p{Lu}/u.test(n))
+    .filter((n) => !nomesDaResposta(n).some((x) => nomesQuem.has(x)) && normalizarTexto(n) !== normalizarTexto(quem))
+    .filter((n) => !vistos.has(normalizarTexto(n)) && vistos.add(normalizarTexto(n)));
+  return { contexto, erradas };
+}
+// A pergunta: a frase logo no início (não é dica) e as dicas: o livro e o capítulo, o contexto (se veio) e 4 nomes para escolher (o certo
+// misturado com 3 errados; os que faltarem vêm de PERSONAGENS_PARA_OPCOES).
+export function perguntaDoQuemDisse({ fala, referencia, resposta, bruta, semente = 1 }) {
+  const quem = quemFalou(resposta);
+  const d1 = dicaDoLivroECapitulo(referencia, resposta);
+  if (!fala || !quem || !d1) return "";
+  const { contexto, erradas } = partesDoQuemDisse(bruta, resposta);
+  const nomesQuem = new Set(nomesDaResposta(resposta));
+  const opcoes = erradas.slice(0, 3);
+  for (const n of embaralhar(PERSONAGENS_PARA_OPCOES.slice(), semente + 31)) {
+    if (opcoes.length >= 3) break;
+    if (!nomesDaResposta(n).some((x) => nomesQuem.has(x)) && !opcoes.some((o) => normalizarTexto(o) === normalizarTexto(n))) opcoes.push(n);
+  }
+  const todas = embaralhar([quem, ...opcoes], semente + 37);
+  const dicas = [`${d1}.`, ...(contexto ? [contexto] : []), `Escolha entre: ${todas.join("; ")}.`];
+  return `Quem disse isso? “${fala}” ${dicas.map((d, i) => `Dica ${i + 1}: ${d}`).join(" ")}`;
+}
+
 // ---------- Patch 6.12.77: aspas soltas e quem fala ----------
 
 // Tira as aspas que ficaram sem par no versículo transcrito (a fala começou no versículo de antes ou continua no seguinte): “ sem o ”

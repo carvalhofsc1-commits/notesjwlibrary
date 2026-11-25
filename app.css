@@ -17499,6 +17499,12 @@ input[type="date"].fam-campo::-webkit-calendar-picker-indicator { margin: 0; pad
 #participarSessao .fam-sessao-acerto > select, #participarSessao .fam-sessao-acerto > button { width: 100%; min-width: 0; margin: 0; }
 
 /* 6.11.96: jogo de dicas ao vivo — uma questão e uma dica por vez; os pontos caem a cada dica dada. */
+/* 6.13.39: Quem disse isso?: a dica com os 4 nomes em botões (2 por linha, na largura toda) */
+#participarSessao .fam-sessao-dica-opcoes { display: grid; gap: 8px; }
+#participarSessao .fam-sessao-dica-opcoes[hidden] { display: none; }
+#participarSessao .fam-sessao-dica-texto { margin: 0; }
+#participarSessao .fam-sessao-opcoes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+#participarSessao .fam-sessao-opcao { width: 100%; min-width: 0; margin: 0; white-space: normal; overflow-wrap: anywhere; font-weight: 700; }
 #participarSessao .fam-sessao-dica { margin: 0 0 6px; padding: 6px 10px; border-left: 3px solid color-mix(in srgb, #f59e0b 80%, var(--line)); border-radius: 6px; background: color-mix(in srgb, #f59e0b 10%, var(--card)); font-weight: 600; }
 #participarSessao .fam-sessao-aguarda { margin: 0 0 6px; color: var(--muted); font-style: italic; }
 #participarSessao .fam-sessao-qnum > span:last-child { color: color-mix(in srgb, #f59e0b 35%, var(--text)); }

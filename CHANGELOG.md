@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.39
+
+- Quem disse isso? (Adoração e Jogos bíblicos): a frase aparece logo no início da questão (não é mais dica) e já dá para responder, sem o aviso de esperar a 1ª dica. Dica 1: o livro e o capítulo ("Está em Atos, capítulo 26"; no livro com o nome de quem falou, só a parte das Escrituras). Dica 2: o contexto, o que estava acontecendo quando a frase foi dita (escrito pela IA, sem o nome de quem falou; o que trouxer o nome sai). Dica 3: 4 nomes em botões (2 por linha), o certo misturado com 3 errados da IA (os que faltarem vêm de uma lista de personagens); tocar num nome o põe no campo da resposta.
+- Prompt do jogo: no Quem disse isso? a IA manda em "pergunta" o "Contexto: …" e as "Opções erradas: …". Responder só com a frase vale mais pontos (total de dicas − dicas dadas + 1).
+
 ## 6.13.38
 
 - Jogos bíblicos → jogo pronto → 🔗 Jogar em grupo: os itens não ficam mais grudados (10 px entre a dica, o aviso dos nomes, o campo do apelido com ➕ Acrescentar, o 🔗 Criar o código do jogo e o ◀ Escolher outro jogo).

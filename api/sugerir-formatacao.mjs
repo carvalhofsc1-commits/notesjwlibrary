@@ -57,6 +57,7 @@ import {
   cortarNoFimDaFrase,
   datasPermitidas,
   dicaDoLivro,
+  perguntaDoQuemDisse,
   embaralhar,
   escolhasValidas,
   eventosDoApendiceB,
@@ -3980,7 +3981,10 @@ const PREPARAR_QUADRO_FAMILIA = {
               const dica2 = dicaDoLivro(livroDaReferencia(v.referencia), resposta);
               // 6.12.77: só vale se o nome de quem fala está no texto, antes da fala, e o ouvinte não vem antes dele (quemFalaConfere).
               if (!fala || !dica2 || !quemFalaConfere(v.texto, resposta) || !falaSemONome(fala, resposta) || !versiculoNovo(v.referencia)) return;
-              conferidas.push({ pergunta: `Quem disse isso? Dica 1: “${aspasSimples(fala)}” Dica 2: ${dica2}.`, resposta, referencia: v.referencia });
+              // 6.13.39: a frase aparece logo no início (não é dica); Dica 1 = livro e capítulo, Dica 2 = o contexto (da IA), Dica 3 = 4 nomes para escolher.
+              const pergunta = perguntaDoQuemDisse({ fala: aspasSimples(fala), referencia: v.referencia, resposta, bruta: b.pergunta, semente: ctx.semente + i });
+              if (!pergunta) return;
+              conferidas.push({ pergunta, resposta, referencia: v.referencia });
             } else {
               // 6.12.77: a referência com o nome do livro como na Bíblia do app ("Filemon" -> "Filêmon", "Salmo" -> "Salmos").
               const r = { pergunta: limparTextoGerado(b.pergunta, 400), resposta, referencia: referenciaPadrao(linhaFamilia(b.referencia, 120)) };
