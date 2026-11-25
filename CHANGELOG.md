@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.88
+
+- Barra de baixo: o atalho **Anotações** foi substituído por **🎲 Jogos** (Início, Jogos, Pesquisas, Reuniões, Adoração, Bíblia, Menu). As Anotações continuam no Menu (☰) e nos atalhos do Início. Ao tocar em Jogos pela barra, a tela abre sempre nas duas opções (Entrar em um jogo / Montar o meu jogo); e a tela ao vivo de um jogo marca "Jogos" na barra (antes marcava "Adoração").
+
 ## 6.13.87
 
 - Jogo ao vivo: o rótulo do sorteio agora é "🎲 Sorteio: jogadores, perguntas e dicas (opcional)", numa linha só (a letra diminui sozinha para caber; 12 px numa tela de 360 px).
