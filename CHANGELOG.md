@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.56
+
+- "Jogar em grupo": setinha ao lado do título, para baixo com o card recolhido e para cima com ele aberto.
+
 ## 6.13.55
 
 - "Jogar em grupo": o título do card mantém a cor de fundo original ao abrir.
