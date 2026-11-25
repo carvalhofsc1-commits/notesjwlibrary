@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.71
+
+- Títulos do alto das telas **sempre numa linha só**: na página de Reuniões ("Preparar para comentar") o título ficava espremido em 3 linhas por causa de um espaço reservado que eu tinha posto na 6.13.64; saiu. Em todo o app os títulos não quebram: se o texto não couber, a letra diminui (mínimo 11 px) e só então entram reticências. Conferido em 340 px em 14 telas.
+
 ## 6.13.70
 
 - Topo das telas com linha divisória (Anotações, Adoração em família e subpainéis, Jogos, Pesquisas salvas, Formatar, páginas de Reuniões): todas seguem as medidas da tela Anotações (título a 8 px da linha; linha de 3 px; 10 px da linha até o início da página, conferido: 7 px de texto até a linha e 10 px até o próximo item) e a linha é **azul** em todo o app (antes variava: cinza-azulado, roxo, laranja, verde…).

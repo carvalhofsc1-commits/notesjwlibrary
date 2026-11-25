@@ -17898,3 +17898,10 @@ body[data-screen="inicio"] .voltar-topo { visibility: hidden; }
 .fam-card > .fam-topo + * { margin-top: 0; }
 .fam-topo .fam-titulo, .salvas-topo h2, .reunioes-topo .reunioes-pagina-titulo { margin: 0; line-height: 1.2; }
 .formatar-titulo { line-height: 1.2; }
+
+/* 6.13.71: os títulos do alto das telas usam sempre UMA linha só (se não couber, a letra diminui; nunca quebra em várias linhas) */
+.reunioes-topo:has(> #reunioesCampoBtn:not([hidden]))::before { content: none; }
+.fam-titulo, #anotacoesTitulo, #salvasTitulo, .formatar-titulo, .pesq-titulo, #backupCard > h2, .leitura-topo h2, .ajustes-grupo-titulo, .reunioes-topo .reunioes-pagina-titulo { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fam-titulo { display: block; flex-wrap: nowrap; }
+.reunioes-topo .reunioes-pagina-titulo { flex: 1 1 auto; min-width: 0; width: 100%; justify-content: center; flex-wrap: nowrap; }
+#participarTitulo.fam-titulo-jogo { display: flex; justify-content: center; }

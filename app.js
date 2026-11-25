@@ -90,6 +90,21 @@
     }
     window.addEventListener('resize', topbarAjustar);
 
+    // 6.13.71: os títulos do alto das telas ficam numa linha só: se o texto não couber, a letra diminui até caber (mínimo 11 px; depois, reticências).
+    const TITULOS_UMA_LINHA = '.fam-titulo, #anotacoesTitulo, #salvasTitulo, .formatar-titulo, .pesq-titulo, #backupCard > h2, .leitura-topo h2, .ajustes-grupo-titulo, .reunioes-topo .reunioes-pagina-titulo';
+    function titulosAjustar() {
+      document.querySelectorAll(TITULOS_UMA_LINHA).forEach(el => {
+        if (!el.getClientRects().length) return;
+        el.style.fontSize = '';
+        let tam = parseFloat(getComputedStyle(el).fontSize) || 16;
+        let guarda = 0;
+        while (el.scrollWidth > el.clientWidth + 1 && tam > 11 && guarda++ < 30) { tam -= 0.5; el.style.fontSize = tam + 'px'; }
+      });
+    }
+    window.addEventListener('resize', titulosAjustar);
+    window.addEventListener('hashchange', () => setTimeout(titulosAjustar, 60));
+    setInterval(titulosAjustar, 900);
+
     // "Mais opções" (depois do Salvar alterações): na tela Formatar só o que é do texto (Salvar texto, Exportar) fica nele, e as opções de formatação ficam à vista;
     // nas outras telas (Reuniões e demais onde o cartão Texto original mostra uma resposta) as opções de formatação também entram nele, recolhidas.
     function editorOpcoesPosicionar() {
@@ -7935,7 +7950,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.13.70'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.13.71'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
