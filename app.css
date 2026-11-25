@@ -18105,3 +18105,10 @@ details.fam-placar-card > summary { min-height: 0 !important; padding: 3px 8px !
 .fam-sessao-nav-seta:disabled { opacity: .45; }
 .fam-sessao-nav > .fam-sessao-nav-seta { background: #7c3aed !important; border-color: #6d28d9 !important; color: #fff !important; }
 .fam-sessao-nav > .fam-sessao-nav-seta:disabled { background: #a78bfa !important; border-color: #a78bfa !important; opacity: .7; }
+
+/* 6.13.96: na resposta do jogo: "Enviar resposta" com fundo azul e "Não sei" com fundo vermelho (letras brancas; desabilitados, mais claros) */
+#participarSessao .fam-sessao-resp-box .fam-sessao-responder button.fam-principal { background: #2563eb !important; border-color: #1d4ed8 !important; color: #fff !important; }
+#participarSessao .fam-sessao-resp-box .fam-sessao-responder button.fam-nao-sei { background: #dc2626 !important; border-color: #b91c1c !important; color: #fff !important; }
+#participarSessao .fam-sessao-resp-box .fam-sessao-responder button.fam-principal:disabled { background: #93b4f5 !important; border-color: #93b4f5 !important; opacity: .85; }
+#participarSessao .fam-sessao-resp-box .fam-sessao-responder button.fam-nao-sei:disabled { background: #f29b9b !important; border-color: #f29b9b !important; opacity: .85; }
+#participarSessao .fam-sessao-resp-box .fam-sessao-responder button.fam-nao-sei svg { color: #fff; stroke: currentColor; }

@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.96
+
+- Ordem e data dos acontecimentos: a descrição na lista dos jogos agora é "Ponha os acontecimentos bíblicos na ordem certa".
+- Resposta do jogo: o botão "Enviar resposta" com fundo **azul** e o "Não sei" com fundo **vermelho**, letras e ícone brancos; desabilitados, os dois ficam em tons mais claros.
+
 ## 6.13.95
 
 - Jogo ao vivo, cor do card da questão: **cinza claro** sem responder, **roxo** com a resposta certa e **vermelho claro** com a resposta errada (também quando já houve uma tentativa errada ou ninguém acertou). Saíram o azul de "em andamento" e o verde de "respondida".

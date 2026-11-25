@@ -7958,7 +7958,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.13.95'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.13.96'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -30807,7 +30807,7 @@ function saveTemplatesToStorage() {
     const JOGOS_BIBLICOS = [
       { nome: FAMILIA_JOGOS[0], titulo: 'Quem sou eu?', emoji: '🕵️', desc: 'Descubra o personagem bíblico pelas dicas.' },
       { nome: FAMILIA_JOGOS[1], titulo: 'Verdadeiro ou falso', emoji: '✅', desc: 'Diga se a afirmação sobre a Bíblia é verdadeira ou falsa.' },
-      { nome: FAMILIA_JOGOS[2], titulo: 'Ordem e data dos acontecimentos', emoji: '⏳', desc: 'Ponha os acontecimentos bíblicos na ordem certa, com as datas.' },
+      { nome: FAMILIA_JOGOS[2], titulo: 'Ordem e data dos acontecimentos', emoji: '⏳', desc: 'Ponha os acontecimentos bíblicos na ordem certa' },
       { nome: FAMILIA_JOGOS[3], titulo: 'Quem disse isso?', emoji: '💬', desc: 'Descubra quem disse a frase da Bíblia.' },
       { nome: FAMILIA_JOGOS[4], titulo: 'Complete o versículo', emoji: '📖', desc: 'Diga a palavra que falta no versículo.' },
       { nome: FAMILIA_JOGOS[5], titulo: 'Abreviações bíblicas', emoji: '🔤', desc: 'Decifre siglas como “Os 12 A de C”.' },
