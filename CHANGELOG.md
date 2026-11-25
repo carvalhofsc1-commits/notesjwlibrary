@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.61
+
+- Jogos: o nome do jogo aparece só no título do card, em cima; o corpo (pedido e jogo pronto) não repete. O tema, se houver, vai na linha "Preparado em…".
+- Perfil bíblico: a descrição agora diz "Acerte o nome de pessoas, lugares, coisas e anos…" (sem "Adivinhe").
+
 ## 6.13.60
 
 - Jogos (sozinho e em grupo): o nome do jogo aparece só no título de cima; a seção liberada não repete o título.

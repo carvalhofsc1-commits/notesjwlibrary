@@ -17783,8 +17783,6 @@ body.fam-tela-grande .fam-video-texto { font-size: 1.05em; max-height: 50vh; }
 .jogos-grade[hidden] { display: none; }
 
 /* 6.13.52: Jogos: vistas (só o que importa em cada tela), jogo pronto sem o título do card, grupo recolhível */
-.jogos-card.pronto > .jogos-atalho { display: none; }
-.jogos-card.pronto > .jogos-painel { border-top: 0; }
 .jogos-grupo[hidden], #jogosHub[hidden], #jogosDica[hidden], #jogosSalvosBox[hidden] { display: none; }
 
 /* 6.13.53: "Jogar em grupo" num card só: recolhido parece um botão; aberto, a moldura abraça o botão e as configurações */

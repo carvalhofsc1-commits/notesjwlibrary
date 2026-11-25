@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.13.60'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.13.61'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -30642,7 +30642,7 @@ function saveTemplatesToStorage() {
       { nome: FAMILIA_JOGOS[3], titulo: 'Quem disse isso?', emoji: '💬', desc: 'Descubra quem disse a frase da Bíblia.' },
       { nome: FAMILIA_JOGOS[4], titulo: 'Complete o versículo', emoji: '📖', desc: 'Diga a palavra que falta no versículo.' },
       { nome: FAMILIA_JOGOS[5], titulo: 'Abreviações bíblicas', emoji: '🔤', desc: 'Decifre siglas como “Os 12 A de C”.' },
-      { nome: FAMILIA_JOGOS[6], titulo: 'Perfil bíblico', emoji: '🃏', desc: 'Adivinhe pessoas, lugares, coisas e anos com o menor número de dicas.' }
+      { nome: FAMILIA_JOGOS[6], titulo: 'Perfil bíblico', emoji: '🃏', desc: 'Acerte o nome de pessoas, lugares, coisas e anos com o menor número de dicas.' }
     ];
     const JOGOS_SALVOS_KEY = 'nsJogosPreparadosV1';
     const JOGOS_SALVOS_MAX = 30;
@@ -30756,9 +30756,6 @@ function saveTemplatesToStorage() {
       jogosStatus('');
       botao.setAttribute('aria-expanded', 'true');
       const p = jogosEls.painel;
-      const titulo = document.createElement('p');
-      titulo.className = 'jogos-painel-titulo';
-      titulo.textContent = j.emoji + ' ' + j.titulo;
       const rotTema = document.createElement('label');
       rotTema.className = 'fam-trocar-rotulo';
       rotTema.htmlFor = 'jogosTema';
@@ -30801,7 +30798,7 @@ function saveTemplatesToStorage() {
       aviso.setAttribute('role', 'status');
       aviso.hidden = true;
       ir.addEventListener('click', () => jogosPreparar(j, tema.value, instr.value, ir, aviso));
-      p.replaceChildren(titulo, rotTema, tema, rotInstr, instr, acoes, aviso);
+      p.replaceChildren(rotTema, tema, rotInstr, instr, acoes, aviso); // 6.13.61: sem o nome do jogo de novo (já está no título do card)
       botao.after(p);
       p.hidden = false;
       jogosFiltro = j.nome; // os "Jogos preparados" mostram só os deste jogo
@@ -30881,14 +30878,12 @@ function saveTemplatesToStorage() {
       jogosEls.grade.querySelectorAll('.jogos-atalho').forEach(b => b.setAttribute('aria-expanded', String(b === botao)));
       const caixa = document.createElement('div');
       caixa.className = 'jogos-pronto';
-      const titulo = document.createElement('p');
-      titulo.className = 'jogos-painel-titulo';
-      titulo.textContent = (item.op.emoji || j.emoji) + ' ' + item.op.titulo;
+      // 6.13.61: sem repetir o nome do jogo (ele já está no título do card, em cima); o tema, se houver, vai na linha do "Preparado em"
       const meta = document.createElement('p');
       meta.className = 'jogos-pronto-meta';
       const n = jogosRodadas(item);
-      meta.textContent = 'Preparado em ' + jogosQuando(item.em) + (n ? ' · ' + n + (n === 1 ? ' rodada' : ' rodadas') : '');
-      caixa.append(titulo, meta);
+      meta.textContent = 'Preparado em ' + jogosQuando(item.em) + (n ? ' · ' + n + (n === 1 ? ' rodada' : ' rodadas') : '') + (item.tema ? ' · Tema: ' + item.tema : '');
+      caixa.append(meta);
       if (mensagem) {
         const ok = document.createElement('p');
         ok.className = 'fam-trocar-aviso ok';
