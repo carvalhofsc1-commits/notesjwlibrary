@@ -2,6 +2,13 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.52
+
+- Jogos bíblicos, por vistas: na tela inicial só "Entrar em um jogo" e "Montar o meu jogo"; em "Montar", só o menu dos jogos; com um jogo aberto, só ele (e os "Jogos preparados" daquele jogo, se houver); com um jogo preparado aberto, só as opções de jogar. "Jogos preparados" some da tela inicial. O Voltar leva sempre à tela das duas opções (e dela, ao Início).
+- O Voltar da tela do jogo/adoração ao vivo não cai mais no Início: o jogo volta aos Jogos (tela das duas opções) e a adoração, à Adoração em família.
+- Jogo pronto: "▶️ Iniciar partida" sem texto explicativo e "▶️ Jogar em grupo" igual a ele, que expande e recolhe as configurações.
+- Partida sozinho: abre direto no jogo, sem código no topo, sem controles do administrador e sem liberar/bloquear; "Tela grande" continua.
+
 ## 6.13.51
 
 - Jogos bíblicos: a tela inicial tem duas opções, "Entrar em um jogo" e "Montar o meu jogo" (que abre o menu de jogos).

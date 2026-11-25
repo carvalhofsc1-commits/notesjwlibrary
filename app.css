@@ -17781,3 +17781,8 @@ body.fam-tela-grande .fam-video-texto { font-size: 1.05em; max-height: 50vh; }
 .jogos-card.aberto > .jogos-atalho { background: color-mix(in srgb, #8b5cf6 17%, var(--card)) !important; }
 .jogos-card > .jogos-painel { margin: 0; border: 0; border-top: 1px solid color-mix(in srgb, #8b5cf6 45%, var(--line)); border-radius: 0; background: color-mix(in srgb, #8b5cf6 4%, var(--card)); }
 .jogos-grade[hidden] { display: none; }
+
+/* 6.13.52: Jogos: vistas (só o que importa em cada tela), jogo pronto sem o título do card, grupo recolhível */
+.jogos-card.pronto > .jogos-atalho { display: none; }
+.jogos-card.pronto > .jogos-painel { border-top: 0; }
+.jogos-grupo[hidden], #jogosHub[hidden], #jogosDica[hidden], #jogosSalvosBox[hidden] { display: none; }

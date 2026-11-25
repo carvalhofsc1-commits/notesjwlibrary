@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.13.51'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.13.52'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -28492,6 +28492,8 @@ function saveTemplatesToStorage() {
       participarMontar();
       participarAplicar(d);
       participarVista('sessao');
+      // 6.13.52: partida sozinho: cai direto no jogo aberto, com as perguntas
+      if (d.programa.solo && participar.secoes && participar.secoes[0] && !participar.secoes[0].aberta) participarSecaoAbrir(0, true);
       participarAgendar();
     }
 
@@ -28937,6 +28939,8 @@ function saveTemplatesToStorage() {
       const p = participar.programa;
       const caixa = participarEls.sessao;
       caixa.textContent = '';
+      const solo = Boolean(p.solo); // 6.13.52: partida sozinho: sem código no topo, sem controles do administrador e sem liberar/bloquear
+      caixa.classList.remove('fam-sessao-solo');
       const cab = document.createElement('div');
       cab.className = 'fam-sessao-cabeca';
       const h = document.createElement('h3');
@@ -28957,10 +28961,10 @@ function saveTemplatesToStorage() {
       grande.title = 'Mostra só as partes liberadas, com letra grande (para a TV ou o notebook)';
       grande.addEventListener('click', () => participarTelaGrande(!document.body.classList.contains('fam-tela-grande')));
       participar.cron = { linha: cron };
-      cab.append(h, meta, grande);
+      if (solo) cab.append(h, grande); else cab.append(h, meta, grande);
       caixa.appendChild(cab); // sem o texto de resumo da programação (retirado na 6.11.76)
       caixa.appendChild(participarPainelMontar()); // 6.13.31: 👥 quem está participando (todos veem)
-      if (participar.dirigente) caixa.appendChild(participarDirigenteMontar());
+      if (participar.dirigente) { const painelDir = participarDirigenteMontar(); if (!solo) caixa.appendChild(painelDir); }
       else {
         const dica = document.createElement('p');
         dica.className = 'hint fam-dica';
@@ -28969,6 +28973,7 @@ function saveTemplatesToStorage() {
       }
       const lista = document.createElement('div');
       lista.className = 'fam-sessao-secoes';
+      if (solo) caixa.classList.add('fam-sessao-solo');
       // A Oração inicial não é uma parte para liberar: aparece só como uma linha de texto (sem card, sem descrição) e a numeração das partes segue sem ela.
       participar.oracao = new Set();
       // Também as partes só de boas-vindas (sem textos, vídeos nem jogo) deixam de ser seção: viram uma linha de texto.
@@ -29045,6 +29050,7 @@ function saveTemplatesToStorage() {
         if (participar.dirigente) {
           const acoes = document.createElement('div');
           acoes.className = 'fam-sessao-secao-acoes';
+          if (solo) acoes.style.display = 'none';
           const acao = document.createElement('button');
           acao.type = 'button';
           acao.className = 'secondary fam-fino';
@@ -30473,8 +30479,11 @@ function saveTemplatesToStorage() {
 
     // ---- Eventos da tela ----
     participarEls.voltar.addEventListener('click', () => {
+      // 6.13.52: o Voltar nunca cai no Início do app: o jogo volta à tela das duas opções dos Jogos; a adoração, à tela da Adoração em família
+      // (ou às Sugestões, se foi de lá que abriu).
+      if (participarEhJogo()) { try { jogosVista('home'); } catch (e) { /* tela dos jogos ainda iniciando */ } showScreen('jogos'); return; }
       const destino = participar.voltarPara;
-      showScreen(APP_SCREENS.includes(destino) && destino !== 'participar' && !(destino === 'familia' && !codigoAcessoSalvo()) ? destino : 'adoracao');
+      showScreen(destino === 'familia' && codigoAcessoSalvo() ? 'familia' : 'adoracao');
     });
     participarEls.codigo.addEventListener('input', () => {
       const c = participarCodigoLimpo(participarEls.codigo.value).slice(0, 6);
@@ -30530,7 +30539,14 @@ function saveTemplatesToStorage() {
     const JOGOS_SALVOS_MAX = 30;
     const JOGOS_FORMACAO = 'Grupo de irmãos jogando um jogo bíblico (várias idades)';
     let jogosPreparando = false;
+    // 6.13.52: as vistas da tela: 'home' (Entrar em um jogo / Montar o meu jogo), 'montar' (o menu dos jogos), 'jogo' (um jogo aberto, com o pedido)
+    // e 'pronto' (um jogo preparado, com as opções de jogar). jogosFiltro = o jogo aberto (os "Jogos preparados" mostram só dele).
+    let jogosVistaAtual = 'home';
+    let jogosFiltro = null;
     const jogosEls = {
+      hub: document.getElementById('jogosHub'),
+      dica: document.getElementById('jogosDica'),
+      salvosBox: document.getElementById('jogosSalvosBox'),
       grade: document.getElementById('jogosGrade'),
       painel: document.getElementById('jogosPainel'),
       status: document.getElementById('jogosStatus'),
@@ -30585,13 +30601,24 @@ function saveTemplatesToStorage() {
       const aberto = botoes.some(b => b.getAttribute('aria-expanded') === 'true');
       botoes.forEach(b => { b.parentElement.hidden = aberto && b.getAttribute('aria-expanded') !== 'true'; b.parentElement.classList.toggle('aberto', b.getAttribute('aria-expanded') === 'true'); });
     }
-    // "Montar o meu jogo" mostra (ou esconde) o menu de jogos.
-    function jogosGradeMostrar(sim) {
-      if (!sim) jogosFecharPainel();
-      if (jogosPreparando && !sim) return;
-      jogosEls.grade.hidden = !sim;
-      const bt = document.getElementById('jogosMontarBtn');
-      if (bt) bt.setAttribute('aria-expanded', String(sim));
+    // Mostra só o que a vista atual pede: na 'home', as duas opções; nas outras, o menu (ou o jogo aberto) e os "Jogos preparados" do jogo
+    // aberto (todos, no menu; nenhum, se não houver ou no jogo pronto).
+    function jogosVistaAplicar() {
+      const v = jogosVistaAtual;
+      const lista = jogosSalvosLer().filter(i => !jogosFiltro || i.nome === jogosFiltro);
+      jogosEls.dica.hidden = v !== 'home';
+      jogosEls.hub.hidden = v !== 'home';
+      jogosEls.grade.hidden = v === 'home';
+      jogosEls.salvosBox.hidden = !(v === 'montar' || v === 'jogo') || !lista.length;
+      document.getElementById('jogosMontarBtn').setAttribute('aria-expanded', String(v !== 'home'));
+      jogosCardsAtualizar();
+      jogosEls.grade.querySelectorAll('.jogos-card').forEach(c => c.classList.toggle('pronto', v === 'pronto' && c.classList.contains('aberto')));
+    }
+    function jogosVista(v) {
+      jogosVistaAtual = v;
+      if (v === 'home' || v === 'montar') { jogosFiltro = null; jogosSalvosPintar(); }
+      jogosVistaAplicar();
+      window.scrollTo(0, 0);
     }
     function jogosFecharPainel() {
       if (jogosPreparando) return;
@@ -30599,6 +30626,17 @@ function saveTemplatesToStorage() {
       jogosEls.painel.replaceChildren();
       jogosEls.grade.querySelectorAll('.jogos-atalho').forEach(b => b.setAttribute('aria-expanded', 'false'));
       jogosCardsAtualizar();
+      if (jogosVistaAtual !== 'home') { jogosVista('montar'); }
+    }
+    // O botão ◀ Voltar: dentro dos jogos leva sempre à tela das duas opções; nela, volta ao Início.
+    function jogosVoltar() {
+      if (jogosVistaAtual === 'home') { showScreen('inicio'); return; }
+      if (jogosPreparando) { jogosStatus('Espere o jogo em preparação ficar pronto.', 'erro'); return; }
+      jogosStatus('');
+      jogosEls.painel.hidden = true;
+      jogosEls.painel.replaceChildren();
+      jogosEls.grade.querySelectorAll('.jogos-atalho').forEach(b => b.setAttribute('aria-expanded', 'false'));
+      jogosVista('home');
     }
     // Tocar num jogo abre, logo abaixo dele, o pedido: tema e instrução (opcionais) e "✨ Preparar o jogo".
     function jogosAbrir(j, botao) {
@@ -30657,7 +30695,10 @@ function saveTemplatesToStorage() {
       p.replaceChildren(titulo, rotTema, tema, rotInstr, instr, acoes, aviso);
       botao.after(p);
       p.hidden = false;
-      jogosCardsAtualizar();
+      jogosFiltro = j.nome; // os "Jogos preparados" mostram só os deste jogo
+      jogosSalvosPintar();
+      jogosVistaAtual = 'jogo';
+      jogosVistaAplicar();
       requestAnimationFrame(() => botao.scrollIntoView({ block: 'nearest', behavior: 'smooth' }));
     }
     async function jogosPreparar(j, temaBruto, instrBruta, botao, avisoEl) {
@@ -30767,21 +30808,27 @@ function saveTemplatesToStorage() {
       }
       // 6.13.50: "Jogar sozinho" é o padrão (botão Iniciar partida); o grupo fica num bloco recolhido.
       caixa.appendChild(jogosSoloMontar(item));
-      const detGrupo = document.createElement('details');
-      detGrupo.className = 'fam-jogos-box jogos-grupo-det';
-      const smGrupo = document.createElement('summary');
-      smGrupo.textContent = '🔗 Jogar em grupo — configurações';
+      // 6.13.52: "▶️ Jogar em grupo" é um botão igual ao Iniciar partida; ao tocar, expande as configurações e, de novo, recolhe.
+      const btnGrupo = document.createElement('button');
+      btnGrupo.type = 'button';
+      btnGrupo.className = 'fam-fino fam-principal';
+      btnGrupo.textContent = '▶️ Jogar em grupo';
+      btnGrupo.setAttribute('aria-expanded', 'false');
       const grupo = document.createElement('div');
       grupo.className = 'jogos-grupo'; // 6.13.45: os itens do "Jogar em grupo" com espaço entre eles
-      detGrupo.append(smGrupo, grupo);
-      caixa.appendChild(detGrupo);
+      grupo.hidden = true;
+      btnGrupo.addEventListener('click', () => { grupo.hidden = !grupo.hidden; btnGrupo.setAttribute('aria-expanded', String(!grupo.hidden)); });
+      const acoesGrupo = document.createElement('div');
+      acoesGrupo.className = 'fam-acoes';
+      acoesGrupo.appendChild(btnGrupo);
+      caixa.append(acoesGrupo, grupo);
       jogosCompartilharMontar(item, grupo);
       p.replaceChildren(caixa);
       if (botao) botao.after(p);
       p.hidden = false;
-      jogosGradeMostrar(true); // 6.13.51: o jogo aberto dos "Jogos preparados" aparece mesmo com o menu fechado
-      jogosCardsAtualizar();
-      requestAnimationFrame(() => (botao || p).scrollIntoView({ block: 'nearest', behavior: 'smooth' }));
+      jogosVistaAtual = 'pronto'; // 6.13.52: só as opções do jogo pronto e o Voltar
+      jogosVistaAplicar();
+      requestAnimationFrame(() => window.scrollTo(0, 0));
     }
     // Jogar em grupo: os apelidos (opcionais) e "🔗 Criar o código do jogo"; com o código já criado, o código e "▶️ Iniciar o jogo".
     function jogosCompartilharMontar(item, onde) {
@@ -30834,9 +30881,6 @@ function saveTemplatesToStorage() {
     function jogosSoloMontar(item) {
       const caixa = document.createElement('div');
       caixa.className = 'jogos-solo';
-      const dica = document.createElement('p');
-      dica.className = 'hint fam-dica';
-      dica.textContent = 'Jogar sozinho: você vê as perguntas, responde e julga. O placar mostra só a pontuação.';
       const acoes = document.createElement('div');
       acoes.className = 'fam-acoes';
       const iniciar = document.createElement('button');
@@ -30873,12 +30917,12 @@ function saveTemplatesToStorage() {
         participarAbrir(r.data.sessao);
       });
       acoes.appendChild(iniciar);
-      caixa.append(dica, acoes, status);
+      caixa.append(acoes, status);
       return caixa;
     }
     // 📂 Jogos preparados (neste aparelho): abrir de novo (o mesmo jogo, para jogar outra vez ou com outro grupo) ou apagar.
     function jogosSalvosPintar() {
-      const lista = jogosSalvosLer();
+      const lista = jogosSalvosLer().filter(i => !jogosFiltro || i.nome === jogosFiltro); // 6.13.52: com um jogo aberto, só os preparados dele
       jogosEls.salvosQtd.textContent = lista.length ? '(' + lista.length + ')' : '(nenhum ainda)';
       if (!lista.length) {
         const vazio = document.createElement('p');
@@ -30929,12 +30973,10 @@ function saveTemplatesToStorage() {
     }
     jogosGradeMontar();
     jogosSalvosPintar();
-    document.getElementById('jogosVoltar').addEventListener('click', () => showScreen('inicio'));
+    jogosVistaAplicar();
+    document.getElementById('jogosVoltar').addEventListener('click', jogosVoltar);
     document.getElementById('jogosParticiparBtn').addEventListener('click', () => participarAbrir(''));
-    document.getElementById('jogosMontarBtn').addEventListener('click', () => {
-      if (jogosPreparando) { jogosStatus('Espere o jogo em preparação ficar pronto.', 'erro'); return; }
-      jogosGradeMostrar(jogosEls.grade.hidden);
-    });
+    document.getElementById('jogosMontarBtn').addEventListener('click', () => jogosVista('montar'));
     // Aberta pelo endereço (#participar ou #participar=CÓDIGO) antes de esta parte do app carregar.
     if (participarInicial) participarAbrir(participarInicial);
     else if (currentScreen() === 'participar') participarAoEntrar();
