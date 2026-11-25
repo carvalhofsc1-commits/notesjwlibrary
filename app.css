@@ -17955,3 +17955,8 @@ body :is(.fam-titulo, #anotacoesTitulo, #salvasTitulo, .formatar-titulo, .pesq-t
 
 /* 6.13.77: Anotações: ao passar o mouse os botões tremiam (a regra do :hover dos atalhos tirava os 100 px de altura mínima do menu, o botão encolhia, o mouse saía de cima dele e ele crescia de novo, sem parar): no :hover agora vale a mesma altura, e só a cor muda de leve */
 .atalhos-grid.anotacoes-hub-grid .atalho:hover { min-height: 100px; filter: brightness(.97); }
+
+/* 6.13.78: o cabeçalho da questão (número e pontos) e o tipo do Perfil bíblico centralizados */
+#participarSessao .fam-sessao-qnum { flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 6px; }
+.fam-sessao-pergunta.fam-perfil-tipo { justify-content: center; text-align: center; }
+.fam-sessao-pergunta.fam-perfil-tipo .fam-perfil-emojis { font-size: 1.9rem; }

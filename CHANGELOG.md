@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.78
+
+- Jogo ao vivo: o cabeçalho da questão ("Questão 1 de 4" e "⭐ vale N pontos") fica centralizado, um embaixo do outro.
+- Perfil bíblico: o tipo do que se deve descobrir passa a ter o emoji e o ❓ dos dois lados do texto, centralizado: 📅❓ Ano ❓📅, 📍❓ Lugar ❓📍, 🧑❓ Pessoa ❓🧑.
+
 ## 6.13.77
 
 - Anotações: os três botões do menu (Reuniões congregacionais, Assembleias, Congressos) não tremem mais ao passar o mouse. A regra do :hover dos atalhos zerava a altura mínima de 100 px do menu, o botão encolhia, o mouse saía de cima dele, ele voltava ao tamanho e assim por diante. Agora, com o mouse em cima, vale a mesma altura e só a cor muda de leve (3% mais escura).
