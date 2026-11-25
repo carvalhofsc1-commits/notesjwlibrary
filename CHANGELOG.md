@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.83
+
+- Rodapé do jogo: o texto "📜 Regras" ficava 10 px mais baixo que o centro do botão (o card tinha um espaço interno de 10 × 12 px e o título, uma margem). Tirei os dois: o texto de "Regras" e o de "Tela grande" estão agora no centro exato dos botões (mesma altura, mesma fonte e mesmo peso).
+
 ## 6.13.82
 
 - Jogo ao vivo: depois de tirar o contêiner verde sobrou o recuo lateral da parte (12 px de cada lado), que deixava o placar, o sorteio, a barra das questões e o card da questão mais estreitos que o card "Quem está participando". Tirei o recuo: todos os blocos têm agora a mesma largura (27 a 373 px numa tela de 400 px), inclusive o rodapé com Regras e Tela grande.

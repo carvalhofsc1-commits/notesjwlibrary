@@ -18017,3 +18017,9 @@ details.fam-placar-card > summary { min-height: 0 !important; padding: 3px 8px !
 
 /* 6.13.82: no jogo avulso, sem o recuo lateral da parte (.fam-parte): o jogo ocupa a mesma largura do card "Quem está participando" */
 #participarSessao.fam-sessao-jogo-avulso .fam-sessao-secao:not(.bloqueada) .fam-parte { padding-left: 0; padding-right: 0; }
+
+/* 6.13.83: o texto "Regras" centralizado no botão (a classe fam-secao-titulo do título dava margens que o deixavam mais baixo e mais estreito) */
+.fam-sessao-rodape > .fam-jogo-enunciado > summary { margin: 0 !important; padding: 0 10px !important; width: 100%; height: 30px; min-height: 0; box-sizing: border-box; line-height: 1.2; font-size: .85rem; font-weight: 600; }
+.fam-sessao-rodape > .fam-sessao-grande-btn { font-size: .85rem; font-weight: 600; line-height: 1.2; }
+.fam-sessao-rodape > .fam-jogo-enunciado { padding: 0 !important; }
+.fam-sessao-rodape > .fam-jogo-enunciado[open] { padding: 0 0 8px !important; }
