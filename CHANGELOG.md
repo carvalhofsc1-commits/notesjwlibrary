@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.84
+
+- Botão das regras do jogo: o rótulo é só a palavra "Regras" (saiu o emoji 📜 e qualquer seta ou marcador), fino (28 px) e dividindo a mesma linha com o "Tela grande", ambos do mesmo tamanho (157 × 28 px). Ao abrir, as regras ocupam a linha toda.
+
 ## 6.13.83
 
 - Rodapé do jogo: o texto "📜 Regras" ficava 10 px mais baixo que o centro do botão (o card tinha um espaço interno de 10 × 12 px e o título, uma margem). Tirei os dois: o texto de "Regras" e o de "Tela grande" estão agora no centro exato dos botões (mesma altura, mesma fonte e mesmo peso).

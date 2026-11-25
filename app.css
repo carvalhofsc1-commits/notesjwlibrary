@@ -18023,3 +18023,10 @@ details.fam-placar-card > summary { min-height: 0 !important; padding: 3px 8px !
 .fam-sessao-rodape > .fam-sessao-grande-btn { font-size: .85rem; font-weight: 600; line-height: 1.2; }
 .fam-sessao-rodape > .fam-jogo-enunciado { padding: 0 !important; }
 .fam-sessao-rodape > .fam-jogo-enunciado[open] { padding: 0 0 8px !important; }
+
+/* 6.13.84: o botão Regras só com a palavra "Regras" (sem seta nem emoji), fino e na mesma linha do Tela grande */
+.fam-sessao-rodape > .fam-jogo-enunciado > summary { list-style: none; }
+.fam-sessao-rodape > .fam-jogo-enunciado > summary::marker, .fam-sessao-rodape > .fam-jogo-enunciado > summary::-webkit-details-marker { content: ""; display: none; }
+.fam-sessao-rodape > .fam-jogo-enunciado > summary::before, .fam-sessao-rodape > .fam-jogo-enunciado > summary::after { content: none !important; display: none !important; }
+.fam-sessao-rodape > .fam-jogo-enunciado:not([open]), .fam-sessao-rodape > .fam-sessao-grande-btn { height: 28px; min-height: 28px; }
+.fam-sessao-rodape > .fam-jogo-enunciado > summary { height: 26px; }
