@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.42
+
+- Jogos (Adoração e Jogos bíblicos): o botão "Pontuar" virou o ícone 💾 (salvar), pequeno, à direita do campo "Quem acertou?", na mesma linha (o campo cresce e ocupa o resto). Faz o mesmo de antes: dá os pontos a quem foi escolhido (ou "Ninguém acertou") e revela a resposta.
+
 ## 6.13.41
 
 - Jogos (Adoração e Jogos bíblicos): o botão de pontuar mostra só "✅ Pontuar" (sem "3 pontos"); quanto a questão vale continua no alto dela ("vale N pontos agora").
