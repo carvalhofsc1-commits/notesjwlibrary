@@ -18079,3 +18079,7 @@ details.fam-placar-card > summary { min-height: 0 !important; padding: 3px 8px !
 /* 6.13.91: lista dos jogos: coluna do emoji com largura fixa (64 px) e o emoji centralizado nela; assim o nome de todos os jogos começa na mesma posição (o emoji maior do Perfil bíblico empurrava o texto) */
 .jogos-card > .jogos-atalho { grid-template-columns: 64px minmax(0, 1fr); column-gap: 10px; }
 .jogos-card .fam-hub-icone { justify-self: center; text-align: center; width: 64px; }
+
+/* 6.13.92: o emoji do Perfil bíblico do mesmo tamanho dos emojis dos outros jogos (na lista e no título da tela do jogo) */
+.jogos-card[data-jogo="perfil_biblico"] .fam-hub-icone { font-size: 2.9rem; }
+#participarTitulo[data-jogo="perfil_biblico"] .fam-titulo-jogo-emoji { font-size: 2.3rem; }

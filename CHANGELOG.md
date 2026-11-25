@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.92
+
+- O emoji do Perfil bíblico (a carta coringa) volta ao mesmo tamanho dos emojis dos outros jogos: 46 px na lista dos jogos e 37 px no título da tela do jogo (antes 59 e 48 px).
+
 ## 6.13.91
 
 - Lista dos jogos: o nome e a descrição do Perfil bíblico começavam mais à direita porque o emoji dele é maior e alargava a coluna. A coluna do emoji agora tem largura fixa (64 px) em todos os jogos e o emoji fica centralizado nela: todos os nomes e descrições começam no mesmo ponto (conferido nos 7 cards).
