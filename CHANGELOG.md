@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.47
+
+- Prompt do Verdadeiro ou falso: a IA passa a escolher sempre afirmações relevantes, sobre as histórias e os fatos mais conhecidos da Bíblia, sem se prender a detalhes miúdos do texto (números, nomes secundários, medidas); as falsas trocam um fato importante por outro plausível, nunca uma pegadinha de detalhe.
+
 ## 6.13.46
 
 - Perfil bíblico (Adoração e Jogos bíblicos): as dicas de cada questão podem ser sorteadas. No card de sorteio, quem dirige escolhe "🎲 Sorteadas" ou "📋 Em ordem" (padrão: em ordem, como sempre foi). Com "Sorteadas", o botão vira "🎲 Sortear a Nª dica": em todos os aparelhos aparece uma animação com os números girando, o número sorteado em destaque e só então a dica é revelada; o sorteio é feito pelo servidor entre as dicas que ainda não saíram, sem repetir. Os pontos seguem a quantidade de dicas dadas (1ª dica vale o máximo, a seguinte um ponto a menos...). Reiniciar a questão zera as dicas sorteadas. Só no Perfil bíblico por enquanto.
