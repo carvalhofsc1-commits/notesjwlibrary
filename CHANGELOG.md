@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.86
+
+- Card recolhido "Controles do administrador do jogo" mais baixo: 34 px (antes 54 px), a mesma altura do card do Sorteio; o texto fica centralizado na vertical. Aberto, o card mantém o conteúdo de sempre.
+
 ## 6.13.85
 
 - Jogo ao vivo: **todos os espaços verticais entre os blocos iguais, de 10 px** (o que havia entre o placar e o sorteio). Antes variavam de 4 a 22 px: cabeçalho, "Quem está participando", controles do administrador, placar, sorteio, barra das questões, card da questão, "Voltar a bloquear" e o rodapé (Regras e Tela grande). Dentro do card da questão, os quadros também ficam a 10 px e o espaço do número da questão até o tipo da carta passou de 8 para 10 px.

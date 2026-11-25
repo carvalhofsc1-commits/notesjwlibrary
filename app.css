@@ -18044,3 +18044,8 @@ details.fam-placar-card > summary { min-height: 0 !important; padding: 3px 8px !
 #participarSessao.fam-sessao-jogo-avulso > .fam-sessao-rodape { margin-top: 10px; }
 #participarSessao .fam-sessao-qnum { margin-bottom: 10px; }
 .fam-sessao-pergunta.fam-perfil-tipo { margin: 0 0 10px; }
+
+/* 6.13.86: o card recolhido "Controles do administrador do jogo" mais baixo (34 px, como o card do Sorteio; antes 54 px) */
+#participarSessao details.fam-sessao-dirigente { padding: 0 12px; }
+#participarSessao details.fam-sessao-dirigente[open] { padding: 0 12px 10px; }
+#participarSessao details.fam-sessao-dirigente > summary { min-height: 32px; padding: 0; line-height: 1.2; }
