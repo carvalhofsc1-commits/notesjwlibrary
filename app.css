@@ -18004,3 +18004,13 @@ details.fam-placar-card > summary { min-height: 0 !important; padding: 3px 8px !
 #participarSessao .fam-sessao-jogo > .fam-sessao-placar { margin-bottom: 0; }
 #participarSessao .fam-sessao-jogo > .fam-sessao-nav { margin: 0; }
 #participarSessao .fam-sessao-jogo > ol.fam-sessao-rodadas { margin-top: 0; }
+
+/* 6.13.81: no jogo, sem o contêiner colorido (verde) em volta da tela; Regras e Tela grande do mesmo tamanho e da mesma cor */
+#participarSessao.fam-sessao-jogo-avulso .fam-sessao-secao:not(.bloqueada) { border: 0; background: transparent; box-shadow: none; padding: 0; margin: 0; }
+#participarSessao.fam-sessao-jogo-avulso .fam-sessao-secao:not(.bloqueada) > .fam-sessao-corpo { border: 0; padding: 0; background: transparent; }
+#participarSessao.fam-sessao-jogo-avulso .fam-sessao-secao:not(.bloqueada) .fam-sessao-corpo-dentro { padding: 0; }
+.fam-sessao-rodape { align-items: stretch; }
+.fam-sessao-rodape > .fam-jogo-enunciado, .fam-sessao-rodape > .fam-sessao-grande-btn { box-sizing: border-box; min-height: 32px; background: #f8f9fa !important; border: 1px solid var(--line) !important; border-radius: 8px; color: #4b5563; }
+.fam-sessao-rodape > .fam-jogo-enunciado:not([open]) { height: 32px; }
+.fam-sessao-rodape > .fam-sessao-grande-btn { height: 32px; padding: 0 10px; display: flex; align-items: center; justify-content: center; }
+.fam-sessao-rodape > .fam-jogo-enunciado > summary { min-height: 30px; display: flex; align-items: center; justify-content: center; padding: 0 10px; box-sizing: border-box; }

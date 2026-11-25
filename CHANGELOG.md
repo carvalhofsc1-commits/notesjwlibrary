@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.81
+
+- Jogo ao vivo: sem o contêiner colorido (borda verde) em volta da tela do jogo; as questões ficam direto na página.
+- Rodapé do jogo: "Regras" e "Tela grande" com o mesmo tamanho (157 × 32 px), a mesma cor de fundo e a mesma moldura (as Regras estavam laranja e mais baixas); as regras, ao abrir, ocupam a largura toda.
+
 ## 6.13.80
 
 - Jogo ao vivo: moldura fina cinza em volta da barra das setas e das questões; os espaços entre o placar, a barra e o card da questão ficaram bem pequenos e iguais (4 px; antes 32 e 20 px, porque um bloco vazio do sorteio e margens repetidas somavam espaço).
