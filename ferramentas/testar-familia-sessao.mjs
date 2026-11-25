@@ -251,6 +251,13 @@ try {
   assert.ok(!JSON.stringify(part2.dados).includes(DATA_SECRETA) && !("extras" in part2.dados)); passo("participante não recebe a ordem nem as datas");
   const dir2 = await chamar({ acao: "entrar", sessao: cv2.sessao, chave: cv2.chave });
   assert.deepEqual(dir2.dados.extras.ordens["2"], v2.partes[2].jogo.ordem); passo("quem dirige recebe a ordem certa em extras.ordens[índice da parte]");
+  // 6.13.36: jogo avulso (tela Jogos bíblicos): programa.modo = "jogos" e o jogo já começa liberado e aberto
+  const avulso = (await chamar({ acao: "criar", programa: { modo: "jogos", titulo: "Quem sou eu?", emoji: "🕵️", partes: [v2.partes[2]] }, codigo: "codigo-de-teste" })).dados;
+  const entAvulso = await chamar({ acao: "entrar", sessao: avulso.sessao, nome: "Ana" });
+  assert.equal(entAvulso.dados.programa.modo, "jogos");
+  assert.deepEqual(entAvulso.dados.estado.liberadas, [0]);
+  assert.equal(entAvulso.dados.estado.atual, 0); passo("jogo avulso: modo \"jogos\" guardado e o jogo já liberado e aberto");
+  assert.ok(!("modo" in prog2)); passo("programação da Adoração continua sem modo");
   const progAntigo = JSON.parse(programaArq);
   assert.ok(!("versao" in progAntigo) && progAntigo.partes.every((p) => !("quadro" in p)) && !("ordens" in d.dados.extras)); passo("programação antiga continua sem versao, quadro e ordens");
 

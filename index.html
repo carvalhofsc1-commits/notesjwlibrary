@@ -57,6 +57,7 @@
       <button type="button" data-menu-ir="transcricao"><span aria-hidden="true">🎙️</span> Áudio em texto</button>
       <button type="button" data-menu-ir="pesquisa"><span aria-hidden="true">🔎</span> Assistente de pesquisas</button>
       <button type="button" data-menu-ir="adoracao"><span aria-hidden="true">👨‍👩‍👧</span> Adoração em família</button>
+      <button type="button" data-menu-ir="jogos"><span aria-hidden="true">🎲</span> Jogos bíblicos</button>
       <button type="button" data-menu-ir="backup"><span aria-hidden="true">📦</span> Backup JW</button>
       <button type="button" data-menu-atalho="historico"><span aria-hidden="true">🗂️</span> Pesquisas salvas</button>
       <button type="button" data-menu-ir="ajustes"><span aria-hidden="true">⚙️</span> Ajustes</button>
@@ -146,17 +147,18 @@
 
       <section class="card atalhos-card" aria-label="Atalhos">
         <div class="atalhos-paginas" id="atalhosPaginas">
-        <div class="atalhos-grid" id="atalhosPagina1" role="group" aria-label="Atalhos, página 1 de 2">
+        <div class="atalhos-grid" id="atalhosPagina1" role="group" aria-label="Atalhos, página 1 de 3">
           <button type="button" class="atalho" data-atalho="anotacoes"><span class="atalho-icone" aria-hidden="true">📝</span><span class="atalho-nome">Anotações</span><span class="atalho-desc">Reuniões, assembleias e congressos</span></button>
           <button type="button" class="atalho" data-atalho="pesquisa"><span class="atalho-icone" aria-hidden="true">🔎</span><span class="atalho-nome">Assistente de pesquisas</span><span class="atalho-desc">Pesquisar um assunto, texto ou vídeo no wol.jw.org com auxílio da IA</span><span class="atalho-trava" hidden></span></button>
           <button type="button" class="atalho" data-atalho="biblia"><span class="atalho-icone" aria-hidden="true">📚</span><span class="atalho-nome">Leitura diária da Bíblia</span><span class="atalho-desc">Programa anual e resumo dos capítulos</span><span class="atalho-barra" id="bibliaAtalhoBarra" aria-hidden="true"><span></span></span></button>
           <button type="button" class="atalho" data-atalho="comentarios"><span class="atalho-icone" aria-hidden="true">✋</span><span class="atalho-nome">Comentários</span><span class="atalho-desc">Ajuda na preparação para comentar</span><span class="atalho-trava" hidden></span></button>
           <button type="button" class="atalho" data-atalho="dirigir"><span class="atalho-icone" aria-hidden="true">🎤</span><span class="atalho-nome">Dirigentes</span><span class="atalho-desc">Ajuda na preparação para dirigir</span><span class="atalho-trava" hidden></span></button>
           <button type="button" class="atalho" data-atalho="adoracao"><span class="atalho-icone" aria-hidden="true">👨‍👩‍👧</span><span class="atalho-nome">Adoração em família</span><span class="atalho-desc">Sugestões para a noite de adoração e participar de uma adoração</span></button>
+          <button type="button" class="atalho" data-atalho="jogos"><span class="atalho-icone" aria-hidden="true">🎲</span><span class="atalho-nome">Jogos bíblicos</span><span class="atalho-desc">Jogar em grupo pelo celular, com código</span></button>
           <button type="button" class="atalho" data-atalho="leitura"><span class="atalho-icone" aria-hidden="true">🔊</span><span class="atalho-nome">Assistente de leitura em voz</span><span class="atalho-desc">Ouvir um PDF, um Word ou um texto colado</span><span class="atalho-trava" hidden></span></button>
-          <button type="button" class="atalho" data-atalho="transcricao"><span class="atalho-icone" aria-hidden="true">🎙️</span><span class="atalho-nome">Áudio em texto</span><span class="atalho-desc">Transcrever um áudio e resumir com a IA</span><span class="atalho-trava" hidden></span></button>
         </div>
-        <div class="atalhos-grid" id="atalhosPagina2" role="group" aria-label="Atalhos, página 2 de 2">
+        <div class="atalhos-grid" id="atalhosPagina2" role="group" aria-label="Atalhos, página 2 de 3">
+          <button type="button" class="atalho" data-atalho="transcricao"><span class="atalho-icone" aria-hidden="true">🎙️</span><span class="atalho-nome">Áudio em texto</span><span class="atalho-desc">Transcrever um áudio e resumir com a IA</span><span class="atalho-trava" hidden></span></button>
           <button type="button" class="atalho" data-atalho="formatar"><span class="atalho-icone" aria-hidden="true">✨</span><span class="atalho-nome">Formatar notas JW Library</span><span class="atalho-desc">Organizar e formatar o texto com a IA</span></button>
           <button type="button" class="atalho" data-atalho="sentinela"><span class="atalho-icone" aria-hidden="true">📰</span><span class="atalho-nome">A Sentinela</span><span class="atalho-desc">Respostas e comentários do estudo</span><span class="atalho-trava" hidden></span></button>
           <button type="button" class="atalho" data-atalho="discursos"><span class="atalho-icone" aria-hidden="true">📜</span><span class="atalho-nome">Discursos</span><span class="atalho-desc">Ajuda na preparação de discursos e esboços</span><span class="atalho-trava" hidden></span></button>
@@ -164,6 +166,9 @@
           <button type="button" class="atalho" data-atalho="extrato"><span class="atalho-icone" aria-hidden="true">💰</span><span class="atalho-nome">Extrato</span><span class="atalho-desc">Créditos, consumo de IA e saldo</span></button>
           <button type="button" class="atalho" data-atalho="outros"><span class="atalho-icone" aria-hidden="true">🖋️</span><span class="atalho-nome">Outros esboços</span><span class="atalho-desc">Tema livre ou esboço importado</span><span class="atalho-trava" hidden></span></button>
           <button type="button" class="atalho" data-atalho="ajustes"><span class="atalho-icone" aria-hidden="true">⚙️</span><span class="atalho-nome">Ajustes</span><span class="atalho-desc">Códigos, vozes, IA e preferências</span></button>
+        </div>
+        <!-- 6.13.36: Jogos bíblicos entrou na página 1 (depois da Adoração); o Áudio em texto foi para a 2 e as Pesquisas salvas para a 3. -->
+        <div class="atalhos-grid" id="atalhosPagina3" role="group" aria-label="Atalhos, página 3 de 3">
           <button type="button" class="atalho" data-atalho="historico"><span class="atalho-icone" aria-hidden="true">🗂️</span><span class="atalho-nome">Pesquisas salvas</span><span class="atalho-desc">Respostas e pesquisas guardadas</span></button>
         </div>
         <!-- Adoração em Família está na página 1, no lugar de Discursos, que foi para a página 2 (6.11.22). O atalho Joias espirituais saiu do Início (6.11.31); as joias continuam em Reuniões → Comentários. -->
@@ -172,6 +177,7 @@
           <button type="button" class="atalhos-seta" id="atalhosAnt" aria-label="Página anterior dos atalhos">‹</button>
           <button type="button" class="atalhos-ponto" data-pagina="1" aria-label="Atalhos, página 1" aria-current="true"></button>
           <button type="button" class="atalhos-ponto" data-pagina="2" aria-label="Atalhos, página 2"></button>
+          <button type="button" class="atalhos-ponto" data-pagina="3" aria-label="Atalhos, página 3"></button>
           <button type="button" class="atalhos-seta" id="atalhosProx" aria-label="Próxima página dos atalhos">›</button>
         </div>
       </section>
@@ -2930,6 +2936,25 @@
       </div>
     </section>
 
+    <!-- 6.13.36: Jogos bíblicos: os mesmos jogos da Adoração em Família (mesmo servidor e mesma tela ao vivo), avulsos, para jogar em grupo por código. -->
+    <section id="jogosCard" class="card fam-card screen-jogos" aria-labelledby="jogosTitulo">
+      <div class="fam-topo">
+        <button id="jogosVoltar" class="secondary" type="button">◀ Voltar</button>
+        <h2 id="jogosTitulo" class="fam-titulo"><span aria-hidden="true">🎲</span> Jogos bíblicos</h2>
+      </div>
+      <p class="hint fam-dica">Escolha um jogo. A IA prepara as rodadas e vocês jogam em grupo: cada um entra com o código no próprio celular, ganha um bichinho e responde pelo app. Quem cria o código é o administrador do jogo.</p>
+      <div id="jogosGrade" class="fam-hub jogos-grade" role="group" aria-label="Jogos"></div>
+      <div id="jogosPainel" class="jogos-painel" hidden></div>
+      <p id="jogosStatus" class="fam-status" role="status" aria-live="polite" hidden></p>
+      <div class="fam-hub">
+        <button id="jogosParticiparBtn" type="button" class="secondary fam-hub-btn"><span class="fam-hub-icone" aria-hidden="true">🔗</span><span class="fam-hub-nome">Participar de um jogo</span><span class="fam-hub-desc">Entre com o código que o administrador do jogo passou, ou administre de outro aparelho.</span></button>
+      </div>
+      <details id="jogosSalvosBox" class="fam-jogos-box jogos-salvos-box">
+        <summary>📂 Jogos preparados <span id="jogosSalvosQtd" class="opc"></span></summary>
+        <div id="jogosSalvosLista" class="jogos-salvos"></div>
+      </details>
+    </section>
+
     <!-- Adoração em Família (6.11.02; 6.12.70: uma programação por quadros); liberada pelo código de pesquisa; perfil só neste aparelho. -->
     <section id="familiaCard" class="card fam-card screen-familia" aria-labelledby="familiaTitulo">
       <div class="fam-topo">
@@ -3299,16 +3324,16 @@
         <h2 id="participarTitulo" class="fam-titulo"><span aria-hidden="true">🔗</span> Adoração em família ao vivo</h2>
       </div>
       <div id="participarEntrada">
-        <p class="hint">Digite o código que o presidente da reunião passou. As partes da programação vão se abrindo aqui conforme ele liberar.</p>
-        <label for="participarCodigo">Código da adoração</label>
+        <p id="participarEntradaDica" class="hint">Digite o código que o presidente da reunião passou. As partes da programação vão se abrindo aqui conforme ele liberar.</p>
+        <label id="participarCodigoRotulo" for="participarCodigo">Código da adoração</label>
         <div class="fam-sessao-add">
           <input id="participarCodigo" class="fam-sessao-campo-codigo" type="text" inputmode="text" maxlength="7" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ABC234">
           <button id="participarEntrarBtn" type="button" class="fam-fino fam-principal">Entrar</button>
         </div>
         <div id="participarRecentes" class="fam-sessao-recentes" hidden></div>
         <details id="participarAssumirBox" class="fam-sessao-assumir">
-          <summary>🔁 Presidir de outro aparelho</summary>
-          <p class="hint fam-dica">Use o código do presidente da reunião gerado em 🔁 Passar a direção, no aparelho de quem preside.</p>
+          <summary id="participarAssumirTitulo">🔁 Presidir de outro aparelho</summary>
+          <p id="participarAssumirDica" class="hint fam-dica">Use o código do presidente da reunião gerado em 🔁 Passar a direção, no aparelho de quem preside.</p>
           <div class="fam-sessao-assumir-campos">
             <input id="participarAssumirSessao" class="fam-sessao-campo-codigo" type="text" maxlength="6" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Código da adoração" aria-label="Código da adoração">
             <input id="participarAssumirCodigo" class="fam-sessao-campo-codigo" type="text" maxlength="8" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Código do presidente da reunião" aria-label="Código do presidente da reunião">

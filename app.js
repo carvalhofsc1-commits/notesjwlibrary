@@ -16,7 +16,7 @@
     // É um app só: a tela escolhida (guardada no endereço, ex.: #reunioes) mostra os blocos dela e esconde os outros.
     // Formatar e Reuniões dividem o mesmo campo de texto. O app sempre abre no Início; ao recarregar a página, o endereço
     // mantém a tela em que se estava.
-    const APP_SCREENS = ['inicio', 'formatar', 'reunioes', 'backup', 'ajustes', 'leitura', 'transcricao', 'biblia', 'anotacoes', 'pesquisa', 'salvas', 'familia', 'participar', 'adoracao']; // "adoracao" = tela principal da Adoração em família (sugestões / participar); "leitura" = voz alta; "biblia" = leitura diária; "anotacoes" = reunião/assembleia/congresso; "pesquisa" = Assistente de pesquisas; "familia" = Adoração em Família
+    const APP_SCREENS = ['inicio', 'formatar', 'reunioes', 'backup', 'ajustes', 'leitura', 'transcricao', 'biblia', 'anotacoes', 'pesquisa', 'salvas', 'familia', 'participar', 'adoracao', 'jogos']; // "jogos" = Jogos bíblicos (6.13.36); "adoracao" = tela principal da Adoração em família (sugestões / participar); "leitura" = voz alta; "biblia" = leitura diária; "anotacoes" = reunião/assembleia/congresso; "pesquisa" = Assistente de pesquisas; "familia" = Adoração em Família
     try { localStorage.removeItem('jwLibraryNoteAplicarScreenV1'); } catch (e) { /* a tela não é mais guardada */ }
 
     function currentScreen() {
@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.13.35'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.13.36'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -15561,7 +15561,7 @@ function saveTemplatesToStorage() {
 
         // Fim da última linha da resposta + o espaço em branco que separa as respostas (duas linhas), com o botão no meio dele: assim sobra folga de uma linha
         // para os dois lados, e um erro de medida pequeno não põe o botão por cima do texto.
-        // 6.13.35: os botões sobem para logo abaixo da resposta (4 px), para a linha separadora ficar bem acima da resposta seguinte (o espelho é
+        // 6.13.36: os botões sobem para logo abaixo da resposta (4 px), para a linha separadora ficar bem acima da resposta seguinte (o espelho é
         // uma cópia do campo e mede o fim da resposta sem erro).
         const top = fimDaResposta + 4 - input.scrollTop;
         const visible = top >= 0 && top + btnHeight <= input.clientHeight;
@@ -15578,7 +15578,7 @@ function saveTemplatesToStorage() {
           }
         }
         if (entry.linha) { // 6.13.33: a linha entre o fim dos botões e o começo da resposta seguinte (duas linhas depois do fim desta)
-          const topLinha = Math.round(top + btnHeight + 6); // 6.13.35: 6 px abaixo dos botões; o resto do espaço em branco fica antes da resposta seguinte
+          const topLinha = Math.round(top + btnHeight + 6); // 6.13.36: 6 px abaixo dos botões; o resto do espaço em branco fica antes da resposta seguinte
           const larg = input.clientWidth - (parseFloat(style.paddingLeft) || 0) - (parseFloat(style.paddingRight) || 0);
           entry.linha.hidden = topLinha < 0 || topLinha > input.clientHeight;
           entry.linha.style.top = (borderTop + topLinha) + 'px';
@@ -21701,7 +21701,7 @@ function saveTemplatesToStorage() {
       if (esbocoJson) item.esbocoJson = esbocoJson;
       // Adoração em Família: as opções como a IA devolveu (abrir a pesquisa salva as mostra de novo na tela Família).
       if (familiaOpcoes) item.familiaOpcoes = familiaOpcoes;
-      if (familiaAssunto) item.familiaAssunto = String(familiaAssunto).slice(0, 400); // 6.13.35: o tema inteiro (o título leva só 60 letras)
+      if (familiaAssunto) item.familiaAssunto = String(familiaAssunto).slice(0, 400); // 6.13.36: o tema inteiro (o título leva só 60 letras)
       // Respostas do estudo: os itens crus da IA e o contexto do pedido (para Outra resposta e Melhorar depois de reabrir a pesquisa salva).
       if (refino) item.refino = refino;
       if (sub) item.sub = sub; // joias: 'resumo', 'pergunta' (joia da semana), 'joias' (da leitura) ou 'instrucoes'; cada um é salvo separado
@@ -27856,7 +27856,7 @@ function saveTemplatesToStorage() {
         det.addEventListener('toggle', () => { if (det.open) familiaSalvasAbertas.add(item.id); else familiaSalvasAbertas.delete(item.id); });
         const h = document.createElement('summary');
         h.className = 'fam-salva-titulo';
-        // 6.13.35: a data numa linha discreta e o tema embaixo, inteiro e em destaque (antes o título vinha cortado em 60 letras)
+        // 6.13.36: a data numa linha discreta e o tema embaixo, inteiro e em destaque (antes o título vinha cortado em 60 letras)
         const quando = new Date(item.data);
         const partesTitulo = String(item.titulo || '').match(/^Adoração em Família · [^·]+?(?: · (.*))?$/);
         let temaTitulo = item.familiaAssunto || '';
@@ -28010,12 +28010,13 @@ function saveTemplatesToStorage() {
     }
 
     // 📤 Compartilhar link: a Web Share API, quando existe; senão copia o convite.
-    async function familiaSessaoCompartilharLink(cod, titulo, botao) {
+    async function familiaSessaoCompartilharLink(cod, titulo, botao, modo) {
       const link = FAMILIA_SESSAO_LINK + cod;
-      const texto = 'Participe da nossa Adoração em Família' + (titulo ? ' (' + titulo + ')' : '') + ' no NoteStyle. Código: ' + cod;
+      const jogo = modo === 'jogos'; // 6.13.36: jogo avulso (tela Jogos bíblicos)
+      const texto = (jogo ? 'Venha jogar com a gente um jogo bíblico' : 'Participe da nossa Adoração em Família') + (titulo ? ' (' + titulo + ')' : '') + ' no NoteStyle. Código: ' + cod;
       if (navigator.share) {
         try {
-          await navigator.share({ title: 'Adoração em Família', text: texto, url: link });
+          await navigator.share({ title: jogo ? 'Jogo bíblico' : 'Adoração em Família', text: texto, url: link });
           return;
         } catch (e) {
           if (e && e.name === 'AbortError') return; // a pessoa fechou a janela de compartilhar
@@ -28036,51 +28037,55 @@ function saveTemplatesToStorage() {
     // 🗑️ Apagar o compartilhamento: encerra a sessão no servidor (o código deixa de valer) e tira do aparelho. 404 = já não existia.
     async function familiaSessaoApagar(cod) {
       const guardada = familiaSessoesLer()[cod] || {};
-      if (!(await askConfirm('Apagar este compartilhamento? O código ' + cod + ' deixa de valer e quem estiver na adoração é desconectado. Você poderá criar outro, com um código diferente.', 'Apagar compartilhamento'))) return false;
+      if (!(await askConfirm('Apagar este compartilhamento? O código ' + cod + ' deixa de valer e quem estiver ' + (guardada.modo === 'jogos' ? 'no jogo' : 'na adoração') + ' é desconectado. Você poderá criar outro, com um código diferente.', 'Apagar compartilhamento'))) return false;
       const r = await familiaSessaoPedir({ acao: 'encerrar', sessao: cod, chave: guardada.chave || '' });
       if (!r.ok && r.status !== 404) { familiaStatus(r.erro || 'Não consegui apagar o compartilhamento agora. Tente de novo.', 'erro'); return false; }
       familiaSessaoGuardar(cod, null);
       familiaPaineisAbertos.forEach((p, k) => { if (p.dataset.sessao === cod) familiaPaineisAbertos.delete(k); });
       if (participar.cod === cod) { participarLimpar(); if (currentScreen() === 'participar') { participarRecentesPintar(); participarVista('entrada'); } }
       familiaDirigindoPintar();
+      try { jogosSalvosPintar(); } catch (e) { /* ainda iniciando */ }
       return true;
     }
 
     // O resultado: o código grande e os botões: abrir como dirigente (de novo, quantas vezes precisar), copiar, compartilhar e apagar.
     // aoApagar: o que fazer depois de apagar (o painel volta à criação, para criar outro código).
-    function familiaSessaoCodigoMontar(cod, titulo, aoApagar) {
+    function familiaSessaoCodigoMontar(cod, titulo, aoApagar, modo) {
+      const jogo = modo === 'jogos'; // 6.13.36: jogo avulso (tela Jogos bíblicos)
       const caixa = document.createElement('div');
       caixa.className = 'fam-sessao-criada';
       caixa.dataset.sessao = cod;
       const rotulo = document.createElement('p');
       rotulo.className = 'fam-sessao-rotulo';
-      rotulo.textContent = 'Código da adoração';
+      rotulo.textContent = jogo ? 'Código do jogo' : 'Código da adoração';
       const codigo = document.createElement('p');
       codigo.className = 'fam-sessao-codigo';
       codigo.textContent = cod;
       codigo.setAttribute('aria-label', 'Código ' + cod.split('').join(' '));
       const dica = document.createElement('p');
       dica.className = 'hint fam-dica';
-      dica.textContent = 'Passe o código (ou o link) aos participantes. Eles entram em Participar de uma adoração, sem precisar do código de pesquisa. O código vale até 48 horas sem uso. Se fechar a adoração sem querer, toque em Iniciar a adoração de novo.';
+      dica.textContent = jogo
+        ? 'Passe o código (ou o link) aos jogadores. Eles entram em 🎲 Jogos bíblicos → Participar de um jogo, sem precisar do código de pesquisa, e cada um ganha um bichinho. O código vale até 48 horas sem uso. Se fechar o jogo sem querer, toque em Iniciar o jogo de novo.'
+        : 'Passe o código (ou o link) aos participantes. Eles entram em Participar de uma adoração, sem precisar do código de pesquisa. O código vale até 48 horas sem uso. Se fechar a adoração sem querer, toque em Iniciar a adoração de novo.';
       const acoes = document.createElement('div');
       acoes.className = 'fam-acoes';
       const abrir = document.createElement('button');
       abrir.type = 'button';
       abrir.className = 'fam-fino fam-principal';
-      abrir.textContent = '▶️ Iniciar a adoração';
+      abrir.textContent = jogo ? '▶️ Iniciar o jogo' : '▶️ Iniciar a adoração';
       abrir.addEventListener('click', () => participarAbrir(cod));
       const copiar = document.createElement('button');
       copiar.type = 'button';
       copiar.className = 'secondary fam-fino';
       copiar.textContent = '📋 Copiar';
-      copiar.title = 'Copiar o código da adoração';
+      copiar.title = jogo ? 'Copiar o código do jogo' : 'Copiar o código da adoração';
       copiar.addEventListener('click', async () => { if (!(await familiaCopiar(cod, copiar))) familiaStatus('Não consegui copiar. O código é ' + cod + '.', 'erro'); });
       const link = document.createElement('button');
       link.type = 'button';
       link.className = 'secondary fam-fino';
       link.textContent = '📤 Link';
-      link.title = 'Compartilhar o link da adoração';
-      link.addEventListener('click', () => familiaSessaoCompartilharLink(cod, titulo, link));
+      link.title = jogo ? 'Compartilhar o link do jogo' : 'Compartilhar o link da adoração';
+      link.addEventListener('click', () => familiaSessaoCompartilharLink(cod, titulo, link, modo));
       const apagar = document.createElement('button');
       apagar.type = 'button';
       apagar.className = 'secondary fam-fino limpar-btn';
@@ -28267,7 +28272,7 @@ function saveTemplatesToStorage() {
         link.type = 'button';
         link.className = 'secondary fam-fino';
         link.textContent = '📤 Link';
-        link.addEventListener('click', () => familiaSessaoCompartilharLink(s.cod, s.titulo, link));
+        link.addEventListener('click', () => familiaSessaoCompartilharLink(s.cod, s.titulo, link, s.modo));
         const apagar = document.createElement('button');
         apagar.type = 'button';
         apagar.className = 'secondary fam-fino limpar-btn';
@@ -28327,6 +28332,9 @@ function saveTemplatesToStorage() {
       clearTimeout(participar.timer);
       participar.timer = 0;
     }
+    // 6.13.36: jogo avulso (tela 🎲 Jogos bíblicos): a mesma tela ao vivo, com "administrador do jogo" no lugar de "presidente da reunião".
+    function participarEhJogo() { return Boolean(participar.programa && participar.programa.modo === 'jogos') || (!participar.programa && participar.origemJogos === true); }
+    function participarPapel() { return participarEhJogo() ? 'administrador do jogo' : 'presidente da reunião'; }
     function participarLimpar() {
       participarParar();
       try { participarAudioParar(); document.querySelectorAll('#participarSessao video').forEach(v => v.pause()); } catch (e) { /* ainda iniciando */ }
@@ -28338,8 +28346,29 @@ function saveTemplatesToStorage() {
     }
 
     // Chamadas por showScreen ao entrar e ao sair da tela (ao sair, a consulta periódica para).
+    // 6.13.36: os textos fixos da tela (título, entrada e "presidir de outro aparelho") conforme seja uma adoração ou um jogo avulso.
+    function participarTextosModo() {
+      const jogo = participarEhJogo();
+      const h = document.getElementById('participarTitulo');
+      if (h) {
+        const ic = document.createElement('span');
+        ic.setAttribute('aria-hidden', 'true');
+        ic.textContent = jogo ? '🎲' : '🔗';
+        h.replaceChildren(ic, document.createTextNode(jogo ? ' Jogo bíblico ao vivo' : ' Adoração em família ao vivo'));
+      }
+      const pares = [
+        ['participarEntradaDica', 'Digite o código que o administrador do jogo passou. O jogo abre aqui, e cada um responde no próprio celular.', 'Digite o código que o presidente da reunião passou. As partes da programação vão se abrindo aqui conforme ele liberar.'],
+        ['participarCodigoRotulo', 'Código do jogo', 'Código da adoração'],
+        ['participarAssumirTitulo', '🔁 Administrar de outro aparelho', '🔁 Presidir de outro aparelho'],
+        ['participarAssumirDica', 'Use o código do administrador do jogo gerado em 🔁 Passar a direção, no aparelho de quem administra.', 'Use o código do presidente da reunião gerado em 🔁 Passar a direção, no aparelho de quem preside.']
+      ];
+      pares.forEach(([id, j, a]) => { const el = document.getElementById(id); if (el) el.textContent = jogo ? j : a; });
+      if (participarEls.assumirSessao) participarEls.assumirSessao.placeholder = jogo ? 'Código do jogo' : 'Código da adoração';
+      if (participarEls.assumirCodigo) participarEls.assumirCodigo.placeholder = 'Código do ' + participarPapel();
+    }
     function participarAoEntrar(anterior) {
-      if (anterior && anterior !== 'participar') participar.voltarPara = anterior;
+      if (anterior && anterior !== 'participar') { participar.voltarPara = anterior; participar.origemJogos = anterior === 'jogos'; }
+      participarTextosModo();
       if (participar.programa) { participarAgendar(0); return; }
       participarRecentesPintar();
       participarVista(participarEls.nomePasso.hidden ? 'entrada' : 'nome');
@@ -28371,7 +28400,7 @@ function saveTemplatesToStorage() {
       if (!cods.length) return;
       const t = document.createElement('p');
       t.className = 'fam-secao-titulo';
-      t.textContent = 'Adorações recentes neste aparelho';
+      t.textContent = participarEhJogo() ? 'Jogos e adorações recentes neste aparelho' : 'Adorações e jogos recentes neste aparelho';
       participarEls.recentes.appendChild(t);
       cods.forEach(cod => {
         const linha = document.createElement('div');
@@ -28390,7 +28419,7 @@ function saveTemplatesToStorage() {
         if (dados[cod].chave) {
           const linhaDir = document.createElement('span');
           linhaDir.className = 'fam-recente-dirige';
-          linhaDir.textContent = '👑 você preside (toque para reabrir)';
+          linhaDir.textContent = dados[cod].modo === 'jogos' ? '👑 você administra (toque para reabrir)' : '👑 você preside (toque para reabrir)';
           b.appendChild(linhaDir);
         }
         b.addEventListener('click', () => participarAbrir(cod));
@@ -28455,8 +28484,9 @@ function saveTemplatesToStorage() {
         nome: d.nome || nomeUsado, participantes: d.participantes || [], extras: d.extras || null
       });
       const titulo = (d.programa.emoji ? d.programa.emoji + ' ' : '') + (d.programa.titulo || 'Adoração em Família');
-      familiaSessaoGuardar(cod, Object.assign({ titulo }, d.participanteId ? { participanteId: d.participanteId, nome: d.nome || nomeUsado } : {}));
+      familiaSessaoGuardar(cod, Object.assign({ titulo }, d.programa.modo === 'jogos' ? { modo: 'jogos' } : {}, d.participanteId ? { participanteId: d.participanteId, nome: d.nome || nomeUsado } : {}));
       participarStatus('');
+      participarTextosModo(); // 6.13.36: adoração ou jogo avulso
       participarMontar();
       participarAplicar(d);
       participarVista('sessao');
@@ -28912,7 +28942,7 @@ function saveTemplatesToStorage() {
       h.textContent = (p.emoji ? p.emoji + ' ' : '') + (p.titulo || 'Adoração em Família');
       const meta = document.createElement('p');
       meta.className = 'fam-opcao-meta';
-      meta.textContent = 'Código ' + participar.cod + ' · ' + (participar.dirigente ? '👑 ' + (participar.nome ? participar.nome + ', presidente da reunião' : 'Você preside esta adoração') : 'Você entrou como ' + participar.nome);
+      meta.textContent = 'Código ' + participar.cod + ' · ' + (participar.dirigente ? '👑 ' + (participar.nome ? participar.nome + ', ' + participarPapel() + '' : (participarEhJogo() ? 'Você administra este jogo' : 'Você preside esta adoração')) : 'Você entrou como ' + participar.nome);
       // ⏱️ O cronômetro da parte (6.11.51), visível para todos, e o 📺 modo tela grande (TV ou notebook).
       const cron = document.createElement('p');
       cron.className = 'fam-sessao-cron-linha';
@@ -28932,7 +28962,7 @@ function saveTemplatesToStorage() {
       else {
         const dica = document.createElement('p');
         dica.className = 'hint fam-dica';
-        dica.textContent = 'As partes se abrem aqui quando o presidente da reunião liberar. Deixe esta tela aberta.';
+        dica.textContent = 'As partes se abrem aqui quando o ' + participarPapel() + ' liberar. Deixe esta tela aberta.';
         caixa.appendChild(dica);
       }
       const lista = document.createElement('div');
@@ -29000,7 +29030,7 @@ function saveTemplatesToStorage() {
         topo.append(numEl, nome, lado); // 6.12.22: sem os ícones 🔒/📖 (o botão de liberar já diz o estado); o elemento do ícone segue existindo fora da tela
         const aviso = document.createElement('p');
         aviso.className = 'fam-sessao-aviso';
-        aviso.textContent = '🔒 Aguardando o presidente da reunião liberar esta parte.';
+        aviso.textContent = '🔒 Aguardando o ' + participarPapel() + ' liberar esta parte.';
         aviso.hidden = true;
         const corpo = document.createElement('div');
         corpo.className = 'fam-sessao-corpo';
@@ -29033,7 +29063,7 @@ function saveTemplatesToStorage() {
       entrar.textContent = '▶️ Entrar';
       entrar.addEventListener('click', () => { participar.vista = 'atividades'; participarVistaAplicar(); window.scrollTo(0, 0); });
       participar.boasVindas.appendChild(entrar);
-      participar.vista = 'boasvindas';
+      participar.vista = participarEhJogo() ? 'atividades' : 'boasvindas'; // 6.13.36: no jogo avulso, direto para o jogo
       caixa.append(participar.boasVindas, lista);
       participarVistaAplicar();
       // A barra da tela grande: sair e, para o dirigente, ir para a próxima parte sem sair da tela grande (o Próxima voltou na 6.11.92).
@@ -29082,10 +29112,10 @@ function saveTemplatesToStorage() {
       const topo = document.createElement('p');
       topo.className = 'fam-bv-emojis';
       topo.setAttribute('aria-hidden', 'true');
-      topo.textContent = '✨ 🏠 🙏 🏠 ✨';
+      topo.textContent = participarEhJogo() ? '✨ 🎲 🏆 🎲 ✨' : '✨ 🏠 🙏 🏠 ✨';
       const ola = document.createElement('p');
       ola.className = 'fam-bv-ola';
-      ola.textContent = '🌟 Boas-vindas à Adoração em Família 🌟';
+      ola.textContent = participarEhJogo() ? '🌟 Boas-vindas ao jogo bíblico 🌟' : '🌟 Boas-vindas à Adoração em Família 🌟';
       const tema = document.createElement('h3');
       tema.className = 'fam-bv-tema';
       tema.textContent = (p.emoji ? p.emoji + ' ' : '') + (p.titulo || 'Adoração em Família');
@@ -29281,7 +29311,7 @@ function saveTemplatesToStorage() {
       painel.className = 'fam-sessao-dirigente';
       const t = document.createElement('summary');
       t.className = 'fam-secao-titulo';
-      t.textContent = '👑 Controles do presidente da reunião';
+      t.textContent = '👑 Controles do ' + participarPapel() + '';
       const quem = document.createElement('p');
       quem.className = 'fam-sessao-quem';
       const acoes = document.createElement('div');
@@ -29297,12 +29327,12 @@ function saveTemplatesToStorage() {
       codigo.type = 'button';
       codigo.className = 'secondary fam-fino';
       codigo.textContent = '📤 Passar o código';
-      codigo.addEventListener('click', () => familiaSessaoCompartilharLink(participar.cod, participar.programa.titulo, codigo));
+      codigo.addEventListener('click', () => familiaSessaoCompartilharLink(participar.cod, participar.programa.titulo, codigo, participar.programa.modo));
       const passar = document.createElement('button');
       passar.type = 'button';
       passar.className = 'secondary fam-fino';
       passar.textContent = '🔁 Passar a direção';
-      passar.title = 'Gera um código do presidente da reunião para presidir de outro aparelho';
+      passar.title = 'Gera um código do ' + participarPapel() + ' para presidir de outro aparelho';
       const encerrar = document.createElement('button');
       encerrar.type = 'button';
       encerrar.className = 'secondary fam-fino limpar-btn';
@@ -29319,7 +29349,7 @@ function saveTemplatesToStorage() {
         const ate = new Date(d.validoAte).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
         const rotulo = document.createElement('summary');
         rotulo.className = 'fam-sessao-rotulo';
-        rotulo.textContent = '🔑 Código do presidente da reunião (só você vê)';
+        rotulo.textContent = '🔑 Código do ' + participarPapel() + ' (só você vê)';
         const cod = document.createElement('p');
         cod.className = 'fam-sessao-codigo fam-sessao-codigo-dir';
         cod.textContent = d.codigoDirigente;
@@ -29412,7 +29442,7 @@ function saveTemplatesToStorage() {
       const det = document.createElement('details');
       det.className = 'fam-sessao-extras';
       const sm = document.createElement('summary');
-      sm.textContent = '🔐 Só para o presidente da reunião: preparação, tarefas e dica';
+      sm.textContent = '🔐 Só para o ' + participarPapel() + ': preparação, tarefas e dica';
       det.appendChild(sm);
       const lista = (titulo, itens, texto) => {
         if (!itens || !itens.length) return;
@@ -29560,7 +29590,7 @@ function saveTemplatesToStorage() {
         const det = document.createElement('details');
         det.className = 'fam-jogo-itens fam-jogo-ordem';
         const sm = document.createElement('summary');
-        sm.textContent = '🔑 Ordem certa (só o presidente da reunião vê)';
+        sm.textContent = '🔑 Ordem certa (só o ' + participarPapel() + ' vê)';
         const ol = document.createElement('ol');
         ol.className = 'fam-lista';
         ordemCerta.forEach(o => {
@@ -29597,7 +29627,7 @@ function saveTemplatesToStorage() {
         const rot = document.createElement('label');
         rot.className = 'fam-trocar-rotulo';
         rot.htmlFor = 'famJogarTambem-' + parteIdx;
-        rot.textContent = '🎮 Jogar também (o presidente da reunião responde como os outros)';
+        rot.textContent = '🎮 Jogar também (o ' + participarPapel() + ' responde como os outros)';
         const linha = document.createElement('div');
         linha.className = 'fam-sessao-jogar-linha';
         const campo = document.createElement('input');
@@ -29766,7 +29796,7 @@ function saveTemplatesToStorage() {
           envioEl.hidden = true;
           li.appendChild(envioEl);
           let area = null, areaNota = null, campoResp = null, respBox = null, ctrlBox = null;
-          if (participar.participanteId) { // 6.13.26: também o presidente da reunião que entrou no jogo com um nome
+          if (participar.participanteId) { // 6.13.26: também o presidente da reunião (ou o administrador do jogo) que entrou no jogo com um nome
             area = document.createElement('div');
             area.className = 'fam-sessao-responder';
             areaNota = document.createElement('p');
@@ -29826,7 +29856,7 @@ function saveTemplatesToStorage() {
             ctrlBox.className = 'fam-sessao-ctrl-box';
             const rotCtrl = document.createElement('p');
             rotCtrl.className = 'fam-sessao-box-rotulo';
-            rotCtrl.textContent = '👑 Controles do presidente da reunião';
+            rotCtrl.textContent = '👑 Controles do ' + participarPapel() + '';
             ctrlBox.appendChild(rotCtrl);
           }
           let julgarEl = null;
@@ -29955,7 +29985,7 @@ function saveTemplatesToStorage() {
         lista.className = 'fam-lista';
         const aguarda = document.createElement('p');
         aguarda.className = 'fam-sessao-aguarda';
-        aguarda.textContent = '⏳ O presidente da reunião vai revelar a ordem certa.';
+        aguarda.textContent = '⏳ O ' + participarPapel() + ' vai revelar a ordem certa.';
         const resultado = document.createElement('p');
         resultado.className = 'fam-sessao-ordem-resultado';
         card.append(tit, lista, aguarda, resultado);
@@ -30104,7 +30134,7 @@ function saveTemplatesToStorage() {
           const linhas = [];
           (erradas[k] || []).forEach(x => linhas.push(['errada', '❌ ' + x.nome + ': “' + x.texto + '”']));
           if (env && env.status === 'certa') linhas.push(['certa', '🎉 ' + env.nome + ' acertou: “' + env.texto + '”' + (ac && ac.nome === env.nome ? ' · +' + ac.pts + (ac.pts === 1 ? ' ponto' : ' pontos') : '')]);
-          else if (pend) linhas.push(['pendente', '⏳ ' + env.nome + ' respondeu: “' + env.texto + '” — aguardando o julgamento do presidente da reunião']);
+          else if (pend) linhas.push(['pendente', '⏳ ' + env.nome + ' respondeu: “' + env.texto + '” — aguardando o julgamento do ' + participarPapel() + '']);
           // 6.13.20: resposta que esperava julgamento quando a questão foi revelada (sessões de antes desta versão): conta como errada
           if (env && env.status === 'pendente' && (revK || ac) && !(ac && ac.nome === env.nome)) linhas.push(['errada', '❌ ' + env.nome + ': “' + env.texto + '”']);
           // "Ninguém acertou": marcado por quem dirige, ou a resposta revelada sem ninguém pontuar — no lugar de quem acertou, em laranja claro
@@ -30257,7 +30287,7 @@ function saveTemplatesToStorage() {
       participarLimpar();
       participarRecentesPintar();
       participarVista('entrada');
-      participarStatus('Esta adoração terminou (o presidente da reunião encerrou ou ela venceu).', 'ok');
+      participarStatus((participarEhJogo() ? 'Este jogo terminou (o ' : 'Esta adoração terminou (o ') + participarPapel() + (participarEhJogo() ? ' encerrou ou ele venceu).' : ' encerrou ou ela venceu).'), 'ok');
     }
 
     // ---- Consulta periódica: só com a tela Participar aberta e a página visível ----
@@ -30323,7 +30353,7 @@ function saveTemplatesToStorage() {
     participarEls.assumirBtn.addEventListener('click', async () => {
       const cod = participarCodigoLimpo(participarEls.assumirSessao.value);
       const codigoDirigente = participarCodigoLimpo(participarEls.assumirCodigo.value);
-      if (!participarCodigoValido(cod) || codigoDirigente.length !== 8) { participarStatus('Informe o código da adoração (6 caracteres) e o código do presidente da reunião (8 caracteres).', 'erro'); return; }
+      if (!participarCodigoValido(cod) || codigoDirigente.length !== 8) { participarStatus('Informe o código da adoração (6 caracteres) e o código do ' + participarPapel() + ' (8 caracteres).', 'erro'); return; }
       participarOcupado(true);
       const r = await familiaSessaoPedir({ acao: 'assumir', sessao: cod, codigoDirigente });
       participarOcupado(false);
@@ -30336,6 +30366,355 @@ function saveTemplatesToStorage() {
     document.getElementById('adoracaoParticiparBtn').addEventListener('click', () => participarAbrir(''));
     document.getElementById('adoracaoSugestoesBtn').addEventListener('click', () => { if (codigoAcessoSalvo()) showScreen('familia'); });
     document.getElementById('adoracaoVoltar').addEventListener('click', () => showScreen('inicio'));
+
+    // ---- 6.13.36: 🎲 Jogos bíblicos ----
+    // Os mesmos 7 jogos da Adoração em Família, avulsos. O servidor prepara o jogo pela MESMA fase "quadro" (quadro "jogo", só com o tipo
+    // escolhido em "jogos"), e a partida em grupo usa a MESMA sessão compartilhada e a MESMA tela ao vivo (programa.modo = 'jogos': o jogo já
+    // começa liberado e quem cria o código é o "administrador do jogo"). Assim, o que mudar nos jogos (geração, conferência, respostas, placar,
+    // bichinhos, controles do administrador) vale nos dois lugares. A memória do que já saiu (para não repetir) também é a mesma.
+    const JOGOS_BIBLICOS = [
+      { nome: FAMILIA_JOGOS[0], titulo: 'Quem sou eu?', emoji: '🕵️', desc: 'Descubra o personagem bíblico pelas dicas.' },
+      { nome: FAMILIA_JOGOS[1], titulo: 'Verdadeiro ou falso', emoji: '✅', desc: 'Diga se a afirmação sobre a Bíblia é verdadeira ou falsa.' },
+      { nome: FAMILIA_JOGOS[2], titulo: 'Ordem e data dos acontecimentos', emoji: '⏳', desc: 'Ponha os acontecimentos bíblicos na ordem certa, com as datas.' },
+      { nome: FAMILIA_JOGOS[3], titulo: 'Quem disse isso?', emoji: '💬', desc: 'Descubra quem disse a frase da Bíblia.' },
+      { nome: FAMILIA_JOGOS[4], titulo: 'Complete o versículo', emoji: '📖', desc: 'Diga a palavra que falta no versículo.' },
+      { nome: FAMILIA_JOGOS[5], titulo: 'Abreviações bíblicas', emoji: '🔤', desc: 'Decifre siglas como “Os 12 A de C”.' },
+      { nome: FAMILIA_JOGOS[6], titulo: 'Perfil bíblico', emoji: '🃏', desc: 'Adivinhe pessoas, lugares, coisas e anos com o menor número de dicas.' }
+    ];
+    const JOGOS_SALVOS_KEY = 'nsJogosPreparadosV1';
+    const JOGOS_SALVOS_MAX = 30;
+    const JOGOS_FORMACAO = 'Grupo de irmãos jogando um jogo bíblico (várias idades)';
+    let jogosPreparando = false;
+    const jogosEls = {
+      grade: document.getElementById('jogosGrade'),
+      painel: document.getElementById('jogosPainel'),
+      status: document.getElementById('jogosStatus'),
+      salvosLista: document.getElementById('jogosSalvosLista'),
+      salvosQtd: document.getElementById('jogosSalvosQtd')
+    };
+    function jogosStatus(msg, tipo) {
+      jogosEls.status.hidden = !msg;
+      jogosEls.status.textContent = msg || '';
+      jogosEls.status.className = 'fam-status' + (tipo ? ' ' + tipo : '');
+    }
+    function jogosSalvosLer() {
+      try { const l = JSON.parse(localStorage.getItem(JOGOS_SALVOS_KEY) || '[]'); return Array.isArray(l) ? l.filter(i => i && i.id && i.op && Array.isArray(i.op.partes)) : []; } catch (e) { return []; }
+    }
+    function jogosSalvosGravar(lista) {
+      try { localStorage.setItem(JOGOS_SALVOS_KEY, JSON.stringify(lista.slice(0, JOGOS_SALVOS_MAX))); return true; } catch (e) { return false; }
+    }
+    const jogosDoNome = nome => JOGOS_BIBLICOS.find(j => j.nome === nome) || null;
+    const jogosRodadas = item => { const parte = item.op.partes[0]; return parte && parte.jogo ? familiaConteudoDoJogo(parte.jogo).rodadas.length : 0; };
+    const jogosQuando = em => { const d = new Date(em); return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); };
+
+    // A tela inicial dos jogos: um atalho para cada jogo, com o emoji dele.
+    function jogosGradeMontar() {
+      jogosEls.grade.replaceChildren(...JOGOS_BIBLICOS.map(j => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'secondary fam-hub-btn jogos-atalho';
+        b.setAttribute('aria-expanded', 'false');
+        b.setAttribute('aria-controls', 'jogosPainel');
+        const ic = document.createElement('span');
+        ic.className = 'fam-hub-icone';
+        ic.setAttribute('aria-hidden', 'true');
+        ic.textContent = j.emoji;
+        const nome = document.createElement('span');
+        nome.className = 'fam-hub-nome';
+        nome.textContent = j.titulo;
+        const desc = document.createElement('span');
+        desc.className = 'fam-hub-desc';
+        desc.textContent = j.desc;
+        b.append(ic, nome, desc);
+        b.addEventListener('click', () => jogosAbrir(j, b));
+        return b;
+      }));
+    }
+    function jogosFecharPainel() {
+      if (jogosPreparando) return;
+      jogosEls.painel.hidden = true;
+      jogosEls.painel.replaceChildren();
+      jogosEls.grade.querySelectorAll('.jogos-atalho').forEach(b => b.setAttribute('aria-expanded', 'false'));
+    }
+    // Tocar num jogo abre, logo abaixo dele, o pedido: tema e instrução (opcionais) e "✨ Preparar o jogo".
+    function jogosAbrir(j, botao) {
+      if (jogosPreparando) { jogosStatus('Espere o jogo em preparação ficar pronto.', 'erro'); return; }
+      const jaAberto = botao.getAttribute('aria-expanded') === 'true';
+      jogosFecharPainel();
+      if (jaAberto) return;
+      jogosStatus('');
+      botao.setAttribute('aria-expanded', 'true');
+      const p = jogosEls.painel;
+      const titulo = document.createElement('p');
+      titulo.className = 'jogos-painel-titulo';
+      titulo.textContent = j.emoji + ' ' + j.titulo;
+      const rotTema = document.createElement('label');
+      rotTema.className = 'fam-trocar-rotulo';
+      rotTema.htmlFor = 'jogosTema';
+      rotTema.textContent = 'Tema (opcional)';
+      const tema = document.createElement('input');
+      tema.id = 'jogosTema';
+      tema.type = 'text';
+      tema.className = 'fam-campo';
+      tema.maxLength = 300;
+      tema.autocomplete = 'off';
+      tema.placeholder = 'Ex.: Davi; os profetas; a fé; o livro de Atos';
+      const rotInstr = document.createElement('label');
+      rotInstr.className = 'fam-trocar-rotulo';
+      rotInstr.htmlFor = 'jogosInstrucao';
+      rotInstr.textContent = 'Instrução para a IA (opcional)';
+      const instr = document.createElement('textarea');
+      instr.id = 'jogosInstrucao';
+      instr.className = 'fam-trocar-instrucao';
+      instr.rows = 2;
+      instr.maxLength = 300;
+      instr.placeholder = 'Ex.: perguntas fáceis, para crianças; só do Novo Testamento';
+      const acoes = document.createElement('div');
+      acoes.className = 'fam-acoes jogos-acoes';
+      const ir = document.createElement('button');
+      ir.type = 'button';
+      ir.className = 'fam-fino fam-principal jogos-ir';
+      ir.textContent = '✨ Preparar o jogo';
+      const nota = familiaGerarBtn.getAttribute('data-ia-nota');
+      if (nota) ir.setAttribute('data-ia-nota', nota);
+      const cancelar = document.createElement('button');
+      cancelar.type = 'button';
+      cancelar.className = 'secondary fam-fino jogos-cancelar';
+      cancelar.textContent = '✖️';
+      cancelar.title = 'Cancelar';
+      cancelar.setAttribute('aria-label', 'Cancelar');
+      cancelar.addEventListener('click', jogosFecharPainel);
+      acoes.append(ir, cancelar);
+      const aviso = document.createElement('p');
+      aviso.className = 'fam-trocar-aviso';
+      aviso.setAttribute('role', 'status');
+      aviso.hidden = true;
+      ir.addEventListener('click', () => jogosPreparar(j, tema.value, instr.value, ir, aviso));
+      p.replaceChildren(titulo, rotTema, tema, rotInstr, instr, acoes, aviso);
+      botao.after(p);
+      p.hidden = false;
+      requestAnimationFrame(() => p.scrollIntoView({ block: 'nearest', behavior: 'smooth' }));
+    }
+    async function jogosPreparar(j, temaBruto, instrBruta, botao, avisoEl) {
+      if (jogosPreparando) return;
+      const avisar = (msg, tipo) => {
+        avisoEl.textContent = msg || '';
+        avisoEl.hidden = !msg;
+        avisoEl.className = 'fam-trocar-aviso' + (tipo === 'erro' ? ' erro' : tipo === 'ok' ? ' ok' : '');
+      };
+      const codigo = codigoAcessoSalvo();
+      if (!codigo) { avisar('Para preparar um jogo, informe o código de pesquisa em Ajustes → 🔐 Autorização de acessos. (Para entrar num jogo, só o código do jogo basta.)', 'erro'); return; }
+      const q = QUADROS_FAMILIA.find(x => x.id === 'jogo');
+      const tema = String(temaBruto || '').replace(/\s+/g, ' ').trim().slice(0, 300);
+      jogosPreparando = true;
+      botao.disabled = true;
+      botao.textContent = '⏳ Preparando…';
+      avisar('⏳ A IA está preparando o jogo ' + j.titulo + '. Pode levar alguns minutos; deixe esta tela aberta.');
+      try {
+        const r = await postStudy({
+          tarefa: 'adoracao-familia',
+          codigo,
+          formacao: JOGOS_FORMACAO,
+          anosCasados: null,
+          membros: [],
+          convidados: { formacao: '', familia: '', anotacoes: '', membros: [] },
+          circunstancias: [],
+          outrasCircunstancias: '',
+          quadros: ['jogo'],
+          canticoInicial: false,
+          canticoFinal: false,
+          jogos: [j.nome], // só o jogo escolhido
+          assunto: tema,
+          fase: 'quadro',
+          quadro: 'jogo',
+          angulo: '',
+          plano: { titulo: '', objetivo: '' },
+          evitar: familiaEvitarLer(),
+          jaUsados: {},
+          instrucao: String(instrBruta || '').replace(/\s+/g, ' ').trim().slice(0, 300)
+        }, IA_ESPERA_MS);
+        const parte = r.ok && r.data && q ? familiaParteDoQuadro(r.data.parte, q) : null;
+        if (!parte || !parte.jogo) {
+          avisar('O jogo não foi preparado: ' + String((r.data && r.data.erro) || (r.unavailable ? 'serviço indisponível no momento' : 'tente de novo')).replace(/\.$/, '') + '.', 'erro');
+          return;
+        }
+        if (r.data.memoria && typeof r.data.memoria === 'object') familiaEvitarRegistrar([r.data.memoria]);
+        const item = {
+          id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+          nome: j.nome,
+          tema,
+          em: Date.now(),
+          op: { modo: 'jogos', titulo: j.titulo + (tema ? ' · ' + tema : ''), emoji: j.emoji, partes: [parte], duracaoTotal: parte.minutos || 0 }
+        };
+        const salvo = jogosSalvosGravar([item, ...jogosSalvosLer()]);
+        jogosSalvosPintar();
+        jogosPreparando = false;
+        const avisoIa = r.data.aviso ? String(r.data.aviso).replace(/^[^:]{1,80}:\s*/, '').replace(/\.$/, '').slice(0, 300) : '';
+        jogosProntoMostrar(item, (salvo ? '✅ Jogo pronto e guardado em 📂 Jogos preparados.' : '✅ Jogo pronto (não coube na memória do aparelho para guardar).') + (avisoIa ? ' ⚠️ ' + avisoIa + '.' : ''));
+      } catch (e) {
+        avisar('O jogo não foi preparado. Confira a conexão e tente de novo.', 'erro');
+      } finally {
+        jogosPreparando = false;
+        if (botao.isConnected) { botao.disabled = false; botao.textContent = '✨ Preparar o jogo'; }
+      }
+    }
+    // O jogo pronto: as rodadas com as respostas (só para quem administra) e "🔗 Jogar em grupo" (o código, igual ao da Adoração).
+    function jogosProntoMostrar(item, mensagem) {
+      const j = jogosDoNome(item.nome) || { emoji: item.op.emoji || '🎲', titulo: item.op.titulo };
+      const p = jogosEls.painel;
+      const botao = Array.from(jogosEls.grade.querySelectorAll('.jogos-atalho'))[JOGOS_BIBLICOS.indexOf(jogosDoNome(item.nome))];
+      jogosEls.grade.querySelectorAll('.jogos-atalho').forEach(b => b.setAttribute('aria-expanded', String(b === botao)));
+      const caixa = document.createElement('div');
+      caixa.className = 'jogos-pronto';
+      const titulo = document.createElement('p');
+      titulo.className = 'jogos-painel-titulo';
+      titulo.textContent = (item.op.emoji || j.emoji) + ' ' + item.op.titulo;
+      const meta = document.createElement('p');
+      meta.className = 'jogos-pronto-meta';
+      const n = jogosRodadas(item);
+      meta.textContent = 'Preparado em ' + jogosQuando(item.em) + (n ? ' · ' + n + (n === 1 ? ' rodada' : ' rodadas') : '');
+      caixa.append(titulo, meta);
+      if (mensagem) {
+        const ok = document.createElement('p');
+        ok.className = 'fam-trocar-aviso ok';
+        ok.setAttribute('role', 'status');
+        ok.textContent = mensagem;
+        caixa.appendChild(ok);
+      }
+      const parte = item.op.partes[0];
+      const textos = familiaJogoTextos(parte.jogo);
+      if (textos.length) {
+        const det = document.createElement('details');
+        det.className = 'fam-jogos-box';
+        const sm = document.createElement('summary');
+        sm.textContent = '🔐 Rodadas e respostas (só para o administrador do jogo)';
+        const ol = document.createElement('ol');
+        ol.className = 'fam-lista';
+        textos.forEach(tx => { const li = document.createElement('li'); li.textContent = tx; ol.appendChild(li); });
+        det.append(sm, ol);
+        caixa.appendChild(det);
+      }
+      const grupo = document.createElement('div');
+      caixa.appendChild(grupo);
+      jogosCompartilharMontar(item, grupo);
+      const acoes = document.createElement('div');
+      acoes.className = 'fam-acoes';
+      const fechar = document.createElement('button');
+      fechar.type = 'button';
+      fechar.className = 'secondary fam-fino';
+      fechar.textContent = '◀ Escolher outro jogo';
+      fechar.addEventListener('click', jogosFecharPainel);
+      acoes.appendChild(fechar);
+      caixa.appendChild(acoes);
+      p.replaceChildren(caixa);
+      if (botao) botao.after(p);
+      p.hidden = false;
+      requestAnimationFrame(() => p.scrollIntoView({ block: 'nearest', behavior: 'smooth' }));
+    }
+    // Jogar em grupo: os apelidos (opcionais) e "🔗 Criar o código do jogo"; com o código já criado, o código e "▶️ Iniciar o jogo".
+    function jogosCompartilharMontar(item, onde) {
+      const progId = 'jogo:' + item.id;
+      const titulo = (item.op.emoji ? item.op.emoji + ' ' : '') + item.op.titulo;
+      const desenhar = () => {
+        const sessao = familiaSessaoDaProgramacao(progId, titulo);
+        if (sessao) { onde.replaceChildren(familiaSessaoCodigoMontar(sessao.cod, titulo, desenhar, 'jogos')); return; }
+        const t = document.createElement('p');
+        t.className = 'fam-secao-titulo';
+        t.textContent = '🔗 Jogar em grupo';
+        const dica = document.createElement('p');
+        dica.className = 'hint fam-dica';
+        dica.textContent = 'Cada jogador entra com o código no próprio celular, escolhe o nome (ou escreve um apelido) e ganha um bichinho. Você é o administrador do jogo: mostra as perguntas, julga as respostas e também pode jogar. Os nomes abaixo são opcionais (aparecem para cada um tocar no seu).';
+        const editor = familiaNomesEditor([]);
+        const acoes = document.createElement('div');
+        acoes.className = 'fam-acoes';
+        const criar = document.createElement('button');
+        criar.type = 'button';
+        criar.className = 'fam-fino fam-principal';
+        criar.textContent = '🔗 Criar o código do jogo';
+        const status = document.createElement('p');
+        status.className = 'fam-status';
+        status.setAttribute('role', 'status');
+        status.hidden = true;
+        criar.addEventListener('click', async () => {
+          const codigo = codigoAcessoSalvo();
+          if (!codigo) { status.hidden = false; status.className = 'fam-status erro'; status.textContent = 'Para criar o código, informe o código de pesquisa em Ajustes → 🔐 Autorização de acessos.'; return; }
+          criar.disabled = true;
+          criar.textContent = '⏳ Criando…';
+          status.hidden = true;
+          const r = await familiaSessaoPedir({ acao: 'criar', programa: familiaProgramaParaCompartilhar(item.op), nomes: editor.ler(), codigo });
+          if (!r.ok || !r.data.sessao) {
+            criar.disabled = false;
+            criar.textContent = '🔗 Criar o código do jogo';
+            status.hidden = false;
+            status.className = 'fam-status erro';
+            status.textContent = r.erro || 'Não consegui criar o código do jogo.';
+            return;
+          }
+          familiaSessaoGuardar(r.data.sessao, { chave: r.data.chave, titulo, progId, modo: 'jogos' });
+          try { familiaDirigindoPintar(); } catch (e) { /* a lista da Adoração se pinta depois */ }
+          desenhar();
+          jogosSalvosPintar();
+        });
+        acoes.appendChild(criar);
+        onde.replaceChildren(t, dica, editor.el, acoes, status);
+      };
+      desenhar();
+    }
+    // 📂 Jogos preparados (neste aparelho): abrir de novo (o mesmo jogo, para jogar outra vez ou com outro grupo) ou apagar.
+    function jogosSalvosPintar() {
+      const lista = jogosSalvosLer();
+      jogosEls.salvosQtd.textContent = lista.length ? '(' + lista.length + ')' : '(nenhum ainda)';
+      if (!lista.length) {
+        const vazio = document.createElement('p');
+        vazio.className = 'hint fam-dica';
+        vazio.textContent = 'Os jogos que você preparar ficam guardados aqui, neste aparelho, para jogar de novo.';
+        jogosEls.salvosLista.replaceChildren(vazio);
+        return;
+      }
+      const sessoes = familiaSessoesDoDirigente();
+      jogosEls.salvosLista.replaceChildren(...lista.map(item => {
+        const art = document.createElement('article');
+        art.className = 'jogos-salvo';
+        const nome = document.createElement('p');
+        nome.className = 'jogos-salvo-nome';
+        nome.textContent = (item.op.emoji ? item.op.emoji + ' ' : '') + item.op.titulo;
+        const meta = document.createElement('p');
+        meta.className = 'jogos-salvo-meta';
+        const n = jogosRodadas(item);
+        const sessao = sessoes.find(s => s.progId === 'jogo:' + item.id);
+        meta.textContent = 'Preparado em ' + jogosQuando(item.em) + (n ? ' · ' + n + (n === 1 ? ' rodada' : ' rodadas') : '') + (sessao ? ' · 🔗 código ' + sessao.cod : '');
+        const acoes = document.createElement('div');
+        acoes.className = 'fam-acoes';
+        const abrir = document.createElement('button');
+        abrir.type = 'button';
+        abrir.className = 'secondary fam-fino';
+        abrir.textContent = '▶️ Abrir este jogo';
+        abrir.addEventListener('click', () => {
+          if (jogosPreparando) { jogosStatus('Espere o jogo em preparação ficar pronto.', 'erro'); return; }
+          jogosStatus('');
+          jogosProntoMostrar(item);
+        });
+        const apagar = document.createElement('button');
+        apagar.type = 'button';
+        apagar.className = 'secondary fam-fino limpar-btn';
+        apagar.textContent = '🗑️';
+        apagar.title = 'Apagar este jogo preparado';
+        apagar.setAttribute('aria-label', 'Apagar este jogo preparado');
+        apagar.addEventListener('click', async () => {
+          if (!(await askConfirm('Apagar o jogo “' + item.op.titulo + '” deste aparelho?' + (sessao ? ' O código ' + sessao.cod + ' continua valendo até você apagar o compartilhamento.' : ''), 'Apagar jogo'))) return;
+          jogosSalvosGravar(jogosSalvosLer().filter(x => x.id !== item.id));
+          jogosFecharPainel();
+          jogosSalvosPintar();
+        });
+        acoes.append(abrir, apagar);
+        art.append(nome, meta, acoes);
+        return art;
+      }));
+    }
+    jogosGradeMontar();
+    jogosSalvosPintar();
+    document.getElementById('jogosVoltar').addEventListener('click', () => showScreen('inicio'));
+    document.getElementById('jogosParticiparBtn').addEventListener('click', () => participarAbrir(''));
     // Aberta pelo endereço (#participar ou #participar=CÓDIGO) antes de esta parte do app carregar.
     if (participarInicial) participarAbrir(participarInicial);
     else if (currentScreen() === 'participar') participarAoEntrar();
@@ -30687,7 +31066,7 @@ function saveTemplatesToStorage() {
         const item = historicoSalvar({
           tipo: 'familia',
           titulo: 'Adoração em Família · ' + quando.toLocaleDateString('pt-BR') + ' ' + quando.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + (assunto ? ' · ' + assunto.slice(0, 60) : ''),
-          familiaAssunto: assunto, // 6.13.35: o tema inteiro, para a lista de Programações salvas
+          familiaAssunto: assunto, // 6.13.36: o tema inteiro, para a lista de Programações salvas
           partes: [{ paragrafos: 'Programação', texto }],
           familiaOpcoes: [op],
           ligar: false

@@ -314,6 +314,8 @@ function limparPrograma(op) {
     partes,
   };
   if (op.versao === 2) programa.versao = 2;
+  // 6.13.36: jogo avulso da tela 🎲 Jogos bíblicos (uma parte só, o jogo); a tela ao vivo é a mesma, com os textos de jogo.
+  if (op.modo === "jogos") programa.modo = "jogos";
   const extras = {
     preparacao: lista(op.preparacao, 20, (t) => texto(t, 400)),
     tarefas: lista(op.tarefas, 20, (t) => (t && typeof t === "object" ? { membro: texto(t.membro, 60), tarefa: texto(t.tarefa, 300) } : null)),
@@ -369,7 +371,9 @@ export default async function handler(req, res) {
       programa.criadoEm = agora;
       await gravarJson(caminho(cod, "respostas.json"), { chaves: [hash(chave)], respostas, referencias, extras, direcao: null });
       await gravarJson(caminho(cod, "programa.json"), programa);
-      await gravarJson(caminho(cod, "estado.json"), { versao: 1, liberadas: [], atual: null, reveladas: {}, sorteio: null, cronometro: null, atualizadoEm: agora });
+      // 6.13.36: no jogo avulso o jogo (a parte 0) já começa liberado e aberto
+      const jogoAvulso = programa.modo === "jogos";
+      await gravarJson(caminho(cod, "estado.json"), { versao: 1, liberadas: jogoAvulso ? [0] : [], atual: jogoAvulso ? 0 : null, reveladas: {}, sorteio: null, cronometro: null, atualizadoEm: agora });
       return res.status(200).json({ sessao: cod, chave });
     }
 

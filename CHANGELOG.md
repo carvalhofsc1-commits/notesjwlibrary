@@ -2,6 +2,13 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.36
+
+- Nova seção **🎲 Jogos bíblicos** (menu, atalho na página 1 do Início; o Áudio em texto foi para a página 2 e as Pesquisas salvas para a nova página 3). A tela inicial tem um atalho com emoji para cada um dos 7 jogos da Adoração em Família (🕵️ Quem sou eu?, ✅ Verdadeiro ou falso, ⏳ Ordem e data, 💬 Quem disse isso?, 📖 Complete o versículo, 🔤 Abreviações, 🃏 Perfil bíblico). Tocar num jogo abre o pedido (tema e instrução opcionais) e "✨ Preparar o jogo" (código de pesquisa, como na Adoração).
+- Mesmo código nos dois lugares: o jogo é preparado pela mesma fase "quadro" do servidor (quadro "jogo", só com o tipo escolhido) e a partida em grupo usa a mesma sessão compartilhada e a mesma tela ao vivo (apelidos, bichinhos, painel de participantes, respostas dos jogadores e do administrador, controles, placar). Ajustes nos jogos valem para a Adoração e para os Jogos bíblicos. A memória do que já saiu (para não repetir) também é a mesma.
+- Sessão de jogo avulso: `programa.modo = "jogos"` (api/familia-sessao.mjs) — o jogo já começa liberado e aberto, sem a tela de boas-vindas, e quem cria o código aparece como "administrador do jogo" (na Adoração continua "presidente da reunião"). Textos do código, do convite e da tela de entrada adaptados ao jogo.
+- 📂 Jogos preparados: os jogos ficam guardados no aparelho (até 30) para abrir de novo, com as rodadas e respostas (só para o administrador), o código já criado e o 🗑️.
+
 ## 6.13.35
 
 - Programações salvas (Adoração em Família): o tema não é mais cortado. O cartão mostra a data numa linha discreta (cinza, menor) e, embaixo, o tema inteiro em roxo e negrito. O tema completo passa a ser guardado com a programação (`familiaAssunto`); nas salvas antes desta versão, cujo tema foi gravado cortado em 60 letras, aparece o título inteiro da programação.
