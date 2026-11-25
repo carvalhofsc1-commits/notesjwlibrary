@@ -955,6 +955,53 @@ export function perguntaDoQuemDisse({ fala, referencia, resposta, bruta, semente
   return `Quem disse isso? “${fala}” ${dicas.map((d, i) => `Dica ${i + 1}: ${d}`).join(" ")}`;
 }
 
+// ---------- 6.13.44: Complete o versículo como o Quem disse isso? (versículo à vista e 3 dicas) ----------
+
+// Palavras para completar as 4 opções da Dica 3 quando a IA (e as outras rodadas do jogo) não deram 3 palavras erradas.
+export const PALAVRAS_PARA_OPCOES = Object.freeze([
+  "amor", "justiça", "misericórdia", "sabedoria", "coração", "caminho", "verdade", "esperança", "alegria", "força", "glória", "palavra",
+  "reino", "vida", "paz", "bondade", "humildade", "fidelidade", "paciência", "conhecimento", "entendimento", "salvação", "promessa", "bênção",
+]);
+const umaPalavra = (s) => String(s || "").replace(/^[^\p{L}]+|[^\p{L}]+$/gu, "").trim();
+// "Provérbios 15:1" -> "Está em Provérbios, capítulo 15".
+export function dicaDoLivroECapituloDoVersiculo(referencia) {
+  // Livro de um capítulo só ("Filêmon 10", sem os dois-pontos): só o nome do livro.
+  const livro = livroDaReferencia(referencia) || String(referencia || "").trim().replace(/\s+\d[\d\s,–-]*$/, "").trim();
+  const cap = (String(referencia || "").match(/\s(\d{1,3}):/) || [])[1];
+  return livro ? `Está em ${livro}${cap ? `, capítulo ${cap}` : ""}` : "";
+}
+// A pergunta: o versículo com a lacuna logo no início (não é dica) e as dicas: o livro e o capítulo, o contexto (da IA, sem a palavra; sem
+// ele, quantas letras e a primeira letra) e 4 palavras para escolher (a certa com 3 erradas: as da IA, as respostas das outras rodadas do jogo
+// e, se ainda faltar, PALAVRAS_PARA_OPCOES), na mesma caixa (maiúscula ou minúscula) da palavra certa.
+export function perguntaDoComplete({ lacuna, referencia, resposta, bruta, outras = [], semente = 1 }) {
+  const certa = umaPalavra(resposta);
+  const d1 = dicaDoLivroECapituloDoVersiculo(referencia);
+  if (!lacuna || !certa || !d1) return "";
+  const alvo = normalizarTexto(certa);
+  const t = String(bruta || "").replace(/\s+/g, " ").trim();
+  let contexto = (t.match(/contexto\s*:\s*(.*?)(?=\s*op[çc][õo]es(?:\s+erradas)?\s*:|$)/i) || [])[1] || "";
+  contexto = contexto.replace(/[|;\s]+$/, "").replace(/^["“”]+|["“”]+$/g, "").trim();
+  if (contexto && !/[.!?]$/.test(contexto)) contexto += ".";
+  const temAPalavra = (s) => [...String(s).matchAll(/[\p{L}\p{M}]+/gu)].some((m) => normalizarTexto(m[0]) === alvo);
+  if (contexto.length < 12 || contexto.length > 300 || temAPalavra(contexto) || /dica\s*\d/i.test(contexto)) contexto = "";
+  const d2 = contexto || `A palavra tem ${[...certa].length} letras e começa com “${certa.charAt(0).toUpperCase()}”.`;
+  const maiuscula = /^\p{Lu}/u.test(certa);
+  const caixa = (p) => (maiuscula ? p.charAt(0).toUpperCase() + p.slice(1) : p.charAt(0).toLowerCase() + p.slice(1));
+  const vistas = new Set([alvo]);
+  const opcoes = [];
+  const aceitar = (p) => {
+    const w = umaPalavra(p);
+    if (!w || /\s/.test(w) || !/^[\p{L}\p{M}-]+$/u.test(w) || w.length > 30 || vistas.has(normalizarTexto(w)) || opcoes.length >= 3) return;
+    vistas.add(normalizarTexto(w));
+    opcoes.push(caixa(w));
+  };
+  String((t.match(/op[çc][õo]es(?:\s+erradas)?\s*:\s*(.*)$/i) || [])[1] || "").split(/[;,/]/).forEach(aceitar);
+  embaralhar(outras.slice(), semente + 41).forEach(aceitar);
+  embaralhar(PALAVRAS_PARA_OPCOES.slice(), semente + 43).forEach(aceitar);
+  const todas = embaralhar([certa, ...opcoes], semente + 47);
+  return `Complete a palavra que falta. “${lacuna}” Dica 1: ${d1}. Dica 2: ${d2} Dica 3: Escolha entre: ${todas.join("; ")}.`;
+}
+
 // ---------- Patch 6.12.77: aspas soltas e quem fala ----------
 
 // Tira as aspas que ficaram sem par no versículo transcrito (a fala começou no versículo de antes ou continua no seguinte): “ sem o ”

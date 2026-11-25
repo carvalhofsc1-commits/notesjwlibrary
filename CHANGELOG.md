@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.44
+
+- Complete o versículo (Adoração e Jogos bíblicos) igual ao Quem disse isso?: o versículo com a lacuna aparece logo no início (não é mais dica) e já dá para responder. Dica 1: o livro e o capítulo ("Está em Provérbios, capítulo 15"; livro de um capítulo só, só o nome). Dica 2: o contexto (quem fala ou escreve, a quem e em que situação, escrito pela IA sem a palavra que falta; sem contexto válido, quantas letras a palavra tem e a primeira letra). Dica 3: 4 palavras em botões (2 por linha), a certa com 3 erradas da IA (as que faltarem vêm das outras rodadas do jogo e de uma lista de palavras), na mesma caixa da palavra certa; tocar numa palavra a põe no campo da resposta.
+- Prompt do jogo: no Complete o versículo a IA manda em "pergunta" o "Contexto: …" e as "Opções erradas: …".
+
 ## 6.13.43
 
 - Jogos (Adoração e Jogos bíblicos): "Ver só para mim" e "Revelar resposta" numa linha só, metade cada, com rótulos curtos ("Só para mim" e "Revelar", ambos com o olho de linhas; o texto completo fica no título do botão). A resposta que só o administrador vê aparece logo abaixo da linha.

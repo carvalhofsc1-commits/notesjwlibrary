@@ -58,6 +58,7 @@ import {
   datasPermitidas,
   dicaDoLivro,
   perguntaDoQuemDisse,
+  perguntaDoComplete,
   embaralhar,
   escolhasValidas,
   eventosDoApendiceB,
@@ -3971,8 +3972,11 @@ const PREPARAR_QUADRO_FAMILIA = {
               // 6.12.77: sem as aspas que ficaram sem par (a fala começou no versículo de antes ou continua no seguinte).
               const lacuna = lacunaNoVersiculo(semAspasSoltas(v.texto), resposta, livro);
               if (!lacuna) return;
-              const pergunta = `Complete a palavra que falta. Dica 1: “${aspasSimples(lacuna.texto)}” Dica 2: Está em ${livro}.`;
-              if (pergunta.length > 400 || chavesDasRodadas.has(`p:${normalizarTexto(lacuna.resposta)}`) || !versiculoNovo(v.referencia)) return;
+              // 6.13.44: como o Quem disse isso?: o versículo com a lacuna logo no início; Dica 1 = livro e capítulo, Dica 2 = o contexto (ou as
+              // letras), Dica 3 = 4 palavras para escolher.
+              const outras = brutas.map((x) => x && x.resposta).filter((x) => x && normalizarTexto(x) !== normalizarTexto(lacuna.resposta));
+              const pergunta = perguntaDoComplete({ lacuna: aspasSimples(lacuna.texto), referencia: v.referencia, resposta: lacuna.resposta, bruta: b.pergunta, outras, semente: ctx.semente + i });
+              if (!pergunta || pergunta.length > 900 || chavesDasRodadas.has(`p:${normalizarTexto(lacuna.resposta)}`) || !versiculoNovo(v.referencia)) return;
               novaRodada(`p:${normalizarTexto(lacuna.resposta)}`);
               conferidas.push({ pergunta, resposta: lacuna.resposta, referencia: v.referencia });
             } else if (idTipo === "quem_disse") {

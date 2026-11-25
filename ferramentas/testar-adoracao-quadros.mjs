@@ -1165,7 +1165,7 @@ teste("6.12.76: Complete o versículo e Quem disse isso? montados pelo servidor 
   if (!comFontes) return console.log("      (sem FONTES_DIR: pulado)");
   const boas = [["Provérbios 15:1", "branda"], ["Mateus 5:9", "pacificadores"], ["Colossenses 3:13", "queixa"], ["Provérbios 17:9", "transgressão"], ["Efésios 4:32", "compassivos"], ["Provérbios 19:11", "perspicácia"], ["Miqueias 6:8", "modestamente"], ["Salmo 86:5", "invocam"]];
   const ruins = [["Miqueias 6:8", "Jeová"], ["Mateus 6:14", "Pai"], ["Colossenses 3:13", "liberalmente"], ["Gênesis 50:20", "palavra"], ["Livro Inventado 3:1", "nada"]];
-  const rodadas = [...ruins, ...boas, ["Provérbios 15:1", "furor"]].map(([referencia, resposta]) => ({ pergunta: "", resposta, referencia }));
+  const rodadas = [...ruins, ...boas, ["Provérbios 15:1", "furor"]].map(([referencia, resposta]) => ({ pergunta: referencia === "Provérbios 15:1" && resposta === "branda" ? "Contexto: Um conselho de Salomão sobre como falar com quem está irritado. Opções erradas: dura; rápida; branda; firme" : referencia === "Mateus 5:9" ? "Contexto: Jesus ensinava que os pacificadores são felizes. Opções erradas: mansos" : "", resposta, referencia }));
   const cp = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "jogo", jogos: ["Complete o versículo"], evitar: { jogo_versiculos: ["Lucas 23:34"] } }), montados);
   assert.match(cp.mensagem, /QUANTIDADE: mande 12 rodadas \(no mínimo 8; ficam até 10\)\./);
   assert.match(cp.mensagem, /EVITAR \(versículos dos jogos usados nas últimas semanas — escolha outros\): Lucas 23:34/);
@@ -1174,10 +1174,21 @@ teste("6.12.76: Complete o versículo e Quem disse isso? montados pelo servidor 
   assert.equal(c1.falta, "");
   assert.equal(c1.trocarTipo, "");
   assert.equal(c1.jogo.idTipo, "complete_versiculo");
-  assert.deepEqual(c1.jogo.rodadas[0], { pergunta: "Complete a palavra que falta. Dica 1: “Uma resposta ______ acalma o furor, Mas uma palavra dura atiça a ira.” Dica 2: Está em Provérbios.", resposta: "branda", referencia: "Provérbios 15:1" });
-  assert.match(c1.jogo.rodadas[1].pergunta, /Dica 1: “Felizes os ______, porque/, "6.12.77: a aspa sem par do começo do Sermão sai");
+  // 6.13.44: o versículo com a lacuna logo no início (não é dica); Dica 1 = livro e capítulo, Dica 2 = o contexto (sem a palavra; sem ele,
+  // as letras), Dica 3 = 4 palavras para escolher (a certa uma vez só, as erradas da IA e, se faltar, as das outras rodadas e da lista).
+  const p0 = c1.jogo.rodadas[0];
+  assert.equal(p0.resposta, "branda");
+  assert.equal(p0.referencia, "Provérbios 15:1");
+  assert.match(p0.pergunta, /^Complete a palavra que falta\. “Uma resposta ______ acalma o furor, Mas uma palavra dura atiça a ira\.” Dica 1: Está em Provérbios, capítulo 15\. Dica 2: Um conselho de Salomão sobre como falar com quem está irritado\. Dica 3: Escolha entre: /);
+  assert.deepEqual(p0.pergunta.replace(/^.*Escolha entre: /, "").replace(/\.$/, "").split("; ").sort(), ["branda", "dura", "firme", "rápida"].sort());
+  assert.match(c1.jogo.rodadas[1].pergunta, /^Complete a palavra que falta\. “Felizes os ______, porque/, "6.12.77: a aspa sem par do começo do Sermão sai");
+  assert.match(c1.jogo.rodadas[1].pergunta, /Dica 2: A palavra tem 13 letras e começa com “P”\. Dica 3: Escolha entre: .*\bmansos\b/, "o contexto com a palavra sai: vale a dica das letras");
   assert.deepEqual(c1.memoria.jogo_versiculos, boas.map(([r]) => (r === "Salmo 86:5" ? "Salmos 86:5" : r)));
-  for (const r of c1.jogo.rodadas) assert.match(r.pergunta, /^Complete a palavra que falta\. Dica 1: “.+” Dica 2: Está em .+\.$/);
+  for (const r of c1.jogo.rodadas) {
+    assert.match(r.pergunta, /^Complete a palavra que falta\. “.+” Dica 1: Está em .+, capítulo \d+\. Dica 2: .+ Dica 3: Escolha entre: [^;]+; [^;]+; [^;]+; [^;]+\.$/, r.referencia);
+    const ops = r.pergunta.replace(/^.*Escolha entre: /, "").replace(/\.$/, "").split("; ");
+    assert.equal(ops.filter((o) => o === r.resposta).length, 1, r.referencia + ": a certa uma vez só entre as 4");
+  }
   // Versículos das últimas semanas e os já usados nesta noite saem; com menos de 6, o servidor pede a troca do tipo.
   const cp2 = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "jogo", jogos: ["Complete o versículo"], evitar: { jogo_versiculos: ["Provérbios 15:1", "Mateus 5:9"] }, jaUsados: { versiculos: ["efesios 4:32"] } }), montados);
   const c2 = await cp2.prep.montar({ descricao: "d", nome: "Complete", comoJogar: "R.", rodadas: boas.map(([referencia, resposta]) => ({ pergunta: "", resposta, referencia })), eventos: [] });
@@ -1217,9 +1228,9 @@ teste("6.12.76: Complete o versículo e Quem disse isso? montados pelo servidor 
   const cp3 = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "jogo", jogos: ["Complete o versículo"] }), montados);
   const c3 = await cp3.prep.montar({ descricao: "d", nome: "Complete", comoJogar: "R.", rodadas: [["Mateus 6:14", "celestial"], ["Mateus 18:35", "coração"], ["Marcos 11:25", "orando"]].map(([referencia, resposta]) => ({ pergunta: "", resposta, referencia })), eventos: [] });
   assert.equal(c3.jogo.rodadas.length, 3);
-  assert.equal(c3.jogo.rodadas[0].pergunta, "Complete a palavra que falta. Dica 1: “Pois, se vocês perdoarem aos homens as falhas deles, o seu Pai ______ também perdoará vocês;” Dica 2: Está em Mateus.");
-  assert.match(c3.jogo.rodadas[1].pergunta, /ao seu irmão\.” Dica 2: Está em Mateus\.$/);
-  assert.match(c3.jogo.rodadas[2].pergunta, /as falhas de vocês\.” Dica 2: Está em Marcos\.$/);
+  assert.match(c3.jogo.rodadas[0].pergunta, /^Complete a palavra que falta\. “Pois, se vocês perdoarem aos homens as falhas deles, o seu Pai ______ também perdoará vocês;” Dica 1: Está em Mateus, capítulo 6\./);
+  assert.match(c3.jogo.rodadas[1].pergunta, /ao seu irmão\.” Dica 1: Está em Mateus, capítulo 18\./);
+  assert.match(c3.jogo.rodadas[2].pergunta, /as falhas de vocês\.” Dica 1: Está em Marcos, capítulo 11\./);
   for (const r of c3.jogo.rodadas) assert.doesNotMatch(r.pergunta, /[‘’]/, r.referencia);
   // 6.12.77: a referência escrita pela IA com outra grafia do livro é lida e fica como na Bíblia.
   const c4 = await cp3.prep.montar({ descricao: "d", nome: "Complete", comoJogar: "R.", rodadas: [{ pergunta: "", resposta: "transgressões", referencia: "Salmo 103:12" }, { pergunta: "", resposta: "prisão", referencia: "Filemom 10" }], eventos: [] });
