@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.63
+
+- **Botão Voltar no app inteiro**: agora é uma seta (←, mais completa, só o ícone) fixa na barra superior, à direita do logo (o menu fica à esquerda e o logo continua no centro). Ela aciona o "◀ Voltar" da tela que estiver à vista (Jogos, Adoração em família e seus subpainéis, Reuniões, Pesquisas salvas, Anotações, Formatar e o extrato de consumo); os botões "◀ Voltar" de cada tela ficam fora da vista. Sem para onde voltar (Início e telas do menu), a seta some, guardando o lugar para o logo ficar centralizado.
+
 ## 6.13.62
 
 - Jogo ao vivo: **uma questão por vez**, com ◀ ▶ e bolinhas numeradas (a atual em destaque e as respondidas marcadas); abre na primeira ainda sem resposta e uma questão sorteada leva a tela para ela. O número da questão e os pontos (⭐ vale N pontos, desde o começo) ganharam destaque.
