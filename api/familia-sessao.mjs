@@ -453,7 +453,9 @@ export default async function handler(req, res) {
       const total = Math.max(1, (String(r.pergunta || "").match(/Dica\s*\d+\s*:/gi) || []).length);
       const dadas = Math.min(total, Number(((e.dicas || {})[parte] || {})[rodada]) || 0);
       e.acertos = e.acertos || {};
-      e.acertos[parte] = { ...(e.acertos[parte] || {}), [rodada]: { nome, pts: Math.max(1, total - dadas + 1) } };
+      // 6.13.98: cada resposta errada de quem acertou, nesta mesma questão, tira 1 ponto (nunca abaixo de zero; não passa para outras questões)
+      const erros = ((((e.erradas || {})[parte] || {})[rodada]) || []).filter((x) => x && x.nome === nome).length;
+      e.acertos[parte] = { ...(e.acertos[parte] || {}), [rodada]: { nome, pts: Math.max(0, Math.max(1, total - dadas + 1) - erros) } };
       e.reveladas = e.reveladas || {};
       e.reveladas[parte] = { ...(e.reveladas[parte] || {}), [rodada]: resposta };
       const ref = String((((segredo && segredo.referencias) || {})[parte] || [])[rodada] || "");
@@ -852,7 +854,9 @@ export default async function handler(req, res) {
       const total = Math.max(1, (String(r.pergunta).match(/Dica\s*\d+\s*:/gi) || []).length);
       const dadas = Math.min(total, Number(((estado.dicas || {})[parte] || {})[rodada]) || 0);
       if (!dadas && !ninguem) return erro(res, 400, "Dê ao menos a primeira dica antes de pontuar.");
-      const pts = ninguem ? 0 : Math.max(1, total - dadas + 1);
+      // 6.13.98: o mesmo desconto de 1 ponto por resposta errada de quem acertou, nesta questão (nunca abaixo de zero)
+      const errosDoNome = ((((estado.erradas || {})[parte] || {})[rodada]) || []).filter((x) => x && x.nome === nome).length;
+      const pts = ninguem ? 0 : Math.max(0, Math.max(1, total - dadas + 1) - errosDoNome);
       return gravarEstado((e) => {
         e.acertos = e.acertos || {};
         e.acertos[parte] = { ...(e.acertos[parte] || {}), [rodada]: ninguem ? { nome: "", pts: 0, ninguem: true } : { nome, pts } };

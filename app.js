@@ -7958,7 +7958,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.13.97'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.13.98'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -28117,6 +28117,7 @@ function saveTemplatesToStorage() {
       apagar.setAttribute('aria-label', 'Apagar este compartilhamento');
       apagar.addEventListener('click', async () => { if (await familiaSessaoApagar(cod) && aoApagar) aoApagar(); });
       acoes.append(abrir, copiar, link, apagar);
+      if (jogo) acoes.classList.add('fam-acoes-codigo-jogo'); // 6.13.98: nos jogos, a lixeira fica ao lado do "Iniciar o jogo"
       caixa.append(rotulo, codigo, dica, acoes);
       return caixa;
     }
@@ -29659,9 +29660,10 @@ function saveTemplatesToStorage() {
             ? 'Descubra a resposta pelas dicas. Toque em “Dar a 1ª dica” para começar: quanto menos dicas você usar, mais pontos a questão vale (a etiqueta “vale N pontos” mostra o valor de agora). Escreva a resposta (ou toque no 🎤 e fale) e envie.'
             : 'Leia a questão e escreva a resposta (ou toque no 🎤 e fale), depois envie.');
         const fim = j.idTipo === 'verdadeiro_falso' ? '' : ' Se errar, tente de novo ou toque em “Apelar para a IA”, que confere se a essência da resposta está certa (um erro de grafia ou um conectivo não muda o sentido). “Não sei” mostra a resposta e a questão não pontua.';
-        return base + fim + ' Use as setas para trocar de questão; sua pontuação aparece no placar.';
+        return base + fim + (j.idTipo === 'verdadeiro_falso' ? '' : ' Cada resposta errada tira 1 ponto daquela questão (que nunca fica abaixo de zero).') + ' Use as setas para trocar de questão; sua pontuação aparece no placar.';
       })();
-      (soloRegras ? [regrasSolo] : [j.comoJogar, j.material ? '✏️ Material: ' + j.material : '']).filter(Boolean).forEach(txt => {
+      const regraPenalidade = 'Cada resposta errada tira 1 ponto da questão em que foi dada (a questão nunca fica abaixo de zero, e o desconto não passa para as outras questões).';
+      (soloRegras ? [regrasSolo] : [j.comoJogar, j.material ? '✏️ Material: ' + j.material : '', j.idTipo && j.idTipo !== 'verdadeiro_falso' && j.idTipo !== 'ordem_data' && !/tira 1 ponto/.test(String(j.comoJogar || '')) ? regraPenalidade : '']).filter(Boolean).forEach(txt => {
         const p = document.createElement('p');
         p.className = 'fam-parte-desc';
         p.textContent = txt;
@@ -30130,7 +30132,8 @@ function saveTemplatesToStorage() {
             rr.recolhida = !rr.recolhida;
             participarJogoPintar(parteIdx, false);
           });
-          li.appendChild(btnRecolher);
+          // 6.13.98: o botão ▾ de recolher a questão respondida saiu da tela (desnecessário); o objeto continua para o resto do código
+          btnRecolher.remove();
           ref.rodadas.push({ btnRecolher, recolhida: false, li, respBox, ctrlBox, linhaAcerto, sel, btnPontuar, btnEspiar, btnReiniciar, espiada, sig: null, resp, btn: btn || btnRevelarSolo, campoResp, btnEnviar, sincEnviar, btnDica, dicasEls, aguarda, pontos, total: dicas.length, referencia: r.referencia || '', envioEl, area, areaNota, julgarEl, temIntro: Boolean(intro) });
           ol.appendChild(li);
         });
@@ -30601,8 +30604,10 @@ function saveTemplatesToStorage() {
         r.aguarda.hidden = !(comDicas && n === 0 && !revelada && !participar.dirigente) || r.aguarda.dataset.semEspera === '1';
         const pts = Math.max(1, r.total - n + 1);
         // 6.13.62: os pontos em destaque desde o começo (antes da 1ª dica vale o máximo)
-        const ptsAgora = Math.max(1, r.total - Math.max(n, 1) + 1);
-        r.pontos.textContent = comDicas && !revelada ? '⭐ vale ' + ptsAgora + (ptsAgora === 1 ? ' ponto' : ' pontos') : '';
+        // 6.13.98: cada resposta errada tira 1 ponto desta questão (de quem errou; nunca abaixo de zero)
+        const errosMeus = (erradas[k] || []).filter(x => soloJogo || !participar.nome || x.nome === participar.nome).length;
+        const ptsAgora = Math.max(0, Math.max(1, r.total - Math.max(n, 1) + 1) - errosMeus);
+        r.pontos.textContent = comDicas && !revelada ? '⭐ vale ' + ptsAgora + (ptsAgora === 1 ? ' ponto' : ' pontos') + (errosMeus ? ' · −' + errosMeus + (errosMeus === 1 ? ' por erro' : ' por erros') : '') : '';
         r.resp.hidden = comDicas && n === 0 && !revelada;
         r.resp.classList.toggle('escondida', !revelada);
         r.resp.classList.toggle('revelada', revelada);
@@ -30644,6 +30649,11 @@ function saveTemplatesToStorage() {
         ref.nav.pontos.forEach((b, k) => {
           b.classList.toggle('atual', k === ref.atual);
           b.classList.toggle('respondida', rev[k] != null && rev[k] !== '');
+          // 6.13.98: a bolinha acompanha a cor do card: roxa (certa) ou vermelha (errada / ninguém acertou)
+          const acN = acertos[k], envN = envios[k];
+          const certaN = Boolean((acN && !acN.ninguem) || (envN && envN.status === 'certa'));
+          b.classList.toggle('certa', certaN);
+          b.classList.toggle('errada', !certaN && Boolean((acN && acN.ninguem) || ((rev[k] != null && rev[k] !== '') && !acN) || (erradas[k] || []).length));
           b.setAttribute('aria-current', k === ref.atual ? 'true' : 'false');
         });
       }

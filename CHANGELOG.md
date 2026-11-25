@@ -2,6 +2,15 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.98
+
+- **Penalidade por resposta errada**: cada resposta errada tira **1 ponto da questão** em que foi dada (de quem errou). A questão nunca fica abaixo de zero (se os erros passarem dos pontos, vale 0) e o desconto **não passa para as outras questões**. Vale no servidor (`darPontos` e `pontuar`, em `api/familia-sessao.mjs`): quando a IA aceita uma resposta ("Apelar para a IA"), esse erro deixa de contar. A etiqueta da questão mostra o valor atual e o desconto ("⭐ vale 2 pontos · −2 por erros"). Não vale no Verdadeiro ou falso (errou, a questão termina sem pontos) nem no "Não sei".
+- **Regras atualizadas** com a nova regra (jogo sozinho, jogo em grupo e as regras do Perfil bíblico geradas pela IA); jogos já guardados recebem a frase na hora de mostrar.
+- Saiu o botão ▾ de recolher a questão respondida.
+- As bolinhas das questões acompanham a cor do card: roxa (certa) e vermelha (errada / ninguém acertou); sem verde.
+- No código do jogo: a lixeira 🗑️ ao lado do "Iniciar o jogo" (o Iniciar ficou menor, 230 px, e a lixeira, com 48 px); Copiar e Link dividem a linha de baixo.
+- Testes: 100 verificações do servidor (3 novas da penalidade) e 93 dos quadros.
+
 ## 6.13.97
 
 - Regras do jogo: ao abrir o botão, o texto colava nas bordas (1 px); agora tem margens de 14 px dos lados e espaço em cima e embaixo.

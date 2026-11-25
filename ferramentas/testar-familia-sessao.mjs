@@ -367,6 +367,12 @@ try {
     assert.equal(aceita.dados.estado.envios["2"]["1"].status, "certa");
     assert.equal(aceita.dados.estado.envios["2"]["1"].ia, "Aceito, só errou a grafia!");
     assert.equal(aceita.dados.estado.erradas["2"]["1"].length, 1);
+    // 6.13.98: cada resposta errada tira 1 ponto da questão (a aceita pela IA não conta): 2 pontos de base − 1 erro = 1
+    assert.equal(aceita.dados.estado.acertos["2"]["1"].pts, 1); passo("penalidade: 1 erro tira 1 ponto da questão (o erro que a IA aceitou não conta)");
+    for (const t of ["x", "y", "z"]) await chamar({ acao: "responder", sessao: ss.sessao, participanteId: idS, parte: 2, rodada: 0, texto: t });
+    const zerada = await chamar({ acao: "responder", sessao: ss.sessao, participanteId: idS, parte: 2, rodada: 0, texto: "moises" });
+    assert.equal(zerada.dados.estado.acertos["2"]["0"].pts, 0); passo("penalidade: com mais erros que pontos, a questão fica em zero (nunca negativa)");
+    assert.equal(zerada.dados.estado.acertos["2"]["1"].pts, 1); passo("penalidade: o desconto não passa para outra questão");
     assert.ok(aceita.dados.estado.reveladas["2"]["1"]); passo("IA aceitou: pontos, resposta revelada e comentário guardado");
     assert.equal((await chamar({ acao: "julgamento-ia", sessao: ss.sessao, chave: ss.chave, parte: 2, rodada: 1, indice: 0, certo: true })).status, 409); passo("depois de respondida, a questão não aceita mais apelação");
     await chamar({ acao: "encerrar", sessao: ss.sessao, chave: ss.chave });
