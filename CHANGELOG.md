@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.65
+
+- A seta Voltar da barra superior ganhou moldura fina cinza e fundo fixo (cinza claro).
+- A seta fica **sempre à vista e ativa**. Ela sumia na tela Leitura (a barra do topo ficava escondida lá, agora aparece) e nas telas sem botão de voltar. Sem um voltar próprio na tela, ela leva ao Início; no Início, sobe ao topo da página.
+
 ## 6.13.64
 
 - Os títulos do alto de cada seção ficam **centralizados** (Adoração em família, Jogos bíblicos, Preparar para comentar, Anotações, Pesquisas salvas, Assistente de pesquisas, Leitura diária, Áudio em texto, Backup, Formatar, Ajustes…), conferido pelo centro do texto (188 px numa tela de 375).
