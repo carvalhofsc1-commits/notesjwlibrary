@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.74
+
+- Assistente de pesquisas, Assistente de leitura em voz e Áudio em texto: linha azul separando o título, com as mesmas medidas das Anotações (7 px do título até a linha, linha de 3 px, 10 px até o início da página).
+- Páginas de Reuniões (ex.: Preparação de discursos e esboços): com o botão "📝 ↓" fora de vista, o título usa a largura toda (sem os espaços laterais) e a letra é maior (17,8 px, antes cerca de 13 px); com o botão à vista, o título continua centralizado.
+
 ## 6.13.73
 
 - Espaços do topo das telas voltaram ao padrão da tela Anotações também em Reuniões: o botão "📝 ↓" (40 px) deixava a barra mais alta e afastava o título da linha (13 px); agora ele não aumenta a barra e a linha fica a 7 px do título, com 10 px até o início da página, igual às outras telas.

@@ -17924,3 +17924,18 @@ body:not([data-reunioes="hub"]) .reunioes-topo { display: grid; grid-template-co
 /* 6.13.73: o botão "📝 ↓" (40 px) não aumenta a altura da barra de Reuniões: a linha fica a 7 px do título, como nas Anotações */
 .reunioes-topo #reunioesCampoBtn { align-self: center; margin-top: -9px; margin-bottom: -9px; }
 body:not([data-reunioes="hub"]) .reunioes-topo { padding-bottom: 11px; }
+
+/* 6.13.74: Assistente de pesquisas, Assistente de leitura em voz e Áudio em texto: a linha azul separa o título (mesmas medidas do padrão: 8 px, 3 px, 10 px) */
+.pesq-card > .pesq-titulo, #leituraCard > .leitura-topo, #transcricaoCard > .leitura-topo { margin: 0 0 10px; padding-bottom: 8px; border-bottom: 3px solid var(--sv-azul-bd); }
+.pesq-card > .pesq-titulo { line-height: 1.2; }
+/* Reuniões: sem o botão "📝 ↓" à vista, o título usa a largura toda (sem os espaços laterais) e a letra pode ser maior */
+.reunioes-topo .reunioes-pagina-titulo { font-size: 1.3rem; }
+body[data-screen="reunioes"][data-reunioes="comentarios"].sem-texto-original .reunioes-topo,
+body[data-screen="reunioes"]:not(.texto-chegou) .reunioes-topo { grid-template-columns: minmax(0, 1fr); column-gap: 0; }
+body[data-screen="reunioes"][data-reunioes="comentarios"].sem-texto-original .reunioes-topo::before,
+body[data-screen="reunioes"]:not(.texto-chegou) .reunioes-topo::before,
+body[data-screen="reunioes"][data-reunioes="comentarios"].sem-texto-original #reunioesCampoBtn,
+body[data-screen="reunioes"]:not(.texto-chegou) #reunioesCampoBtn { display: none; }
+.pesq-card > .pesq-titulo { margin-bottom: -2px; } /* o cartão é uma grade com 12 px entre os itens: 12 - 2 = 10 px até o próximo */
+#leituraCard > .leitura-topo h2, #transcricaoCard > .leitura-topo h2 { line-height: 1.2; }
+#transcricaoCard > .leitura-topo { padding-bottom: 9px; }
