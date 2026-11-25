@@ -18014,3 +18014,6 @@ details.fam-placar-card > summary { min-height: 0 !important; padding: 3px 8px !
 .fam-sessao-rodape > .fam-jogo-enunciado:not([open]) { height: 32px; }
 .fam-sessao-rodape > .fam-sessao-grande-btn { height: 32px; padding: 0 10px; display: flex; align-items: center; justify-content: center; }
 .fam-sessao-rodape > .fam-jogo-enunciado > summary { min-height: 30px; display: flex; align-items: center; justify-content: center; padding: 0 10px; box-sizing: border-box; }
+
+/* 6.13.82: no jogo avulso, sem o recuo lateral da parte (.fam-parte): o jogo ocupa a mesma largura do card "Quem está participando" */
+#participarSessao.fam-sessao-jogo-avulso .fam-sessao-secao:not(.bloqueada) .fam-parte { padding-left: 0; padding-right: 0; }
