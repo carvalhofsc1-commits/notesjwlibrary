@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.38
+
+- Jogos bíblicos → jogo pronto → 🔗 Jogar em grupo: os itens não ficam mais grudados (10 px entre a dica, o aviso dos nomes, o campo do apelido com ➕ Acrescentar, o 🔗 Criar o código do jogo e o ◀ Escolher outro jogo).
+
 ## 6.13.37
 
 - Início: o atalho 📰 A Sentinela saiu (as respostas do estudo continuam em Reuniões); 🗂️ Pesquisas salvas ficou no lugar dele, na página 2. Os atalhos voltam a ter 2 páginas.

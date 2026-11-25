@@ -17307,6 +17307,16 @@ body[data-screen="jogos"] :is(.screen-inicio, .screen-editor, .screen-formatar, 
 .jogos-painel .jogos-acoes > .jogos-ir { flex: 1 1 auto; width: auto; min-width: 0; margin: 0; }
 .jogos-painel .jogos-acoes > .jogos-cancelar { flex: 0 0 48px; width: 48px; min-width: 48px; margin: 0; padding: 0; min-height: 40px; display: inline-flex; align-items: center; justify-content: center; font-size: 1rem; }
 .jogos-painel .fam-trocar-aviso[hidden] { display: none; }
+/* 6.13.38: "Jogar em grupo" sem nada grudado: título, dica, nomes, campo do apelido, Criar o código e Escolher outro jogo com espaço entre si */
+.jogos-pronto { gap: 12px; }
+.jogos-grupo { display: grid; gap: 10px; min-width: 0; }
+.jogos-grupo > * { margin: 0; }
+.jogos-grupo .fam-sessao-nomes { display: grid; gap: 10px; min-width: 0; }
+.jogos-grupo .fam-sessao-chips > .hint { margin: 0; }
+.jogos-grupo .fam-sessao-add { display: flex; gap: 8px; align-items: stretch; min-width: 0; margin: 0; }
+.jogos-grupo .fam-sessao-add > input { flex: 1 1 auto; min-width: 0; margin: 0; }
+.jogos-grupo .fam-sessao-add > button { flex: 0 0 auto; margin: 0; }
+.jogos-grupo .fam-acoes > button, .jogos-pronto > .fam-acoes > button { margin: 0; }
 .jogos-pronto .fam-lista { margin: 6px 0 0; padding-left: 1.3em; display: grid; gap: 4px; }
 .jogos-pronto .fam-lista li { overflow-wrap: anywhere; }
 .fam-hub { display: grid; gap: 10px; min-width: 0; margin-top: 10px; }
