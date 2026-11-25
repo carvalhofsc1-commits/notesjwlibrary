@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.59
+
+- Tela pequena: os botões dos controles do administrador (dica, quem acertou, só para mim, revelar) passavam da borda do quadro; a coluna do quadro agora acompanha a largura e os botões ficam dentro (conferido em 340 px).
+
 ## 6.13.58
 
 - Saiu o card "🎮 Jogar também" (nome + Entrar no jogo): o administrador já é identificado pelo cadastro do aparelho, então joga direto, e a regra de quem viu a resposta continua valendo.

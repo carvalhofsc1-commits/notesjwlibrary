@@ -17809,3 +17809,7 @@ details.fam-placar-card > summary { cursor: pointer; font-weight: 800; padding: 
 details.fam-placar-card[open] > summary { border-bottom: 1px solid var(--line); margin-bottom: 6px; }
 .fam-placar-medalha { display: inline-block; min-width: 1.4em; text-align: center; }
 tr.fam-placar-lider td { background: color-mix(in srgb, #f59e0b 18%, var(--card)); font-weight: 800; }
+
+/* 6.13.59: tela pequena: o quadro dos controles do administrador não deixa os botões passarem da borda (a coluna da grade não cresce com o conteúdo) */
+#participarSessao .fam-sessao-ctrl-box { grid-template-columns: minmax(0, 1fr); }
+#participarSessao .fam-sessao-ctrl-box > * { min-width: 0; max-width: 100%; box-sizing: border-box; }
