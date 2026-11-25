@@ -838,6 +838,25 @@ export function siglaCurta(sigla) {
   return iniciais >= 1 && iniciais <= MAX_INICIAIS_NA_SIGLA && tokens.length <= 7;
 }
 
+// 6.14.03: na sigla (e no começo das palavras), os artigos e as palavras de ligação por extenso ficam em minúsculas ("os 12 A de C",
+// "o P da P"); a maiúscula fica só nas palavras. Uma letra sozinha só é artigo quando a resposta traz a mesma letra ali ("A L do M" = "A Luz do
+// Mundo" → "a L do M"; em "Os 12 A de C", o "A" é de "Apóstolos" e continua maiúsculo).
+const MINUSCULAS_NA_SIGLA = new Set(["a", "as", "o", "os", "um", "uma", "uns", "umas", "de", "da", "do", "das", "dos", "e", "em", "no", "na", "nos", "nas", "ao", "aos", "com", "por", "para"]);
+const minusculaSeLigacao = (w) => (MINUSCULAS_NA_SIGLA.has(normalizarTexto(w)) ? w.toLocaleLowerCase("pt-BR") : w);
+export function siglaComArtigosMinusculos(sigla, resposta) {
+  const palavras = String(resposta || "").trim().split(/\s+/);
+  let i = 0;
+  return String(sigla || "")
+    .trim()
+    .split(/\s+/)
+    .map((t) => {
+      if (/^(?:\p{Lu}\.){2,}$/u.test(t)) { i += t.split(".").filter(Boolean).length; return t; }
+      const palavra = palavras[i++] || "";
+      return normalizarTexto(t) === normalizarTexto(palavra) ? minusculaSeLigacao(t) : t;
+    })
+    .join(" ");
+}
+
 // 6.13.22: as dicas de uma rodada de Abreviações: quantas palavras, onde está (o livro da Bíblia ou o tipo da sigla) e o começo de cada
 // palavra ("Gr Mu" para "Grande Multidão": as 2 primeiras letras; números e palavras de até 2 letras ficam inteiros).
 export function comecoDasPalavras(resposta) {
@@ -846,7 +865,7 @@ export function comecoDasPalavras(resposta) {
     .trim()
     .split(/\s+/)
     .filter(Boolean)
-    .map((w) => (/^\d/.test(w) || w.replace(/[^\p{L}]/gu, "").length <= 2 ? w : w.replace(/^(\P{L}*\p{L}\p{L}).*$/u, "$1")))
+    .map((w) => (MINUSCULAS_NA_SIGLA.has(normalizarTexto(w)) ? minusculaSeLigacao(w) : /^\d/.test(w) || w.replace(/[^\p{L}]/gu, "").length <= 2 ? w : w.replace(/^(\P{L}*\p{L}\p{L}).*$/u, "$1")))
     .join(" ");
 }
 // 6.14.01: uma pista de significado vale se diz alguma coisa (de 15 a 220 caracteres) e não entrega nenhuma palavra da resposta (de 4 letras ou
@@ -873,7 +892,7 @@ export function perguntaDaAbreviacao(sigla, resposta, onde, pistas = []) {
   const principal = palavraPrincipal(resposta);
   const reveladora = principal ? `Uma das palavras é “${principal}”.` : `${lugar}.`;
   const [d1, d2] = boas.length >= 2 ? [boas[0], `${boas[1]} ${lugar}.`] : boas.length === 1 ? [`${lugar}.`, boas[0]] : [`${lugar}.`, reveladora];
-  return `O que significa a sigla “${sigla}”? Dica 1: ${d1} Dica 2: ${d2} Dica 3: O começo de cada palavra: “${comecoDasPalavras(resposta)}”.`;
+  return `O que significa a sigla “${siglaComArtigosMinusculos(sigla, resposta)}”? Dica 1: ${d1} Dica 2: ${d2} Dica 3: O começo de cada palavra: “${comecoDasPalavras(resposta)}”.`;
 }
 
 // 6.14.02: a expressão cortada: a resposta "O Rio da Vida" para Apocalipse 22:1, que diz "um rio de ÁGUA da vida". É cortada quando as palavras

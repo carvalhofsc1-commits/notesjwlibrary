@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.03
+
+- Jogo **Abreviações**: na sigla, os artigos (o, a, os, as, um, uma) e as palavras de ligação ficam em minúsculas; maiúsculas só nas palavras (ex.: “o P da P”, “os 12 A de C”). O mesmo na dica do começo das palavras.
+- Jogos já preparados continuam como estavam; é só preparar de novo.
+
 ## 6.14.02
 
 - Jogo **Abreviações**: a expressão da resposta tem de ser a que o versículo traz. Corrigido o caso de "O Rio da Vida" para Apocalipse 22:1, que diz "um rio de **água** da vida": o servidor compara com o texto e tira a rodada com a expressão cortada (outra expressão é pedida no lugar).
