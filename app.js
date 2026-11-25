@@ -7958,7 +7958,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.13.89'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.13.90'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -30807,6 +30807,8 @@ function saveTemplatesToStorage() {
     ['quem_sou_eu', 'verdadeiro_falso', 'ordem_data', 'quem_disse', 'complete_versiculo', 'abreviacoes', 'perfil_biblico'].forEach((id, i) => {
       if (JOGOS_BIBLICOS[i]) { JOGOS_BIBLICOS[i].id = id; JOGOS_BIBLICOS[i].cor = JOGOS_VISUAL[id].cor; JOGOS_BIBLICOS[i].emoji = JOGOS_VISUAL[id].emoji; }
     });
+    // 6.13.90: o Perfil bíblico é o primeiro da lista dos jogos (a ordem só vale para a tela; cada jogo continua com o seu nome e id)
+    JOGOS_BIBLICOS.unshift(JOGOS_BIBLICOS.splice(JOGOS_BIBLICOS.findIndex(j => j.id === 'perfil_biblico'), 1)[0]);
     const JOGOS_SALVOS_KEY = 'nsJogosPreparadosV1';
     const JOGOS_SALVOS_MAX = 30;
     const JOGOS_FORMACAO = 'Grupo de irmãos jogando um jogo bíblico (várias idades)';

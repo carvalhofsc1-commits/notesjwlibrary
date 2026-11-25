@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.90
+
+- Lista dos jogos: o **Perfil bíblico** é o primeiro; os demais seguem na ordem de antes (Quem sou eu?, Verdadeiro ou falso, Ordem e data, Quem disse isso?, Complete o versículo, Abreviações bíblicas). A ordem vale só para a tela: cada jogo continua com o seu nome, id e cor.
+
 ## 6.13.89
 
 - Perfil bíblico: a descrição na lista dos jogos agora é "Acerte o nome de pessoas, lugares, coisas e anos".
