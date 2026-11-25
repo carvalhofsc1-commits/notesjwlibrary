@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.41
+
+- Jogos (Adoração e Jogos bíblicos): o botão de pontuar mostra só "✅ Pontuar" (sem "3 pontos"); quanto a questão vale continua no alto dela ("vale N pontos agora").
+
 ## 6.13.40
 
 - O aviso de um quadro (Adoração e Jogos bíblicos) não mostra mais a instrução interna dada à IA no refazer ("vieram 5 rodadas válidas; mande 12 rodadas… a referência de um versículo…"): agora diz só o que ficou ("Jogo bíblico: ficou com 5 rodadas (as outras não passaram na conferência com a Bíblia ou repetiam o que já saiu)."). Nos Jogos bíblicos o aviso fica numa linha própria, em laranja claro, separado do "✅ Jogo pronto".
