@@ -17939,3 +17939,6 @@ body[data-screen="reunioes"]:not(.texto-chegou) #reunioesCampoBtn { display: non
 .pesq-card > .pesq-titulo { margin-bottom: -2px; } /* o cartão é uma grade com 12 px entre os itens: 12 - 2 = 10 px até o próximo */
 #leituraCard > .leitura-topo h2, #transcricaoCard > .leitura-topo h2 { line-height: 1.2; }
 #transcricaoCard > .leitura-topo { padding-bottom: 9px; }
+
+/* 6.13.75: todos os títulos do alto das telas com a MESMA fonte (1,15 rem); só diminuem, sozinhos, se o texto não couber numa linha */
+body :is(.fam-titulo, #anotacoesTitulo, #salvasTitulo, .formatar-titulo, .pesq-titulo, #backupCard > h2, .leitura-topo h2, .ajustes-grupo-titulo, .reunioes-topo .reunioes-pagina-titulo) { font-size: 1.15rem; }

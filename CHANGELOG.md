@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.75
+
+- Todos os títulos do alto das telas (Anotações, Pesquisas salvas, Assistente de pesquisas, Leitura diária, Assistente de leitura, Áudio em texto, Backup, Formatar, Ajustes, Adoração, Jogos, Reuniões…) com a **mesma fonte** (1,15 rem = 18,4 px); antes variavam de 15 a 21 px (as Anotações eram a menor). A letra só diminui, sozinha, se o título não couber em uma linha (ex.: "Preparação de discursos e esboços", 17,9 px).
+
 ## 6.13.74
 
 - Assistente de pesquisas, Assistente de leitura em voz e Áudio em texto: linha azul separando o título, com as mesmas medidas das Anotações (7 px do título até a linha, linha de 3 px, 10 px até o início da página).
