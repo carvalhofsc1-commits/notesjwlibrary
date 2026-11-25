@@ -17882,3 +17882,6 @@ header.app-topbar::after { content: none; }
 .voltar-topo { flex: 0 0 30px; width: 30px; height: 30px; margin: 0 3px; border: 1px solid #c4c9d1; border-radius: 10px; }
 .voltar-topo svg { width: 20px; height: 20px; }
 header.app-topbar .voltar-topo { min-height: 30px; max-height: 30px; min-width: 30px; }
+/* 6.13.67: a seta mais larga na horizontal (42 px) e baixa na vertical (30 px); as margens negativas mantêm o espaço de 36 px e o logo no centro */
+.voltar-topo { flex: 0 0 42px; width: 42px; margin: 0 -3px; }
+header.app-topbar .voltar-topo { min-width: 42px; }
