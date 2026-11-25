@@ -17798,5 +17798,5 @@ details.jogos-grupo-card { display: block; min-width: 0; padding: 0; border: 1px
 details.jogos-grupo-card > summary { display: flex; align-items: center; justify-content: center; min-height: 38px; box-sizing: border-box; padding: 8px 14px; margin: 0; list-style: none; cursor: pointer; text-align: center; font-size: .95rem; font-weight: 700; line-height: 1.2; color: #1f2937; }
 details.jogos-grupo-card > summary::-webkit-details-marker { display: none; }
 details.jogos-grupo-card[open] { border-color: color-mix(in srgb, #8b5cf6 55%, var(--line)); background: color-mix(in srgb, #8b5cf6 4%, var(--card)); }
-details.jogos-grupo-card[open] > summary { background: color-mix(in srgb, #8b5cf6 12%, var(--card)); border-bottom: 1px solid color-mix(in srgb, #8b5cf6 45%, var(--line)); }
+details.jogos-grupo-card[open] > summary { background: #f1f2f4; border-bottom: 1px solid color-mix(in srgb, #8b5cf6 45%, var(--line)); }
 details.jogos-grupo-card > .jogos-grupo { padding: 10px; }

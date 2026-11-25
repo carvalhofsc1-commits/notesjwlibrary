@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.55
+
+- "Jogar em grupo": o título do card mantém a cor de fundo original ao abrir.
+
 ## 6.13.54
 
 - "Jogar em grupo" deixou de ser um botão: é o título de um card que, recolhido, tem a aparência do "Iniciar partida sozinho" (mesmo tamanho e cor) e, aberto, mostra as configurações dentro da moldura, com o título separado do corpo por uma linha.
