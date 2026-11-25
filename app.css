@@ -17309,6 +17309,7 @@ body[data-screen="jogos"] :is(.screen-inicio, .screen-editor, .screen-formatar, 
 .jogos-painel .fam-trocar-aviso[hidden] { display: none; }
 /* 6.13.38: "Jogar em grupo" sem nada grudado: título, dica, nomes, campo do apelido, Criar o código e Escolher outro jogo com espaço entre si */
 .jogos-pronto { gap: 12px; }
+.jogos-aviso { margin: 0; padding: 8px 10px; border: 1px solid color-mix(in srgb, #f59e0b 55%, var(--line)); border-radius: 8px; background: color-mix(in srgb, #f59e0b 10%, var(--card)); font-size: .88rem; color: var(--text); overflow-wrap: anywhere; }
 .jogos-grupo { display: grid; gap: 10px; min-width: 0; }
 .jogos-grupo > * { margin: 0; }
 .jogos-grupo .fam-sessao-nomes { display: grid; gap: 10px; min-width: 0; }

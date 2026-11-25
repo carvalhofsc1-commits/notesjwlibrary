@@ -4319,7 +4319,14 @@ async function gerarQuadroFamilia(res, body, P) {
     }
     // 6.12.79: se sobrou problema e acabou o tempo (prazo total do quadro), o aviso diz que não deu para refazer.
     const semTempo = problemas(r).length && body.refazerRepetido !== true && !refeito && !comTempo() ? "sem tempo para refazer o quadro" : "";
-    const aviso = problemas(r).length || trocado ? `${quadro.nome}: ${[trocado, ...problemas(r), semTempo].filter(Boolean).join("; ")}.` : "";
+    // 6.13.40: o aviso que vai para a tela não repete a instrução dada à IA no refazer ("mande 12 rodadas…"): só diz, em poucas palavras, o que ficou.
+    const avisoDaFalta = (falta) => {
+      const m = String(falta || "").match(/^vieram (\d+) (rodadas|acontecimentos|cartas) válid[oa]s/);
+      if (m) return `ficou com ${m[1]} ${m[2]} (as outras não passaram na conferência com a Bíblia ou repetiam o que já saiu)`;
+      return String(falta || "").split(/[;,]\s*mande\b/)[0].trim();
+    };
+    const problemasNaTela = [...r.repeticoes, ...(r.falta ? [avisoDaFalta(r.falta)] : [])];
+    const aviso = problemasNaTela.length || trocado ? `${quadro.nome}: ${[trocado, ...problemasNaTela, semTempo].filter(Boolean).join("; ")}.` : "";
     console.log("Adoração em Família (quadro):", JSON.stringify({ modelo: P.ia.modelo, quadro: id, ...prep.contagens, ...r.contagens, leitura: Boolean(r.parte.leitura), textos: r.parte.textos.length, refeito, repeticoes: r.repeticoes.length, falta: r.falta ? 1 : 0, segundosIa: Math.round((Date.now() - inicio) / 100) / 10, entrada, saida }));
     return res.status(200).json({ parte: r.parte, quadro: id, usados: r.usados, memoria: r.memoria, aviso, refeito, modelo: nomeDoModelo(P.ia.modelo), data: new Date().toISOString() });
   } catch (e) {
