@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.87
+
+- Jogo ao vivo: o rótulo do sorteio agora é "🎲 Sorteio: jogadores, perguntas e dicas (opcional)", numa linha só (a letra diminui sozinha para caber; 12 px numa tela de 360 px).
+- Nova ordem na tela do jogo: Quem está participando → **Placar** → Controles do administrador → Sorteio (os dois juntos) → barra das questões → questão → "Voltar a bloquear" → Regras e Tela grande, todos a 10 px um do outro e com a mesma largura.
+
 ## 6.13.86
 
 - Card recolhido "Controles do administrador do jogo" mais baixo: 34 px (antes 54 px), a mesma altura do card do Sorteio; o texto fica centralizado na vertical. Aberto, o card mantém o conteúdo de sempre.

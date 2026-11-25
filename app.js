@@ -91,7 +91,7 @@
     window.addEventListener('resize', topbarAjustar);
 
     // 6.13.71: os títulos do alto das telas ficam numa linha só: se o texto não couber, a letra diminui até caber (mínimo 11 px; depois, reticências).
-    const TITULOS_UMA_LINHA = '.fam-titulo, #anotacoesTitulo, #salvasTitulo, .formatar-titulo, .pesq-titulo, #backupCard > h2, .leitura-topo h2, .ajustes-grupo-titulo, .reunioes-topo .reunioes-pagina-titulo';
+    const TITULOS_UMA_LINHA = '.fam-sessao-sorteio-card > summary, .fam-titulo,#anotacoesTitulo, #salvasTitulo, .formatar-titulo, .pesq-titulo, #backupCard > h2, .leitura-topo h2, .ajustes-grupo-titulo, .reunioes-topo .reunioes-pagina-titulo';
     function titulosAjustar() {
       document.querySelectorAll(TITULOS_UMA_LINHA).forEach(el => {
         if (!el.getClientRects().length) return;
@@ -7952,7 +7952,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.13.86'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.13.87'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -29698,7 +29698,7 @@ function saveTemplatesToStorage() {
       const cardSorteio = document.createElement('details');
       cardSorteio.className = 'fam-sessao-sorteio-card';
       const resumoSorteio = document.createElement('summary');
-      resumoSorteio.textContent = '🎲 Sorteio de jogadores (opcional)';
+      resumoSorteio.textContent = '🎲 Sorteio: jogadores, perguntas e dicas (opcional)';
       cardSorteio.appendChild(resumoSorteio);
       cardSorteio.hidden = !participar.dirigente || Boolean(participar.programa && participar.programa.solo);
       sorteio.appendChild(cardSorteio);
@@ -30636,7 +30636,7 @@ function saveTemplatesToStorage() {
       ref.nome.hidden = !vale;
       ref.linhaVez.hidden = !vale;
       ref.cardSorteio.hidden = (!vale && !valeQ && !participar.dirigente) || Boolean(participar.programa && participar.programa.solo); // quem não dirige só vê o card quando há algo sorteado; sozinho, nunca
-      if (!vale) { ref.resumoSorteio.textContent = valeQ ? '🎯 ' + textoQ : '🎲 Sorteio de jogadores (opcional)'; return; }
+      if (!vale) { ref.resumoSorteio.textContent = valeQ ? '🎯 ' + textoQ : '🎲 Sorteio: jogadores, perguntas e dicas (opcional)'; return; }
       // O sorteado aparece como no placar: o mesmo bichinho e a mesma cor, em negrito. Com o card recolhido, o título já mostra de quem é a vez.
       const mascote = participarMascotes(participarNomesVistos([...nomes, s.nome]))[s.nome];
       const vezDe = () => {

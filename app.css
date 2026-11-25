@@ -18049,3 +18049,29 @@ details.fam-placar-card > summary { min-height: 0 !important; padding: 3px 8px !
 #participarSessao details.fam-sessao-dirigente { padding: 0 12px; }
 #participarSessao details.fam-sessao-dirigente[open] { padding: 0 12px 10px; }
 #participarSessao details.fam-sessao-dirigente > summary { min-height: 32px; padding: 0; line-height: 1.2; }
+
+/* 6.13.87: o rótulo do sorteio numa linha só (a letra diminui se preciso) */
+#participarSessao .fam-sessao-sorteio-card > summary { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* 6.13.87: nova ordem no jogo: Quem está participando → Placar → Controles do administrador → Sorteio (juntos) → barra das questões → questão → Voltar a bloquear → rodapé.
+   As camadas intermediárias (partes e seção) deixam de ter caixa (display: contents) para os blocos poderem trocar de lugar na coluna da tela. */
+#participarSessao.fam-sessao-jogo-avulso { display: flex; flex-direction: column; }
+#participarSessao.fam-sessao-jogo-avulso .fam-sessao-secoes,
+#participarSessao.fam-sessao-jogo-avulso .fam-sessao-secao:not(.bloqueada),
+#participarSessao.fam-sessao-jogo-avulso .fam-sessao-secao:not(.bloqueada) > .fam-sessao-corpo,
+#participarSessao.fam-sessao-jogo-avulso .fam-sessao-secao:not(.bloqueada) .fam-sessao-corpo-dentro,
+#participarSessao.fam-sessao-jogo-avulso .fam-sessao-secao:not(.bloqueada) .fam-parte,
+#participarSessao.fam-sessao-jogo-avulso .fam-sessao-secao:not(.bloqueada) .fam-sessao-jogo { display: contents; }
+#participarSessao.fam-sessao-jogo-avulso > .fam-sessao-cabeca { order: 0; }
+#participarSessao.fam-sessao-jogo-avulso > .fam-sessao-presentes { order: 1; }
+#participarSessao.fam-sessao-jogo-avulso .fam-sessao-jogo > .fam-sessao-placar { order: 2; }
+#participarSessao.fam-sessao-jogo-avulso > .fam-sessao-dirigente { order: 3; }
+#participarSessao.fam-sessao-jogo-avulso .fam-sessao-jogo > .fam-sessao-sorteio { order: 4; }
+#participarSessao.fam-sessao-jogo-avulso .fam-sessao-jogo > .fam-sessao-nav { order: 5; }
+#participarSessao.fam-sessao-jogo-avulso .fam-sessao-jogo > ol.fam-sessao-rodadas { order: 6; }
+#participarSessao.fam-sessao-jogo-avulso .fam-sessao-secao > .fam-sessao-secao-acoes { order: 7; }
+#participarSessao.fam-sessao-jogo-avulso > .fam-sessao-rodape { order: 8; }
+/* sem o espaço (gap) da grade do jogo, cada bloco leva os 10 px por baixo */
+#participarSessao.fam-sessao-jogo-avulso .fam-sessao-jogo > * { margin-bottom: 10px !important; }
+#participarSessao.fam-sessao-jogo-avulso .fam-sessao-secao > .fam-sessao-secao-acoes { margin: 0 0 10px; }
+#participarSessao.fam-sessao-jogo-avulso > .fam-sessao-rodape { margin-top: 0; }
