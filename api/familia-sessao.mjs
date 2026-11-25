@@ -146,6 +146,9 @@ function estadoPublico(e) {
     // 6.13.28: quem viu a resposta de uma questão em "Ver só para mim" (o presidente da reunião que também joga) não responde mais a ela
     // ({ parte: { rodada: [nome] } }).
     espiaram: e.espiaram && typeof e.espiaram === "object" ? e.espiaram : {},
+    // 6.13.46: Perfil bíblico com dicas sorteadas: a ordem em que as dicas saíram ({ parte: { rodada: [índices] } }) e as partes em modo sorteio ({ parte: true }).
+    dicasOrdem: e.dicasOrdem && typeof e.dicasOrdem === "object" ? e.dicasOrdem : {},
+    sorteioDicas: e.sorteioDicas && typeof e.sorteioDicas === "object" ? e.sorteioDicas : {},
   };
 }
 // O dirigente recebe também a lista de quem entrou; a versão dele inclui a quantidade de participantes (muda quando alguém entra).
@@ -619,7 +622,7 @@ export default async function handler(req, res) {
 
     // ----- Daqui em diante, só o dirigente -----
     if (!(await exigirDirigente())) return;
-    const programa = ["liberar", "bloquear", "revelar", "revelar-ordem", "dica", "pontuar", "reiniciar", "sortear", "sortear-questao", "limpar-sorteio", "cronometro", "julgar"].includes(acao) ? await lerJson(caminho(cod, "programa.json")) : null;
+    const programa = ["liberar", "bloquear", "revelar", "revelar-ordem", "dica", "pontuar", "reiniciar", "sortear", "sortear-questao", "limpar-sorteio", "cronometro", "julgar", "sortear-dica", "modo-dicas"].includes(acao) ? await lerJson(caminho(cod, "programa.json")) : null;
     const parteValida = (i) => programa && Number.isInteger(i) && i >= 0 && i < programa.partes.length;
     // 6.12.76: a referência secreta da rodada (respostas.json; sessões antigas não a têm) e a revelação dela junto com a resposta.
     const referenciaDaRodada = (parte, rodada) => String((((segredo && segredo.referencias) || {})[parte] || [])[rodada] || "");
@@ -721,7 +724,52 @@ export default async function handler(req, res) {
         e.dicas = e.dicas || {};
         const mapa = e.dicas[parte] || {};
         const dadas = Number(mapa[rodada]) || 0;
-        if (dadas < total) e.dicas[parte] = { ...mapa, [rodada]: dadas + 1 };
+        if (dadas >= total) return;
+        e.dicas[parte] = { ...mapa, [rodada]: dadas + 1 };
+        // 6.13.46: se as dicas desta questão já vinham sendo sorteadas, a próxima "em ordem" é a menor que ainda não saiu
+        const ordem = ((e.dicasOrdem || {})[parte] || {})[rodada];
+        if (Array.isArray(ordem)) {
+          let prox = 0;
+          while (ordem.includes(prox)) prox++;
+          e.dicasOrdem[parte] = { ...e.dicasOrdem[parte], [rodada]: [...ordem, prox] };
+        }
+      });
+    }
+
+    // ----- modo-dicas (6.13.46): só no Perfil bíblico, quem dirige escolhe se as dicas são sorteadas ou dadas em ordem -----
+    if (acao === "modo-dicas") {
+      const parte = Number(corpo.parte);
+      if (!parteValida(parte)) return erro(res, 400, "Parte inválida.");
+      if ((programa.partes[parte].jogo || {}).idTipo !== "perfil_biblico") return erro(res, 400, "O sorteio de dicas vale só para o Perfil bíblico.");
+      const sorteio = corpo.sorteio === true;
+      return gravarEstado((e) => {
+        e.sorteioDicas = { ...(e.sorteioDicas || {}) };
+        if (sorteio) e.sorteioDicas[parte] = true;
+        else delete e.sorteioDicas[parte];
+      });
+    }
+
+    // ----- sortear-dica (6.13.46): sorteia, entre as dicas que ainda não saíram, a próxima da rodada; os pontos seguem a quantidade de dicas dadas -----
+    if (acao === "sortear-dica") {
+      const parte = Number(corpo.parte);
+      const rodada = Number(corpo.rodada);
+      if (!parteValida(parte)) return erro(res, 400, "Parte inválida.");
+      const jogo = programa.partes[parte].jogo;
+      const r = jogo && (jogo.rodadas || [])[rodada];
+      if (!Number.isInteger(rodada) || !r) return erro(res, 400, "Rodada inválida.");
+      if (jogo.idTipo !== "perfil_biblico") return erro(res, 400, "O sorteio de dicas vale só para o Perfil bíblico.");
+      if (((estado.reveladas || {})[parte] || {})[rodada]) return erro(res, 409, "Esta questão já foi respondida.");
+      const total = Math.max(1, (String(r.pergunta).match(/Dica\s*\d+\s*:/gi) || []).length);
+      const dadas = Math.min(total, Number(((estado.dicas || {})[parte] || {})[rodada]) || 0);
+      const jaSairam = ((estado.dicasOrdem || {})[parte] || {})[rodada] || Array.from({ length: dadas }, (_, i) => i);
+      const faltam = Array.from({ length: total }, (_, i) => i).filter((i) => !jaSairam.includes(i));
+      if (!faltam.length) return erro(res, 400, "Todas as dicas já saíram.");
+      const sorteada = faltam[randomInt(faltam.length)];
+      return gravarEstado((e) => {
+        e.dicasOrdem = e.dicasOrdem || {};
+        e.dicasOrdem[parte] = { ...(e.dicasOrdem[parte] || {}), [rodada]: [...jaSairam, sorteada] };
+        e.dicas = e.dicas || {};
+        e.dicas[parte] = { ...(e.dicas[parte] || {}), [rodada]: jaSairam.length + 1 };
       });
     }
 
@@ -785,7 +833,7 @@ export default async function handler(req, res) {
       }
       if (!parteValida(parte) || !Number.isInteger(rodada) || rodada < 0) return erro(res, 400, "Rodada inválida.");
       return gravarEstado((e) => {
-        for (const campo of ["dicas", "reveladas", "acertos", "referenciasReveladas", "envios", "erradas"]) {
+        for (const campo of ["dicas", "dicasOrdem", "reveladas", "acertos", "referenciasReveladas", "envios", "erradas"]) {
           if (e[campo] && e[campo][parte]) {
             const copia = { ...e[campo][parte] };
             delete copia[rodada];

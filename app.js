@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.13.45'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.13.46'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -29706,6 +29706,28 @@ function saveTemplatesToStorage() {
           itemQ.append(bq, nota);
           botoes.appendChild(itemQ);
         }
+        // 6.13.46: Perfil bíblico: as dicas podem ser sorteadas (animação e número) ou dadas em ordem; quem dirige escolhe
+        if (j.idTipo === 'perfil_biblico' && (j.rodadas || []).length) {
+          const itemD = document.createElement('div');
+          itemD.className = 'fam-sessao-sorteio-item';
+          const tD = document.createElement('p');
+          tD.className = 'fam-sessao-sorteio-nomes';
+          tD.textContent = '💡 Como saem as dicas de cada questão:';
+          const linhaD = document.createElement('div');
+          linhaD.className = 'fam-acoes-dupla';
+          const mk = (sorteio, rotulo) => {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'secondary fam-fino';
+            b.textContent = rotulo;
+            b.addEventListener('click', () => participarAcao({ acao: 'modo-dicas', parte: parteIdx, sorteio }, b));
+            return b;
+          };
+          ref.modoDicas = { sorteadas: mk(true, '🎲 Sorteadas'), emOrdem: mk(false, '📋 Em ordem') };
+          linhaD.append(ref.modoDicas.sorteadas, ref.modoDicas.emOrdem);
+          itemD.append(tD, linhaD);
+          botoes.appendChild(itemD);
+        }
         cardSorteio.appendChild(botoes);
       }
       // O nome sorteado fica por último, na parte de baixo do card; ao lado, a 🗑️ (só o dirigente) tira o nome (sorteio acidental).
@@ -29930,7 +29952,7 @@ function saveTemplatesToStorage() {
               btnDica = document.createElement('button');
               btnDica.type = 'button';
               btnDica.className = 'secondary fam-fino fam-sessao-revelar fam-sessao-dar-dica';
-              btnDica.addEventListener('click', () => participarAcao({ acao: 'dica', parte: parteIdx, rodada: k }, btnDica));
+              btnDica.addEventListener('click', () => participarAcao({ acao: (participar.estado && participar.estado.sorteioDicas && participar.estado.sorteioDicas[parteIdx]) ? 'sortear-dica' : 'dica', parte: parteIdx, rodada: k }, btnDica));
               ctrlBox.appendChild(btnDica);
               // Quem acertou: escolhe o nome e pontua (os pontos de agora); a resposta é revelada junto.
               linhaAcerto = document.createElement('div');
@@ -30069,6 +30091,37 @@ function saveTemplatesToStorage() {
       return caixa;
     }
 
+    // 6.13.46: animação do sorteio da dica (em todos os aparelhos): os números 1..total giram uns 2 s, o número sorteado aparece em destaque e,
+    // em seguida, a dica sorteada é revelada. O resultado já veio do servidor; a animação é só visual.
+    function dicaSorteioAnimar(r, indice) {
+      if (r.animandoDica != null) return;
+      r.animandoDica = indice;
+      const caixa = document.createElement('div');
+      caixa.className = 'fam-sessao-sorteio-dica';
+      caixa.setAttribute('role', 'status');
+      const texto = document.createElement('p');
+      texto.className = 'fam-sessao-sorteio-dica-texto';
+      texto.textContent = '🎲 Sorteando a dica…';
+      const num = document.createElement('div');
+      num.className = 'fam-sessao-sorteio-dica-num girando';
+      num.textContent = '?';
+      caixa.append(texto, num);
+      r.li.insertBefore(caixa, r.aguarda);
+      const girar = setInterval(() => { num.textContent = String(1 + Math.floor(Math.random() * Math.max(2, r.dicasEls.length))); }, 90);
+      setTimeout(() => {
+        clearInterval(girar);
+        num.classList.remove('girando');
+        num.textContent = String(indice + 1);
+        texto.textContent = '🎲 Dica sorteada: ' + (indice + 1);
+        setTimeout(() => {
+          caixa.remove();
+          r.animandoDica = null;
+          if (r.dicasEls[indice]) r.dicasEls[indice].hidden = false;
+          if (r.btnDica) r.btnDica.disabled = false;
+        }, 1200);
+      }, 2200);
+    }
+
     // Respostas reveladas e o nome sorteado, a cada mudança do estado.
     function participarJogoPintar(i, montando) {
       const ref = participar.jogos.get(i);
@@ -30076,6 +30129,14 @@ function saveTemplatesToStorage() {
       if (!ref || !e) return;
       const rev = (e.reveladas && e.reveladas[i]) || {};
       const dadas = (e.dicas && e.dicas[i]) || {};
+      const ordemDicas = (e.dicasOrdem && e.dicasOrdem[i]) || {};
+      const sorteioDicas = e.sorteioDicas || {};
+      if (ref.modoDicas) { // 6.13.46: a escolha de quem dirige (sorteadas ou em ordem) fica marcada
+        ref.modoDicas.sorteadas.setAttribute('aria-pressed', sorteioDicas[i] ? 'true' : 'false');
+        ref.modoDicas.emOrdem.setAttribute('aria-pressed', sorteioDicas[i] ? 'false' : 'true');
+        ref.modoDicas.sorteadas.classList.toggle('fam-modo-marcado', Boolean(sorteioDicas[i]));
+        ref.modoDicas.emOrdem.classList.toggle('fam-modo-marcado', !sorteioDicas[i]);
+      }
       const acertos = (e.acertos && e.acertos[i]) || {};
       // Os nomes do jogo: os cadastrados ao compartilhar, quem entrou (visto pelo dirigente) e quem já pontuou.
       // 6.13.31: com quem está presente (todos recebem essa lista)
@@ -30204,7 +30265,14 @@ function saveTemplatesToStorage() {
         if (r.btnReiniciar) r.btnReiniciar.hidden = !revelada; // o 🔄 só depois que a questão foi respondida
         const n = Math.min(r.total, Number(dadas[k]) || 0);
         r.li.classList.toggle('fam-sessao-questao-andamento', n > 0 && !revelada); // questão em andamento (com dicas dadas, ainda sem resposta): fundo azul claro
-        r.dicasEls.forEach((p, d) => { p.hidden = d >= n; });
+        // 6.13.46: dicas sorteadas: valem as da lista (na ordem em que saíram, cada uma com o número sorteado); sem a lista, as n primeiras
+        const ordemK = Array.isArray(ordemDicas[k]) ? ordemDicas[k].filter(d => d >= 0 && d < r.dicasEls.length) : null;
+        const saidas = ordemK || Array.from({ length: n }, (_, d) => d);
+        const modoSorteio = Boolean(sorteioDicas[i]);
+        if (r.sorteadas != null && ordemK && ordemK.length > r.sorteadas && !montando && modoSorteio) dicaSorteioAnimar(r, ordemK[ordemK.length - 1]); // saiu uma dica nova: animação em todos os aparelhos
+        r.sorteadas = ordemK ? ordemK.length : 0;
+        r.dicasEls.forEach((p, d) => { p.hidden = !saidas.includes(d) || r.animandoDica === d; });
+        if (ordemK) saidas.forEach(d => { if (r.animandoDica !== d) r.li.insertBefore(r.dicasEls[d], r.aguarda); }); // na ordem em que saíram
         r.aguarda.hidden = !(comDicas && n === 0 && !revelada && !participar.dirigente) || r.aguarda.dataset.semEspera === '1';
         const pts = Math.max(1, r.total - n + 1);
         r.pontos.textContent = comDicas && n > 0 && !revelada ? ' · vale ' + pts + (pts === 1 ? ' ponto' : ' pontos') + ' agora' : '';
@@ -30230,7 +30298,8 @@ function saveTemplatesToStorage() {
         }
         if (r.btnDica) {
           r.btnDica.hidden = revelada || n >= r.total;
-          r.btnDica.textContent = '💡 Dar a ' + (n + 1) + 'ª dica' + (n === 0 ? '' : ' (vale ' + Math.max(1, r.total - n) + ')');
+          r.btnDica.textContent = (modoSorteio ? '🎲 Sortear a ' : '💡 Dar a ') + (n + 1) + 'ª dica' + (n === 0 ? '' : ' (vale ' + Math.max(1, r.total - n) + ')');
+          r.btnDica.disabled = r.animandoDica != null;
         }
         if (r.btn) r.btn.hidden = revelada || (comDicas && n === 0);
         if (r.btnEspiar) { // 6.12.06: "Ver só para mim" some quando a resposta já foi revelada a todos
