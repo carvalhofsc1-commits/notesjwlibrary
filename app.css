@@ -17478,6 +17478,11 @@ input[type="date"].fam-campo::-webkit-calendar-picker-indicator { margin: 0; pad
 .fam-sessao-sorteio-card > .fam-sessao-vez-linha + .fam-sessao-vez-linha { margin-top: 10px; }
 #participarSessao li.fam-sessao-questao > button.fam-sessao-reiniciar { position: absolute; top: 4px; right: 10px; width: 28px; min-width: 0; min-height: 0; height: 22px; margin: 0; padding: 0; font-size: .78rem; line-height: 1; border-radius: 7px; display: flex; align-items: center; justify-content: center; } /* 6.12.30: menor, na altura da linha "Questão N de M" */
 #participarSessao li.fam-sessao-questao > button.fam-sessao-reiniciar[hidden] { display: none; }
+/* 6.13.48: questão respondida com fundo verde claro; o botão ▾/▸ recolhe (fica o título, a resposta e quem acertou) */
+#participarSessao li.fam-sessao-questao.fam-sessao-questao-respondida { background: color-mix(in srgb, #22c55e 16%, var(--card)); border-color: #4ade80; }
+#participarSessao li.fam-sessao-questao > button.fam-sessao-recolher { position: absolute; top: 4px; right: 44px; width: 28px; min-width: 0; min-height: 0; height: 22px; margin: 0; padding: 0; font-size: .8rem; line-height: 1; border-radius: 7px; display: flex; align-items: center; justify-content: center; }
+#participarSessao li.fam-sessao-questao > button.fam-sessao-recolher[hidden] { display: none; }
+#participarSessao li.fam-sessao-questao.fam-sessao-questao-recolhida > :not(.fam-sessao-qnum):not(.fam-sessao-resposta):not(.fam-sessao-envio):not(.fam-sessao-recolher):not(.fam-sessao-reiniciar) { display: none; }
 #participarSessao .fam-sessao-qnum { margin: 0 0 4px; font-weight: 700; font-size: .85em; color: color-mix(in srgb, #7c3aed 45%, var(--text)); }
 #participarSessao li.fam-sessao-questao .fam-sessao-resposta { display: block; }
 #participarSessao li.fam-sessao-questao .fam-sessao-revelar { display: block; width: 100%; margin: 6px 0 0; }

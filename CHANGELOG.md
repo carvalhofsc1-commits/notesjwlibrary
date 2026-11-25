@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.48
+
+- Questões dos jogos (Adoração e Jogos bíblicos): a questão respondida (resposta revelada) fica com fundo verde claro e ganha um botão ▾/▸ no alto, ao lado do 🔄, para recolhê-la: recolhida, fica só o título, a resposta e quem acertou. Reiniciar a questão a devolve ao estado original.
+
 ## 6.13.47
 
 - Prompt do Verdadeiro ou falso: a IA passa a escolher sempre afirmações relevantes, sobre as histórias e os fatos mais conhecidos da Bíblia, sem se prender a detalhes miúdos do texto (números, nomes secundários, medidas); as falsas trocam um fato importante por outro plausível, nunca uma pegadinha de detalhe.

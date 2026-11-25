@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.13.47'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.13.48'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -30015,7 +30015,18 @@ function saveTemplatesToStorage() {
             if (respBox) li.insertBefore(ctrlBox, respBox);
             else li.appendChild(ctrlBox);
           }
-          ref.rodadas.push({ li, respBox, ctrlBox, linhaAcerto, sel, btnPontuar, btnEspiar, btnReiniciar, espiada, sig: null, resp, btn, btnDica, dicasEls, aguarda, pontos, total: dicas.length, referencia: r.referencia || '', envioEl, area, areaNota, julgarEl, temIntro: Boolean(intro) });
+          // 6.13.48: questão respondida (resposta revelada): fundo verde e um botão para recolhê-la (fica só o título, a resposta e quem acertou)
+          const btnRecolher = document.createElement('button');
+          btnRecolher.type = 'button';
+          btnRecolher.className = 'secondary fam-sessao-recolher';
+          btnRecolher.hidden = true;
+          btnRecolher.addEventListener('click', () => {
+            const rr = ref.rodadas[k];
+            rr.recolhida = !rr.recolhida;
+            participarJogoPintar(parteIdx, false);
+          });
+          li.appendChild(btnRecolher);
+          ref.rodadas.push({ btnRecolher, recolhida: false, li, respBox, ctrlBox, linhaAcerto, sel, btnPontuar, btnEspiar, btnReiniciar, espiada, sig: null, resp, btn, btnDica, dicasEls, aguarda, pontos, total: dicas.length, referencia: r.referencia || '', envioEl, area, areaNota, julgarEl, temIntro: Boolean(intro) });
           ol.appendChild(li);
         });
         caixa.appendChild(ol);
@@ -30264,6 +30275,16 @@ function saveTemplatesToStorage() {
         r.li.hidden = false; // 6.12.31: todas as questões do jogo ficam visíveis (cada uma continua com uma dica por vez)
         if (r.btnReiniciar) r.btnReiniciar.hidden = !revelada; // o 🔄 só depois que a questão foi respondida
         const n = Math.min(r.total, Number(dadas[k]) || 0);
+        if (!revelada) r.recolhida = false; // reiniciada: volta ao estado original
+        r.li.classList.toggle('fam-sessao-questao-respondida', revelada);
+        r.li.classList.toggle('fam-sessao-questao-recolhida', revelada && r.recolhida);
+        if (r.btnRecolher) {
+          r.btnRecolher.hidden = !revelada;
+          r.btnRecolher.textContent = r.recolhida ? '▸' : '▾';
+          r.btnRecolher.title = r.recolhida ? 'Mostrar a questão inteira' : 'Recolher a questão';
+          r.btnRecolher.setAttribute('aria-label', r.btnRecolher.title);
+          r.btnRecolher.setAttribute('aria-expanded', r.recolhida ? 'false' : 'true');
+        }
         r.li.classList.toggle('fam-sessao-questao-andamento', n > 0 && !revelada); // questão em andamento (com dicas dadas, ainda sem resposta): fundo azul claro
         // 6.13.46: dicas sorteadas: valem as da lista (na ordem em que saíram, cada uma com o número sorteado); sem a lista, as n primeiras
         const ordemK = Array.isArray(ordemDicas[k]) ? ordemDicas[k].filter(d => d >= 0 && d < r.dicasEls.length) : null;
