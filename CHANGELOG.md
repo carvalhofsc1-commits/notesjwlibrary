@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.01
+
+- Jogo ao vivo: botão **"▶ Próxima questão"** no pé de cada questão (menos a última), abaixo de "Enviar resposta" e "Não sei", na largura toda. No jogo em grupo, quando é o administrador (com o 👥 ligado), leva todos junto.
+- **Abreviações (siglas):** saiu a dica "A resposta tem N palavras". Agora a **Dica 1** é uma pista do significado, a **Dica 2** uma pista mais reveladora com o livro da Bíblia (ou o tipo da sigla) e a **Dica 3** segue sendo o começo de cada palavra. As 81 siglas do banco ganharam duas pistas escritas (`PISTAS_DAS_SIGLAS` em `api/_jogosBanco.mjs`), sem palavra da resposta; a IA passa a mandar as duas pistas, e uma pista que entrega a resposta é descartada (`pistaDaAbreviacao`), entrando uma de reserva. Vale para jogos preparados a partir de agora.
+- Testes: 94 dos quadros (1 novo das pistas) e 103 do servidor.
+
 ## 6.14.00
 
 - **Jogo em grupo: todos na mesma questão.** Quando quem administra o jogo troca de questão (setas ou números), todos os aparelhos vão para a questão escolhida. Cada jogador pode depois mudar a própria tela; na próxima troca do administrador, todos são levados de novo. Quem entra no meio do jogo já abre na questão em foco. Novo botão **👥** na barra das questões (só para o administrador, ligado ao abrir): desligado, as trocas dele não levam ninguém; ao religar, leva todos à questão atual.

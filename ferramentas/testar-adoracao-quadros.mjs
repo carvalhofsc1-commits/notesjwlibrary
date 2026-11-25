@@ -1142,7 +1142,7 @@ teste("6.12.76: Quem sou eu? e Abreviações conferidos pelo servidor; Princípi
   assert.equal(p2.contagens.rodadas, 5, "sigla repetida e sigla que não confere saem (ficam 1 da IA e 4 do banco)");
   assert.equal(p2.contagens.tiradas, 2);
   // 6.13.17: a sigla na própria pergunta; 6.13.22: as dicas: quantas palavras, o livro e o começo de cada palavra
-  assert.equal(p2.jogo.rodadas.find((r) => r.pergunta.includes("“Os 12 A de C”")).pergunta, "O que significa a sigla “Os 12 A de C”? Dica 1: A resposta tem 5 palavras. Dica 2: Está em Mateus. Dica 3: O começo de cada palavra: “Os 12 Ap de Cr”.");
+  assert.equal(p2.jogo.rodadas.find((r) => r.pergunta.includes("“Os 12 A de C”")).pergunta, "O que significa a sigla “Os 12 A de C”? Dica 1: Está em Mateus. Dica 2: Uma das palavras é “Apóstolos”. Dica 3: O começo de cada palavra: “Os 12 Ap de Cr”.");
   assert.match(p2.falta, /^vieram 5 rodadas válidas \(com 4 siglas do servidor\); mande 6 rodadas \(no mínimo 4\)/);
   assert.equal(p2.memoria.jogo_cartas.length, 5, "as respostas das siglas vão para a memória jogo_cartas");
   assert.equal(p2.trocarTipo, "", "Abreviações não troca de tipo");
@@ -1701,6 +1701,27 @@ teste("6.12.81 (2): sigla curta nas Abreviações (siglaCurta, abreviacaoJogavel
   assert.match(servidorJs, /abreviacoes: "a sigla na pergunta curta \(no máximo 4 iniciais\), de uma expressão bíblica conhecida/);
 });
 
+teste("6.14.01: Abreviações: duas pistas do significado sem a resposta, sem a dica da quantidade de palavras", async () => {
+  const ab = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "jogo", jogos: ["Abreviações bíblicas (ex.: Os 12 A de C)"] }), montados);
+  const r = await ab.prep.montar({ descricao: "d", nome: "Siglas", comoJogar: "R.", rodadas: [
+    { pergunta: "O P da P Dica 1: É um título profético dado ao Messias. Dica 2: Isaías o anunciou junto com outros nomes de um menino que nasceria.", resposta: "O Príncipe da Paz", referencia: "Isaías 9:6" },
+    { pergunta: "O C de D Dica 1: O Cordeiro tira o pecado do mundo. Dica 2: João Batista chamou Jesus assim ao vê-lo se aproximar.", resposta: "O Cordeiro de Deus", referencia: "João 1:29" },
+  ], eventos: [] });
+  const paz = r.jogo.rodadas.find((x) => x.pergunta.includes("“O P da P”")).pergunta;
+  assert.equal(paz, "O que significa a sigla “O P da P”? Dica 1: É um título profético dado ao Messias. Dica 2: Isaías o anunciou junto com outros nomes de um menino que nasceria. Está em Isaías. Dica 3: O começo de cada palavra: “O Pr da Pa”.");
+  const cordeiro = r.jogo.rodadas.find((x) => x.pergunta.includes("“O C de D”")).pergunta;
+  assert.ok(!/Cordeiro tira/.test(cordeiro), "a pista que entrega a resposta é descartada");
+  assert.match(cordeiro, /Dica 1: Está em João\. Dica 2: João Batista chamou Jesus assim/);
+  assert.ok(r.jogo.rodadas.every((x) => !/A resposta tem \d+ palavra/.test(x.pergunta)), "sem a dica da quantidade de palavras");
+  assert.equal(ger.pistaDaAbreviacao("Os apóstolos escolhidos por ele no começo.", "Os 12 Apóstolos de Cristo"), "", "o começo da palavra da resposta também entrega");
+  // Todas as siglas do banco têm duas pistas válidas.
+  const banco = await import("../api/_jogosBanco.mjs");
+  for (const [sigla, resposta] of banco.SIGLAS_BANCO) {
+    const p = banco.PISTAS_DAS_SIGLAS[sigla];
+    assert.ok(p && p.length === 2 && p.every((t) => ger.pistaDaAbreviacao(t, resposta)), `pistas da sigla do banco: ${sigla} = ${resposta}`);
+  }
+});
+
 teste("6.12.81 (2): o jogo de Abreviações tira as siglas longas e o pedido de novo diz o que fazer", async () => {
   const ab = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "jogo", jogos: ["Abreviações bíblicas (ex.: Os 12 A de C)"] }), montados);
   assert.ok(!ab.erro);
@@ -1712,7 +1733,7 @@ teste("6.12.81 (2): o jogo de Abreviações tira as siglas longas e o pedido de 
   assert.equal(r.contagens.rodadas, 10, JSON.stringify(r.jogo && r.jogo.rodadas.map((x) => x.pergunta)));
   assert.equal(r.contagens.tiradas, 3, "as 3 siglas longas saem");
   assert.ok(!r.jogo.rodadas.some((x) => /T L C O|P L U A|P P A A/.test(x.pergunta)));
-  assert.equal(r.jogo.rodadas.find((x) => x.pergunta.includes("“O P da P”")).pergunta, "O que significa a sigla “O P da P”? Dica 1: A resposta tem 4 palavras. Dica 2: Está em Isaías. Dica 3: O começo de cada palavra: “O Pr da Pa”.");
+  assert.equal(r.jogo.rodadas.find((x) => x.pergunta.includes("“O P da P”")).pergunta, "O que significa a sigla “O P da P”? Dica 1: Está em Isaías. Dica 2: Uma das palavras é “Príncipe”. Dica 3: O começo de cada palavra: “O Pr da Pa”.");
   assert.equal(r.falta, "", "com as siglas do banco, 10 rodadas: nada falta");
   // Sem as siglas do banco (todas na memória das últimas semanas não cabem: só 40), a IA sozinha com poucas siglas pede de novo.
   const r2 = await ab.prep.montar({ descricao: "d", nome: "Abreviações", comoJogar: "R.", rodadas: rodadas.slice(0, 3), eventos: [] });
