@@ -17991,3 +17991,16 @@ details.fam-placar-card > summary { min-height: 0 !important; padding: 3px 8px !
 #participarSessao .fam-sessao-placar-tabela th, #participarSessao .fam-sessao-placar-tabela td { padding: 1px 8px; line-height: 1.15; font-size: .9rem; }
 #participarSessao .fam-placar-bicho { font-size: 1em; width: 1.5em; }
 .fam-placar-medalha { min-width: 1.2em; }
+
+/* 6.13.80: moldura na barra das setas e das questões; espaços pequenos entre o placar, a barra e o card; o tipo da carta cabe sem os emojis passarem por cima do texto */
+#participarSessao .fam-sessao-placar { margin-bottom: 4px; }
+.fam-sessao-nav { margin: 0 0 4px; padding: 3px 6px; border: 1px solid #9ca3af; border-radius: 10px; background: var(--card); }
+.fam-sessao-pergunta.fam-perfil-tipo { gap: 6px; }
+.fam-sessao-pergunta.fam-perfil-tipo .fam-perfil-emojis { font-size: 1.45rem; letter-spacing: 0; }
+.fam-sessao-pergunta.fam-perfil-tipo .fam-perfil-palavra { font-size: 1.5rem; letter-spacing: 0; }
+/* 6.13.80: espaço pequeno (4 px) entre o placar, a barra das questões e o card: some o bloco do sorteio quando está vazio e as margens duplicadas */
+#participarSessao .fam-sessao-jogo { row-gap: 4px; }
+#participarSessao .fam-sessao-jogo > .fam-sessao-sorteio:not(:has(> :not([hidden]))) { display: none; }
+#participarSessao .fam-sessao-jogo > .fam-sessao-placar { margin-bottom: 0; }
+#participarSessao .fam-sessao-jogo > .fam-sessao-nav { margin: 0; }
+#participarSessao .fam-sessao-jogo > ol.fam-sessao-rodadas { margin-top: 0; }

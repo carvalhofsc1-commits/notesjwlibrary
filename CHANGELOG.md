@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.80
+
+- Jogo ao vivo: moldura fina cinza em volta da barra das setas e das questões; os espaços entre o placar, a barra e o card da questão ficaram bem pequenos e iguais (4 px; antes 32 e 20 px, porque um bloco vazio do sorteio e margens repetidas somavam espaço).
+- Perfil bíblico: o 2º ❓ não passa mais por cima do nome do tipo (Pessoa, Coisa…): os emojis e o texto ficaram um pouco menores para caber na largura de 360 px sem sobrepor, conferido nas 4 categorias.
+
 ## 6.13.79
 
 - Perfil bíblico: o tipo da carta (Coisa, Lugar, Pessoa, Ano) voltou a ficar numa linha só, sem quebrar o texto ("Cois/a") nem empilhar os emojis; conferido nas 4 categorias.
