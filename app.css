@@ -18083,3 +18083,9 @@ details.fam-placar-card > summary { min-height: 0 !important; padding: 3px 8px !
 /* 6.13.92: o emoji do Perfil bíblico do mesmo tamanho dos emojis dos outros jogos (na lista e no título da tela do jogo) */
 .jogos-card[data-jogo="perfil_biblico"] .fam-hub-icone { font-size: 2.9rem; }
 #participarTitulo[data-jogo="perfil_biblico"] .fam-titulo-jogo-emoji { font-size: 2.3rem; }
+
+/* 6.13.93: "Enviar resposta" e "Não sei / Revelar" com a mesma altura (40 px, antes 46 e 52 px) e mais finos */
+#participarSessao .fam-sessao-resp-box .fam-acoes-dupla > button { height: 40px !important; min-height: 40px !important; max-height: 40px; padding: 2px 6px !important; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.1; }
+#participarSessao .fam-sessao-resp-box .fam-acoes-dupla > button:not(.fam-nao-sei) { font-size: .88rem; flex-direction: row; gap: 4px; text-align: center; }
+#participarSessao .fam-sessao-resp-box .fam-acoes-dupla > .fam-nao-sei .fam-nao-sei-1 { font-size: .9rem; }
+#participarSessao .fam-sessao-resp-box .fam-acoes-dupla > .fam-nao-sei .fam-nao-sei-2 { font-size: .72rem; }

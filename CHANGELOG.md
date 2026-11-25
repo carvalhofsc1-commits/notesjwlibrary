@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.93
+
+- Jogo sozinho: "Enviar resposta" e "Não sei / Revelar" com a **mesma altura** (40 px; antes 46 e 52 px), mais finos, com "Enviar resposta" numa linha só.
+- O campo de resposta avisa os gerenciadores de senha do navegador (atributos `data-lpignore`, `data-1p-ignore`, `data-bwignore`, `data-form-type`) para não o tratarem como campo de login. Os erros "Cannot read properties of null (ControlLooksLikePasswordCredentialField / UsernameElementUniqueID)" no console vêm do `content script.js` de uma extensão do navegador (gerenciador de senhas), não do NoteStyle.
+
 ## 6.13.92
 
 - O emoji do Perfil bíblico (a carta coringa) volta ao mesmo tamanho dos emojis dos outros jogos: 46 px na lista dos jogos e 37 px no título da tela do jogo (antes 59 e 48 px).
