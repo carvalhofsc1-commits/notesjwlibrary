@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.99
+
+- Jogo ao vivo (participante): saiu o aviso "As partes se abrem aqui quando o administrador do jogo liberar. Deixe esta tela aberta.", porque o jogo já abre sozinho. Na Adoração em Família o aviso continua.
+
 ## 6.13.98
 
 - **Penalidade por resposta errada**: cada resposta errada tira **1 ponto da questão** em que foi dada (de quem errou). A questão nunca fica abaixo de zero (se os erros passarem dos pontos, vale 0) e o desconto **não passa para as outras questões**. Vale no servidor (`darPontos` e `pontuar`, em `api/familia-sessao.mjs`): quando a IA aceita uma resposta ("Apelar para a IA"), esse erro deixa de contar. A etiqueta da questão mostra o valor atual e o desconto ("⭐ vale 2 pontos · −2 por erros"). Não vale no Verdadeiro ou falso (errou, a questão termina sem pontos) nem no "Não sei".
