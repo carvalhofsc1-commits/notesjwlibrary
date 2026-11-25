@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.45
+
+- Verdadeiro ou falso (Adoração e Jogos bíblicos): o botão ✅ Verdadeiro fica verde claro e o ❌ Falso vermelho claro.
+- O julgamento é imediato, feito pelo servidor: ao tocar num dos botões, quem acerta ganha os pontos e a resposta é revelada; quem erra entra na lista das erradas, a resposta é revelada e ninguém pontua. O presidente da reunião (ou administrador do jogo) não precisa mais julgar neste jogo.
+
 ## 6.13.44
 
 - Complete o versículo (Adoração e Jogos bíblicos) igual ao Quem disse isso?: o versículo com a lacuna aparece logo no início (não é mais dica) e já dá para responder. Dica 1: o livro e o capítulo ("Está em Provérbios, capítulo 15"; livro de um capítulo só, só o nome). Dica 2: o contexto (quem fala ou escreve, a quem e em que situação, escrito pela IA sem a palavra que falta; sem contexto válido, quantas letras a palavra tem e a primeira letra). Dica 3: 4 palavras em botões (2 por linha), a certa com 3 erradas da IA (as que faltarem vêm das outras rodadas do jogo e de uma lista de palavras), na mesma caixa da palavra certa; tocar numa palavra a põe no campo da resposta.

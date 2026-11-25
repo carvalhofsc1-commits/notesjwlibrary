@@ -16894,6 +16894,11 @@ button.secondary.fam-atalho-ativo { background: color-mix(in srgb, #3b82f6 18%, 
 .fam-jogos-rodape { display: grid; gap: 8px; margin-top: 8px; min-width: 0; width: 100%; box-sizing: border-box; }
 .fam-acoes-dupla { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; min-width: 0; width: 100%; }
 .fam-acoes-dupla > .fam-fino { width: 100%; min-width: 0; margin: 0; }
+/* 6.13.45: Verdadeiro (verde) e Falso (vermelho) no jogo Verdadeiro ou falso */
+#participarSessao .fam-acoes-dupla > .fam-vf-verdadeiro { background: #dcfce7; border: 1.5px solid #4ade80; color: #14532d; }
+#participarSessao .fam-acoes-dupla > .fam-vf-falso { background: #fee2e2; border: 1.5px solid #f87171; color: #7f1d1d; }
+#participarSessao .fam-acoes-dupla > .fam-vf-verdadeiro:disabled,
+#participarSessao .fam-acoes-dupla > .fam-vf-falso:disabled { opacity: .55; }
 /* Quadros da programação (6.12.70): uma coluna, os minutos à direita; os obrigatórios (marcados e travados) num fundo azul bem claro. */
 .fam-quadros { grid-template-columns: minmax(0, 1fr); }
 .fam-check.fam-quadro { grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; }

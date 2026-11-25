@@ -595,6 +595,21 @@ export default async function handler(req, res) {
       segredo ||= await lerJson(caminho(cod, "respostas.json"));
       const certa = String((((segredo && segredo.respostas) || {})[parte] || [])[rodada] || "");
       const confere = certa && respostaConfere(textoResp, certa, jogo.idTipo || "");
+      // 6.13.45: no Verdadeiro ou falso só há duas respostas, sem interpretação: o servidor julga na hora. Quem erra fica na lista das erradas e
+      // a resposta é revelada (sem pontos para ninguém); quem acerta ganha os pontos como sempre.
+      if (jogo.idTipo === "verdadeiro_falso" && certa && !confere) {
+        return gravarEstado((e) => {
+          e.erradas = e.erradas || {};
+          e.erradas[parte] = { ...(e.erradas[parte] || {}), [rodada]: [...(((e.erradas[parte] || {})[rodada]) || []), { nome: quem.nome, texto: textoResp }].slice(-10) };
+          e.reveladas = e.reveladas || {};
+          e.reveladas[parte] = { ...(e.reveladas[parte] || {}), [rodada]: certa };
+          const ref = String((((segredo && segredo.referencias) || {})[parte] || [])[rodada] || "");
+          if (ref) {
+            e.referenciasReveladas = e.referenciasReveladas || {};
+            e.referenciasReveladas[parte] = { ...(e.referenciasReveladas[parte] || {}), [rodada]: ref };
+          }
+        });
+      }
       return gravarEstado((e) => {
         e.envios = e.envios || {};
         e.envios[parte] = { ...(e.envios[parte] || {}), [rodada]: { nome: quem.nome, texto: textoResp, em: Date.now(), status: confere ? "certa" : "pendente" } };

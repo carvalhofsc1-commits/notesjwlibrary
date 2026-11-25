@@ -284,6 +284,28 @@ try {
   assert.deepEqual(po2.dados.estado.ordensReveladas["2"], v2.partes[2].jogo.ordem); passo("pontuar a ordem (mesmo com 0 ponto) também revela a ordem");
   await chamar({ acao: "encerrar", sessao: cv2.sessao, chave: cv2.chave });
 
+  // 6.13.45: Verdadeiro ou falso é julgado na hora pelo servidor (certa: pontos; errada: resposta revelada, sem pontos, sem esperar o presidente)
+  {
+    const pvf = JSON.parse(JSON.stringify(programa));
+    pvf.partes[2].jogo = { tipo: "Verdadeiro ou falso", idTipo: "verdadeiro_falso", nome: "Verdadeiro ou falso", comoJogar: "Diga.", material: null, rodadas: [
+      { pergunta: "Noé construiu uma arca.", resposta: "Verdadeiro. Gênesis 6.", referencia: "Gênesis 6:14" },
+      { pergunta: "Jonas foi engolido por um leão.", resposta: "Falso. Foi um peixe.", referencia: "Jonas 1:17" },
+    ] };
+    const sv = (await chamar({ acao: "criar", programa: pvf, codigo: "codigo-de-teste" })).dados;
+    const idV = (await chamar({ acao: "entrar", sessao: sv.sessao, nome: "Ana" })).dados.participanteId;
+    await chamar({ acao: "liberar", sessao: sv.sessao, chave: sv.chave, parte: 2 });
+    const vc = await chamar({ acao: "responder", sessao: sv.sessao, participanteId: idV, parte: 2, rodada: 0, texto: "Verdadeiro" });
+    assert.equal(vc.dados.estado.envios["2"]["0"].status, "certa");
+    assert.equal(vc.dados.estado.acertos["2"]["0"].nome, "Ana"); passo("Verdadeiro ou falso: resposta certa pontua na hora");
+    const ve = await chamar({ acao: "responder", sessao: sv.sessao, participanteId: idV, parte: 2, rodada: 1, texto: "Verdadeiro" });
+    assert.equal(ve.status, 200);
+    assert.equal((ve.dados.estado.envios || {})["2"]?.["1"], undefined);
+    assert.equal(ve.dados.estado.acertos["2"]?.["1"], undefined);
+    assert.deepEqual(ve.dados.estado.erradas["2"]["1"], [{ nome: "Ana", texto: "Verdadeiro" }]);
+    assert.ok(String(ve.dados.estado.reveladas["2"]["1"]).startsWith("Falso")); passo("Verdadeiro ou falso: resposta errada é julgada na hora, sem pontos, e a resposta é revelada");
+    await chamar({ acao: "encerrar", sessao: sv.sessao, chave: sv.chave });
+  }
+
   // 6.13.17: responder pelo app e julgar
   {
     const s3 = (await chamar({ acao: "criar", programa, codigo: "codigo-de-teste" })).dados;
