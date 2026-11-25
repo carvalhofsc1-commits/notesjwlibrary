@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.70
+
+- Topo das telas com linha divisória (Anotações, Adoração em família e subpainéis, Jogos, Pesquisas salvas, Formatar, páginas de Reuniões): todas seguem as medidas da tela Anotações (título a 8 px da linha; linha de 3 px; 10 px da linha até o início da página, conferido: 7 px de texto até a linha e 10 px até o próximo item) e a linha é **azul** em todo o app (antes variava: cinza-azulado, roxo, laranja, verde…).
+
 ## 6.13.69
 
 - A seta Voltar da barra superior não aparece na tela inicial (a única exceção); o espaço dela fica guardado e o logo continua no centro. Nas outras telas ela segue sempre à vista.

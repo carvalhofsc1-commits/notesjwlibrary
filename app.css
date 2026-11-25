@@ -17889,3 +17889,12 @@ header.app-topbar .voltar-topo { min-width: 42px; }
 .voltar-topo svg { width: 26px; height: 26px; }
 /* 6.13.69: na tela inicial a seta Voltar não aparece (única exceção); o espaço fica guardado para o logo continuar no centro */
 body[data-screen="inicio"] .voltar-topo { visibility: hidden; }
+
+/* 6.13.70: o padrão do topo das telas (medidas da tela Anotações): 10 px do título até a linha, linha de 3 px e 12 px da linha até o início da página; a linha é azul em todo o app */
+.anotacoes-topo, .fam-topo, .salvas-topo, .formatar-titulo, body:not([data-reunioes="hub"]) .reunioes-topo { margin: 0 0 12px; padding-bottom: 10px; border-bottom: 3px solid var(--sv-azul-bd); }
+/* 6.13.70 (ajuste): as medidas exatas da tela Anotações no celular: 8 px do título até a linha, linha de 3 px e 10 px até o início da página */
+.anotacoes-topo, .fam-topo, .salvas-topo, .formatar-titulo, body:not([data-reunioes="hub"]) .reunioes-topo { margin: 0 0 10px; padding-bottom: 8px; border-bottom: 3px solid var(--sv-azul-bd); }
+.fam-card > .fam-topo { margin-bottom: -2px; } /* o cartão é uma grade com 12 px entre os itens: 12 - 2 = 10 px até o próximo */
+.fam-card > .fam-topo + * { margin-top: 0; }
+.fam-topo .fam-titulo, .salvas-topo h2, .reunioes-topo .reunioes-pagina-titulo { margin: 0; line-height: 1.2; }
+.formatar-titulo { line-height: 1.2; }
