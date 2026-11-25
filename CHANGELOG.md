@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.77
+
+- Anotações: os três botões do menu (Reuniões congregacionais, Assembleias, Congressos) não tremem mais ao passar o mouse. A regra do :hover dos atalhos zerava a altura mínima de 100 px do menu, o botão encolhia, o mouse saía de cima dele, ele voltava ao tamanho e assim por diante. Agora, com o mouse em cima, vale a mesma altura e só a cor muda de leve (3% mais escura).
+
 ## 6.13.76
 
 - Anotações (menu, Reunião, Assembleia e Congresso): o título aparecia pequeno e cortado ("Anotações · Assembl…") porque ficava espremido numa coluna estreita entre as colunas dos botões. Agora ele usa a largura toda, com a fonte padrão dos títulos (18,4 px), e o texto ficou mais curto ("📝 Reunião", "📝 Assembleia", "📝 Congresso"). Os botões "Trocar de evento" e "Programa", quando aparecem, ficam nas pontas, menores (30 px de altura), sem aumentar a barra nem tocar o título.

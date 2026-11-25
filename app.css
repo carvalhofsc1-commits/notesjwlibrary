@@ -17952,3 +17952,6 @@ body :is(.fam-titulo, #anotacoesTitulo, #salvasTitulo, .formatar-titulo, .pesq-t
 .anotacoes-topo #anotacoesTrocarTopo, .anotacoes-topo #anotacoesProgramaTopo { height: 30px !important; min-height: 0 !important; padding: 0 6px !important; font-size: 12px !important; }
 .anotacoes-topo #anotacoesTrocarTopo { width: 76px !important; }
 .anotacoes-topo #anotacoesProgramaTopo { width: 92px !important; }
+
+/* 6.13.77: Anotações: ao passar o mouse os botões tremiam (a regra do :hover dos atalhos tirava os 100 px de altura mínima do menu, o botão encolhia, o mouse saía de cima dele e ele crescia de novo, sem parar): no :hover agora vale a mesma altura, e só a cor muda de leve */
+.atalhos-grid.anotacoes-hub-grid .atalho:hover { min-height: 100px; filter: brightness(.97); }
