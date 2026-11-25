@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.68
+
+- Seta Voltar da barra superior: só o ícone ficou maior (de 20 para 26 px); o botão continua com 42 × 30 px.
+
 ## 6.13.67
 
 - A seta Voltar da barra superior: o ajuste era só vertical. Agora tem 42 px de largura (mais larga que antes, que eram 36) e 30 px de altura, com a moldura fina; o logo continua no centro.

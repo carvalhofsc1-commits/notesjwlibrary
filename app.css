@@ -17885,3 +17885,5 @@ header.app-topbar .voltar-topo { min-height: 30px; max-height: 30px; min-width: 
 /* 6.13.67: a seta mais larga na horizontal (42 px) e baixa na vertical (30 px); as margens negativas mantêm o espaço de 36 px e o logo no centro */
 .voltar-topo { flex: 0 0 42px; width: 42px; margin: 0 -3px; }
 header.app-topbar .voltar-topo { min-width: 42px; }
+/* 6.13.68: só o ícone da seta maior (o botão fica 42 x 30 px) */
+.voltar-topo svg { width: 26px; height: 26px; }
