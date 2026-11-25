@@ -16,7 +16,7 @@
     // É um app só: a tela escolhida (guardada no endereço, ex.: #reunioes) mostra os blocos dela e esconde os outros.
     // Formatar e Reuniões dividem o mesmo campo de texto. O app sempre abre no Início; ao recarregar a página, o endereço
     // mantém a tela em que se estava.
-    const APP_SCREENS = ['inicio', 'formatar', 'reunioes', 'backup', 'ajustes', 'leitura', 'transcricao', 'biblia', 'anotacoes', 'pesquisa', 'salvas', 'familia', 'participar', 'adoracao', 'jogos']; // "jogos" = Jogos bíblicos (6.13.36); "adoracao" = tela principal da Adoração em família (sugestões / participar); "leitura" = voz alta; "biblia" = leitura diária; "anotacoes" = reunião/assembleia/congresso; "pesquisa" = Assistente de pesquisas; "familia" = Adoração em Família
+    const APP_SCREENS = ['inicio', 'formatar', 'reunioes', 'backup', 'ajustes', 'leitura', 'transcricao', 'biblia', 'anotacoes', 'pesquisa', 'salvas', 'familia', 'participar', 'adoracao', 'jogos']; // "jogos" = Jogos bíblicos (6.13.37); "adoracao" = tela principal da Adoração em família (sugestões / participar); "leitura" = voz alta; "biblia" = leitura diária; "anotacoes" = reunião/assembleia/congresso; "pesquisa" = Assistente de pesquisas; "familia" = Adoração em Família
     try { localStorage.removeItem('jwLibraryNoteAplicarScreenV1'); } catch (e) { /* a tela não é mais guardada */ }
 
     function currentScreen() {
@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.13.36'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.13.37'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -15561,7 +15561,7 @@ function saveTemplatesToStorage() {
 
         // Fim da última linha da resposta + o espaço em branco que separa as respostas (duas linhas), com o botão no meio dele: assim sobra folga de uma linha
         // para os dois lados, e um erro de medida pequeno não põe o botão por cima do texto.
-        // 6.13.36: os botões sobem para logo abaixo da resposta (4 px), para a linha separadora ficar bem acima da resposta seguinte (o espelho é
+        // 6.13.37: os botões sobem para logo abaixo da resposta (4 px), para a linha separadora ficar bem acima da resposta seguinte (o espelho é
         // uma cópia do campo e mede o fim da resposta sem erro).
         const top = fimDaResposta + 4 - input.scrollTop;
         const visible = top >= 0 && top + btnHeight <= input.clientHeight;
@@ -15578,7 +15578,7 @@ function saveTemplatesToStorage() {
           }
         }
         if (entry.linha) { // 6.13.33: a linha entre o fim dos botões e o começo da resposta seguinte (duas linhas depois do fim desta)
-          const topLinha = Math.round(top + btnHeight + 6); // 6.13.36: 6 px abaixo dos botões; o resto do espaço em branco fica antes da resposta seguinte
+          const topLinha = Math.round(top + btnHeight + 6); // 6.13.37: 6 px abaixo dos botões; o resto do espaço em branco fica antes da resposta seguinte
           const larg = input.clientWidth - (parseFloat(style.paddingLeft) || 0) - (parseFloat(style.paddingRight) || 0);
           entry.linha.hidden = topLinha < 0 || topLinha > input.clientHeight;
           entry.linha.style.top = (borderTop + topLinha) + 'px';
@@ -21701,7 +21701,7 @@ function saveTemplatesToStorage() {
       if (esbocoJson) item.esbocoJson = esbocoJson;
       // Adoração em Família: as opções como a IA devolveu (abrir a pesquisa salva as mostra de novo na tela Família).
       if (familiaOpcoes) item.familiaOpcoes = familiaOpcoes;
-      if (familiaAssunto) item.familiaAssunto = String(familiaAssunto).slice(0, 400); // 6.13.36: o tema inteiro (o título leva só 60 letras)
+      if (familiaAssunto) item.familiaAssunto = String(familiaAssunto).slice(0, 400); // 6.13.37: o tema inteiro (o título leva só 60 letras)
       // Respostas do estudo: os itens crus da IA e o contexto do pedido (para Outra resposta e Melhorar depois de reabrir a pesquisa salva).
       if (refino) item.refino = refino;
       if (sub) item.sub = sub; // joias: 'resumo', 'pergunta' (joia da semana), 'joias' (da leitura) ou 'instrucoes'; cada um é salvo separado
@@ -27856,7 +27856,7 @@ function saveTemplatesToStorage() {
         det.addEventListener('toggle', () => { if (det.open) familiaSalvasAbertas.add(item.id); else familiaSalvasAbertas.delete(item.id); });
         const h = document.createElement('summary');
         h.className = 'fam-salva-titulo';
-        // 6.13.36: a data numa linha discreta e o tema embaixo, inteiro e em destaque (antes o título vinha cortado em 60 letras)
+        // 6.13.37: a data numa linha discreta e o tema embaixo, inteiro e em destaque (antes o título vinha cortado em 60 letras)
         const quando = new Date(item.data);
         const partesTitulo = String(item.titulo || '').match(/^Adoração em Família · [^·]+?(?: · (.*))?$/);
         let temaTitulo = item.familiaAssunto || '';
@@ -28012,7 +28012,7 @@ function saveTemplatesToStorage() {
     // 📤 Compartilhar link: a Web Share API, quando existe; senão copia o convite.
     async function familiaSessaoCompartilharLink(cod, titulo, botao, modo) {
       const link = FAMILIA_SESSAO_LINK + cod;
-      const jogo = modo === 'jogos'; // 6.13.36: jogo avulso (tela Jogos bíblicos)
+      const jogo = modo === 'jogos'; // 6.13.37: jogo avulso (tela Jogos bíblicos)
       const texto = (jogo ? 'Venha jogar com a gente um jogo bíblico' : 'Participe da nossa Adoração em Família') + (titulo ? ' (' + titulo + ')' : '') + ' no NoteStyle. Código: ' + cod;
       if (navigator.share) {
         try {
@@ -28051,7 +28051,7 @@ function saveTemplatesToStorage() {
     // O resultado: o código grande e os botões: abrir como dirigente (de novo, quantas vezes precisar), copiar, compartilhar e apagar.
     // aoApagar: o que fazer depois de apagar (o painel volta à criação, para criar outro código).
     function familiaSessaoCodigoMontar(cod, titulo, aoApagar, modo) {
-      const jogo = modo === 'jogos'; // 6.13.36: jogo avulso (tela Jogos bíblicos)
+      const jogo = modo === 'jogos'; // 6.13.37: jogo avulso (tela Jogos bíblicos)
       const caixa = document.createElement('div');
       caixa.className = 'fam-sessao-criada';
       caixa.dataset.sessao = cod;
@@ -28332,7 +28332,7 @@ function saveTemplatesToStorage() {
       clearTimeout(participar.timer);
       participar.timer = 0;
     }
-    // 6.13.36: jogo avulso (tela 🎲 Jogos bíblicos): a mesma tela ao vivo, com "administrador do jogo" no lugar de "presidente da reunião".
+    // 6.13.37: jogo avulso (tela 🎲 Jogos bíblicos): a mesma tela ao vivo, com "administrador do jogo" no lugar de "presidente da reunião".
     function participarEhJogo() { return Boolean(participar.programa && participar.programa.modo === 'jogos') || (!participar.programa && participar.origemJogos === true); }
     function participarPapel() { return participarEhJogo() ? 'administrador do jogo' : 'presidente da reunião'; }
     function participarLimpar() {
@@ -28346,7 +28346,7 @@ function saveTemplatesToStorage() {
     }
 
     // Chamadas por showScreen ao entrar e ao sair da tela (ao sair, a consulta periódica para).
-    // 6.13.36: os textos fixos da tela (título, entrada e "presidir de outro aparelho") conforme seja uma adoração ou um jogo avulso.
+    // 6.13.37: os textos fixos da tela (título, entrada e "presidir de outro aparelho") conforme seja uma adoração ou um jogo avulso.
     function participarTextosModo() {
       const jogo = participarEhJogo();
       const h = document.getElementById('participarTitulo');
@@ -28486,7 +28486,7 @@ function saveTemplatesToStorage() {
       const titulo = (d.programa.emoji ? d.programa.emoji + ' ' : '') + (d.programa.titulo || 'Adoração em Família');
       familiaSessaoGuardar(cod, Object.assign({ titulo }, d.programa.modo === 'jogos' ? { modo: 'jogos' } : {}, d.participanteId ? { participanteId: d.participanteId, nome: d.nome || nomeUsado } : {}));
       participarStatus('');
-      participarTextosModo(); // 6.13.36: adoração ou jogo avulso
+      participarTextosModo(); // 6.13.37: adoração ou jogo avulso
       participarMontar();
       participarAplicar(d);
       participarVista('sessao');
@@ -29063,7 +29063,7 @@ function saveTemplatesToStorage() {
       entrar.textContent = '▶️ Entrar';
       entrar.addEventListener('click', () => { participar.vista = 'atividades'; participarVistaAplicar(); window.scrollTo(0, 0); });
       participar.boasVindas.appendChild(entrar);
-      participar.vista = participarEhJogo() ? 'atividades' : 'boasvindas'; // 6.13.36: no jogo avulso, direto para o jogo
+      participar.vista = participarEhJogo() ? 'atividades' : 'boasvindas'; // 6.13.37: no jogo avulso, direto para o jogo
       caixa.append(participar.boasVindas, lista);
       participarVistaAplicar();
       // A barra da tela grande: sair e, para o dirigente, ir para a próxima parte sem sair da tela grande (o Próxima voltou na 6.11.92).
@@ -30367,7 +30367,7 @@ function saveTemplatesToStorage() {
     document.getElementById('adoracaoSugestoesBtn').addEventListener('click', () => { if (codigoAcessoSalvo()) showScreen('familia'); });
     document.getElementById('adoracaoVoltar').addEventListener('click', () => showScreen('inicio'));
 
-    // ---- 6.13.36: 🎲 Jogos bíblicos ----
+    // ---- 6.13.37: 🎲 Jogos bíblicos ----
     // Os mesmos 7 jogos da Adoração em Família, avulsos. O servidor prepara o jogo pela MESMA fase "quadro" (quadro "jogo", só com o tipo
     // escolhido em "jogos"), e a partida em grupo usa a MESMA sessão compartilhada e a MESMA tela ao vivo (programa.modo = 'jogos': o jogo já
     // começa liberado e quem cria o código é o "administrador do jogo"). Assim, o que mudar nos jogos (geração, conferência, respostas, placar,
@@ -31066,7 +31066,7 @@ function saveTemplatesToStorage() {
         const item = historicoSalvar({
           tipo: 'familia',
           titulo: 'Adoração em Família · ' + quando.toLocaleDateString('pt-BR') + ' ' + quando.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + (assunto ? ' · ' + assunto.slice(0, 60) : ''),
-          familiaAssunto: assunto, // 6.13.36: o tema inteiro, para a lista de Programações salvas
+          familiaAssunto: assunto, // 6.13.37: o tema inteiro, para a lista de Programações salvas
           partes: [{ paragrafos: 'Programação', texto }],
           familiaOpcoes: [op],
           ligar: false

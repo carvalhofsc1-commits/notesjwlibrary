@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.37
+
+- Início: o atalho 📰 A Sentinela saiu (as respostas do estudo continuam em Reuniões); 🗂️ Pesquisas salvas ficou no lugar dele, na página 2. Os atalhos voltam a ter 2 páginas.
+
 ## 6.13.36
 
 - Nova seção **🎲 Jogos bíblicos** (menu, atalho na página 1 do Início; o Áudio em texto foi para a página 2 e as Pesquisas salvas para a nova página 3). A tela inicial tem um atalho com emoji para cada um dos 7 jogos da Adoração em Família (🕵️ Quem sou eu?, ✅ Verdadeiro ou falso, ⏳ Ordem e data, 💬 Quem disse isso?, 📖 Complete o versículo, 🔤 Abreviações, 🃏 Perfil bíblico). Tocar num jogo abre o pedido (tema e instrução opcionais) e "✨ Preparar o jogo" (código de pesquisa, como na Adoração).

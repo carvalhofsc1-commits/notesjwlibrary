@@ -17309,8 +17309,6 @@ body[data-screen="jogos"] :is(.screen-inicio, .screen-editor, .screen-formatar, 
 .jogos-painel .fam-trocar-aviso[hidden] { display: none; }
 .jogos-pronto .fam-lista { margin: 6px 0 0; padding-left: 1.3em; display: grid; gap: 4px; }
 .jogos-pronto .fam-lista li { overflow-wrap: anywhere; }
-/* página 3 dos atalhos do Início com poucos atalhos: as linhas continuam do tamanho das outras páginas */
-.atalhos-card #atalhosPagina3 { grid-template-rows: repeat(4, minmax(0, 1fr)); grid-auto-rows: minmax(0, 1fr); }
 .fam-hub { display: grid; gap: 10px; min-width: 0; margin-top: 10px; }
 .fam-hub-btn { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 12px; row-gap: 2px; align-items: center; width: 100%; min-width: 0; margin: 0; padding: 12px 14px; text-align: left; white-space: normal; }
 .fam-hub-icone { grid-row: 1 / span 3; font-size: 1.8rem; line-height: 1; }
