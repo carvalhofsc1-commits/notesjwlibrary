@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.54
+
+- "Jogar em grupo" deixou de ser um botão: é o título de um card que, recolhido, tem a aparência do "Iniciar partida sozinho" (mesmo tamanho e cor) e, aberto, mostra as configurações dentro da moldura, com o título separado do corpo por uma linha.
+
 ## 6.13.53
 
 - Jogo pronto: o "Iniciar partida" virou "Iniciar partida sozinho". "Jogar em grupo" é um card só: recolhido parece um botão; aberto, uma moldura abraça o botão e todas as configurações, e o "Iniciar partida sozinho" fica desabilitado.

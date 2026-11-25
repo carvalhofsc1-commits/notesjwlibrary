@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.13.53'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.13.54'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -30809,29 +30809,19 @@ function saveTemplatesToStorage() {
       // 6.13.50: "Jogar sozinho" é o padrão (botão Iniciar partida); o grupo fica num bloco recolhido.
       const soloEl = jogosSoloMontar(item);
       caixa.appendChild(soloEl);
-      // 6.13.52: "▶️ Jogar em grupo" é um botão igual ao Iniciar partida; ao tocar, expande as configurações e, de novo, recolhe.
-      const btnGrupo = document.createElement('button');
-      btnGrupo.type = 'button';
-      btnGrupo.className = 'fam-fino fam-principal';
-      btnGrupo.textContent = '▶️ Jogar em grupo';
-      btnGrupo.setAttribute('aria-expanded', 'false');
+      // 6.13.54: "▶️ Jogar em grupo" não é um botão: é o título de um card (details) que, recolhido, tem a aparência do Iniciar partida sozinho;
+      // aberto, mostra as configurações dentro da moldura e deixa o Iniciar partida sozinho desabilitado.
+      const cardGrupo = document.createElement('details');
+      cardGrupo.className = 'jogos-grupo-card';
+      const tituloGrupo = document.createElement('summary');
+      tituloGrupo.textContent = '▶️ Jogar em grupo';
       const grupo = document.createElement('div');
       grupo.className = 'jogos-grupo'; // 6.13.45: os itens do "Jogar em grupo" com espaço entre eles
-      grupo.hidden = true;
-      // 6.13.53: um card só abraça o botão e as configurações; recolhido parece um botão; aberto, ganha a moldura e o Iniciar partida sozinho fica desabilitado.
-      const cardGrupo = document.createElement('div');
-      cardGrupo.className = 'jogos-grupo-card';
-      btnGrupo.addEventListener('click', () => {
-        grupo.hidden = !grupo.hidden;
-        btnGrupo.setAttribute('aria-expanded', String(!grupo.hidden));
-        cardGrupo.classList.toggle('aberto', !grupo.hidden);
+      cardGrupo.addEventListener('toggle', () => {
         const iniciarSolo = soloEl.querySelector('button');
-        if (iniciarSolo) iniciarSolo.disabled = !grupo.hidden;
+        if (iniciarSolo) iniciarSolo.disabled = cardGrupo.open;
       });
-      const acoesGrupo = document.createElement('div');
-      acoesGrupo.className = 'fam-acoes';
-      acoesGrupo.appendChild(btnGrupo);
-      cardGrupo.append(acoesGrupo, grupo);
+      cardGrupo.append(tituloGrupo, grupo);
       caixa.appendChild(cardGrupo);
       jogosCompartilharMontar(item, grupo);
       p.replaceChildren(caixa);
