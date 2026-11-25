@@ -18030,3 +18030,17 @@ details.fam-placar-card > summary { min-height: 0 !important; padding: 3px 8px !
 .fam-sessao-rodape > .fam-jogo-enunciado > summary::before, .fam-sessao-rodape > .fam-jogo-enunciado > summary::after { content: none !important; display: none !important; }
 .fam-sessao-rodape > .fam-jogo-enunciado:not([open]), .fam-sessao-rodape > .fam-sessao-grande-btn { height: 28px; min-height: 28px; }
 .fam-sessao-rodape > .fam-jogo-enunciado > summary { height: 26px; }
+
+/* 6.13.85: no jogo, TODOS os espaços verticais entre os blocos iguais (10 px, o do placar para o sorteio): cabeçalho, quem participa, controles, placar, sorteio, barra das questões, card, "Voltar a bloquear" e o rodapé */
+#participarSessao.fam-sessao-jogo-avulso > .fam-sessao-cabeca,
+#participarSessao.fam-sessao-jogo-avulso > .fam-sessao-presentes,
+#participarSessao.fam-sessao-jogo-avulso > .fam-sessao-dirigente { margin: 0 0 10px; }
+#participarSessao.fam-sessao-jogo-avulso .fam-sessao-secoes { margin: 0; gap: 0; }
+#participarSessao.fam-sessao-jogo-avulso .fam-sessao-secao:not(.bloqueada) { margin: 0; padding: 0; }
+#participarSessao.fam-sessao-jogo-avulso .fam-sessao-secao:not(.bloqueada) .fam-parte { padding-top: 0; padding-bottom: 0; margin: 0; }
+#participarSessao .fam-sessao-jogo { row-gap: 10px; }
+#participarSessao .fam-sessao-jogo > * { margin-top: 0 !important; margin-bottom: 0 !important; }
+#participarSessao.fam-sessao-jogo-avulso .fam-sessao-secao > .fam-sessao-secao-acoes { margin: 10px 0 0; padding: 0; }
+#participarSessao.fam-sessao-jogo-avulso > .fam-sessao-rodape { margin-top: 10px; }
+#participarSessao .fam-sessao-qnum { margin-bottom: 10px; }
+.fam-sessao-pergunta.fam-perfil-tipo { margin: 0 0 10px; }

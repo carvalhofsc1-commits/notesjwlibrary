@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.85
+
+- Jogo ao vivo: **todos os espaços verticais entre os blocos iguais, de 10 px** (o que havia entre o placar e o sorteio). Antes variavam de 4 a 22 px: cabeçalho, "Quem está participando", controles do administrador, placar, sorteio, barra das questões, card da questão, "Voltar a bloquear" e o rodapé (Regras e Tela grande). Dentro do card da questão, os quadros também ficam a 10 px e o espaço do número da questão até o tipo da carta passou de 8 para 10 px.
+
 ## 6.13.84
 
 - Botão das regras do jogo: o rótulo é só a palavra "Regras" (saiu o emoji 📜 e qualquer seta ou marcador), fino (28 px) e dividindo a mesma linha com o "Tela grande", ambos do mesmo tamanho (157 × 28 px). Ao abrir, as regras ocupam a linha toda.
