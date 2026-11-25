@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.89
+
+- Perfil bíblico: a descrição na lista dos jogos agora é "Acerte o nome de pessoas, lugares, coisas e anos".
+
 ## 6.13.88
 
 - Barra de baixo: o atalho **Anotações** foi substituído por **🎲 Jogos** (Início, Jogos, Pesquisas, Reuniões, Adoração, Bíblia, Menu). As Anotações continuam no Menu (☰) e nos atalhos do Início. Ao tocar em Jogos pela barra, a tela abre sempre nas duas opções (Entrar em um jogo / Montar o meu jogo); e a tela ao vivo de um jogo marca "Jogos" na barra (antes marcava "Adoração").
