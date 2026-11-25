@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.58
+
+- Saiu o card "🎮 Jogar também" (nome + Entrar no jogo): o administrador já é identificado pelo cadastro do aparelho, então joga direto, e a regra de quem viu a resposta continua valendo.
+
 ## 6.13.57
 
 - Placar do jogo em grupo: vira um card que abre e recolhe (o estado se mantém nas atualizações; recolhido, o título mostra quem lidera e os pontos); medalhas 🥇🥈🥉 para as três primeiras posições (empates dividem a posição; só com pontos) e a linha do líder em destaque.

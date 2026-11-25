@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.13.57'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.13.58'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -29628,40 +29628,6 @@ function saveTemplatesToStorage() {
       progresso.append(progTexto, progBarra);
       progresso.hidden = !(j.rodadas || []).length;
       caixa.append(enunciado, placar, progresso); // 6.12.19: as regras logo depois do título do jogo, antes do placar
-      // 6.13.26: o presidente da reunião também pode jogar: entra com um nome e responde pelo app como qualquer participante (a resposta fica
-      // registrada no nome dele). Útil quando ele não precisa ver a resposta antes e deixa para revelar no fim.
-      if (participar.dirigente && !participar.participanteId && (j.rodadas || []).length) {
-        const jogar = document.createElement('div');
-        jogar.className = 'fam-sessao-jogar-tambem';
-        const rot = document.createElement('label');
-        rot.className = 'fam-trocar-rotulo';
-        rot.htmlFor = 'famJogarTambem-' + parteIdx;
-        rot.textContent = '🎮 Jogar também (o ' + participarPapel() + ' responde como os outros)';
-        const linha = document.createElement('div');
-        linha.className = 'fam-sessao-jogar-linha';
-        const campo = document.createElement('input');
-        campo.type = 'text';
-        campo.id = 'famJogarTambem-' + parteIdx;
-        campo.className = 'fam-campo';
-        campo.maxLength = 40;
-        campo.autocomplete = 'off';
-        campo.placeholder = 'Seu nome no jogo';
-        campo.value = (familiaSessoesLer()[participar.cod] || {}).nome || '';
-        const ir = document.createElement('button');
-        ir.type = 'button';
-        ir.className = 'fam-fino fam-principal';
-        ir.textContent = '🎮 Entrar no jogo';
-        const entrar = () => {
-          const nomeJogo = campo.value.replace(/\s+/g, ' ').trim();
-          if (!nomeJogo) { participarStatus('Escreva o seu nome para jogar.', 'erro'); campo.focus(); return; }
-          participarEntrar(participar.cod, nomeJogo);
-        };
-        ir.addEventListener('click', entrar);
-        campo.addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); entrar(); } });
-        linha.append(campo, ir);
-        jogar.append(rot, linha);
-        caixa.appendChild(jogar);
-      }
       const ref = { rodadas: [], sorteio: null, nome: null, ultimoN: null, placar, progTexto, progBarra, progPreench };
       // Sorteio: o nome sorteado aparece para todos; os botões, só para o dirigente.
       const sorteio = document.createElement('div');
