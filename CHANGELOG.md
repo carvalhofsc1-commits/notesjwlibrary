@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.69
+
+- A seta Voltar da barra superior não aparece na tela inicial (a única exceção); o espaço dela fica guardado e o logo continua no centro. Nas outras telas ela segue sempre à vista.
+
 ## 6.13.68
 
 - Seta Voltar da barra superior: só o ícone ficou maior (de 20 para 26 px); o botão continua com 42 × 30 px.

@@ -17887,3 +17887,5 @@ header.app-topbar .voltar-topo { min-height: 30px; max-height: 30px; min-width: 
 header.app-topbar .voltar-topo { min-width: 42px; }
 /* 6.13.68: só o ícone da seta maior (o botão fica 42 x 30 px) */
 .voltar-topo svg { width: 26px; height: 26px; }
+/* 6.13.69: na tela inicial a seta Voltar não aparece (única exceção); o espaço fica guardado para o logo continuar no centro */
+body[data-screen="inicio"] .voltar-topo { visibility: hidden; }
