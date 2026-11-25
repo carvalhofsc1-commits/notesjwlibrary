@@ -7935,7 +7935,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.13.61'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.13.62'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -28349,14 +28349,39 @@ function saveTemplatesToStorage() {
 
     // Chamadas por showScreen ao entrar e ao sair da tela (ao sair, a consulta periódica para).
     // 6.13.45: os textos fixos da tela (título, entrada e "presidir de outro aparelho") conforme seja uma adoração ou um jogo avulso.
+    // 6.13.62: o emoji, o nome e a cor de cada jogo bíblico (a lista dos Jogos, o título da tela do jogo ao vivo e os cards usam os mesmos).
+    // Sem verde (padrão visual suave do app); cores mais intensas que as do resto do app.
+    const JOGOS_VISUAL = Object.freeze({
+      quem_sou_eu: Object.freeze({ nome: 'Quem sou eu?', emoji: '🕵️', cor: '#7c3aed' }),
+      verdadeiro_falso: Object.freeze({ nome: 'Verdadeiro ou falso', emoji: '✅', cor: '#2563eb' }),
+      ordem_data: Object.freeze({ nome: 'Ordem e data dos acontecimentos', emoji: '⏳', cor: '#ea580c' }),
+      quem_disse: Object.freeze({ nome: 'Quem disse isso?', emoji: '💬', cor: '#db2777' }),
+      complete_versiculo: Object.freeze({ nome: 'Complete o versículo', emoji: '📖', cor: '#0891b2' }),
+      abreviacoes: Object.freeze({ nome: 'Abreviações bíblicas', emoji: '🔤', cor: '#dc2626' }),
+      perfil_biblico: Object.freeze({ nome: 'Perfil bíblico', emoji: '🃏', cor: '#4f46e5' })
+    });
     function participarTextosModo() {
       const jogo = participarEhJogo();
       const h = document.getElementById('participarTitulo');
       if (h) {
-        const ic = document.createElement('span');
-        ic.setAttribute('aria-hidden', 'true');
-        ic.textContent = jogo ? '🎲' : '🔗';
-        h.replaceChildren(ic, document.createTextNode(jogo ? ' Jogo bíblico ao vivo' : ' Adoração em família ao vivo'));
+        // 6.13.62: no jogo ao vivo, o título é o nome do jogo que está sendo jogado (grande, colorido, com o emoji do jogo)
+        const idJogo = jogo && participar.programa && participar.programa.partes && participar.programa.partes[0] && participar.programa.partes[0].jogo ? participar.programa.partes[0].jogo.idTipo : '';
+        const vis = JOGOS_VISUAL[idJogo];
+        h.classList.toggle('fam-titulo-jogo', Boolean(vis));
+        if (vis) {
+          h.style.setProperty('--cor-jogo', vis.cor);
+          const ic = document.createElement('span');
+          ic.className = 'fam-titulo-jogo-emoji';
+          ic.setAttribute('aria-hidden', 'true');
+          ic.textContent = vis.emoji;
+          h.replaceChildren(ic, document.createTextNode(' ' + vis.nome));
+        } else {
+          h.style.removeProperty('--cor-jogo');
+          const ic = document.createElement('span');
+          ic.setAttribute('aria-hidden', 'true');
+          ic.textContent = jogo ? '🎲' : '🔗';
+          h.replaceChildren(ic, document.createTextNode(jogo ? ' Jogo bíblico' : ' Adoração em família ao vivo'));
+        }
       }
       const pares = [
         ['participarEntradaDica', 'Digite o código que o administrador do jogo passou. O jogo abre aqui, e cada um responde no próprio celular.', 'Digite o código que o presidente da reunião passou. As partes da programação vão se abrindo aqui conforme ele liberar.'],
@@ -28961,7 +28986,18 @@ function saveTemplatesToStorage() {
       grande.title = 'Mostra só as partes liberadas, com letra grande (para a TV ou o notebook)';
       grande.addEventListener('click', () => participarTelaGrande(!document.body.classList.contains('fam-tela-grande')));
       participar.cron = { linha: cron };
-      if (solo) cab.append(h, grande); else cab.append(h, meta, grande);
+      // 6.13.62: no jogo, o nome do jogo já é o título da tela (em cima) e o 📺 Tela grande desce para o rodapé, junto das regras
+      const jogoAvulso = p.modo === 'jogos';
+      participar.rodapeJogo = null;
+      if (jogoAvulso) {
+        if (!solo) cab.appendChild(meta);
+        grande.classList.add('fam-sessao-grande-fino');
+        const rodape = document.createElement('div');
+        rodape.className = 'fam-sessao-rodape';
+        rodape.appendChild(grande);
+        participar.rodapeJogo = rodape;
+        cab.hidden = solo; // sozinho: nada a mostrar no cabeçalho
+      } else cab.append(h, meta, grande);
       caixa.appendChild(cab); // sem o texto de resumo da programação (retirado na 6.11.76)
       caixa.appendChild(participarPainelMontar()); // 6.13.31: 👥 quem está participando (todos veem)
       if (participar.dirigente) { const painelDir = participarDirigenteMontar(); if (!solo) caixa.appendChild(painelDir); }
@@ -29074,6 +29110,7 @@ function saveTemplatesToStorage() {
       participar.boasVindas.appendChild(entrar);
       participar.vista = participarEhJogo() ? 'atividades' : 'boasvindas'; // 6.13.45: no jogo avulso, direto para o jogo
       caixa.append(participar.boasVindas, lista);
+      if (participar.rodapeJogo) caixa.appendChild(participar.rodapeJogo);
       participarVistaAplicar();
       // A barra da tela grande: sair e, para o dirigente, ir para a próxima parte sem sair da tela grande (o Próxima voltou na 6.11.92).
       const barra = document.createElement('div');
@@ -29628,8 +29665,9 @@ function saveTemplatesToStorage() {
       progBarra.appendChild(progPreench);
       progresso.append(progTexto, progBarra);
       progresso.hidden = !(j.rodadas || []).length;
-      caixa.append(enunciado, placar, progresso); // 6.12.19: as regras logo depois do título do jogo, antes do placar
-      const ref = { rodadas: [], sorteio: null, nome: null, ultimoN: null, placar, progTexto, progBarra, progPreench };
+      // 6.13.62: no jogo avulso, as regras vão para o rodapé da tela (fino e discreto, na mesma linha do Tela grande)
+      if (participar.rodapeJogo) { caixa.append(placar, progresso); participar.rodapeJogo.insertBefore(enunciado, participar.rodapeJogo.firstChild); } else caixa.append(enunciado, placar, progresso); // 6.12.19: as regras logo depois do título do jogo, antes do placar
+      const ref = { rodadas: [], sorteio: null, nome: null, ultimoN: null, placar, progTexto, progBarra, progPreench, atual: 0, primeiraVez: true };
       // Sorteio: o nome sorteado aparece para todos; os botões, só para o dirigente.
       const sorteio = document.createElement('div');
       sorteio.className = 'fam-sessao-sorteio';
@@ -29769,6 +29807,24 @@ function saveTemplatesToStorage() {
           perg.className = 'fam-sessao-pergunta';
           const comDicas = dicas.length > 0;
           perg.textContent = comDicas ? intro : r.pergunta + (r.referencia ? ' (' + r.referencia + ')' : '');
+          // 6.13.62: Perfil bíblico: sem o "Perfil bíblico:" na frente; o que se deve descobrir (ano, lugar, pessoa, coisa…) em destaque, com um emoji e o ❓
+          if (j.idTipo === 'perfil_biblico' && comDicas) {
+            const mp = String(intro || '').match(/^Perfil b[ií]blico\s*:\s*(.+?)\.?\s*$/i);
+            if (mp) {
+              const categoria = mp[1].trim();
+              const chaveCat = categoria.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+              const emojiCat = { pessoa: '🧑', lugar: '📍', coisa: '🏺', objeto: '🏺', ano: '📅', qualidade: '💎', animal: '🐾', acontecimento: '📜' }[chaveCat] || '🔎';
+              perg.className += ' fam-perfil-tipo';
+              const em = document.createElement('span');
+              em.className = 'fam-perfil-emojis';
+              em.setAttribute('aria-hidden', 'true');
+              em.textContent = emojiCat + '❓';
+              const palavra = document.createElement('span');
+              palavra.className = 'fam-perfil-palavra';
+              palavra.textContent = categoria.charAt(0).toUpperCase() + categoria.slice(1);
+              perg.replaceChildren(em, palavra);
+            }
+          }
           const dicasEls = dicas.map((txt, d) => {
             // 6.13.45: a dica "Escolha entre: A; B; C; D." (Quem disse isso?) vira 4 botões; tocar num nome o põe no campo da resposta.
             const escolha = txt.match(/^Escolha entre\s*:\s*(.+?)\.?$/i);
@@ -29821,7 +29877,7 @@ function saveTemplatesToStorage() {
           envioEl.setAttribute('aria-live', 'polite');
           envioEl.hidden = true;
           li.appendChild(envioEl);
-          let area = null, areaNota = null, campoResp = null, respBox = null, ctrlBox = null, btnRevelarSolo = null;
+          let area = null, areaNota = null, campoResp = null, respBox = null, ctrlBox = null, btnRevelarSolo = null, btnEnviar = null, sincEnviar = null;
           const solo = Boolean(participar.programa && participar.programa.solo); // 6.13.60: partida sozinho: sem controles do administrador
           if (participar.participanteId) { // 6.13.26: também o presidente da reunião (ou o administrador do jogo) que entrou no jogo com um nome
             area = document.createElement('div');
@@ -29838,6 +29894,7 @@ function saveTemplatesToStorage() {
               if (!rr.ok) { participarStatus(rr.erro || 'Não consegui enviar a resposta.', 'erro'); return; }
               participarStatus('');
               if (campoResp) campoResp.value = '';
+              if (sincEnviar) sincEnviar();
               participarAplicar(rr.data);
             };
             if (j.idTipo === 'verdadeiro_falso') {
@@ -29867,6 +29924,10 @@ function saveTemplatesToStorage() {
               b.addEventListener('click', () => enviar(campoResp.value, b));
               campoResp.addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); enviar(campoResp.value, b); } });
               // 6.13.60: o administrador e quem joga sozinho podem responder falando: 🎤 no campo (grava, transcreve e põe o texto no campo)
+              // 6.13.62: "Enviar resposta" só fica habilitado com o campo preenchido
+              btnEnviar = b;
+              sincEnviar = () => { b.disabled = campoResp.disabled || !campoResp.value.trim(); };
+              campoResp.addEventListener('input', () => sincEnviar());
               const linhaCampo = document.createElement('div');
               linhaCampo.className = 'fam-sessao-resp-linha';
               linhaCampo.appendChild(campoResp);
@@ -29876,7 +29937,8 @@ function saveTemplatesToStorage() {
                 btnRevelarSolo = document.createElement('button');
                 btnRevelarSolo.type = 'button';
                 btnRevelarSolo.className = 'secondary fam-fino fam-sessao-revelar';
-                btnRevelarSolo.innerHTML = ICONE_OLHO + ' Revelar';
+                btnRevelarSolo.classList.add('fam-nao-sei');
+                btnRevelarSolo.innerHTML = '<span class="fam-nao-sei-1">Não sei</span><span class="fam-nao-sei-2">' + ICONE_OLHO + ' Revelar</span>'; // 6.13.62: duas linhas
                 btnRevelarSolo.title = 'Mostrar a resposta (conta como ninguém acertou)';
                 btnRevelarSolo.addEventListener('click', () => participarAcao({ acao: 'pontuar', parte: parteIdx, rodada: k, ninguem: true }, btnRevelarSolo));
                 const duas = document.createElement('div');
@@ -29948,7 +30010,8 @@ function saveTemplatesToStorage() {
               btnDica.type = 'button';
               btnDica.className = 'secondary fam-fino fam-sessao-revelar fam-sessao-dar-dica';
               btnDica.addEventListener('click', () => participarAcao({ acao: (participar.estado && participar.estado.sorteioDicas && participar.estado.sorteioDicas[parteIdx]) ? 'sortear-dica' : 'dica', parte: parteIdx, rodada: k }, btnDica));
-              ctrlBox.appendChild(btnDica);
+              if (solo && respBox) respBox.insertBefore(btnDica, respBox.firstChild); // sozinho: o botão da dica no mesmo quadro da resposta (mesma largura)
+              else ctrlBox.appendChild(btnDica);
               // Quem acertou: escolhe o nome e pontua (os pontos de agora); a resposta é revelada junto. (Sozinho não há "quem acertou".)
               if (!solo) {
               linhaAcerto = document.createElement('div');
@@ -30025,9 +30088,44 @@ function saveTemplatesToStorage() {
             participarJogoPintar(parteIdx, false);
           });
           li.appendChild(btnRecolher);
-          ref.rodadas.push({ btnRecolher, recolhida: false, li, respBox, ctrlBox, linhaAcerto, sel, btnPontuar, btnEspiar, btnReiniciar, espiada, sig: null, resp, btn: btn || btnRevelarSolo, btnDica, dicasEls, aguarda, pontos, total: dicas.length, referencia: r.referencia || '', envioEl, area, areaNota, julgarEl, temIntro: Boolean(intro) });
+          ref.rodadas.push({ btnRecolher, recolhida: false, li, respBox, ctrlBox, linhaAcerto, sel, btnPontuar, btnEspiar, btnReiniciar, espiada, sig: null, resp, btn: btn || btnRevelarSolo, campoResp, btnEnviar, sincEnviar, btnDica, dicasEls, aguarda, pontos, total: dicas.length, referencia: r.referencia || '', envioEl, area, areaNota, julgarEl, temIntro: Boolean(intro) });
           ol.appendChild(li);
         });
+        // 6.13.62: uma questão por vez: ◀ ▶ trocam de questão; as bolinhas mostram onde está (a atual) e quais já foram respondidas
+        if (rodadas.length > 1) {
+          const nav = document.createElement('div');
+          nav.className = 'fam-sessao-nav';
+          const mover = (passo) => { ref.atual = Math.max(0, Math.min(rodadas.length - 1, ref.atual + passo)); participarJogoPintar(parteIdx, false); };
+          const ant = document.createElement('button');
+          ant.type = 'button';
+          ant.className = 'secondary fam-sessao-nav-seta';
+          ant.textContent = '◀';
+          ant.title = 'Questão anterior';
+          ant.setAttribute('aria-label', 'Questão anterior');
+          ant.addEventListener('click', () => mover(-1));
+          const prox = document.createElement('button');
+          prox.type = 'button';
+          prox.className = 'secondary fam-sessao-nav-seta';
+          prox.textContent = '▶';
+          prox.title = 'Próxima questão';
+          prox.setAttribute('aria-label', 'Próxima questão');
+          prox.addEventListener('click', () => mover(1));
+          const bolinhas = document.createElement('div');
+          bolinhas.className = 'fam-sessao-nav-bolinhas';
+          const pontos = rodadas.map((_, k) => {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'fam-sessao-nav-bolinha';
+            b.textContent = String(k + 1);
+            b.title = 'Ir para a questão ' + (k + 1);
+            b.addEventListener('click', () => { ref.atual = k; participarJogoPintar(parteIdx, false); });
+            bolinhas.appendChild(b);
+            return b;
+          });
+          nav.append(ant, bolinhas, prox);
+          ref.nav = { ant, prox, pontos };
+          caixa.appendChild(nav);
+        }
         caixa.appendChild(ol);
       }
       if ((j.itens || []).length) {
@@ -30231,6 +30329,22 @@ function saveTemplatesToStorage() {
         ref.modoDicas.emOrdem.classList.toggle('fam-modo-marcado', !sorteioDicas[i]);
       }
       const acertos = (e.acertos && e.acertos[i]) || {};
+      const soloJogo = Boolean(participar.programa && participar.programa.solo);
+      // 6.13.62: uma questão por vez. Ao abrir, a primeira ainda sem resposta; uma questão sorteada leva a tela para ela; ◀ ▶ trocam de questão.
+      {
+        const respK = k => rev[k] != null && rev[k] !== '';
+        if (ref.primeiraVez) {
+          ref.primeiraVez = false;
+          const prim = ref.rodadas.findIndex((_, k) => !respK(k));
+          ref.atual = prim >= 0 ? prim : 0;
+        }
+        const sq0 = e.sorteioQuestao;
+        if (sq0 && sq0.parte === i && ref.rodadas[sq0.rodada] && !respK(sq0.rodada)) {
+          const chaveSq = sq0.rodada + ':' + (sq0.n || '');
+          if (ref.sqVisto !== chaveSq) { ref.sqVisto = chaveSq; ref.atual = sq0.rodada; }
+        }
+        ref.atual = Math.max(0, Math.min(Math.max(0, ref.rodadas.length - 1), ref.atual));
+      }
       // Os nomes do jogo: os cadastrados ao compartilhar, quem entrou (visto pelo dirigente) e quem já pontuou.
       // 6.13.31: com quem está presente (todos recebem essa lista)
       const nomes = [...new Set([...(participar.programa.nomes || []), ...(participar.participantes || []).map(p => p.nome), ...(participar.presentes || []).map(p => p.nome), ...Object.values(acertos).map(a => a.nome)].filter(Boolean))];
@@ -30396,17 +30510,22 @@ function saveTemplatesToStorage() {
             // 6.13.28: quem viu a resposta (Ver só para mim) fica fora desta questão: a área aparece cinza e travada
             const espiou = Boolean(participar.nome) && (((e.espiaram || {})[i] || {})[k] || []).includes(participar.nome);
             const bloqueio = espiou ? '' : sorteadoNome && sorteadoNome !== participar.nome ? 'Agora é a vez de ' + sorteadoNome + '.' : questaoSorteada != null && questaoSorteada !== k ? 'Responda a questão sorteada (questão ' + (questaoSorteada + 1) + ').' : '';
-            r.area.hidden = !aberta || Boolean(bloqueio);
+            // 6.13.62: o campo e os botões ficam sempre à vista (até a questão ser respondida) e desabilitados enquanto a rodada não começou
+            const emJogo = !revK && !ac && !pend;
+            r.area.hidden = !emJogo || Boolean(bloqueio);
             r.areaNota.hidden = !aberta || (!bloqueio && !espiou);
             r.areaNota.textContent = espiou ? '🔒 Você viu a resposta desta questão (Ver só para mim) e não pode mais responder a ela.' : bloqueio ? '🔒 ' + bloqueio : '';
-            r.area.querySelectorAll('input, button').forEach(c => { c.disabled = espiou; });
+            // a rodada "começou" quando a 1ª dica já saiu (nos jogos sem dicas ou com a frase à vista, desde o início)
+            const iniciada = r.total === 0 || ndadas > 0 || r.aguarda.dataset.semEspera === '1';
+            r.area.querySelectorAll('input, button').forEach(c => { c.disabled = espiou || !iniciada; });
+            if (r.sincEnviar) r.sincEnviar(); // "Enviar resposta" só com o campo preenchido
             if (r.respBox) r.respBox.classList.toggle('fam-sessao-resp-bloqueada', espiou);
           }
         }
         const txt = rev[k];
         const revelada = txt != null && txt !== '';
         const comDicas = r.total > 0;
-        r.li.hidden = false; // 6.12.31: todas as questões do jogo ficam visíveis (cada uma continua com uma dica por vez)
+        r.li.hidden = k !== ref.atual; // 6.13.62: uma questão por vez (6.12.31: antes, todas ficavam visíveis)
         if (r.btnReiniciar) r.btnReiniciar.hidden = !revelada; // o 🔄 só depois que a questão foi respondida
         const n = Math.min(r.total, Number(dadas[k]) || 0);
         if (!revelada) r.recolhida = false; // reiniciada: volta ao estado original
@@ -30430,7 +30549,9 @@ function saveTemplatesToStorage() {
         if (ordemK) saidas.forEach(d => { if (r.animandoDica !== d) r.li.insertBefore(r.dicasEls[d], r.aguarda); }); // na ordem em que saíram
         r.aguarda.hidden = !(comDicas && n === 0 && !revelada && !participar.dirigente) || r.aguarda.dataset.semEspera === '1';
         const pts = Math.max(1, r.total - n + 1);
-        r.pontos.textContent = comDicas && n > 0 && !revelada ? ' · vale ' + pts + (pts === 1 ? ' ponto' : ' pontos') + ' agora' : '';
+        // 6.13.62: os pontos em destaque desde o começo (antes da 1ª dica vale o máximo)
+        const ptsAgora = Math.max(1, r.total - Math.max(n, 1) + 1);
+        r.pontos.textContent = comDicas && !revelada ? '⭐ vale ' + ptsAgora + (ptsAgora === 1 ? ' ponto' : ' pontos') : '';
         r.resp.hidden = comDicas && n === 0 && !revelada;
         r.resp.classList.toggle('escondida', !revelada);
         r.resp.classList.toggle('revelada', revelada);
@@ -30456,7 +30577,7 @@ function saveTemplatesToStorage() {
           r.btnDica.textContent = (modoSorteio ? '🎲 Sortear a ' : '💡 Dar a ') + (n + 1) + 'ª dica' + (n === 0 ? '' : ' (vale ' + Math.max(1, r.total - n) + ')');
           r.btnDica.disabled = r.animandoDica != null;
         }
-        if (r.btn) r.btn.hidden = revelada || (comDicas && n === 0);
+        if (r.btn) r.btn.hidden = revelada || (!soloJogo && comDicas && n === 0); // sozinho, o "Não sei" fica sempre à vista (desabilitado até a 1ª dica)
         if (r.btnEspiar) { // 6.12.06: "Ver só para mim" some quando a resposta já foi revelada a todos
           r.btnEspiar.hidden = revelada || (comDicas && n === 0);
           if (revelada) r.espiada.hidden = true;
@@ -30466,6 +30587,15 @@ function saveTemplatesToStorage() {
         if (r.ctrlBox) r.ctrlBox.hidden = [...r.ctrlBox.children].slice(1).every(c => c.hidden);
         anteriorRespondida = revelada;
       });
+      if (ref.nav) { // 6.13.62: setas e bolinhas (atual e respondidas)
+        ref.nav.ant.disabled = ref.atual <= 0;
+        ref.nav.prox.disabled = ref.atual >= ref.rodadas.length - 1;
+        ref.nav.pontos.forEach((b, k) => {
+          b.classList.toggle('atual', k === ref.atual);
+          b.classList.toggle('respondida', rev[k] != null && rev[k] !== '');
+          b.setAttribute('aria-current', k === ref.atual ? 'true' : 'false');
+        });
+      }
       if (ref.listas) { // os nomes de cada sorteio, logo abaixo do botão
         const quem = { participantes: [...new Set((participar.participantes || []).map(p => p.nome).filter(Boolean))], nomes: [...new Set((participar.programa.nomes || []).filter(Boolean))] };
         Object.keys(ref.listas).forEach(f => { ref.listas[f].textContent = quem[f].length ? quem[f].join(', ') : (f === 'participantes' ? 'Ninguém entrou ainda.' : ''); });
@@ -30644,6 +30774,10 @@ function saveTemplatesToStorage() {
       { nome: FAMILIA_JOGOS[5], titulo: 'Abreviações bíblicas', emoji: '🔤', desc: 'Decifre siglas como “Os 12 A de C”.' },
       { nome: FAMILIA_JOGOS[6], titulo: 'Perfil bíblico', emoji: '🃏', desc: 'Acerte o nome de pessoas, lugares, coisas e anos com o menor número de dicas.' }
     ];
+    // 6.13.62: cada jogo com a sua cor (JOGOS_VISUAL, na mesma ordem dos tipos)
+    ['quem_sou_eu', 'verdadeiro_falso', 'ordem_data', 'quem_disse', 'complete_versiculo', 'abreviacoes', 'perfil_biblico'].forEach((id, i) => {
+      if (JOGOS_BIBLICOS[i]) { JOGOS_BIBLICOS[i].id = id; JOGOS_BIBLICOS[i].cor = JOGOS_VISUAL[id].cor; JOGOS_BIBLICOS[i].emoji = JOGOS_VISUAL[id].emoji; }
+    });
     const JOGOS_SALVOS_KEY = 'nsJogosPreparadosV1';
     const JOGOS_SALVOS_MAX = 30;
     const JOGOS_FORMACAO = 'Grupo de irmãos jogando um jogo bíblico (várias idades)';
@@ -30700,6 +30834,7 @@ function saveTemplatesToStorage() {
         // 6.13.51: cada jogo é um card só: o título (o botão) em cima e, ao abrir, o corpo com as opções logo abaixo, dentro do mesmo card.
         const card = document.createElement('div');
         card.className = 'jogos-card';
+        card.style.setProperty('--cor-jogo', j.cor || '#8b5cf6'); // 6.13.62: uma cor para cada jogo
         card.appendChild(b);
         return card;
       }));
@@ -30725,7 +30860,16 @@ function saveTemplatesToStorage() {
     }
     function jogosVista(v) {
       jogosVistaAtual = v;
-      if (v === 'home' || v === 'montar') { jogosFiltro = null; jogosSalvosPintar(); }
+      if (v === 'home' || v === 'montar') {
+        // 6.13.62: "Montar o meu jogo" abre sempre a lista dos jogos: nenhum jogo fica aberto de antes
+        if (!jogosPreparando) {
+          jogosEls.painel.hidden = true;
+          jogosEls.painel.replaceChildren();
+          jogosEls.grade.querySelectorAll('.jogos-atalho').forEach(b => b.setAttribute('aria-expanded', 'false'));
+        }
+        jogosFiltro = null;
+        jogosSalvosPintar();
+      }
       jogosVistaAplicar();
       window.scrollTo(0, 0);
     }

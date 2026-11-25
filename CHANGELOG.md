@@ -2,6 +2,15 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.62
+
+- Jogo ao vivo: **uma questão por vez**, com ◀ ▶ e bolinhas numeradas (a atual em destaque e as respondidas marcadas); abre na primeira ainda sem resposta e uma questão sorteada leva a tela para ela. O número da questão e os pontos (⭐ vale N pontos, desde o começo) ganharam destaque.
+- Título da tela do jogo: o nome do jogo, grande, na cor dele e com o emoji grande (no lugar de "Jogo bíblico ao vivo"). O nome não se repete no cabeçalho.
+- Perfil bíblico: sem o "Perfil bíblico:" na frente; o que descobrir em destaque, com emoji + ❓ (🧑 Pessoa, 📍 Lugar, 🏺 Coisa, 📅 Ano…).
+- Regras e 📺 Tela grande foram para o rodapé, na mesma linha, finos e discretos (as regras abrem em largura toda).
+- Campo, 🎤, Enviar resposta e Não sei: sempre à vista e **desabilitados até a 1ª dica**; "Enviar resposta" só habilita com o campo preenchido; o "Não sei" (com "Revelar" embaixo) fica ao lado do Enviar, ambos de meia largura; no jogo sozinho o botão da dica entra no mesmo quadro (mesma largura).
+- Lista dos jogos: emojis maiores e uma cor para cada jogo (sem verde). "Montar o meu jogo" abre sempre a lista (nenhum jogo fica aberto de antes).
+
 ## 6.13.61
 
 - Jogos: o nome do jogo aparece só no título do card, em cima; o corpo (pedido e jogo pronto) não repete. O tema, se houver, vai na linha "Preparado em…".

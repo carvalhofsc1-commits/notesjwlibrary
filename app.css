@@ -17823,3 +17823,36 @@ tr.fam-placar-lider td { background: color-mix(in srgb, #f59e0b 18%, var(--card)
 @media (prefers-reduced-motion: reduce) { .fam-sessao-mic.gravando { animation: none; } }
 .fam-sessao-envio-linha > .fam-sessao-apelar { display: block; width: 100%; margin: 8px 0 0; box-sizing: border-box; }
 .fam-sessao-ia-comentario { display: block; margin-top: 6px; font-style: italic; overflow-wrap: anywhere; }
+
+/* 6.13.62: Jogos ao vivo: título com o nome do jogo, uma questão por vez, destaques, rodapé discreto; lista de jogos colorida */
+#participarTitulo.fam-titulo-jogo { color: var(--cor-jogo, inherit); font-size: 1.55rem; font-weight: 900; line-height: 1.15; display: flex; align-items: center; gap: 8px; }
+#participarTitulo .fam-titulo-jogo-emoji { font-size: 2.3rem; line-height: 1; }
+.fam-sessao-nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 6px 0 10px; min-width: 0; }
+.fam-sessao-nav-seta { flex: 0 0 52px; width: 52px; min-width: 52px; min-height: 44px; margin: 0; padding: 0; font-size: 1.3rem; display: inline-flex; align-items: center; justify-content: center; }
+.fam-sessao-nav-seta:disabled { opacity: .35; }
+.fam-sessao-nav-bolinhas { flex: 1 1 auto; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; min-width: 0; }
+.fam-sessao-nav-bolinha { width: 30px; height: 30px; min-width: 30px; margin: 0; padding: 0; border-radius: 50%; border: 1.5px solid #9ca3af; background: #f3f4f6; color: #374151; font-size: .85rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
+.fam-sessao-nav-bolinha.respondida { background: color-mix(in srgb, #4ade80 30%, #fff); border-color: #4ade80; }
+.fam-sessao-nav-bolinha.atual { background: #4f46e5; border-color: #4f46e5; color: #fff; transform: scale(1.15); }
+#participarSessao .fam-sessao-qnum { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin: 0 0 8px; }
+#participarSessao .fam-sessao-qnum > span:first-child { font-size: 1.3rem; font-weight: 900; color: #4f46e5; }
+#participarSessao .fam-sessao-qnum > span:last-child:not(:empty) { padding: 4px 12px; border-radius: 999px; background: #fef3c7; border: 1.5px solid #f59e0b; color: #92400e; font-size: 1.05rem; font-weight: 900; }
+.fam-sessao-pergunta.fam-perfil-tipo { display: flex; align-items: center; gap: 10px; margin: 4px 0 10px; }
+.fam-perfil-emojis { font-size: 2.2rem; line-height: 1; }
+.fam-perfil-palavra { font-size: 1.7rem; font-weight: 900; color: #4f46e5; letter-spacing: .02em; }
+.fam-acoes-dupla > button.fam-nao-sei { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; line-height: 1.1; }
+.fam-nao-sei-1 { font-weight: 800; }
+.fam-nao-sei-2 { font-size: .8rem; font-weight: 500; opacity: .85; display: inline-flex; align-items: center; gap: 4px; }
+.fam-sessao-resp-box .fam-acoes-dupla > button { min-height: 52px; }
+.fam-sessao-rodape { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start; margin-top: 14px; }
+.fam-sessao-rodape > .fam-jogo-enunciado { flex: 1 1 140px; min-width: 0; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: 8px; background: #f8f9fa; box-shadow: none; }
+.fam-sessao-rodape > .fam-jogo-enunciado[open] { flex-basis: 100%; order: 2; padding-bottom: 8px; }
+.fam-sessao-rodape > .fam-jogo-enunciado > summary { padding: 6px 10px; margin: 0; text-align: center; font-size: .85rem; font-weight: 600; color: #4b5563; cursor: pointer; }
+.fam-sessao-rodape > .fam-jogo-enunciado > :not(summary) { margin-left: 10px; margin-right: 10px; font-size: .88rem; }
+.fam-sessao-rodape > .fam-sessao-grande-btn { flex: 1 1 140px; min-width: 0; margin: 0; min-height: 0; padding: 6px 10px; font-size: .85rem; font-weight: 600; color: #4b5563; background: #f8f9fa; border: 1px solid var(--line); border-radius: 8px; }
+.jogos-card { --cor-jogo: #8b5cf6; border-color: var(--cor-jogo); border-width: 2px; }
+.jogos-card > .jogos-atalho { background: color-mix(in srgb, var(--cor-jogo) 14%, var(--card)) !important; }
+.jogos-card.aberto > .jogos-atalho { background: color-mix(in srgb, var(--cor-jogo) 26%, var(--card)) !important; }
+.jogos-card > .jogos-painel { border-top-color: var(--cor-jogo); background: color-mix(in srgb, var(--cor-jogo) 5%, var(--card)); }
+.jogos-card .fam-hub-icone { font-size: 2.9rem; filter: none; }
+.jogos-card .fam-hub-nome { color: color-mix(in srgb, var(--cor-jogo) 80%, #000); font-weight: 800; }
