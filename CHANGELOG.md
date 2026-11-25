@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.13.94
+
+- Jogo sozinho: o botão "Não sei / Revelar" ficava 6 px mais baixo que o "Enviar resposta" (herdava uma margem de 6 px em cima), embora tivessem a mesma altura. Sem a margem, os dois ficam alinhados pelo topo e pela base (conferido: 647,4 e 687,4 px nos dois).
+
 ## 6.13.93
 
 - Jogo sozinho: "Enviar resposta" e "Não sei / Revelar" com a **mesma altura** (40 px; antes 46 e 52 px), mais finos, com "Enviar resposta" numa linha só.

@@ -18089,3 +18089,6 @@ details.fam-placar-card > summary { min-height: 0 !important; padding: 3px 8px !
 #participarSessao .fam-sessao-resp-box .fam-acoes-dupla > button:not(.fam-nao-sei) { font-size: .88rem; flex-direction: row; gap: 4px; text-align: center; }
 #participarSessao .fam-sessao-resp-box .fam-acoes-dupla > .fam-nao-sei .fam-nao-sei-1 { font-size: .9rem; }
 #participarSessao .fam-sessao-resp-box .fam-acoes-dupla > .fam-nao-sei .fam-nao-sei-2 { font-size: .72rem; }
+
+/* 6.13.94: o "Não sei" herdava 6 px de margem em cima (classe fam-sessao-revelar) e ficava mais baixo que o "Enviar resposta": sem margem nos dois, alinhados pelo topo e pela base */
+#participarSessao .fam-sessao-resp-box .fam-acoes-dupla > button { margin: 0 !important; align-self: stretch; }
