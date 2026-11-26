@@ -18212,7 +18212,7 @@ details.fam-placar-card > summary { min-height: 0 !important; padding: 3px 8px !
 /* 6.14.45: a lista dos jogos cabe numa tela, sem rolar, com as margens da tela menores.
    6.14.46: os sete atalhos com a MESMA altura (--jogos-h), calculada pela altura da tela, com folga para "Jogos preparados"; com uma
    partida em andamento, o texto do alto sai para o "Continuar a partida" caber.
-   6.14.47: no Perfil o emoji também fica em cima do texto (tudo centralizado, como nos outros) e "Entrar em um jogo em grupo" mais alto */
+   6.14.47: "Entrar em um jogo em grupo" mais alto. 6.14.48: o Perfil voltou a ficar deitado (emoji ao lado) */
 body[data-screen="jogos"] main { padding-top: 10px; padding-bottom: 6px; }
 #jogosCard { padding-top: 10px; padding-bottom: 8px; --jogos-h: clamp(86px, calc((100vh - 392px) / 4), 120px); --jogos-h: clamp(86px, calc((100dvh - 392px) / 4), 120px); }
 #jogosCard:has(> #jogosContinuar:not([hidden])) { --jogos-h: clamp(86px, calc((100vh - 397px) / 4), 120px); --jogos-h: clamp(86px, calc((100dvh - 397px) / 4), 120px); }
@@ -18223,9 +18223,10 @@ body[data-screen="jogos"] main { padding-top: 10px; padding-bottom: 6px; }
 #jogosCard .jogos-card:not(.aberto) .fam-hub-icone { font-size: clamp(1.6rem, calc(25.6px + (100vh - 740px) * .2), 2.75rem); font-size: clamp(1.6rem, calc(25.6px + (100dvh - 740px) * .2), 2.75rem); line-height: 1.1; }
 #jogosCard .jogos-card:not(.aberto) .fam-hub-nome { font-size: .86rem; line-height: 1.12; }
 #jogosCard .jogos-card:not(.aberto) .fam-hub-desc { font-size: .7rem; line-height: 1.15; }
-#jogosCard #jogosGrade > .jogos-card:first-child:not(.aberto) .fam-hub-icone { font-size: clamp(2.1rem, calc(33.6px + (100vh - 740px) * .18), 3.3rem); font-size: clamp(2.1rem, calc(33.6px + (100dvh - 740px) * .18), 3.3rem); }
-#jogosCard #jogosGrade > .jogos-card:first-child:not(.aberto) .fam-hub-nome { font-size: 1.2rem; }
-#jogosCard #jogosGrade > .jogos-card:first-child:not(.aberto) .fam-hub-desc { font-size: .74rem; }
+#jogosCard #jogosGrade > .jogos-card:first-child:not(.aberto) > .jogos-atalho { display: grid; grid-template-columns: auto minmax(0, 1fr); align-content: center; column-gap: 10px; row-gap: 2px; padding: 2px 10px; }
+#jogosCard #jogosGrade > .jogos-card:first-child:not(.aberto) .fam-hub-icone { grid-row: 1 / span 2; align-self: center; font-size: 3rem; }
+#jogosCard #jogosGrade > .jogos-card:first-child:not(.aberto) .fam-hub-nome { font-size: 1.3rem; }
+#jogosCard #jogosGrade > .jogos-card:first-child:not(.aberto) .fam-hub-desc { font-size: .84rem; }
 #jogosCard > #jogosSalvosBox > summary { min-height: 34px; }
 #jogosCard > #jogosSalvosBox:not([open]) { padding-bottom: 0; }
 #jogosCard #jogosParticiparBtn#jogosParticiparBtn { min-height: 52px; align-content: center; padding-top: 5px; padding-bottom: 5px; }

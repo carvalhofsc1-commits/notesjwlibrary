@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.48
+
+- **Jogos bíblicos (lista):** desfeita a mudança no atalho **Perfil bíblico**: o emoji voltou para o **lado do texto**. O botão "Entrar em um jogo em grupo" continua como na 6.14.47.
+
 ## 6.14.47
 
 - **Jogos bíblicos (lista):** no **Perfil bíblico** o emoji passou para **cima do texto**, tudo centralizado, como nos outros atalhos; o botão ficou **mais alto** e agora se chama **"Entrar em um jogo em grupo"**.
