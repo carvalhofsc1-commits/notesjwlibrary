@@ -7958,7 +7958,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.14.13'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.14.14'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -29060,6 +29060,7 @@ function saveTemplatesToStorage() {
       // 6.13.62: no jogo, o nome do jogo já é o título da tela (em cima) e o 📺 Tela grande desce para o rodapé, junto das regras
       const jogoAvulso = p.modo === 'jogos';
       participar.rodapeJogo = null;
+      participar.fimJogo = null;
       if (jogoAvulso) {
         if (!solo) cab.appendChild(meta);
         grande.classList.add('fam-sessao-grande-fino');
@@ -29181,7 +29182,10 @@ function saveTemplatesToStorage() {
       participar.boasVindas.appendChild(entrar);
       participar.vista = participarEhJogo() ? 'atividades' : 'boasvindas'; // 6.13.45: no jogo avulso, direto para o jogo
       caixa.append(participar.boasVindas, lista);
-      if (participar.rodapeJogo) caixa.appendChild(participar.rodapeJogo);
+      if (participar.rodapeJogo) {
+        participar.fimJogo = participarFimMontar(); // 6.14.14: "Jogar novamente" e "Fechar", quando o jogo termina
+        caixa.append(participar.fimJogo.caixa, participar.rodapeJogo);
+      }
       participarVistaAplicar();
       // A barra da tela grande: sair e, para o dirigente, ir para a próxima parte sem sair da tela grande (o Próxima voltou na 6.11.92).
       const barra = document.createElement('div');
@@ -30529,6 +30533,50 @@ function saveTemplatesToStorage() {
     }
 
     // Respostas reveladas e o nome sorteado, a cada mudança do estado.
+    // 6.14.14: o fim do jogo avulso (todas as respostas reveladas): "Jogar novamente" (quem administra ou joga sozinho: as mesmas questões, do
+    // começo, com a pontuação zerada) e "Fechar" (volta à tela dos Jogos; a partida sozinho acaba).
+    function participarFimMontar() {
+      const caixa = document.createElement('div');
+      caixa.className = 'fam-jogo-fim';
+      caixa.hidden = true;
+      const novo = document.createElement('button');
+      novo.type = 'button';
+      novo.className = 'fam-fino fam-principal';
+      novo.textContent = '🔁 Jogar novamente';
+      novo.hidden = !participar.dirigente;
+      novo.addEventListener('click', async () => {
+        for (const [i, ref] of [...participar.jogos]) {
+          ref.atual = 0;
+          ref.rodadas.forEach(r => { r.recolhida = false; if (r.campoResp) { r.campoResp.value = ''; r.campoResp.dispatchEvent(new Event('input', { bubbles: true })); } });
+          if (!(await participarAcao({ acao: 'reiniciar', parte: i, rodada: 'tudo' }, novo))) return;
+          // no jogo em grupo, todos voltam à 1ª questão junto com quem administra
+          if (!(participar.programa && participar.programa.solo) && ref.sync !== false && ref.rodadas.length) participarAcao({ acao: 'foco', parte: i, rodada: 0 }, null);
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+      const fechar = document.createElement('button');
+      fechar.type = 'button';
+      fechar.className = 'secondary fam-fino fam-jogo-fim-fechar';
+      fechar.textContent = '✖️ Fechar';
+      fechar.addEventListener('click', () => {
+        if (participar.programa && participar.programa.solo) familiaSoloEncerrar(participar.cod, participar.chave);
+        participarEls.voltar.click();
+      });
+      caixa.append(novo, fechar);
+      return { caixa };
+    }
+    function participarFimPintar() {
+      if (!participar.fimJogo) return;
+      const e = participar.estado || {};
+      const partes = [...participar.jogos];
+      participar.fimJogo.caixa.hidden = !partes.length || !partes.every(([i, ref]) => {
+        const rev = (e.reveladas && e.reveladas[i]) || {};
+        const ordem = (e.ordensReveladas || {})[i];
+        if (!ref.rodadas.length && !ref.ordem) return false;
+        return ref.rodadas.every((_, k) => rev[k] != null && rev[k] !== '') && (!ref.ordem || Boolean(Array.isArray(ordem) && ordem.length));
+      });
+    }
+
     function participarJogoPintar(i, montando) {
       const ref = participar.jogos.get(i);
       const e = participar.estado;
@@ -30834,6 +30882,7 @@ function saveTemplatesToStorage() {
           b.setAttribute('aria-current', k === ref.atual ? 'true' : 'false');
         });
       }
+      participarFimPintar(); // 6.14.14
       if (ref.listas) { // os nomes de cada sorteio, logo abaixo do botão
         const quem = { participantes: [...new Set((participar.participantes || []).map(p => p.nome).filter(Boolean))], nomes: [...new Set((participar.programa.nomes || []).filter(Boolean))] };
         Object.keys(ref.listas).forEach(f => { ref.listas[f].textContent = quem[f].length ? quem[f].join(', ') : (f === 'participantes' ? 'Ninguém entrou ainda.' : ''); });

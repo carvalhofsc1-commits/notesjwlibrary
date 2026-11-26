@@ -393,6 +393,11 @@ try {
     assert.equal(zerada.dados.estado.acertos["2"]["1"].pts, 1); passo("penalidade: o desconto não passa para outra questão");
     assert.ok(aceita.dados.estado.reveladas["2"]["1"]); passo("IA aceitou: pontos, resposta revelada e comentário guardado");
     assert.equal((await chamar({ acao: "julgamento-ia", sessao: ss.sessao, chave: ss.chave, parte: 2, rodada: 1, indice: 0, certo: true })).status, 409); passo("depois de respondida, a questão não aceita mais apelação");
+    const tudo = await chamar({ acao: "reiniciar", sessao: ss.sessao, chave: ss.chave, parte: 2, rodada: "tudo" });
+    assert.equal(tudo.status, 200);
+    for (const campo of ["dicas", "reveladas", "acertos", "referenciasReveladas", "envios", "erradas"]) assert.ok(!(tudo.dados.estado[campo] || {})["2"], campo);
+    const deNovo = await chamar({ acao: "responder", sessao: ss.sessao, participanteId: idS, parte: 2, rodada: 0, texto: "moises" });
+    assert.equal(deNovo.status, 200); passo("jogar novamente: a parte inteira volta ao começo e aceita respostas de novo");
     await chamar({ acao: "encerrar", sessao: ss.sessao, chave: ss.chave });
   }
 

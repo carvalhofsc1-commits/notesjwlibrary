@@ -889,6 +889,20 @@ export default async function handler(req, res) {
           }
         });
       }
+      // 6.14.14: "tudo" ("Jogar novamente", no fim do jogo): a parte inteira volta ao começo, de uma vez.
+      if (corpo.rodada === "tudo") {
+        if (!parteValida(parte)) return erro(res, 400, "Parte inválida.");
+        return gravarEstado((e) => {
+          for (const campo of ["dicas", "dicasOrdem", "reveladas", "acertos", "referenciasReveladas", "envios", "erradas", "ordensReveladas"]) {
+            if (e[campo] && e[campo][parte] !== undefined) {
+              const copia = { ...e[campo] };
+              delete copia[parte];
+              e[campo] = copia;
+            }
+          }
+          if (e.sorteioQuestao && e.sorteioQuestao.parte === parte) e.sorteioQuestao = null;
+        });
+      }
       if (!parteValida(parte) || !Number.isInteger(rodada) || rodada < 0) return erro(res, 400, "Rodada inválida.");
       return gravarEstado((e) => {
         for (const campo of ["dicas", "dicasOrdem", "reveladas", "acertos", "referenciasReveladas", "envios", "erradas"]) {

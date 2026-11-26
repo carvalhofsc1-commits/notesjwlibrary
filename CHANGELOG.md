@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.14
+
+- Jogos: ao terminar (todas as respostas reveladas), aparecem **"🔁 Jogar novamente"** e **"✖️ Fechar"**. Jogar novamente recomeça as mesmas questões, com a pontuação zerada (no jogo em grupo, só o administrador vê esse botão e leva todos à 1ª questão). Fechar volta à tela dos Jogos; a partida sozinho acaba.
+- O botão **"Dar a dica"** ganhou fundo cinza.
+
 ## 6.14.13
 
 - Abreviações: acabou o limite de 4 iniciais. A sigla pode ter **até 6 palavras**, sem contar artigos, preposições e o “e”.
