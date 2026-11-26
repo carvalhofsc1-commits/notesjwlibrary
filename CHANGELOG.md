@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.33
+
+- **Adoração em família ao vivo, atividade de jogo:** o botão **"Regras"** desceu para o **final do jogo** e ficou no **formato fino**, igual ao dos Jogos bíblicos.
+
 ## 6.14.32
 
 - **Adoração em família ao vivo:** tocar no card de uma atividade abre essa atividade **numa tela própria** (só ela à vista). O **← Voltar** retorna à **lista das atividades**, no ponto em que ela estava.

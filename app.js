@@ -7958,7 +7958,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.14.32'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.14.33'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -29870,7 +29870,8 @@ function saveTemplatesToStorage() {
       progresso.append(progTexto, progBarra);
       progresso.hidden = !(j.rodadas || []).length;
       // 6.13.62: no jogo avulso, as regras vão para o rodapé da tela (fino e discreto, na mesma linha do Tela grande)
-      if (participar.rodapeJogo) { caixa.append(placar, progresso); participar.rodapeJogo.insertBefore(enunciado, participar.rodapeJogo.firstChild); } else caixa.append(enunciado, placar, progresso); // 6.12.19: as regras logo depois do título do jogo, antes do placar
+      caixa.append(placar, progresso);
+      if (participar.rodapeJogo) participar.rodapeJogo.insertBefore(enunciado, participar.rodapeJogo.firstChild); // na Adoração, as regras entram no fim do jogo (6.14.33)
       const ref = { rodadas: [], sorteio: null, nome: null, ultimoN: null, placar, progTexto, progBarra, progPreench, atual: 0, primeiraVez: true };
       // Sorteio: o nome sorteado aparece para todos; os botões, só para o dirigente.
       const sorteio = document.createElement('div');
@@ -30421,6 +30422,13 @@ function saveTemplatesToStorage() {
         j.itens.forEach(txt => { const li = document.createElement('li'); li.textContent = txt; ol.appendChild(li); });
         det.append(sm, ol);
         caixa.appendChild(det);
+      }
+      // 6.14.33: na Adoração, as regras ficam no final do jogo, no mesmo formato fino dos Jogos bíblicos
+      if (!participar.rodapeJogo) {
+        const pe = document.createElement('div');
+        pe.className = 'fam-sessao-rodape';
+        pe.appendChild(enunciado);
+        caixa.appendChild(pe);
       }
       participar.jogos.set(parteIdx, ref);
       participarJogoPintar(parteIdx, true);
