@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.28
+
+- **◀ Voltar nos Jogos bíblicos:** na tela do jogo, o Voltar leva à **lista dos jogos** (e não mais à tela inicial dos Jogos). O mesmo no jogo preparado e no "✖️ Fechar" do fim da partida. Da lista, o Voltar segue para a tela das duas opções.
+
 ## 6.14.27
 
 - **Complete o versículo e "Quem disse isso?" com todas as rodadas:** o jogo chegava com menos rodadas que o previsto porque o servidor recusava várias que a IA mandava. Agora:

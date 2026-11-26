@@ -7958,7 +7958,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.14.27'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.14.28'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -31171,9 +31171,9 @@ function saveTemplatesToStorage() {
 
     // ---- Eventos da tela ----
     participarEls.voltar.addEventListener('click', () => {
-      // 6.13.52: o Voltar nunca cai no Início do app: o jogo volta à tela das duas opções dos Jogos; a adoração, à tela da Adoração em família
-      // (ou às Sugestões, se foi de lá que abriu).
-      if (participarEhJogo()) { try { jogosVista('home'); } catch (e) { /* tela dos jogos ainda iniciando */ } showScreen('jogos'); return; }
+      // 6.13.52: o Voltar nunca cai no Início do app: o jogo volta aos Jogos; a adoração, à tela da Adoração em família (ou às Sugestões, se
+      // foi de lá que abriu). 6.14.28: de dentro de um jogo, à lista dos jogos; da tela do código, à tela das duas opções.
+      if (participarEhJogo()) { try { jogosVista(participar.programa ? 'montar' : 'home'); } catch (e) { /* tela dos jogos ainda iniciando */ } showScreen('jogos'); return; }
       const destino = participar.voltarPara;
       showScreen(destino === 'familia' && codigoAcessoSalvo() ? 'familia' : 'adoracao');
     });
@@ -31337,15 +31337,13 @@ function saveTemplatesToStorage() {
       jogosCardsAtualizar();
       if (jogosVistaAtual !== 'home') { jogosVista('montar'); }
     }
-    // O botão ◀ Voltar: dentro dos jogos leva sempre à tela das duas opções; nela, volta ao Início.
+    // O botão ◀ Voltar (6.14.28: um passo de cada vez): de um jogo aberto (o pedido ou o jogo pronto) volta à lista dos jogos; da lista, à
+    // tela das duas opções; nela, ao Início.
     function jogosVoltar() {
       if (jogosVistaAtual === 'home') { showScreen('inicio'); return; }
       if (jogosPreparando) { jogosStatus('Espere o jogo em preparação ficar pronto.', 'erro'); return; }
       jogosStatus('');
-      jogosEls.painel.hidden = true;
-      jogosEls.painel.replaceChildren();
-      jogosEls.grade.querySelectorAll('.jogos-atalho').forEach(b => b.setAttribute('aria-expanded', 'false'));
-      jogosVista('home');
+      jogosVista(jogosVistaAtual === 'montar' ? 'home' : 'montar');
     }
     // Tocar num jogo abre, logo abaixo dele, o pedido: tema e instrução (opcionais) e "✨ Preparar o jogo".
     function jogosAbrir(j, botao) {
