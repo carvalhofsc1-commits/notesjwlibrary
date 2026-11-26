@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.70
+
+- **Preparar para dirigir:** mesmo ícone do atalho Dirigentes no card, no título da tela, no texto do código do dirigente e na categoria Dirigentes das Pesquisas salvas.
+
 ## 6.14.69
 
 - **Discursos:** ícone próprio (mesa com os papéis) no atalho, no card e no título de "Preparação de discursos e esboços" e na categoria Esboços das Pesquisas salvas.
