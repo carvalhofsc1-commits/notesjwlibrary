@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.36
+
+- **Jogos bíblicos:** no botão "Entrar em um jogo", a descrição passou a ser **"Entre com o código que o administrador do jogo passou."** O botão ficou **fino** (ícone e nome na mesma linha, descrição pequena embaixo).
+
 ## 6.14.35
 
 - **Jogos bíblicos:** frase do alto encurtada para **"Escolha um jogo: a IA prepara as rodadas e você joga sozinho ou em grupo."**

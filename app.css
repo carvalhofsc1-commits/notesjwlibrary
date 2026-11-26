@@ -18315,5 +18315,9 @@ body:not(.fam-tela-grande) #participarSessao.fam-na-secao .fam-sessao-secao.na-t
 #participarSessao:not(.fam-sessao-jogo-avulso) .fam-sessao-corpo, #participarSessao:not(.fam-sessao-jogo-avulso) .fam-sessao-corpo-dentro { transition: none; }
 
 /* 6.14.34: Jogos: "Entrar em um jogo" no fim da lista, com o icone na mesma coluna dos jogos */
-#jogosHub .fam-hub-icone { justify-self: center; text-align: center; width: 64px; }
+/* 6.14.36: botao fino: icone e nome na mesma linha e a descricao pequena embaixo */
+#jogosCard #jogosParticiparBtn { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; column-gap: 8px; row-gap: 0; min-height: 0; padding: 5px 8px; text-align: center; }
+#jogosCard #jogosParticiparBtn .fam-hub-icone { font-size: 1.05rem; }
+#jogosCard #jogosParticiparBtn .fam-hub-nome { font-size: .92rem; line-height: 1.35; }
+#jogosCard #jogosParticiparBtn .fam-hub-desc { flex: 0 0 100%; font-size: .7rem; line-height: 1.3; }
 #jogosCard > #jogosHub { margin-top: -2px; } /* com o espaco do card (12px), fica a mesma distancia de um jogo para o outro (10px) */
