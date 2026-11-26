@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.46
+
+- **Jogos bíblicos (lista):** os **sete atalhos com a mesma altura**, mais baixos, e tudo **numa tela só** (medido em 360×740, 375×812 e 412×915), também com "Jogos preparados". Com uma partida em andamento, o texto do alto sai para o "Continuar a partida" caber.
+
 ## 6.14.45
 
 - **Jogos bíblicos (lista):** agora **cabe numa tela, sem rolar** (medido em 360×740, 375×812 e 412×915): **Perfil bíblico deitado** (emoji ao lado do nome), quadrados mais baixos, margens menores e "Entrar em um jogo", "Continuar a partida" e "Jogos preparados" mais finos. Nas telas mais altas os atalhos crescem junto.
