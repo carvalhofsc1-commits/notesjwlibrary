@@ -1747,6 +1747,20 @@ teste("6.14.03: Abreviações: artigos em minúsculas na sigla, maiúsculas só 
   assert.equal(ger.comecoDasPalavras("As Boas Novas dos Povos"), "as Bo No dos Po");
 });
 
+teste("6.14.04: Abreviações: sigla de fato muito conhecido, com \"Fato conhecido\" no lugar do versículo", async () => {
+  const banco = await import("../api/_jogosBanco.mjs");
+  assert.ok(banco.ehFatoConhecido("Fato conhecido") && banco.ehFatoConhecido("(fato bíblico conhecido).") && !banco.ehFatoConhecido("Êxodo 20:1"));
+  assert.deepEqual(banco.SIGLAS_BANCO.filter((s) => s[2] === "fato").map((s) => s[0]), ["A B tem 66 L", "As E H têm 39 L", "As E G C têm 27 L"]);
+  const ab = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "jogo", jogos: ["Abreviações bíblicas (ex.: Os 12 A de C)"] }), montados);
+  const r = await ab.prep.montar({ descricao: "d", nome: "Siglas", comoJogar: "R.", rodadas: [
+    { pergunta: "T do M V Dica 1: Foi uma libertação que ninguém esqueceu. Dica 2: Moisés estendeu o bastão e o povo passou em terra seca.", resposta: "Travessia do Mar Vermelho", referencia: "Fato conhecido" },
+  ], eventos: [] });
+  const t = r.jogo.rodadas.find((x) => x.resposta === "Travessia do Mar Vermelho");
+  assert.ok(t, "o fato conhecido entra no jogo");
+  assert.equal(t.referencia, "Fato conhecido");
+  assert.match(t.pergunta, /“T do M V”.*É um fato bíblico muito conhecido\./);
+});
+
 teste("6.12.81 (2): o jogo de Abreviações tira as siglas longas e o pedido de novo diz o que fazer", async () => {
   const ab = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "jogo", jogos: ["Abreviações bíblicas (ex.: Os 12 A de C)"] }), montados);
   assert.ok(!ab.erro);

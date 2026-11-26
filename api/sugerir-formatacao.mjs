@@ -108,7 +108,7 @@ import {
   sentidosDoVerbete,
 } from "./_familiaGeracao.mjs";
 import { dadosDaApelacao } from "./familia-sessao.mjs";
-import { DICA_DO_TIPO_DA_SIGLA, PERFIL_CANDIDATOS, PERFIL_CARTAS_PRONTAS, PISTAS_DAS_SIGLAS, SIGLAS_BANCO } from "./_jogosBanco.mjs";
+import { DICA_DO_TIPO_DA_SIGLA, FATO_CONHECIDO, ehFatoConhecido, PERFIL_CANDIDATOS, PERFIL_CARTAS_PRONTAS, PISTAS_DAS_SIGLAS, SIGLAS_BANCO } from "./_jogosBanco.mjs";
 import { DETALHES_CIRCUNSTANCIAS_FAMILIA, familiaTemCasal, prioridadesAplicaveis } from "./_prompts.mjs";
 // 6.13.05: a circunstância marcada com a descrição que ela tem para a IA (o rótulo na tela fica curto e discreto).
 const circunstanciaParaIa = (c) => (DETALHES_CIRCUNSTANCIAS_FAMILIA[c] ? `${c} (${DETALHES_CIRCUNSTANCIAS_FAMILIA[c]})` : c);
@@ -3446,7 +3446,7 @@ const SIGLAS_DO_BANCO_POR_JOGO = 4;
 function rodadaDaSiglaDoBanco([sigla, resposta, onde]) {
   const ref = DICA_DO_TIPO_DA_SIGLA[onde] ? "" : onde;
   const dica = ref ? `Está em ${livroDaReferencia(ref)}` : DICA_DO_TIPO_DA_SIGLA[onde];
-  return { pergunta: perguntaDaAbreviacao(sigla, resposta, dica, PISTAS_DAS_SIGLAS[sigla]), resposta, referencia: ref };
+  return { pergunta: perguntaDaAbreviacao(sigla, resposta, dica, PISTAS_DAS_SIGLAS[sigla]), resposta, referencia: onde === "fato" ? FATO_CONHECIDO : ref };
 }
 // 6.13.22: Perfil bíblico: as cartas que a IA vai escrever, com o verbete do Perspicaz (o sentido que cita a passagem do candidato). Alterna as
 // categorias (pessoa, lugar, coisa ou qualidade) e tira as das últimas semanas (memória "jogo_cartas"). Até 4 cartas, cada uma com até 2500
@@ -4011,14 +4011,18 @@ const PREPARAR_QUADRO_FAMILIA = {
                   .replace(/[“”"]/g, "")
                   .replace(/[?]+$/, "")
                   .trim();
-                const livro = v ? livroDaReferencia(v.referencia) : comBiblia ? "" : livroDaReferencia(r.referencia);
+                // 6.14.04: a sigla também pode ser de um fato bíblico muito conhecido, sem versículo ("referencia": "Fato conhecido").
+                const fato = ehFatoConhecido(b.referencia);
+                const livro = fato ? "" : v ? livroDaReferencia(v.referencia) : comBiblia ? "" : livroDaReferencia(r.referencia);
+                const onde = fato ? DICA_DO_TIPO_DA_SIGLA.fato : livro ? `Está em ${livro}` : "";
                 // 6.12.81: a sigla tem de ser curta (até 4 iniciais): siglas de frases inteiras de versículos não são jogáveis (abreviacaoJogavel).
                 // 6.14.02: a expressão tem de ser a que o versículo traz, sem tirar palavras do meio ("O Rio da Vida" × "rio de água da vida").
-                if (!sigla || !livro || !abreviacaoJogavel(sigla, r.resposta) || (v && expressaoCortada(r.resposta, v.texto)) || !novaRodada(normalizarTexto(sigla))) return;
+                if (!sigla || !onde || !abreviacaoJogavel(sigla, r.resposta) || (v && expressaoCortada(r.resposta, v.texto)) || !novaRodada(normalizarTexto(sigla))) return;
                 // 6.13.17: a sigla aparece logo na pergunta (antes ficava escondida na 1ª dica).
                 // 6.14.01: as dicas 1 e 2 são pistas do significado, cada vez mais reveladoras (a 2ª com o livro); a 3ª, o começo de cada palavra.
-                r.pergunta = perguntaDaAbreviacao(sigla, r.resposta, `Está em ${livro}`, pistas);
-                if (v) r.referencia = v.referencia;
+                r.pergunta = perguntaDaAbreviacao(sigla, r.resposta, onde, pistas);
+                if (fato) r.referencia = FATO_CONHECIDO;
+                else if (v) r.referencia = v.referencia;
               } else if (!novaRodada(normalizarTexto(r.pergunta))) return;
               conferidas.push(r);
             }
@@ -4059,7 +4063,7 @@ const PREPARAR_QUADRO_FAMILIA = {
             verdadeiro_falso: 'a resposta começando com "Verdadeiro." ou "Falso.", com pelo menos 3 de cada',
             quem_disse: "a referência de um versículo com a fala entre aspas, sem o nome de quem disse na fala, com o NOME de quem fala escrito no texto da referência antes da fala (e antes do nome do ouvinte), a resposta começando por quem fala, e versículos diferentes dos já usados",
             complete_versiculo: "a referência de 1 versículo e, na resposta, uma palavra exata dele (pelo menos 4 letras, uma vez só no versículo; nunca Jeová, Deus, número nem o nome do livro), e versículos diferentes dos já usados",
-            abreviacoes: "a sigla na pergunta curta (no máximo 4 iniciais), de uma expressão bíblica conhecida (nome, título ou grupo, nunca um pedaço de frase de versículo), conferindo palavra por palavra com a resposta, com a pergunta no formato \"SIGLA Dica 1: … Dica 2: …\" (duas pistas do significado, sem palavras da resposta), a referência do versículo onde está e a expressão com as palavras exatas do versículo, sem tirar nenhuma",
+            abreviacoes: "a sigla na pergunta curta (no máximo 4 iniciais), de uma expressão bíblica conhecida (nome, título ou grupo, nunca um pedaço de frase de versículo) ou de um fato bíblico muito conhecido, conferindo palavra por palavra com a resposta, com a pergunta no formato \"SIGLA Dica 1: … Dica 2: …\" (duas pistas do significado, sem palavras da resposta), a referência do versículo onde está (ou \"Fato conhecido\", no fato sem versículo) e a expressão com as palavras exatas do versículo, sem tirar nenhuma",
           }[idTipo];
           const faltas = [];
           if (abrev && jogo) cartasDoJogo = jogo.rodadas.map((r) => r.resposta);

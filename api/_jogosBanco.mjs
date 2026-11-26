@@ -1,7 +1,7 @@
 // 6.13.22: bancos fixos dos jogos da Adoração em Família, a partir das planilhas de sugestões do usuário (AppNotesJW_Diversos\jogos),
 // revisados: erros de digitação corrigidos, nomes antigos de publicações e arranjos tirados, siglas longas encurtadas ou tiradas.
 //
-// SIGLAS_BANCO: [sigla, resposta, referência bíblica OU o tipo ("publicacao", "congregacao", "expressao")]. Cada jogo de Abreviações mistura
+// SIGLAS_BANCO: [sigla, resposta, referência bíblica OU o tipo ("publicacao", "congregacao", "expressao", "fato")]. Cada jogo de Abreviações mistura
 // algumas siglas daqui (sem as das últimas semanas, memória "jogo_cartas") com as que a IA cria. Duas letras ("C Go", "G Mu") são o começo da
 // palavra, para desfazer a dúvida entre siglas iguais (Corpo Governante, Grande Multidão).
 export const SIGLAS_BANCO = Object.freeze([
@@ -34,9 +34,9 @@ export const SIGLAS_BANCO = Object.freeze([
   ["Os T D das N", "Os Tempos Designados das Nações", "Lucas 21:24"],
   ["R de 1000 A de C", "Reino de 1000 Anos de Cristo", "Apocalipse 20:4"],
   ["J C é o F de D", "Jesus Cristo é o Filho de Deus", "Mateus 16:16"],
-  ["A B tem 66 L", "A Bíblia tem 66 Livros", "expressao"],
-  ["As E H têm 39 L", "As Escrituras Hebraicas têm 39 Livros", "expressao"],
-  ["As E G C têm 27 L", "As Escrituras Gregas Cristãs têm 27 Livros", "expressao"],
+  ["A B tem 66 L", "A Bíblia tem 66 Livros", "fato"],
+  ["As E H têm 39 L", "As Escrituras Hebraicas têm 39 Livros", "fato"],
+  ["As E G C têm 27 L", "As Escrituras Gregas Cristãs têm 27 Livros", "fato"],
   ["O F está P", "O Fim está Próximo", "1 Pedro 4:7"],
   ["L a B T os D", "Leia a Bíblia Todos os Dias", "Josué 1:8"],
   ["P as B N do R", "Pregar as Boas Novas do Reino", "Mateus 24:14"],
@@ -97,7 +97,12 @@ export const DICA_DO_TIPO_DA_SIGLA = Object.freeze({
   publicacao: "É uma publicação das Testemunhas de Jeová",
   congregacao: "É um termo usado na congregação",
   expressao: "É uma expressão sobre a Bíblia",
+  fato: "É um fato bíblico muito conhecido",
 });
+
+// 6.14.04: a sigla de um fato bíblico muito conhecido, sem um versículo: no lugar da referência, depois da resposta.
+export const FATO_CONHECIDO = "Fato conhecido";
+export const ehFatoConhecido = (referencia) => /^\(?\s*fato(\s+b[ií]blico)?(\s+(muito|bem))?\s+conhecido\s*\)?\.?$/i.test(String(referencia || "").trim());
 
 // PERFIL_CARTAS_PRONTAS: as cartas do Perfil bíblico prontas (revisadas a partir da planilha "Perfil_Bíblico_9_Cartas" e completadas), com
 // 10 dicas cada, da mais difícil para a mais fácil. Os anos (que não têm verbete no Perspicaz) só vêm daqui; as outras categorias também

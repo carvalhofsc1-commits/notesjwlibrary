@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.04
+
+- Jogo **Abreviações**: a sigla nem sempre precisa vir de um versículo. Pode ser de um fato bíblico muito conhecido (os 10 Mandamentos, a travessia do mar Vermelho, os 66 livros da Bíblia…); nesse caso, depois da resposta aparece **"Fato conhecido"** no lugar da referência.
+- As três siglas fixas sobre a quantidade de livros (66, 39 e 27) passam a mostrar "Fato conhecido".
+
 ## 6.14.03
 
 - Jogo **Abreviações**: na sigla, os artigos (o, a, os, as, um, uma) e as palavras de ligação ficam em minúsculas; maiúsculas só nas palavras (ex.: “o P da P”, “os 12 A de C”). O mesmo na dica do começo das palavras.
