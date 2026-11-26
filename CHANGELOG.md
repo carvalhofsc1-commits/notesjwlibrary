@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.17
+
+- **Modo escuro** no jogo ao vivo e nos Jogos: a barra dos números, o cartão da questão (e as cores de certa e errada), a etiqueta de pontos, o botão da dica, "Próxima questão", "Regras", "Tela grande", o botão de voltar, "Jogar em grupo" e os botões Verdadeiro/Falso passaram a ter fundos escuros. Nomes com a cor do jogo ou do jogador ficaram mais claros para ler. No modo claro nada muda.
+
 ## 6.14.16
 
 - Adoração e Jogos ao vivo: **respostas enviadas ao mesmo tempo não se perdem mais**. O servidor só grava o andamento se ele não mudou desde que foi lido; se mudou, refaz a ação com a situação nova (na mesma questão, a segunda pessoa é avisada de que alguém já respondeu).

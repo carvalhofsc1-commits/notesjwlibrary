@@ -18163,3 +18163,82 @@ details.fam-placar-card > summary { min-height: 0 !important; padding: 3px 8px !
 #participarSessao .fam-jogo-fim[hidden] { display: none; }
 #participarSessao .fam-jogo-fim > button { width: 100%; min-height: 44px; margin: 0; }
 #participarSessao .fam-jogo-fim > button[hidden] { display: none; }
+
+/* 6.14.17: modo escuro do jogo ao vivo e dos Jogos (os fundos claros fixos ficavam claros demais) */
+:root[data-theme="dark"] .voltar-topo { background: #334155; border-color: #475569; color: #c7d2fe; }
+:root[data-theme="dark"] .voltar-topo:hover, :root[data-theme="dark"] .voltar-topo:active { background: #3f4d63; }
+:root[data-theme="dark"] .fam-sessao-nav { background: #33270f; border-color: #b45309; }
+:root[data-theme="dark"] .fam-sessao-nav > .fam-sessao-nav-seta { background: #6d28d9 !important; border-color: #7c3aed !important; color: #f5f3ff !important; }
+:root[data-theme="dark"] .fam-sessao-nav > .fam-sessao-nav-seta:disabled { background: #46326f !important; border-color: #46326f !important; }
+:root[data-theme="dark"] .fam-sessao-nav > .fam-sessao-nav-sync { background: #1e293b !important; border-color: #64748b !important; }
+:root[data-theme="dark"] .fam-sessao-nav > .fam-sessao-nav-sync.ligado { background: #2e2950 !important; border-color: #8b5cf6 !important; }
+:root[data-theme="dark"] .fam-sessao-nav-bolinha { color: #cbd5e1; border-color: #64748b; }
+:root[data-theme="dark"] .fam-sessao-nav-bolinha.certa { background: #2e2950; border-color: #8b5cf6; color: #ddd6fe; }
+:root[data-theme="dark"] .fam-sessao-nav-bolinha.errada { background: #3d2029; border-color: #f87171; color: #fecaca; }
+:root[data-theme="dark"] .fam-sessao-nav-bolinha.atual { background: #6366f1; border-color: #a5b4fc; color: #fff; }
+:root[data-theme="dark"] #participarSessao li.fam-sessao-questao, :root[data-theme="dark"] #participarSessao li.fam-sessao-questao.fam-sessao-questao-andamento, :root[data-theme="dark"] #participarSessao li.fam-sessao-questao.fam-sessao-questao-respondida { background: #243047; border-color: #475569; }
+:root[data-theme="dark"] #participarSessao li.fam-sessao-questao.fam-sessao-questao-sorteada { border-color: #a78bfa; }
+:root[data-theme="dark"] #participarSessao li.fam-sessao-questao.fam-sessao-questao-certa { background: #2a2649; border-color: #7c5fd0; }
+:root[data-theme="dark"] #participarSessao li.fam-sessao-questao.fam-sessao-questao-errada { background: #35212b; border-color: #b45560; }
+:root[data-theme="dark"] #participarSessao .fam-sessao-qnum > span:first-child { color: #a5b4fc; }
+:root[data-theme="dark"] #participarSessao .fam-sessao-qnum > span:last-child:not(:empty) { background: #33270f; border-color: #b45309; color: #fcd34d; }
+:root[data-theme="dark"] .fam-sigla-texto, :root[data-theme="dark"] .fam-perfil-palavra { color: #a5b4fc; }
+:root[data-theme="dark"] #participarSessao .fam-sessao-resp-box { border-color: #3b6fb6; }
+:root[data-theme="dark"] #participarSessao button.fam-sessao-dar-dica { background: #3b475c !important; border-color: #64748b !important; color: #f1f5f9 !important; }
+:root[data-theme="dark"] #participarSessao .fam-sessao-resp-box .fam-sessao-responder button.fam-principal:disabled { background: #27406e !important; border-color: #27406e !important; color: #b4c4e0 !important; }
+:root[data-theme="dark"] #participarSessao .fam-sessao-resp-box .fam-sessao-responder button.fam-nao-sei:disabled { background: #642d37 !important; border-color: #642d37 !important; color: #e5bfc3 !important; }
+:root[data-theme="dark"] #participarSessao li.fam-sessao-questao > .fam-sessao-proxima { background: #2e2950; border-color: #8b5cf6; color: #ddd6fe; }
+:root[data-theme="dark"] .fam-sessao-rodape > .fam-jogo-enunciado, :root[data-theme="dark"] .fam-sessao-rodape > .fam-sessao-grande-btn { background: #243047 !important; border-color: #475569 !important; color: #cbd5e1; }
+:root[data-theme="dark"] .fam-sessao-rodape > .fam-jogo-enunciado > summary { color: #cbd5e1; }
+:root[data-theme="dark"] #participarSessao .fam-acoes-dupla > .fam-vf-verdadeiro { background: #1d3a5f; border-color: #3b82f6; color: #bfdbfe; }
+:root[data-theme="dark"] #participarSessao .fam-acoes-dupla > .fam-vf-falso { background: #3d2029; border-color: #f87171; color: #fecaca; }
+:root[data-theme="dark"] #participarSessao .fam-acoes-dupla > .fam-modo-marcado { background: #2e2950; border-color: #8b5cf6; color: #ddd6fe; }
+:root[data-theme="dark"] #participarSessao .fam-sessao-sorteio-dica { background: #1d2d4a; border-color: #3b6fb6; }
+:root[data-theme="dark"] #participarSessao .fam-sessao-sorteio-dica .fam-sessao-sorteio-dica-num { background: #2e2950; border-color: #8b5cf6; color: #ddd6fe; }
+:root[data-theme="dark"] details.jogos-grupo-card { background: #243047; border-color: #475569; }
+:root[data-theme="dark"] details.jogos-grupo-card > summary, :root[data-theme="dark"] details.jogos-grupo-card[open] > summary { background: #243047; color: #e2e8f0; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .voltar-topo { background: #334155; border-color: #475569; color: #c7d2fe; }
+  :root:not([data-theme="light"]) .voltar-topo:hover, :root:not([data-theme="light"]) .voltar-topo:active { background: #3f4d63; }
+  :root:not([data-theme="light"]) .fam-sessao-nav { background: #33270f; border-color: #b45309; }
+  :root:not([data-theme="light"]) .fam-sessao-nav > .fam-sessao-nav-seta { background: #6d28d9 !important; border-color: #7c3aed !important; color: #f5f3ff !important; }
+  :root:not([data-theme="light"]) .fam-sessao-nav > .fam-sessao-nav-seta:disabled { background: #46326f !important; border-color: #46326f !important; }
+  :root:not([data-theme="light"]) .fam-sessao-nav > .fam-sessao-nav-sync { background: #1e293b !important; border-color: #64748b !important; }
+  :root:not([data-theme="light"]) .fam-sessao-nav > .fam-sessao-nav-sync.ligado { background: #2e2950 !important; border-color: #8b5cf6 !important; }
+  :root:not([data-theme="light"]) .fam-sessao-nav-bolinha { color: #cbd5e1; border-color: #64748b; }
+  :root:not([data-theme="light"]) .fam-sessao-nav-bolinha.certa { background: #2e2950; border-color: #8b5cf6; color: #ddd6fe; }
+  :root:not([data-theme="light"]) .fam-sessao-nav-bolinha.errada { background: #3d2029; border-color: #f87171; color: #fecaca; }
+  :root:not([data-theme="light"]) .fam-sessao-nav-bolinha.atual { background: #6366f1; border-color: #a5b4fc; color: #fff; }
+  :root:not([data-theme="light"]) #participarSessao li.fam-sessao-questao, :root:not([data-theme="light"]) #participarSessao li.fam-sessao-questao.fam-sessao-questao-andamento, :root:not([data-theme="light"]) #participarSessao li.fam-sessao-questao.fam-sessao-questao-respondida { background: #243047; border-color: #475569; }
+  :root:not([data-theme="light"]) #participarSessao li.fam-sessao-questao.fam-sessao-questao-sorteada { border-color: #a78bfa; }
+  :root:not([data-theme="light"]) #participarSessao li.fam-sessao-questao.fam-sessao-questao-certa { background: #2a2649; border-color: #7c5fd0; }
+  :root:not([data-theme="light"]) #participarSessao li.fam-sessao-questao.fam-sessao-questao-errada { background: #35212b; border-color: #b45560; }
+  :root:not([data-theme="light"]) #participarSessao .fam-sessao-qnum > span:first-child { color: #a5b4fc; }
+  :root:not([data-theme="light"]) #participarSessao .fam-sessao-qnum > span:last-child:not(:empty) { background: #33270f; border-color: #b45309; color: #fcd34d; }
+  :root:not([data-theme="light"]) .fam-sigla-texto, :root:not([data-theme="light"]) .fam-perfil-palavra { color: #a5b4fc; }
+  :root:not([data-theme="light"]) #participarSessao .fam-sessao-resp-box { border-color: #3b6fb6; }
+  :root:not([data-theme="light"]) #participarSessao button.fam-sessao-dar-dica { background: #3b475c !important; border-color: #64748b !important; color: #f1f5f9 !important; }
+  :root:not([data-theme="light"]) #participarSessao .fam-sessao-resp-box .fam-sessao-responder button.fam-principal:disabled { background: #27406e !important; border-color: #27406e !important; color: #b4c4e0 !important; }
+  :root:not([data-theme="light"]) #participarSessao .fam-sessao-resp-box .fam-sessao-responder button.fam-nao-sei:disabled { background: #642d37 !important; border-color: #642d37 !important; color: #e5bfc3 !important; }
+  :root:not([data-theme="light"]) #participarSessao li.fam-sessao-questao > .fam-sessao-proxima { background: #2e2950; border-color: #8b5cf6; color: #ddd6fe; }
+  :root:not([data-theme="light"]) .fam-sessao-rodape > .fam-jogo-enunciado, :root:not([data-theme="light"]) .fam-sessao-rodape > .fam-sessao-grande-btn { background: #243047 !important; border-color: #475569 !important; color: #cbd5e1; }
+  :root:not([data-theme="light"]) .fam-sessao-rodape > .fam-jogo-enunciado > summary { color: #cbd5e1; }
+  :root:not([data-theme="light"]) #participarSessao .fam-acoes-dupla > .fam-vf-verdadeiro { background: #1d3a5f; border-color: #3b82f6; color: #bfdbfe; }
+  :root:not([data-theme="light"]) #participarSessao .fam-acoes-dupla > .fam-vf-falso { background: #3d2029; border-color: #f87171; color: #fecaca; }
+  :root:not([data-theme="light"]) #participarSessao .fam-acoes-dupla > .fam-modo-marcado { background: #2e2950; border-color: #8b5cf6; color: #ddd6fe; }
+  :root:not([data-theme="light"]) #participarSessao .fam-sessao-sorteio-dica { background: #1d2d4a; border-color: #3b6fb6; }
+  :root:not([data-theme="light"]) #participarSessao .fam-sessao-sorteio-dica .fam-sessao-sorteio-dica-num { background: #2e2950; border-color: #8b5cf6; color: #ddd6fe; }
+  :root:not([data-theme="light"]) details.jogos-grupo-card { background: #243047; border-color: #475569; }
+  :root:not([data-theme="light"]) details.jogos-grupo-card > summary, :root:not([data-theme="light"]) details.jogos-grupo-card[open] > summary { background: #243047; color: #e2e8f0; }
+}
+
+/* 6.14.17: modo escuro: nomes com a cor do jogo ou do jogador */
+#participarSessao .fam-sessao-presente-nome { color: var(--cor-nome, inherit); }
+:root[data-theme="dark"] #participarTitulo.fam-titulo-jogo { color: color-mix(in srgb, var(--cor-jogo) 60%, #fff); }
+:root[data-theme="dark"] .jogos-card .fam-hub-nome { color: color-mix(in srgb, var(--cor-jogo) 35%, #fff); }
+:root[data-theme="dark"] #participarSessao .fam-sessao-presente-nome { color: color-mix(in srgb, var(--cor-nome, #e2e8f0) 45%, #fff); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) #participarTitulo.fam-titulo-jogo { color: color-mix(in srgb, var(--cor-jogo) 60%, #fff); }
+  :root:not([data-theme="light"]) .jogos-card .fam-hub-nome { color: color-mix(in srgb, var(--cor-jogo) 35%, #fff); }
+  :root:not([data-theme="light"]) #participarSessao .fam-sessao-presente-nome { color: color-mix(in srgb, var(--cor-nome, #e2e8f0) 45%, #fff); }
+}
