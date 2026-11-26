@@ -7958,7 +7958,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.14.18'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.14.19'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -29742,6 +29742,8 @@ function saveTemplatesToStorage() {
       // 6.13.97: partida sozinho: as regras falam de quem joga sozinho (as do jogo em grupo falam de presidente e de quem acerta primeiro)
       const soloRegras = Boolean(participar.programa && participar.programa.solo);
       const regrasSolo = (() => {
+        // 6.14.19: no "Ordem e data" não há questões a escrever: a pessoa pensa na ordem, confere e marca os pontos
+        if (j.idTipo === 'ordem_data') return 'Pense na ordem em que os acontecimentos da lista ocorreram (e nas datas, se souber). Depois toque em “Revelar a ordem a todos” para conferir e marque quantos pontos fez em “Pontuar a ordem”.';
         const dicas = ['perfil_biblico', 'quem_sou_eu'].includes(j.idTipo);
         const base = j.idTipo === 'verdadeiro_falso'
           ? 'Leia a afirmação e toque em Verdadeiro ou Falso. Acertando, você ganha o ponto; errando, a resposta aparece e a questão termina sem pontos.'
@@ -29760,7 +29762,7 @@ function saveTemplatesToStorage() {
       });
       // 6.12.74: no "Ordem e data", a ordem certa (com as datas do Apêndice B) só chega a quem dirige (extras.ordens da sessão).
       const ordemCerta = participar.dirigente && participar.extras && participar.extras.ordens ? participar.extras.ordens[parteIdx] : null;
-      if (Array.isArray(ordemCerta) && ordemCerta.length) {
+      if (Array.isArray(ordemCerta) && ordemCerta.length && !(participar.programa && participar.programa.solo)) { // 6.14.19: sozinho, a resposta não fica nas regras
         const det = document.createElement('details');
         det.className = 'fam-jogo-itens fam-jogo-ordem';
         const sm = document.createElement('summary');
@@ -30311,7 +30313,18 @@ function saveTemplatesToStorage() {
         }
         caixa.appendChild(ol);
       }
-      if ((j.itens || []).length) {
+      // 6.14.19: no "Ordem e data", os acontecimentos são o próprio jogo: ficam sempre à vista (antes, num card fechado sem setinha)
+      if ((j.itens || []).length && (j.idTipo === 'ordem_data' || /ordem e data/i.test(String(j.tipo || '')))) {
+        const eventos = document.createElement('div');
+        eventos.className = 'fam-sessao-eventos';
+        const tit = document.createElement('p');
+        tit.className = 'fam-secao-titulo';
+        tit.textContent = '📜 Ponha na ordem (' + j.itens.length + ' acontecimentos)';
+        const ol = document.createElement('ol');
+        j.itens.forEach(txt => { const li = document.createElement('li'); li.textContent = txt; ol.appendChild(li); });
+        eventos.append(tit, ol);
+        caixa.appendChild(eventos);
+      } else if ((j.itens || []).length) {
         const det = document.createElement('details');
         det.className = 'fam-jogo-itens';
         det.open = false; // 6.12.07: todos os cards recolhíveis da adoração ao vivo começam fechados

@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.19
+
+- **Ordem e data dos acontecimentos:** os acontecimentos voltaram a aparecer. Estavam num quadro fechado ("Material para jogar") sem indicação de que abria; agora ficam sempre à vista, em lista numerada.
+- Jogando sozinho, a ordem certa não aparece mais dentro de "Regras" (dava para ver a resposta), e o texto das regras explica esse jogo.
+
 ## 6.14.18
 
 - **Quem sou eu?:** cada questão já abre **mostrando a 1ª dica**, valendo 3 pontos e com o campo da resposta liberado; o botão passa a pedir a 2ª dica. Reiniciar a questão ou jogar com novas perguntas também abre com a 1ª dica. Vale nos Jogos e na Adoração em Família; sessões criadas antes continuam como estavam.

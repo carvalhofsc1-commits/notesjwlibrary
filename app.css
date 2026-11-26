@@ -18242,3 +18242,9 @@ details.fam-placar-card > summary { min-height: 0 !important; padding: 3px 8px !
   :root:not([data-theme="light"]) .jogos-card .fam-hub-nome { color: color-mix(in srgb, var(--cor-jogo) 35%, #fff); }
   :root:not([data-theme="light"]) #participarSessao .fam-sessao-presente-nome { color: color-mix(in srgb, var(--cor-nome, #e2e8f0) 45%, #fff); }
 }
+
+/* 6.14.19: Ordem e data: os acontecimentos sempre a vista, cada um no seu quadro (segue o tema claro e o escuro) */
+#participarSessao .fam-sessao-eventos { display: grid; gap: 8px; min-width: 0; margin: 0 0 10px; }
+#participarSessao .fam-sessao-eventos > .fam-secao-titulo { margin: 0; }
+#participarSessao .fam-sessao-eventos > ol { display: grid; gap: 6px; margin: 0; padding: 0; list-style-position: inside; }
+#participarSessao .fam-sessao-eventos li { padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); overflow-wrap: anywhere; line-height: 1.35; }
