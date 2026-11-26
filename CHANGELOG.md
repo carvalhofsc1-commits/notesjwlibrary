@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.38
+
+- **Ordem e data:** o mesmo acontecimento não aparece mais duas vezes no jogo (o Apêndice B traz **"Destruição do templo"** em 607 a.C. e em 70 d.C.; agora entra no máximo um deles).
+- **Adorações compartilhadas:** a **🗑️** passou para a **linha do "▶️ Iniciar a adoração"**, à direita. Vale também no quadro do código recém-criado.
+
 ## 6.14.37
 
 - **Adoração em família:** com o código de pesquisa, a seção abre **direto na tela das sugestões**, e o botão fino **"🔗 Participar de uma adoração em família"** fica **no fim dela** (como nos Jogos). O **← Voltar** dessa tela leva ao Início. Sem o código de pesquisa, continua a tela com as duas opções, para quem só vai participar.

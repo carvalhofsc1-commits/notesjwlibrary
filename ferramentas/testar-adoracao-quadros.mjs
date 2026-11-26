@@ -822,6 +822,17 @@ teste("6.12.73/6.12.76: jogo pede de novo quando faltam rodadas (mínimo do tipo
     assert.notDeepEqual(t.itens, t.ordem.map((e) => e.evento), "embaralhados");
   }
   assert.match(parte.jogo.comoJogar, /Rodada 3: 1\. /);
+  // 6.14.38: o mesmo nome com duas datas ("Destruição do templo") entra no máximo uma vez, escolhido pela IA ou completado pelo servidor
+  const templo = [...ordem.mensagem.matchAll(/^\[(B\d+)\] [^\n]* — Destruição do templo$/gm)].map((m) => m[1]);
+  assert.equal(templo.length, 2, "o Apêndice B tem as duas datas");
+  for (let i = 0; i < 40; i++) {
+    const p = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "jogo", jogos: ["Ordem e data dos acontecimentos"] }), montados);
+    const m = await p.prep.montar({ descricao: "d", nome: "Linha", comoJogar: "Ordem.", rodadas: [], eventos: i % 2 ? templo : [] });
+    const nomes = m.jogo.tabelas.flatMap((t) => t.ordem.map((e) => e.evento));
+    assert.equal(new Set(nomes).size, nomes.length, "sem nome repetido");
+    assert.equal(nomes.length, 24);
+    if (i % 2) assert.equal(nomes.filter((n) => n === "Destruição do templo").length, 1);
+  }
 });
 
 teste("6.12.73: Abertura guarda leitura e relato; o trecho lido sai da lista na outra noite; EVITAR dos relatos (com FONTES_DIR)", async () => {

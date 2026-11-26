@@ -7961,7 +7961,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.14.37'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.14.38'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -28214,7 +28214,7 @@ function saveTemplatesToStorage() {
       apagar.setAttribute('aria-label', 'Apagar este compartilhamento');
       apagar.addEventListener('click', async () => { if (await familiaSessaoApagar(cod) && aoApagar) aoApagar(); });
       acoes.append(abrir, copiar, link, apagar);
-      if (jogo) acoes.classList.add('fam-acoes-codigo-jogo'); // 6.13.98: nos jogos, a lixeira fica ao lado do "Iniciar o jogo"
+      acoes.classList.add('fam-acoes-codigo-jogo'); // 6.13.98: a lixeira fica ao lado do "Iniciar o jogo" (e, desde a 6.14.38, do "Iniciar a adoração")
       caixa.append(rotulo, codigo, dica, acoes);
       return caixa;
     }
@@ -28379,7 +28379,7 @@ function saveTemplatesToStorage() {
         const horas = Math.max(0, Math.ceil((FAMILIA_SESSAO_VALIDADE_MS - (Date.now() - (Number(s.em) || 0))) / 3600000));
         nome.textContent = (s.titulo || 'Adoração em Família') + ' · código ' + s.cod + ' · vale até ~' + horas + ' h sem uso';
         const acoes = document.createElement('div');
-        acoes.className = 'fam-acoes';
+        acoes.className = 'fam-acoes fam-acoes-codigo-jogo'; // 6.14.38: a lixeira na linha do "Iniciar a adoração", à direita
         const abrir = document.createElement('button');
         abrir.type = 'button';
         abrir.className = 'fam-fino fam-principal';

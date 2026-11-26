@@ -3928,13 +3928,16 @@ const PREPARAR_QUADRO_FAMILIA = {
           const porData = (e) => valorDaData(e.data);
           // 6.14.21: TABELAS_DA_ORDEM rodadas (tabelas) por jogo, cada uma com 6 a 8 acontecimentos.
           const cabem = TABELAS_DA_ORDEM * MAX_EVENTOS_JOGO;
-          const escolhidos = semRepetirFamilia(escolhasValidas(o.eventos, "B", eventos.length, cabem).map((i) => eventos[i]), porData);
+          // 6.14.38: nem a data nem o nome se repetem no jogo (o Apêndice B traz "Destruição do templo" em 607 a.C. e em 70 d.C.: na lista a
+          // ordenar, os dois ficariam iguais).
+          const porNome = (e) => normalizarTexto(e.evento);
+          const escolhidos = semRepetirFamilia(semRepetirFamilia(escolhasValidas(o.eventos, "B", eventos.length, cabem).map((i) => eventos[i]), porData), porNome);
           // 6.12.73: com menos que o mínimo, o servidor pede de novo uma vez; o que faltar é completado com o Apêndice B.
           const minimo = TABELAS_DA_ORDEM * MIN_EVENTOS_JOGO;
           if (escolhidos.length < minimo) falta = `vieram ${escolhidos.length} acontecimentos válidos; escolha de ${minimo} a ${cabem} identificadores [B#] com datas diferentes (são ${TABELAS_DA_ORDEM} rodadas)`;
           for (const e of embaralhar(eventos, ctx.semente + 7)) {
             if (escolhidos.length >= cabem) break;
-            if (!escolhidos.some((x) => porData(x) === porData(e))) escolhidos.push(e);
+            if (!escolhidos.some((x) => porData(x) === porData(e) || porNome(x) === porNome(e))) escolhidos.push(e);
           }
           // em ordem de data, um acontecimento para cada tabela por vez: cada rodada fica espalhada pelas épocas
           const porEpoca = escolhidos.slice().sort((a, b) => porData(a) - porData(b));
