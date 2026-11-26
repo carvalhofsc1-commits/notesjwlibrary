@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.11
+
+- Jogar sozinho: a partida agora **continua enquanto o app estiver aberto**. Dá para ir à Bíblia ou a outra tela e voltar pelo botão **"▶️ Continuar a partida"**, na tela dos Jogos, na mesma questão e com a mesma pontuação.
+- Ela continua sem código à vista e sem nada salvo: acaba ao fechar ou recarregar o app, ao começar outra partida ou na lixeira 🗑️ ao lado do botão.
+
 ## 6.14.10
 
 - Jogar sozinho: **sem código e sem registro**. A partida não aparece mais nos recentes nem na lista de compartilhamentos, e nada fica salvo no aparelho; as partidas sozinho que estavam na lista saem dela.

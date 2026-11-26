@@ -18150,3 +18150,9 @@ details.fam-placar-card > summary { min-height: 0 !important; padding: 3px 8px !
 
 /* 6.14.09: moldura em volta de cada card de dica */
 #participarSessao .fam-sessao-dica { border: 1.5px solid #f59e0b; border-left-width: 4px; border-radius: 10px; padding: 8px 10px; }
+
+/* 6.14.11: partida sozinho em andamento: "Continuar a partida" cresce e a lixeira fica ao lado */
+#jogosCard .jogos-continuar { display: flex; flex-wrap: nowrap; gap: 8px; align-items: stretch; margin: 0 0 12px; }
+#jogosCard .jogos-continuar[hidden] { display: none; }
+#jogosCard .jogos-continuar > button.fam-principal { flex: 1 1 0 !important; width: auto !important; min-width: 0; margin: 0; white-space: normal; }
+#jogosCard .jogos-continuar > button.limpar-btn { flex: 0 0 52px !important; width: 52px !important; min-width: 52px; margin: 0; }
