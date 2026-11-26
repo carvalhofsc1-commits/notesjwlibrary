@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.50
+
+- **Jogos bíblicos:** o título **"Jogos preparados"** centralizado no card e o botão **"Entrar em um jogo em grupo"** em **azul claro** (azul fechado no modo escuro).
+
 ## 6.14.49
 
 - **Jogos bíblicos:** o card **"Jogos preparados"** em **amarelo claro** (mais fechado no modo escuro).

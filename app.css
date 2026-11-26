@@ -18238,6 +18238,13 @@ body[data-screen="jogos"] main { padding-top: 10px; padding-bottom: 6px; }
 :root[data-theme="dark"] #jogosCard > #jogosSalvosBox { background: #332b10; border-color: #a16207; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #jogosCard > #jogosSalvosBox { background: #332b10; border-color: #a16207; } }
 
+/* 6.14.50: o título "Jogos preparados" no meio do card e o "Entrar em um jogo em grupo" em azul claro */
+#jogosCard > #jogosSalvosBox > summary { justify-content: center; text-align: center; }
+#jogosCard #jogosParticiparBtn#jogosParticiparBtn, #jogosCard #jogosParticiparBtn#jogosParticiparBtn:hover:not(:disabled) { background: #dbeafe; background-image: none; border: 1px solid #3b82f6; }
+#jogosCard #jogosParticiparBtn#jogosParticiparBtn:hover:not(:disabled) { background: #bfdbfe; }
+:root[data-theme="dark"] #jogosCard #jogosParticiparBtn#jogosParticiparBtn { background: #1d2d4a; border-color: #3b82f6; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #jogosCard #jogosParticiparBtn#jogosParticiparBtn { background: #1d2d4a; border-color: #3b82f6; } }
+
 /* 6.14.14: o botao da dica com fundo cinza; no fim do jogo, "Jogar novamente" e "Fechar" na largura toda */
 #participarSessao button.fam-sessao-dar-dica { background: #e5e7eb !important; border: 1.5px solid #9ca3af !important; color: #1f2937 !important; }
 #participarSessao .fam-jogo-fim { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; margin: 12px 0 8px; }
