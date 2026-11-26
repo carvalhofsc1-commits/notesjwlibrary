@@ -661,20 +661,22 @@ export function idDoJogo(nome) {
   return "";
 }
 
-// Quantas rodadas cabem nos 10 minutos do quadro: pedir (o que se pede à IA), min (com menos, refaz uma vez) e max (o que fica).
-// Quem sou eu? tem 3 dicas por rodada (mais demorado); Verdadeiro ou falso é rápido; nos montados pelo servidor pede-se folga.
+// Quantas rodadas tem cada jogo: pedir (o que se pede à IA), min (com menos, refaz uma vez) e max (o que fica).
+// 6.14.53 (pedido do usuário): no mínimo 10 rodadas em todos os jogos, também na Adoração em Família, mesmo passando do tempo do quadro; só o
+// Ordem e data fica com 3 rodadas (TABELAS_DA_ORDEM). Pede-se bem mais que 10 porque as conferências tiram rodadas.
 export const RODADAS_DO_JOGO = Object.freeze({
   // 6.12.78: Quem sou eu? e Verdadeiro ou falso passam pela conferência com a Bíblia (que pode tirar rodadas): pede-se mais do que ficam.
-  quem_sou_eu: Object.freeze({ pedir: 10, min: 6, max: 8 }),
-  verdadeiro_falso: Object.freeze({ pedir: 14, min: 10, max: 12 }),
-  // 6.14.27: de 12 para 15 pedidas: nos dois, o servidor chegava a recusar 5 de 12 e o jogo ficava abaixo do mínimo.
-  quem_disse: Object.freeze({ pedir: 15, min: 8, max: 10 }),
-  complete_versiculo: Object.freeze({ pedir: 15, min: 8, max: 10 }),
-  abreviacoes: Object.freeze({ pedir: 10, min: 8, max: 10 }),
+  quem_sou_eu: Object.freeze({ pedir: 15, min: 10, max: 12 }),
+  verdadeiro_falso: Object.freeze({ pedir: 16, min: 10, max: 12 }),
+  // Nos dois montados pelo servidor, perto de 4 em cada 10 rodadas chegam a ser recusadas.
+  quem_disse: Object.freeze({ pedir: 20, min: 10, max: 12 }),
+  complete_versiculo: Object.freeze({ pedir: 20, min: 10, max: 12 }),
+  // Das pedidas, 4 são siglas do banco fixo, postas pelo servidor.
+  abreviacoes: Object.freeze({ pedir: 16, min: 10, max: 12 }),
   ordem_data: Object.freeze({ pedir: 8, min: 6, max: 8 }),
-  // 6.13.22: Perfil bíblico: 4 cartas de 10 dicas (cada uma leva uns 2 minutos); a IA escreve as cartas dos verbetes oferecidos (até 3 ficam)
-  // e o servidor completa com as cartas prontas.
-  perfil_biblico: Object.freeze({ pedir: 4, min: 2, max: 3 }),
+  // 6.13.22: Perfil bíblico: aqui "pedir", "min" e "max" contam só as cartas que a IA escreve a partir dos verbetes oferecidos; o servidor
+  // completa com as cartas prontas até CARTAS_DO_PERFIL.
+  perfil_biblico: Object.freeze({ pedir: 9, min: 7, max: 9 }),
 });
 
 // ---------- Perfil bíblico (6.13.22) ----------
@@ -682,7 +684,7 @@ export const RODADAS_DO_JOGO = Object.freeze({
 // por quem dirige; quem acerta com menos dicas ganha mais pontos (total de dicas − dicas dadas + 1).
 export const MIN_DICAS_PERFIL = 8;
 export const MAX_DICAS_PERFIL = 12;
-export const CARTAS_DO_PERFIL = 4;
+export const CARTAS_DO_PERFIL = 10;
 export const REGRAS_DO_PERFIL =
   "O presidente da reunião mostra uma dica por vez, da mais difícil para a mais fácil. Quem descobrir primeiro diz (ou envia pelo app) a resposta. Quanto menos dicas, mais pontos: com 10 dicas, acertar na 1ª vale 10 pontos, na 2ª vale 9, e assim por diante. Cada resposta errada tira 1 ponto da questão em que foi dada (a questão nunca fica abaixo de zero, e o desconto não passa para as outras questões).";
 // As dicas escritas pela IA ("Dica 1: … Dica 2: …", ou uma lista) -> [texto], sem as dicas que entregam a resposta (o nome, uma palavra
@@ -826,39 +828,58 @@ export function textoDasRecusadasDoJogo(recusadas) {
     .map((r) => `${curto(r.referencia, 60) || "(sem referência)"}${r.palavra ? `, resposta "${curto(r.palavra, 40)}"` : ""}: ${MOTIVOS_DA_RECUSA[r.motivo]}${corrigivel(r) ? ` (texto do versículo: "${curto(r.texto, 320)}")` : ""}`);
   return `o servidor recusou ${lista.length} ${lista.length === 1 ? "rodada" : "rodadas"} (corrija com o texto do versículo ou use outro): ${itens.join("; ")}`;
 }
-// As rodadas de duas tentativas juntas (as da primeira lista na frente), sem repetir versículo e, com semRepetirResposta, sem repetir a
-// palavra da resposta; até "max".
-export function juntarRodadasDoJogo(rodadas, outras, { max = 10, semRepetirResposta = false } = {}) {
+// As rodadas de duas tentativas juntas (as da primeira lista na frente), até "max", sem repetir: o versículo (semRepetirVersiculo), a
+// resposta (semRepetirResposta) ou a pergunta (semRepetirPergunta).
+export function juntarRodadasDoJogo(rodadas, outras, { max = 10, semRepetirResposta = false, semRepetirVersiculo = true, semRepetirPergunta = false } = {}) {
   const saida = [];
   const versiculos = new Set();
   const respostas = new Set();
+  const perguntas = new Set();
   for (const r of [...(Array.isArray(rodadas) ? rodadas : []), ...(Array.isArray(outras) ? outras : [])]) {
     if (!r || saida.length >= max) continue;
-    const chaves = chavesDosVersiculos(r.referencia);
+    const chaves = semRepetirVersiculo ? chavesDosVersiculos(r.referencia) : [];
     const resposta = normalizarTexto(r.resposta);
-    if (chaves.some((k) => versiculos.has(k)) || (semRepetirResposta && respostas.has(resposta))) continue;
+    const pergunta = normalizarTexto(r.pergunta);
+    if (chaves.some((k) => versiculos.has(k)) || (semRepetirResposta && respostas.has(resposta)) || (semRepetirPergunta && perguntas.has(pergunta))) continue;
     chaves.forEach((k) => versiculos.add(k));
     respostas.add(resposta);
+    perguntas.add(pergunta);
     saida.push(r);
   }
   return saida;
 }
-// Complete o versículo e Quem disse isso?: a tentativa escolhida recebe as rodadas válidas da outra. Cada tentativa é a de gerarQuadroFamilia:
+// O que não pode se repetir ao somar as tentativas, por tipo (6.14.53: todos os jogos de rodadas; o Ordem e data e o Perfil não somam).
+const SOMA_DO_TIPO = Object.freeze({
+  complete_versiculo: { semRepetirResposta: true },
+  quem_disse: {},
+  quem_sou_eu: { semRepetirVersiculo: false, semRepetirResposta: true },
+  verdadeiro_falso: { semRepetirVersiculo: false, semRepetirPergunta: true },
+  abreviacoes: { semRepetirVersiculo: false, semRepetirResposta: true },
+});
+// A tentativa escolhida recebe as rodadas válidas da outra. Cada tentativa é a de gerarQuadroFamilia:
 // { parte: { jogo }, memoria, falta, trocarTipo, contagens }.
 export function somarTentativasDoJogo(escolhida, outra) {
   const a = escolhida && escolhida.parte && escolhida.parte.jogo;
   const b = outra && outra.parte && outra.parte.jogo;
-  if (!a || !b || a.idTipo !== b.idTipo || !["complete_versiculo", "quem_disse"].includes(a.idTipo)) return escolhida;
+  if (!a || !b || a.idTipo !== b.idTipo || !SOMA_DO_TIPO[a.idTipo]) return escolhida;
   const limite = RODADAS_DO_JOGO[a.idTipo];
-  const rodadas = juntarRodadasDoJogo(a.rodadas, b.rodadas, { max: limite.max, semRepetirResposta: a.idTipo === "complete_versiculo" });
+  // Quem sou eu?: o mesmo personagem escrito de dois jeitos ("Josias", "Rei Josias") conta como a mesma resposta.
+  const chaveDaResposta = a.idTipo === "quem_sou_eu" ? (r) => ({ ...r, resposta: nomesDaResposta(r.resposta).join(" ") || r.resposta, original: r }) : (r) => r;
+  const rodadas = juntarRodadasDoJogo(a.rodadas.map(chaveDaResposta), b.rodadas.map(chaveDaResposta), { max: limite.max, ...SOMA_DO_TIPO[a.idTipo] }).map((r) => r.original || r);
   const somadas = rodadas.length - a.rodadas.length;
   if (somadas <= 0) return escolhida;
   const n = rodadas.length;
+  const memoria = { ...escolhida.memoria };
+  if (a.idTipo === "complete_versiculo" || a.idTipo === "quem_disse") memoria.jogo_versiculos = rodadas.map((r) => r.referencia).filter(Boolean);
+  if (a.idTipo === "abreviacoes") memoria.jogo_cartas = rodadas.map((r) => r.resposta);
+  // Verdadeiro ou falso: pelo menos 3 de cada continuam valendo para o jogo somado.
+  const verdadeiras = a.idTipo === "verdadeiro_falso" ? rodadas.filter((r) => /^Verdadeiro\b/.test(r.resposta)).length : 0;
+  const desequilibrio = a.idTipo === "verdadeiro_falso" && (verdadeiras < 3 || n - verdadeiras < 3) ? `vieram ${verdadeiras} verdadeiras e ${n - verdadeiras} falsas` : "";
   return {
     ...escolhida,
     parte: { ...escolhida.parte, jogo: { ...a, rodadas } },
-    memoria: { ...escolhida.memoria, jogo_versiculos: rodadas.map((r) => r.referencia).filter(Boolean) },
-    falta: n < limite.min ? `vieram ${n} rodadas válidas` : "",
+    memoria,
+    falta: [n < limite.min ? `vieram ${n} rodadas válidas` : "", desequilibrio].filter(Boolean).join("; "),
     trocarTipo: n < MIN_RODADAS_PARA_MANTER_O_TIPO ? escolhida.trocarTipo : "",
     contagens: { ...escolhida.contagens, rodadas: n, somadas },
   };

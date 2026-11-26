@@ -3437,7 +3437,7 @@ const CONSULTAS_CRIADOR = Object.freeze([
 ]);
 const chaveDoTrechoCriador = (l) => chaveDoTrecho(l.trecho);
 
-// 6.12.73: o mínimo do jogo; 6.12.76: as rodadas de cada tipo ficam em RODADAS_DO_JOGO (_familiaGeracao.mjs), ajustadas aos 10 minutos.
+// 6.12.73: o mínimo do jogo; 6.12.76: as rodadas de cada tipo ficam em RODADAS_DO_JOGO (_familiaGeracao.mjs), no mínimo 10 por jogo desde a 6.14.53 (menos o Ordem e data).
 const MIN_EVENTOS_JOGO = 6;
 const MAX_EVENTOS_JOGO = 8;
 const TABELAS_DA_ORDEM = 3; // 6.14.21: o "Ordem e data" tem 3 rodadas
@@ -3455,7 +3455,7 @@ function rodadaDaSiglaDoBanco([sigla, resposta, onde]) {
   return { pergunta: perguntaDaAbreviacao(sigla, resposta, dica, PISTAS_DAS_SIGLAS[sigla]), resposta, referencia: onde === "fato" ? FATO_CONHECIDO : ref };
 }
 // 6.13.22: Perfil bíblico: as cartas que a IA vai escrever, com o verbete do Perspicaz (o sentido que cita a passagem do candidato). Alterna as
-// categorias (pessoa, lugar, coisa ou qualidade) e tira as das últimas semanas (memória "jogo_cartas"). Até 4 cartas, cada uma com até 2500
+// categorias (pessoa, lugar, coisa ou qualidade) e tira as das últimas semanas (memória "jogo_cartas"). Até "max" cartas, cada uma com até 2500
 // caracteres do verbete, cortados no fim de uma frase.
 async function candidatosDoPerfil(fora, semente, max = 4) {
   const porCategoria = {};
@@ -3835,7 +3835,7 @@ const PREPARAR_QUADRO_FAMILIA = {
   // Jogo bíblico: o servidor sorteia o tipo da noite entre os aceitos (de preferência um que não foi usado nas últimas semanas). Na Ordem e
   // data dos acontecimentos, a IA só escolhe os acontecimentos [B#] do Apêndice B da Bíblia de Estudo e o servidor põe as datas e embaralha;
   // nos outros tipos, as rodadas com alguma data fora do Apêndice B saem.
-  // 6.12.76: cada tipo tem a sua quantidade de rodadas (RODADAS_DO_JOGO, para caber nos 10 minutos) e a sua conferência: Quem sou eu? com 3
+  // 6.12.76: cada tipo tem a sua quantidade de rodadas (RODADAS_DO_JOGO) e a sua conferência: Quem sou eu? com 3
   // dicas sem o nome; Verdadeiro ou falso com a resposta "Verdadeiro."/"Falso." (pelo menos 3 de cada); Abreviações com a sigla conferida
   // letra por letra. No Complete o versículo e no Quem disse isso?, a IA só escolhe a referência (e a palavra, ou quem disse) e o SERVIDOR
   // transcreve o versículo e monta a pergunta (a lacuna, ou a fala entre aspas). A referência de cada rodada fica para a hora da resposta (na
@@ -3869,7 +3869,7 @@ const PREPARAR_QUADRO_FAMILIA = {
       // Os anos (só nas cartas prontas) primeiro: a 1ª carta pronta da noite é um ano, quando houver.
       prontas.sort((a, b) => (a.categoria === "Ano" ? 0 : 1) - (b.categoria === "Ano" ? 0 : 1));
       if (prontas.length < CARTAS_DO_PERFIL) prontas = prontas.concat(embaralhar(PERFIL_CARTAS_PRONTAS.filter((c) => !prontas.includes(c)), ctx.semente + 17));
-      if (comBiblia) candidatos = await candidatosDoPerfil(cartasFora, ctx.semente).catch(() => []);
+      if (comBiblia) candidatos = await candidatosDoPerfil(cartasFora, ctx.semente, limite.pedir).catch(() => []);
     }
     const listas =
       `\nTIPO DO JOGO DESTA NOITE (use só este): ${tipo}\n` +
@@ -3899,8 +3899,8 @@ const PREPARAR_QUADRO_FAMILIA = {
         let cartasDoJogo = [];
         if (perfil) {
           // 6.13.22: cada rodada da IA é uma carta [C#]: as dicas tiradas do verbete (8 a 12, sem a resposta); a resposta e a referência são as do
-          // candidato (postas pelo servidor). Ficam até 3 cartas da IA, com uma carta pronta (um ano, de preferência) na frente e as prontas
-          // completando as 4 cartas da noite.
+          // candidato (postas pelo servidor). Com uma carta pronta (um ano, de preferência) na frente, as cartas da IA e as prontas
+          // completando as CARTAS_DO_PERFIL cartas do jogo.
           const brutas = (Array.isArray(o.rodadas) ? o.rodadas : []).filter((r) => r && typeof r === "object").slice(0, 10);
           const usadas = new Set();
           const daIa = [];
@@ -4351,7 +4351,7 @@ async function gerarQuadroFamilia(res, body, P) {
       const r2 = await gerarUma(`${pedido.mensagem}\n${pedidoDeNovo}\n`).catch(() => null);
       const primeira = r;
       if (segundaTentativaMelhor(r, r2)) r = r2;
-      // 6.14.27: no Complete o versículo e no Quem disse isso?, as rodadas válidas das duas tentativas se somam.
+      // 6.14.27 (6.14.53: em todos os jogos de rodadas): as rodadas válidas das duas tentativas se somam.
       if (id === "jogo" && r2) r = somarTentativasDoJogo(r, r === primeira ? r2 : primeira);
     }
     // 6.12.76: o Complete o versículo e o Quem disse isso? são montados pelo servidor com o texto da Bíblia; se, mesmo depois de refazer,

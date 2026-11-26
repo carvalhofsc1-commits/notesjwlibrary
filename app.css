@@ -18506,3 +18506,13 @@ body:not(.fam-tela-grande) #participarSessao.fam-na-secao .fam-sessao-secao.na-t
 :is(#familiaCard, #participarCard) .fam-parte > .fam-secao-bloco { margin-top: 0; margin-bottom: 0; }
 :is(#familiaCard, #participarCard) .fam-secao-bloco > p.fam-secao-titulo { margin-top: 0; margin-bottom: 0; }
 :is(#familiaCard, #participarCard) .fam-opcao-acoes { gap: 10px; }
+
+/* 6.14.53: o texto explicativo da Adoração justificado; na adoração ao vivo, "Tela grande" e os controles do presidente da reunião no fim
+   da página, finos, dividindo a mesma linha (com os controles abertos, eles ocupam a linha toda, embaixo) */
+#familiaCard .fam-intro > p { text-align: justify; hyphens: auto; }
+#participarSessao .fam-sessao-pe { display: flex; flex-wrap: wrap; gap: 10px; align-items: stretch; min-width: 0; margin-top: 10px; }
+#participarSessao .fam-sessao-pe > .fam-sessao-grande-btn { display: flex; align-items: center; justify-content: center; flex: 2 1 0; width: auto; min-width: 0; min-height: 40px; margin: 0; padding: 3px 6px; font-size: .84rem; line-height: 1.15; text-align: center; }
+#participarSessao .fam-sessao-pe > details.fam-sessao-dirigente { box-sizing: border-box; flex: 3 1 0; min-width: 0; margin: 0; padding: 0 8px; }
+#participarSessao .fam-sessao-pe > details.fam-sessao-dirigente > summary { justify-content: center; min-height: 38px; font-size: .84rem; line-height: 1.15; text-align: center; }
+#participarSessao .fam-sessao-pe > details.fam-sessao-dirigente[open] { order: 2; flex-basis: 100%; padding: 0 12px 10px; }
+#participarSessao .fam-sessao-pe > .fam-sessao-grande-btn:only-child { flex-basis: 100%; }

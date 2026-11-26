@@ -2,6 +2,14 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.53
+
+- **Jogos (seção Jogos e Adoração em família):** **no mínimo 10 rodadas** em todos, mesmo que passe do tempo do quadro; o **Ordem e data** continua com 3.
+  - Máximo de 12; o **Perfil bíblico** fica com **10 cartas** (até 9 escritas pela IA a partir do Perspicaz, completadas com as prontas).
+  - Pede-se mais à IA (Quem sou eu? 15, Verdadeiro ou falso 16, Quem disse isso? e Complete o versículo 20, Abreviações 16 com as 4 do banco) e, no pedido de novo, as rodadas válidas das **duas tentativas se somam** em todos eles. Se ainda assim faltar, o jogo sai com um aviso.
+- **Adoração em família:** o texto explicativo do alto **justificado**.
+- **Adoração ao vivo:** o **Tela grande** e os **controles do presidente da reunião** foram para o fim da página, depois da Oração final, em botões finos na mesma linha.
+
 ## 6.14.52
 
 - **Adoração em família, tela repaginada:**
