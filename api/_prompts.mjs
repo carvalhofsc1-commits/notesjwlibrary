@@ -1437,6 +1437,17 @@ Regras:
       ["Escopo: recapitulação (leitura pela IA)", "ESCOPO: a RECAPITULAÇÃO. Responda SOMENTE às perguntas do quadro de recapitulação no fim do artigo (o quadro \"Qual é a sua resposta?\"), numeradas na ordem em que aparecem (1, 2, 3...). NÃO responda às perguntas dos parágrafos. EM TODA resposta, termine o texto com os números dos parágrafos do artigo em que ela se baseia, entre parênteses (por exemplo, \"(par. 7)\" ou \"(pars. 3, 4)\"): nenhuma resposta fica sem essa referência."],
     ],
   },
+  // 6.14.39: o "Nível de dificuldade" da preparação dos jogos. Com o nível Médio (o padrão) nada é juntado ao pedido.
+  {
+    id: "frases_jogos",
+    titulo: "Jogos bíblicos: nível de dificuldade",
+    descricao:
+      "Na tela de preparação de um jogo há a opção \"Nível de dificuldade\". Com Fácil ou Difícil, o app junta ao pedido do jogo a frase correspondente abaixo; com Médio (o padrão) nada é juntado e valem as regras de \"Adoração por quadros: Jogo bíblico\". Edite só o texto depois do nome entre colchetes; não mude o nome.",
+    itens: [
+      ["Dificuldade: Fácil", "NÍVEL DE DIFICULDADE DESTE JOGO: FÁCIL (escolhido por quem prepara; vale no lugar das regras de nível, como \"nível de adulto batizado\", \"sem respostas óbvias\" e \"nenhuma pergunta que uma criança responderia\"). Use os relatos, personagens e ensinos mais conhecidos da Bíblia, que crianças maiores e quem está começando a estudar conseguem responder: perguntas diretas, sobre o fato principal, sem pegadinhas nem detalhes miúdos. Quem sou eu? e Perfil bíblico: dicas reveladoras desde a primeira. Verdadeiro ou falso: nas falsas, o erro é claro, num fato conhecido. Ordem e data dos acontecimentos: acontecimentos famosos e bem distantes no tempo. Quem disse isso?: frases famosas, com opções erradas bem diferentes de quem falou. Complete o versículo: versículos muito conhecidos, com uma palavra central e opções erradas fáceis de descartar. Abreviações bíblicas: expressões muito conhecidas, com pistas reveladoras. O formato, a quantidade, as fontes e as conferências continuam iguais."],
+      ["Dificuldade: Difícil", "NÍVEL DE DIFICULDADE DESTE JOGO: DIFÍCIL (escolhido por quem prepara; é mais exigente que o nível de adulto batizado). Faça perguntas para quem estuda a fundo: personagens, relatos e livros menos lembrados e detalhes que exigem leitura atenta (quem, onde, quando, por quê, o que veio antes ou depois), sempre confirmáveis na Bíblia, nunca inventados nem pegadinhas de palavras. Quem sou eu? e Perfil bíblico: as primeiras dicas bem sutis, e mesmo as últimas sem entregar a resposta de imediato. Verdadeiro ou falso: aqui vale usar detalhes (mesmo que a regra do jogo peça os fatos mais conhecidos), e nas falsas o erro é sutil. Ordem e data dos acontecimentos: acontecimentos menos conhecidos e de datas próximas. Quem disse isso?: personagens e momentos menos citados, com opções erradas do mesmo relato. Complete o versículo: versículos pouco decorados, com uma palavra que não se adivinha pelo resto da frase e opções muito parecidas. Abreviações bíblicas: expressões menos comuns (mas ainda conhecidas como nome ou título), com pistas discretas. O formato, a quantidade, as fontes e as conferências continuam iguais."],
+    ],
+  },
 ];
 
 // Partes em itens: o texto padrão (o que aparece na tela) é a lista "[nome] frase", um item por parágrafo.
@@ -1495,7 +1506,7 @@ export const CATEGORIAS = [
     titulo: "ADORAÇÃO EM FAMÍLIA",
     cor: "#ec4899",
     descricao: "Adoração em Família (atalho do Início e menu): a programação da noite da família, conforme o perfil salvo no aparelho, os quadros marcados (a duração é a soma deles) e o assunto da semana.",
-    partes: ["adoracao_q_base", "adoracao_q_plano", "adoracao_q_abertura", "adoracao_q_video", "adoracao_q_principio", "adoracao_q_personagem", "adoracao_q_jesus", "adoracao_q_criador", "adoracao_q_saiba", "adoracao_q_ministerio", "adoracao_q_jogo", "adoracao_q_conferir", "adoracao_q_apelar", "adoracao_q_revisao", "adoracao_q_canticos", "adoracao_familia"],
+    partes: ["adoracao_q_base", "adoracao_q_plano", "adoracao_q_abertura", "adoracao_q_video", "adoracao_q_principio", "adoracao_q_personagem", "adoracao_q_jesus", "adoracao_q_criador", "adoracao_q_saiba", "adoracao_q_ministerio", "adoracao_q_jogo", "frases_jogos", "adoracao_q_conferir", "adoracao_q_apelar", "adoracao_q_revisao", "adoracao_q_canticos", "adoracao_familia"],
   },
   {
     id: "biblia",
@@ -1932,6 +1943,7 @@ export function montarPrompts(overrides, limitesArmazenados) {
       respostas: frasesDe("frases_respostas"),
       textos: frasesDe("frases_textos"),
       pedidos: frasesDe("frases_pedidos"),
+      jogos: frasesDe("frases_jogos"),
       voz: frasesDe("frases_voz"),
     },
     instrucoes: {

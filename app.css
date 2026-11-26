@@ -18159,6 +18159,25 @@ details.fam-placar-card > summary { min-height: 0 !important; padding: 3px 8px !
 #jogosCard .jogos-continuar > button.fam-principal { flex: 1 1 0 !important; width: auto !important; min-width: 0; margin: 0; white-space: normal; }
 #jogosCard .jogos-continuar > button.limpar-btn { flex: 0 0 52px !important; width: 52px !important; min-width: 52px; margin: 0; }
 
+/* 6.14.39: preparação dos jogos: 10 px entre os campos (o rótulo fica a 4 px do seu campo), cabeçalho do jogo aberto mais baixo,
+   o nível de dificuldade em três partes iguais e o "Preparar o jogo" mais fino */
+#jogosCard .jogos-card.aberto > .jogos-atalho { grid-template-columns: 44px minmax(0, 1fr); column-gap: 8px; row-gap: 0; min-height: 0; padding: 6px 10px; }
+#jogosCard .jogos-card.aberto .fam-hub-icone { width: 44px; font-size: 2rem; line-height: 1.1; }
+#jogosCard .jogos-card.aberto .fam-hub-nome { line-height: 1.2; }
+#jogosCard .jogos-card.aberto .fam-hub-desc { line-height: 1.2; }
+#jogosCard .jogos-painel { gap: 10px; padding: 10px; }
+#jogosCard .jogos-painel > * { margin: 0; }
+#jogosCard .jogos-painel > .fam-trocar-rotulo { margin-bottom: -6px; line-height: 1.2; }
+#jogosCard .jogos-continuar { margin-bottom: 10px; }
+.jogos-niveis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; min-width: 0; }
+#jogosCard .jogos-nivel { position: relative; display: flex; align-items: center; justify-content: center; min-width: 0; min-height: 36px; box-sizing: border-box; margin: 0; padding: 4px 6px; border: 1px solid #9ca3af; border-radius: 8px; background: var(--card); color: var(--text); font-size: .9rem; font-weight: 600; cursor: pointer; }
+#jogosCard .jogos-nivel > input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+#jogosCard .jogos-nivel:has(input:checked) { border: 2px solid #7c3aed; background: color-mix(in srgb, #8b5cf6 18%, var(--card)); }
+#jogosCard .jogos-nivel:has(input:focus-visible) { outline: 2px solid #2563eb; outline-offset: 2px; }
+#jogosCard .jogos-painel .jogos-acoes > .jogos-ir { min-height: 36px; padding: 2px 8px; font-size: .9rem; line-height: 1.15; }
+#jogosCard .jogos-painel .jogos-acoes > .jogos-ir[data-ia-nota]::after { margin-top: 0; }
+#jogosCard .jogos-painel .jogos-acoes > .jogos-cancelar { min-height: 36px; }
+
 /* 6.14.14: o botao da dica com fundo cinza; no fim do jogo, "Jogar novamente" e "Fechar" na largura toda */
 #participarSessao button.fam-sessao-dar-dica { background: #e5e7eb !important; border: 1.5px solid #9ca3af !important; color: #1f2937 !important; }
 #participarSessao .fam-jogo-fim { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; margin: 12px 0 8px; }

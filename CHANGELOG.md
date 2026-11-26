@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.39
+
+- **Preparação dos jogos (todos):** **10 px** entre os campos, **cabeçalho do jogo mais baixo** e **"✨ Preparar o jogo" mais fino**.
+- **Nível de dificuldade:** nova opção **Fácil · Médio · Difícil** acima do botão (**Médio** já marcado). Fácil e Difícil juntam ao pedido uma instrução para a IA (tela de prompts: **"Jogos bíblicos: nível de dificuldade"**); Médio é o nível de sempre. "Jogar com novas perguntas" mantém o nível escolhido.
+
 ## 6.14.38
 
 - **Ordem e data:** o mesmo acontecimento não aparece mais duas vezes no jogo (o Apêndice B traz **"Destruição do templo"** em 607 a.C. e em 70 d.C.; agora entra no máximo um deles).

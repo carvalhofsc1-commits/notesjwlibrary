@@ -7961,7 +7961,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.14.38'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.14.39'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -30791,7 +30791,7 @@ function saveTemplatesToStorage() {
       const parte = participar.programa && participar.programa.partes && participar.programa.partes[0];
       const idTipo = parte && parte.jogo ? parte.jogo.idTipo : '';
       const j = (item && jogosDoNome(item.nome)) || JOGOS_BIBLICOS[['quem_sou_eu', 'verdadeiro_falso', 'ordem_data', 'quem_disse', 'complete_versiculo', 'abreviacoes', 'perfil_biblico'].indexOf(idTipo)];
-      return j ? { j, tema: (item && item.tema) || '', instrucao: (item && item.instrucao) || '' } : null;
+      return j ? { j, tema: (item && item.tema) || '', instrucao: (item && item.instrucao) || '', nivel: jogosNivel(item && item.nivel) } : null;
     }
     function participarFimMontar() {
       const caixa = document.createElement('div');
@@ -30818,11 +30818,11 @@ function saveTemplatesToStorage() {
         const cod = participar.cod;
         const voltarBotao = botaoIaOcupado(novo, 'Preparando…'); // 6.14.25: ícone girando e relógio
         avisar('⏳ A IA está preparando novas perguntas. Pode levar alguns minutos; deixe esta tela aberta.');
-        const g = await jogosGerar(pedido.j, pedido.tema, pedido.instrucao, codigo);
+        const g = await jogosGerar(pedido.j, pedido.tema, pedido.instrucao, codigo, pedido.nivel);
         if (g.erro) { voltarBotao(); avisar(g.erro, 'erro'); return; }
         if (cod !== participar.cod) { voltarBotao(); return; } // saiu do jogo enquanto preparava: o jogo novo fica em 📂 Jogos preparados
         const titulo = (g.item.op.emoji ? g.item.op.emoji + ' ' : '') + g.item.op.titulo;
-        if (familiaSolo && familiaSolo.cod === cod) Object.assign(familiaSolo, { titulo, posicoes: {}, jogo: { nome: g.item.nome, tema: g.item.tema, instrucao: g.item.instrucao } });
+        if (familiaSolo && familiaSolo.cod === cod) Object.assign(familiaSolo, { titulo, posicoes: {}, jogo: { nome: g.item.nome, tema: g.item.tema, instrucao: g.item.instrucao, nivel: g.item.nivel } });
         else familiaSessaoGuardar(cod, { progId: 'jogo:' + g.item.id, titulo });
         avisar('⏳ Carregando o jogo novo…');
         const aberto = await participarAcao({ acao: 'novo-jogo', programa: familiaProgramaParaCompartilhar(g.item.op), codigo }, null);
@@ -31326,6 +31326,10 @@ function saveTemplatesToStorage() {
     const JOGOS_SALVOS_KEY = 'nsJogosPreparadosV1';
     const JOGOS_SALVOS_MAX = 30;
     const JOGOS_FORMACAO = 'Grupo de irmãos jogando um jogo bíblico (várias idades)';
+    // 6.14.39: o nível de dificuldade escolhido na preparação (Médio = o padrão de sempre).
+    const JOGOS_NIVEIS = [{ id: 'facil', nome: 'Fácil' }, { id: 'medio', nome: 'Médio' }, { id: 'dificil', nome: 'Difícil' }];
+    const jogosNivel = n => (JOGOS_NIVEIS.some(x => x.id === n) ? n : 'medio');
+    const jogosNivelNome = n => JOGOS_NIVEIS.find(x => x.id === jogosNivel(n)).nome;
     let jogosPreparando = false;
     // 6.13.52: as vistas da tela: 'montar' (a tela inicial: a lista dos jogos, com "Entrar em um jogo" no fim; 6.14.34), 'jogo' (um jogo aberto,
     // com o pedido) e 'pronto' (um jogo preparado, com as opções de jogar). jogosFiltro = o jogo aberto (os "Jogos preparados" mostram só dele).
@@ -31463,7 +31467,30 @@ function saveTemplatesToStorage() {
       instr.className = 'fam-trocar-instrucao';
       instr.rows = 2;
       instr.maxLength = 300;
-      instr.placeholder = 'Ex.: perguntas fáceis, para crianças; só do Novo Testamento';
+      instr.placeholder = 'Ex.: incluir as crianças; só sobre os reis de Israel';
+      // 6.14.39: a última opção antes do botão: o nível de dificuldade, em três partes iguais (Médio já marcado).
+      const rotNivel = document.createElement('span');
+      rotNivel.id = 'jogosNivelRotulo';
+      rotNivel.className = 'fam-trocar-rotulo';
+      rotNivel.textContent = 'Nível de dificuldade';
+      const niveis = document.createElement('div');
+      niveis.className = 'jogos-niveis';
+      niveis.setAttribute('role', 'radiogroup');
+      niveis.setAttribute('aria-labelledby', rotNivel.id);
+      niveis.append(...JOGOS_NIVEIS.map(n => {
+        const opcao = document.createElement('label');
+        opcao.className = 'jogos-nivel';
+        const radio = document.createElement('input');
+        radio.type = 'radio';
+        radio.name = 'jogosNivel';
+        radio.value = n.id;
+        radio.checked = n.id === 'medio';
+        const texto = document.createElement('span');
+        texto.textContent = n.nome;
+        opcao.append(radio, texto);
+        return opcao;
+      }));
+      const nivelEscolhido = () => jogosNivel((niveis.querySelector('input:checked') || {}).value);
       const acoes = document.createElement('div');
       acoes.className = 'fam-acoes jogos-acoes';
       const ir = document.createElement('button');
@@ -31484,8 +31511,8 @@ function saveTemplatesToStorage() {
       aviso.className = 'fam-trocar-aviso';
       aviso.setAttribute('role', 'status');
       aviso.hidden = true;
-      ir.addEventListener('click', () => jogosPreparar(j, tema.value, instr.value, ir, aviso));
-      p.replaceChildren(rotTema, tema, rotInstr, instr, acoes, aviso); // 6.13.61: sem o nome do jogo de novo (já está no título do card)
+      ir.addEventListener('click', () => jogosPreparar(j, tema.value, instr.value, nivelEscolhido(), ir, aviso));
+      p.replaceChildren(rotTema, tema, rotInstr, instr, rotNivel, niveis, acoes, aviso); // 6.13.61: sem o nome do jogo de novo (já está no título do card)
       botao.after(p);
       p.hidden = false;
       jogosFiltro = j.nome; // os "Jogos preparados" mostram só os deste jogo
@@ -31519,7 +31546,7 @@ function saveTemplatesToStorage() {
         botao.textContent = antes;
       };
     }
-    async function jogosPreparar(j, temaBruto, instrBruta, botao, avisoEl) {
+    async function jogosPreparar(j, temaBruto, instrBruta, nivel, botao, avisoEl) {
       if (jogosPreparando) return;
       const avisar = (msg, tipo) => {
         avisoEl.textContent = msg || '';
@@ -31530,15 +31557,16 @@ function saveTemplatesToStorage() {
       if (!codigo) { avisar('Para preparar um jogo, informe o código de pesquisa em Ajustes → 🔐 Autorização de acessos. (Para entrar num jogo, só o código do jogo basta.)', 'erro'); return; }
       const liberar = botaoIaOcupado(botao, 'Preparando…');
       avisar('⏳ A IA está preparando o jogo ' + j.titulo + '. Pode levar alguns minutos; deixe esta tela aberta.');
-      const g = await jogosGerar(j, temaBruto, instrBruta, codigo);
+      const g = await jogosGerar(j, temaBruto, instrBruta, codigo, nivel);
       liberar();
       if (g.erro) { avisar(g.erro, 'erro'); return; }
       jogosProntoMostrar(g.item, g.salvo ? '✅ Jogo pronto e guardado em 📂 Jogos preparados.' : '✅ Jogo pronto (não coube na memória do aparelho para guardar).', g.avisoIa ? '⚠️ ' + g.avisoIa.charAt(0).toUpperCase() + g.avisoIa.slice(1) + '.' : '');
     }
     // A IA prepara um jogo e ele entra nos "Jogos preparados": { item, salvo, avisoIa } ou { erro }. Usado em "✨ Preparar o jogo" e, no fim
     // de um jogo, em "✨ Jogar com novas perguntas" (6.14.15).
-    async function jogosGerar(j, temaBruto, instrBruta, codigo) {
+    async function jogosGerar(j, temaBruto, instrBruta, codigo, nivelBruto) {
       if (jogosPreparando) return { erro: 'Espere o jogo em preparação ficar pronto.' };
+      const nivel = jogosNivel(nivelBruto);
       const q = QUADROS_FAMILIA.find(x => x.id === 'jogo');
       const tema = String(temaBruto || '').replace(/\s+/g, ' ').trim().slice(0, 300);
       const instrucao = String(instrBruta || '').replace(/\s+/g, ' ').trim().slice(0, 300);
@@ -31564,7 +31592,8 @@ function saveTemplatesToStorage() {
           plano: { titulo: '', objetivo: '' },
           evitar: familiaEvitarLer(),
           jaUsados: {},
-          instrucao
+          instrucao,
+          nivel
         }, IA_ESPERA_MS);
         const parte = r.ok && r.data && q ? familiaParteDoQuadro(r.data.parte, q) : null;
         if (!parte || !parte.jogo) return { erro: 'O jogo não foi preparado: ' + String((r.data && r.data.erro) || (r.unavailable ? 'serviço indisponível no momento' : 'tente de novo')).replace(/\.$/, '') + '.' };
@@ -31574,6 +31603,7 @@ function saveTemplatesToStorage() {
           nome: j.nome,
           tema,
           instrucao,
+          nivel,
           em: Date.now(),
           op: { modo: 'jogos', titulo: j.titulo + (tema ? ' · ' + tema : ''), emoji: j.emoji, partes: [parte], duracaoTotal: parte.minutos || 0 }
         };
@@ -31598,7 +31628,7 @@ function saveTemplatesToStorage() {
       const meta = document.createElement('p');
       meta.className = 'jogos-pronto-meta';
       const n = jogosRodadas(item);
-      meta.textContent = 'Preparado em ' + jogosQuando(item.em) + (n ? ' · ' + n + (n === 1 ? ' rodada' : ' rodadas') : '') + (item.tema ? ' · Tema: ' + item.tema : '');
+      meta.textContent = 'Preparado em ' + jogosQuando(item.em) + (n ? ' · ' + n + (n === 1 ? ' rodada' : ' rodadas') : '') + (item.nivel ? ' · Nível ' + jogosNivelNome(item.nivel).toLowerCase() : '') + (item.tema ? ' · Tema: ' + item.tema : '');
       caixa.append(meta);
       if (mensagem) {
         const ok = document.createElement('p');
@@ -31718,7 +31748,7 @@ function saveTemplatesToStorage() {
         }
         if (familiaSolo) familiaSoloEncerrar(familiaSolo.cod, familiaSolo.chave);
         const titulo = (item.op.emoji ? item.op.emoji + ' ' : '') + item.op.titulo;
-        familiaSolo = { cod: r.data.sessao, chave: r.data.chave, titulo, posicoes: {}, jogo: { nome: item.nome, tema: item.tema || '', instrucao: item.instrucao || '' } };
+        familiaSolo = { cod: r.data.sessao, chave: r.data.chave, titulo, posicoes: {}, jogo: { nome: item.nome, tema: item.tema || '', instrucao: item.instrucao || '', nivel: item.nivel || '' } };
         participarAbrir(r.data.sessao);
       });
       acoes.appendChild(iniciar);
@@ -31747,7 +31777,7 @@ function saveTemplatesToStorage() {
         meta.className = 'jogos-salvo-meta';
         const n = jogosRodadas(item);
         const sessao = sessoes.find(s => s.progId === 'jogo:' + item.id);
-        meta.textContent = 'Preparado em ' + jogosQuando(item.em) + (n ? ' · ' + n + (n === 1 ? ' rodada' : ' rodadas') : '') + (sessao ? ' · 🔗 código ' + sessao.cod : '');
+        meta.textContent = 'Preparado em ' + jogosQuando(item.em) + (n ? ' · ' + n + (n === 1 ? ' rodada' : ' rodadas') : '') + (item.nivel ? ' · Nível ' + jogosNivelNome(item.nivel).toLowerCase() : '') + (sessao ? ' · 🔗 código ' + sessao.cod : '');
         const acoes = document.createElement('div');
         acoes.className = 'fam-acoes';
         const abrir = document.createElement('button');

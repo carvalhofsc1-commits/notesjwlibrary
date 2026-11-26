@@ -4102,7 +4102,7 @@ const PREPARAR_QUADRO_FAMILIA = {
           }[idTipo];
           const faltas = [];
           if (abrev && jogo) cartasDoJogo = jogo.rodadas.map((r) => r.resposta);
-          if (validas < limite.min) faltas.push(`vieram ${validas} rodadas válidas${abrev && siglasDoBanco.length ? ` (com ${siglasDoBanco.length} siglas do servidor)` : ""}; mande ${pedir} rodadas (no mínimo ${minDaIa}), em nível de adulto batizado${exigencia ? `, ${exigencia}` : ""}${semData ? ", e sem datas fora do Apêndice B" : ""}${rejeitadasNaBiblia.length ? `; ${textoDasRejeitadas(rejeitadasNaBiblia)}` : ""}${recusadas.length ? `; ${textoDasRecusadasDoJogo(recusadas)}` : ""}`);
+          if (validas < limite.min) faltas.push(`vieram ${validas} rodadas válidas${abrev && siglasDoBanco.length ? ` (com ${siglasDoBanco.length} siglas do servidor)` : ""}; mande ${pedir} rodadas (no mínimo ${minDaIa}), ${ctx.nivel === "facil" ? "no nível FÁCIL escolhido" : ctx.nivel === "dificil" ? "no nível DIFÍCIL escolhido" : "em nível de adulto batizado"}${exigencia ? `, ${exigencia}` : ""}${semData ? ", e sem datas fora do Apêndice B" : ""}${rejeitadasNaBiblia.length ? `; ${textoDasRejeitadas(rejeitadasNaBiblia)}` : ""}${recusadas.length ? `; ${textoDasRecusadasDoJogo(recusadas)}` : ""}`);
           if (idTipo === "verdadeiro_falso" && validas) {
             const verdadeiras = jogo.rodadas.filter((r) => /^Verdadeiro\b/.test(r.resposta)).length;
             if (verdadeiras < 3 || validas - verdadeiras < 3) faltas.push(`vieram ${verdadeiras} verdadeiras e ${validas - verdadeiras} falsas; mande pelo menos 3 verdadeiras e 3 falsas`);
@@ -4172,7 +4172,10 @@ export async function montarPedidoQuadroFamilia(body, P) {
     jaUsados: normalizarUsados(body.jaUsados),
     // 6.12.76: na troca do tipo do jogo (gerarQuadroFamilia), o tipo que não teve rodadas suficientes conferidas fica de fora.
     jogoFora: textoLivre(body.jogoFora, 80),
+    // 6.14.39: o nível de dificuldade escolhido na preparação de um jogo (só no quadro do jogo); "" = médio, o padrão.
+    nivel: id === "jogo" && (body.nivel === "facil" || body.nivel === "dificil") ? body.nivel : "",
   };
+  const fraseDoNivel = ctx.nivel ? P.frases?.jogos?.[ctx.nivel === "facil" ? "Dificuldade: Fácil" : "Dificuldade: Difícil"] || "" : "";
   const prep = await PREPARAR_QUADRO_FAMILIA[id](ctx);
   const tituloPlano = textoLivre(plano.titulo, 120);
   const objetivoPlano = textoLivre(plano.objetivo, 400);
@@ -4192,6 +4195,7 @@ export async function montarPedidoQuadroFamilia(body, P) {
     blocoJaUsados(ctx.jaUsados) +
     (trocaDoQuadro ? `TROCA DESTE QUADRO: quem dirige pediu outro no lugar do anterior; faça um quadro diferente (o que o anterior usou está entre os já usados acima).\n` : "") +
     (instrucao ? `INSTRUÇÃO DE QUEM DIRIGE PARA ESTE QUADRO (siga se não contrariar as regras): ${instrucao}\n` : "") +
+    (fraseDoNivel ? `${fraseDoNivel}\n` : "") +
     prep.listas;
   return { ctx, quadro, perfil, prep, mensagem, sistema: P.sistemaFamiliaQuadro[prep.sistema] };
 }

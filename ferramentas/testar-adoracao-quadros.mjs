@@ -2209,6 +2209,29 @@ teste("6.13.22: o quadro do Perfil bíblico — cartas da IA conferidas, prontas
   assert.match(r.falta, /^vieram 1 cartas válidas/);
 });
 
+teste("6.14.39: o nível de dificuldade entra no pedido do jogo (Médio não junta nada)", async () => {
+  const pedir = (extra) => montarPedidoQuadroFamilia(corpoFamilia({ quadro: "jogo", jogos: ["Verdadeiro ou falso"], semente: 7, ...extra }), montados);
+  const facil = montados.frases.jogos["Dificuldade: Fácil"];
+  const dificil = montados.frases.jogos["Dificuldade: Difícil"];
+  assert.match(facil, /^NÍVEL DE DIFICULDADE DESTE JOGO: FÁCIL/);
+  assert.match(dificil, /^NÍVEL DE DIFICULDADE DESTE JOGO: DIFÍCIL/);
+  const sem = (await pedir({})).mensagem;
+  for (const nivel of ["medio", "outro", ""]) assert.equal((await pedir({ nivel })).mensagem, sem, nivel);
+  assert.doesNotMatch(sem, /NÍVEL DE DIFICULDADE/);
+  assert.ok((await pedir({ nivel: "facil" })).mensagem.includes(facil));
+  assert.ok((await pedir({ nivel: "dificil" })).mensagem.includes(dificil));
+  assert.ok(!(await pedir({ nivel: "dificil" })).mensagem.includes(facil));
+  // só no quadro do jogo
+  const outro = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "personagem", nivel: "facil", evitar: {} }), montados);
+  assert.doesNotMatch(outro.mensagem, /NÍVEL DE DIFICULDADE/);
+  // o pedido de novo não manda voltar ao nível de adulto batizado
+  for (const [nivel, esperado] of [["facil", /no nível FÁCIL escolhido/], ["dificil", /no nível DIFÍCIL escolhido/], ["", /em nível de adulto batizado/]]) {
+    const r = await (await pedir({ nivel })).prep.montar({ descricao: "d", nome: "V ou F", comoJogar: "x", rodadas: [], eventos: [] });
+    assert.match(r.falta, esperado, nivel);
+  }
+  // a frase aparece na tela de prompts
+  assert.ok(prompts.CATEGORIAS.find((c) => c.id === "adoracao_familia").partes.includes("frases_jogos"));
+});
 
 for (const [nome, fn] of testes) {
   try {
