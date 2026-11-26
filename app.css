@@ -18147,3 +18147,6 @@ details.fam-placar-card > summary { min-height: 0 !important; padding: 3px 8px !
 #participarSessao .fam-sessao-resp-caixa > button.fam-sessao-resp-limpar.vazio,
 #participarSessao .fam-sessao-resp-caixa > button.fam-sessao-resp-limpar:disabled { opacity: .4; }
 #participarSessao .fam-sessao-resp-linha > .fam-sessao-mic { align-self: flex-start; height: 44px; min-height: 44px; }
+
+/* 6.14.09: moldura em volta de cada card de dica */
+#participarSessao .fam-sessao-dica { border: 1.5px solid #f59e0b; border-left-width: 4px; border-radius: 10px; padding: 8px 10px; }

@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.09
+
+- Jogo ao vivo: cada **dica ganhou uma moldura** em volta.
+- Abreviações: a **1ª dica ficou genérica** e curta, só o tipo, a situação, o tempo ou a natureza da sigla (ex.: "Dias de Jesus", "Sagrado", "Nação de Israel"). A 2ª continua mais reveladora, com o livro, e a 3ª traz o começo de cada palavra. Vale para as siglas fixas e para as criadas pela IA.
+- Jogos já preparados continuam com as dicas antigas; é só preparar de novo.
+
 ## 6.14.08
 
 - Abreviações: a questão mostra só **"Sigla:"** e a sigla, **grande e em negrito**.

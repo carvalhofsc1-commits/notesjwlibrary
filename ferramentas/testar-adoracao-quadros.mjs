@@ -1704,11 +1704,11 @@ teste("6.12.81 (2): sigla curta nas Abreviações (siglaCurta, abreviacaoJogavel
 teste("6.14.01: Abreviações: duas pistas do significado sem a resposta, sem a dica da quantidade de palavras", async () => {
   const ab = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "jogo", jogos: ["Abreviações bíblicas (ex.: Os 12 A de C)"] }), montados);
   const r = await ab.prep.montar({ descricao: "d", nome: "Siglas", comoJogar: "R.", rodadas: [
-    { pergunta: "O P da P Dica 1: É um título profético dado ao Messias. Dica 2: Isaías o anunciou junto com outros nomes de um menino que nasceria.", resposta: "O Príncipe da Paz", referencia: "Isaías 9:6" },
+    { pergunta: "O P da P Dica 1: Título profético. Dica 2: Isaías o anunciou junto com outros nomes de um menino que nasceria.", resposta: "O Príncipe da Paz", referencia: "Isaías 9:6" },
     { pergunta: "O C de D Dica 1: O Cordeiro tira o pecado do mundo. Dica 2: João Batista chamou Jesus assim ao vê-lo se aproximar.", resposta: "O Cordeiro de Deus", referencia: "João 1:29" },
   ], eventos: [] });
   const paz = r.jogo.rodadas.find((x) => x.pergunta.includes("“o P da P”")).pergunta;
-  assert.equal(paz, "O que significa a sigla “o P da P”? Dica 1: É um título profético dado ao Messias. Dica 2: Isaías o anunciou junto com outros nomes de um menino que nasceria. Está em Isaías. Dica 3: O começo de cada palavra: “o Pr da Pa”.");
+  assert.equal(paz, "O que significa a sigla “o P da P”? Dica 1: Título profético. Dica 2: Isaías o anunciou junto com outros nomes de um menino que nasceria. Está em Isaías. Dica 3: O começo de cada palavra: “o Pr da Pa”.");
   const cordeiro = r.jogo.rodadas.find((x) => x.pergunta.includes("“o C de D”")).pergunta;
   assert.ok(!/Cordeiro tira/.test(cordeiro), "a pista que entrega a resposta é descartada");
   assert.match(cordeiro, /Dica 1: Está em João\. Dica 2: João Batista chamou Jesus assim/);
@@ -1718,7 +1718,7 @@ teste("6.14.01: Abreviações: duas pistas do significado sem a resposta, sem a 
   const banco = await import("../api/_jogosBanco.mjs");
   for (const [sigla, resposta] of banco.SIGLAS_BANCO) {
     const p = banco.PISTAS_DAS_SIGLAS[sigla];
-    assert.ok(p && p.length === 2 && p.every((t) => ger.pistaDaAbreviacao(t, resposta)), `pistas da sigla do banco: ${sigla} = ${resposta}`);
+    assert.ok(p && p.length === 2 && ger.pistaGenerica(p[0], resposta) && ger.pistaDaAbreviacao(p[1], resposta), `pistas da sigla do banco: ${sigla} = ${resposta}`);
   }
 });
 
@@ -1759,6 +1759,18 @@ teste("6.14.04: Abreviações: sigla de fato muito conhecido, com \"Fato conheci
   assert.ok(t, "o fato conhecido entra no jogo");
   assert.equal(t.referencia, "Fato conhecido");
   assert.match(t.pergunta, /“T do M V”.*É um fato bíblico muito conhecido\./);
+});
+
+teste("6.14.09: Abreviações: a 1ª dica é genérica e curta", async () => {
+  const promptsJs = await readFile(new URL("api/_prompts.mjs", raiz), "utf8");
+  assert.equal(ger.pistaGenerica("Dias de Jesus", "Os 12 Apóstolos de Cristo"), "Dias de Jesus.");
+  assert.equal(ger.pistaGenerica("Sagrado", "A Bíblia tem 66 Livros"), "Sagrado.");
+  assert.equal(ger.pistaGenerica("Nação de Israel", "Travessia do Mar Vermelho"), "Nação de Israel.");
+  assert.equal(ger.pistaGenerica("É um grupo escolhido para estar com o Mestre e pregar.", "Os 12 Apóstolos de Cristo"), "", "longa demais para a 1ª dica");
+  assert.equal(ger.pistaGenerica("Dias de Jesus", "Os 12 Apóstolos de Jesus"), "", "tem palavra da resposta");
+  assert.equal(ger.perguntaDaAbreviacao("os 12 A de C", "Os 12 Apóstolos de Cristo", "Está em Mateus", ["Dias de Jesus", "Pedro e João faziam parte desse grupo."]),
+    "O que significa a sigla “os 12 A de C”? Dica 1: Dias de Jesus. Dica 2: Pedro e João faziam parte desse grupo. Está em Mateus. Dica 3: O começo de cada palavra: “os 12 Ap de Cr”.");
+  assert.match(promptsJs, /a Dica 1 é BEM GENÉRICA e curta/);
 });
 
 teste("6.12.81 (2): o jogo de Abreviações tira as siglas longas e o pedido de novo diz o que fazer", async () => {

@@ -868,30 +868,41 @@ export function comecoDasPalavras(resposta) {
     .map((w) => (MINUSCULAS_NA_SIGLA.has(normalizarTexto(w)) ? minusculaSeLigacao(w) : /^\d/.test(w) || w.replace(/[^\p{L}]/gu, "").length <= 2 ? w : w.replace(/^(\P{L}*\p{L}\p{L}).*$/u, "$1")))
     .join(" ");
 }
-// 6.14.01: uma pista de significado vale se diz alguma coisa (de 15 a 220 caracteres) e não entrega nenhuma palavra da resposta (de 4 letras ou
-// mais, nem o começo dela: "apóstolo" também entrega "Apóstolos"). Devolve a frase com o ponto final, ou "".
-export function pistaDaAbreviacao(texto, resposta) {
+// 6.14.01: uma pista não pode entregar nenhuma palavra da resposta (de 4 letras ou mais, nem o começo dela: "apóstolo" também entrega
+// "Apóstolos"). pistaDaAbreviacao (a 2ª dica) diz alguma coisa em 15 a 220 caracteres; pistaGenerica (a 1ª dica, 6.14.09) é bem curta, só o
+// tipo, a situação, o tempo ou a natureza da sigla ("Dias de Jesus", "Sagrado"): até 6 palavras e 50 caracteres. Devolvem a frase com o
+// ponto final, ou "".
+function pistaConferida(texto, resposta, minimo, maximo) {
   const t = String(texto || "").replace(/\s+/g, " ").replace(/\s*Dica\s*\d\s*:.*$/i, "").trim();
-  if (t.length < 15 || t.length > 220) return "";
+  if (t.length < minimo || t.length > maximo) return "";
   const radical = (w) => (w.length > 5 ? w.slice(0, w.length - 1) : w);
   const daResposta = normalizarTexto(resposta).split(/[^a-z0-9]+/).filter((w) => w.length >= 4 && !/^\d+$/.test(w)).map(radical);
   const daPista = normalizarTexto(t).split(/[^a-z0-9]+/).filter(Boolean);
   if (daPista.some((w) => daResposta.some((r) => w === r || (r.length >= 4 && w.startsWith(r))))) return "";
   return /[.!?…]["”’)]?$/.test(t) ? t : `${t}.`;
 }
+export function pistaDaAbreviacao(texto, resposta) {
+  return pistaConferida(texto, resposta, 15, 220);
+}
+export function pistaGenerica(texto, resposta) {
+  const t = pistaConferida(texto, resposta, 3, 51);
+  return t && t.split(" ").length <= 6 ? t : "";
+}
 // A palavra mais forte da resposta (a mais longa): a 2ª dica de reserva, quando não há pista de significado.
 export function palavraPrincipal(resposta) {
   return String(resposta || "").replace(/[.,;:!?()]+/g, " ").split(/\s+/).filter((w) => /\p{L}/u.test(w)).sort((a, b) => b.length - a.length)[0] || "";
 }
-// 6.14.01: as 3 dicas de uma sigla, cada uma mais reveladora que a anterior: 1) uma pista do significado; 2) uma pista mais direta, com o livro
-// da Bíblia (ou o tipo da sigla); 3) o começo de cada palavra. Saiu a antiga dica "A resposta tem N palavras". Sem pistas válidas, a 1ª diz onde
-// está e a 2ª revela a palavra principal.
+// 6.14.01: as 3 dicas de uma sigla, cada uma mais reveladora que a anterior: 1) bem genérica (6.14.09); 2) uma pista mais direta, com o livro
+// da Bíblia (ou o tipo da sigla); 3) o começo de cada palavra. Saiu a antiga dica "A resposta tem N palavras". Sem a 1ª pista válida, a 1ª dica
+// diz onde está; sem a 2ª, ela revela a palavra principal.
 export function perguntaDaAbreviacao(sigla, resposta, onde, pistas = []) {
-  const boas = (Array.isArray(pistas) ? pistas : []).map((p) => pistaDaAbreviacao(p, resposta)).filter(Boolean);
+  const [primeira, segunda] = Array.isArray(pistas) ? pistas : [];
+  const generica = pistaGenerica(primeira, resposta);
+  const forte = pistaDaAbreviacao(segunda, resposta);
   const lugar = String(onde || "").replace(/[.\s]+$/, "") || "É uma expressão conhecida de quem estuda a Bíblia";
   const principal = palavraPrincipal(resposta);
-  const reveladora = principal ? `Uma das palavras é “${principal}”.` : `${lugar}.`;
-  const [d1, d2] = boas.length >= 2 ? [boas[0], `${boas[1]} ${lugar}.`] : boas.length === 1 ? [`${lugar}.`, boas[0]] : [`${lugar}.`, reveladora];
+  const reveladora = forte || (principal ? `Uma das palavras é “${principal}”.` : `${lugar}.`);
+  const [d1, d2] = generica ? [generica, `${reveladora} ${lugar}.`] : [`${lugar}.`, reveladora];
   return `O que significa a sigla “${siglaComArtigosMinusculos(sigla, resposta)}”? Dica 1: ${d1} Dica 2: ${d2} Dica 3: O começo de cada palavra: “${comecoDasPalavras(resposta)}”.`;
 }
 
