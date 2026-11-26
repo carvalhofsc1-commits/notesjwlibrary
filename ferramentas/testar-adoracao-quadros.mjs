@@ -2091,7 +2091,16 @@ teste("6.13.11: assuntos em vista própria pelo botão sob o Assunto, temas no c
   assert.ok(html.includes('>💛 Escolha um tema ou assunto na lista…</button>'));
   assert.ok(!/for="familiaAssunto">Assunto <span class="opc">\(opcional\)/.test(html), "sem o (opcional)");
   assert.ok(appJs.includes("assuntos: ['familiaAssuntosBox', 'familiaAssuntosTopo']"));
-  assert.ok(appJs.includes("familiaAssuntoEl.value = marcados.join('; ');"));
+  assert.ok(appJs.includes("familiaAssuntoEl.value = escolhidos.join('; ').slice(0, 300);"));
+  // 6.14.61: o digitado em "Não encontrou o assunto na lista?" entra depois dos marcados; a lixeira da seção desmarca só os itens dela
+  const trecho = appJs.slice(appJs.indexOf("function familiaAssuntosEscolhidos()"), appJs.indexOf("function familiaAssuntoDaLista()"));
+  const escolhidos = (marcados, informado) => new Function("document", "familiaOutrasCircEl", trecho + "; return familiaAssuntosEscolhidos();")({ querySelectorAll: () => marcados.map((value) => ({ value })) }, { value: informado });
+  assert.equal(escolhidos(["Luto"], "  mudança\n de cidade ").join("; "), "Luto; mudança de cidade");
+  assert.equal(escolhidos([], "mudança").join("; "), "mudança");
+  assert.equal(escolhidos(["Luto"], "").join("; "), "Luto");
+  assert.ok(html.includes(">Não encontrou o assunto na lista? Informe aqui:</label>"));
+  assert.ok(appJs.includes("familiaOutrasCircEl.addEventListener('input', familiaAssuntoDaLista);"));
+  assert.ok(appJs.includes("lixo.className = 'secondary limpar-btn fam-circ-limpar';"));
   assert.ok(appJs.includes("qtd.textContent = n ? '(' + n + (n === 1 ? ' escolhido)' : ' escolhidos)') : '';"));
   assert.ok(appJs.includes("familiaGerarBtn.disabled = !ok;"));
   assert.ok(appJs.includes("familiaAssuntosLimpar(); // 6.13.11"));

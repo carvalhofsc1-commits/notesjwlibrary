@@ -7961,7 +7961,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.14.60'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.14.61'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -26467,15 +26467,43 @@ function saveTemplatesToStorage() {
         let marca = sm.querySelector('.fam-circ-marcadas');
         if (!marca) { marca = document.createElement('span'); marca.className = 'fam-circ-marcadas'; sm.appendChild(marca); }
         marca.textContent = n ? ' · ✓ ' + n : ''; // 6.14.58: curto, para o título da seção caber numa linha só
+        // 6.14.61: a seção com algo marcado ganha uma lixeira dentro do card, à direita do título, que desmarca só os itens dela.
+        sec.classList.toggle('fam-circ-com-marca', n > 0);
+        let lixo = sm.querySelector('.fam-circ-limpar');
+        if (!lixo) {
+          lixo = document.createElement('button');
+          lixo.type = 'button';
+          lixo.className = 'secondary limpar-btn fam-circ-limpar';
+          lixo.textContent = '🗑️';
+          const nome = (sm.childNodes[0] && sm.childNodes[0].textContent || '').replace(/^[^\p{L}]+/u, '').trim();
+          lixo.title = 'Desmarcar os itens de ' + nome;
+          lixo.setAttribute('aria-label', 'Desmarcar os itens de ' + nome);
+          lixo.addEventListener('click', ev => {
+            ev.preventDefault(); // o toque na lixeira não abre nem fecha o card
+            ev.stopPropagation();
+            sec.querySelectorAll('input[type="checkbox"]').forEach(i => { i.checked = false; });
+            familiaCircAplicarLimite(null);
+            familiaAssuntoDaLista();
+            familiaPerfilSalvar();
+          });
+          sm.appendChild(lixo);
+        }
+        lixo.hidden = !n;
       });
     }
 
     // 6.13.11: os temas escolhidos na lista vão para o campo Assunto ("Assunto (2 escolhidos)"); se a pessoa digitar, o rótulo volta a ser só
     // "Assunto". O botão Preparar só fica ativo com um assunto escrito ou pelo menos um tema marcado.
-    function familiaAssuntoDaLista() {
+    // 6.14.61: o assunto digitado em "Não encontrou o assunto na lista?" também vai para o campo, depois dos marcados, separado por ";".
+    function familiaAssuntosEscolhidos() {
       const marcados = Array.from(document.querySelectorAll('#familiaCircunstancias input[type="checkbox"]:checked')).map(i => i.value);
-      if (marcados.length) {
-        familiaAssuntoEl.value = marcados.join('; ');
+      const informado = (familiaOutrasCircEl.value || '').replace(/\s+/g, ' ').trim();
+      return informado ? marcados.concat(informado) : marcados;
+    }
+    function familiaAssuntoDaLista() {
+      const escolhidos = familiaAssuntosEscolhidos();
+      if (escolhidos.length) {
+        familiaAssuntoEl.value = escolhidos.join('; ').slice(0, 300);
         familiaAssuntoEl.dataset.daLista = '1';
       } else if (familiaAssuntoEl.dataset.daLista === '1') {
         familiaAssuntoEl.value = '';
@@ -26485,7 +26513,8 @@ function saveTemplatesToStorage() {
     }
     function familiaAssuntoRotulo() {
       const qtd = document.getElementById('familiaAssuntoQtd');
-      const n = familiaAssuntoEl.dataset.daLista === '1' ? document.querySelectorAll('#familiaCircunstancias input[type="checkbox"]:checked').length : 0;
+      const daLista = familiaAssuntoEl.dataset.daLista === '1' && document.querySelector('#familiaCircunstancias input[type="checkbox"]:checked');
+      const n = daLista ? familiaAssuntosEscolhidos().length : 0; // só o digitado, sem nada marcado: sem contagem
       if (qtd) qtd.textContent = n ? '(' + n + (n === 1 ? ' escolhido)' : ' escolhidos)') : '';
       try { familiaCrescer(familiaAssuntoEl); } catch (e) { /* escondido agora: cresce ao voltar à tela */ }
       familiaGerarHabilitar();
@@ -32390,7 +32419,7 @@ function saveTemplatesToStorage() {
     // 6.13.11: o botão sob o campo Assunto abre a vista dos assuntos e situações; digitar no Assunto tira o "(N escolhidos)".
     document.getElementById('familiaAssuntosAbrir').addEventListener('click', () => familiaVista('assuntos'));
     familiaAssuntoEl.addEventListener('input', () => { delete familiaAssuntoEl.dataset.daLista; familiaAssuntoRotulo(); });
-    familiaOutrasCircEl.addEventListener('input', familiaGerarHabilitar);
+    familiaOutrasCircEl.addEventListener('input', familiaAssuntoDaLista); // 6.14.61: leva o que se digita para o campo Assunto
     // Quadros (6.12.70): salva ao marcar e atualiza o total; os atalhos marcam só os obrigatórios (noite curta) ou todos (completa).
     familiaQuadrosEl.addEventListener('change', () => { familiaQuadrosAtualizar(); familiaPerfilSalvar(); });
     const familiaQuadrosAtalho = todos => {
@@ -32407,8 +32436,8 @@ function saveTemplatesToStorage() {
     document.getElementById('familiaJogosNenhum').addEventListener('click', () => { familiaJogosEl.querySelectorAll('input').forEach(el => { el.checked = false; }); familiaJogosAtualizar(); familiaPerfilSalvar(); });
     familiaPerfilCarregar();
     {
-      const marcadosAoAbrir = Array.from(document.querySelectorAll('#familiaCircunstancias input[type="checkbox"]:checked')).map(i => i.value);
-      if (marcadosAoAbrir.length && familiaAssuntoEl.value === marcadosAoAbrir.join('; ')) familiaAssuntoEl.dataset.daLista = '1';
+      const escolhidosAoAbrir = familiaAssuntosEscolhidos();
+      if (escolhidosAoAbrir.length && familiaAssuntoEl.value === escolhidosAoAbrir.join('; ').slice(0, 300)) familiaAssuntoEl.dataset.daLista = '1';
       familiaAssuntoRotulo();
     }
     familiaSalvasRender();

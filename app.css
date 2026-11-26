@@ -18548,3 +18548,19 @@ body[data-screen="familia"] main { padding: 10px; }
 #familiaCard .fam-circ-secao > summary > span { font-size: inherit; font-weight: 500; }
 body[data-screen="familia"] main { padding-bottom: 3px; } /* com a folga de 7 px do corpo acima da barra de baixo, ficam os 10 px */
 #familiaCard #familiaAssuntosBox .fam-bloco > .fam-dica { text-align: center; } /* 6.14.60 */
+
+/* 6.14.61: em "Assuntos e situações", a seção com algo marcado ganha a lixeira dentro do card, à direita do título (que perde o "até 2" para caber) */
+#familiaCard .fam-circ-secao.fam-circ-com-marca { padding-right: 3px; }
+#familiaCard .fam-circ-secao.fam-circ-com-marca > summary { font-size: clamp(.7rem, 3.5vw, .86rem); }
+#familiaCard .fam-circ-secao.fam-circ-com-marca > summary > .opc { display: none; }
+#familiaCard .fam-circ-secao > summary > button.fam-circ-limpar { flex: 0 0 38px; width: 38px; min-width: 38px; height: 36px; min-height: 36px; margin: 0 0 0 auto; padding: 0; font-size: .95rem; }
+#familiaCard .fam-circ-secao > summary > button.fam-circ-limpar[hidden] { display: none; }
+#familiaCard .fam-circ-secao.fam-circ-com-marca[open] > .fam-checks, #familiaCard .fam-circ-secao.fam-circ-com-marca[open] > .fam-subsecao { margin-right: 7px; }
+/* 6.14.61: sob "Assunto desta semana", o aviso de que o assunto é obrigatório (letra menor, em vermelho) */
+#familiaCard .fam-assunto-card > .fam-assunto-obrig { margin: -6px 0 0; text-align: center; font-size: clamp(.66rem, 3.4vw, .78rem); line-height: 1.3; color: #b91c1c; }
+:root[data-theme="dark"] #familiaCard .fam-assunto-card > .fam-assunto-obrig { color: #fca5a5; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #familiaCard .fam-assunto-card > .fam-assunto-obrig { color: #fca5a5; } }
+/* 6.14.61: o título "Programações salvas" e a contagem numa linha só (antes viravam duas colunas quebradas) */
+#familiaCard > #familiaSalvasBox > summary { flex-wrap: wrap; column-gap: 6px; row-gap: 0; font-size: clamp(.8rem, 4vw, .98rem); line-height: 1.25; }
+#familiaCard > #familiaSalvasBox > summary > .opc { white-space: nowrap; }
+#familiaCard #familiaSalvasLista > .fam-dica { text-align: center; } /* 6.14.61: o aviso de que ainda não há programações */

@@ -2,6 +2,14 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.61
+
+- **Adoração em família:** o título **Programações salvas** e a contagem numa linha só (antes quebravam em duas colunas), e o aviso de lista vazia centralizado.
+- **Adoração em família:** sob **Assunto desta semana**, o aviso **"(Obrigatório informar ou escolher um assunto)"**.
+- **Assuntos e situações:**
+  - O campo de baixo passou a se chamar **"Não encontrou o assunto na lista? Informe aqui:"**, e o que for digitado nele vai para o campo **"Ou informe aqui um assunto:"**, depois dos itens marcados, separado por **;**.
+  - A seção com algo marcado ganha uma **lixeira** dentro do card, à direita do título, que desmarca só os itens dela.
+
 ## 6.14.60
 
 - **Assuntos e situações:** o texto **"Marque até 2 itens relacionados entre si"** centralizado.
