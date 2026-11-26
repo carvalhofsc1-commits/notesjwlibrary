@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.31
+
+- **Modo escuro:** o cartão de **boas-vindas** da Adoração em família ao vivo e do jogo ao vivo agora é **escuro** (azul e roxo discretos, letras claras). Vale também na tela grande. No modo claro nada mudou.
+
 ## 6.14.30
 
 - **Considerações para o serviço de campo:** o título "Fontes do esboço" passou a ser **"📚 Fontes de consulta"** (dava a entender que já havia um esboço).

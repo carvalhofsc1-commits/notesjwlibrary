@@ -18299,3 +18299,11 @@ details.fam-placar-card > summary { min-height: 0 !important; padding: 3px 8px !
 #participarSessao .fam-sessao-pergunta.fam-frase { margin: 4px 0 12px; text-align: center; }
 #participarSessao .fam-frase-rotulo { display: block; margin: 0 0 4px; text-align: left; font-size: .88rem; font-weight: 700; color: var(--muted); }
 #participarSessao .fam-frase-texto { display: block; padding: 10px 12px; border: 1.5px solid #8b5cf6; border-radius: 12px; background: color-mix(in srgb, #8b5cf6 12%, var(--card)); font-size: 1.15rem; font-weight: 800; line-height: 1.4; color: var(--text); overflow-wrap: anywhere; }
+
+/* 6.14.31: modo escuro: o cartao de boas-vindas ao vivo (era claro nos dois temas) */
+:root[data-theme="dark"] #participarSessao .fam-boasvindas { background: linear-gradient(180deg, #1f2b45, #28244a); color: #e5e7eb; }
+:root[data-theme="dark"] #participarSessao .fam-bv-ola { color: #c4b5fd; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) #participarSessao .fam-boasvindas { background: linear-gradient(180deg, #1f2b45, #28244a); color: #e5e7eb; }
+  :root:not([data-theme="light"]) #participarSessao .fam-bv-ola { color: #c4b5fd; }
+}
