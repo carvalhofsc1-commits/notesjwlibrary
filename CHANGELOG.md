@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.44
+
+- **Início:** o atalho **Jogos bíblicos** passou a dizer **"Para atividades em grupo e reuniões sociais"**.
+- **Nível de dificuldade:** os três botões com a **mesma intensidade de cor** (a do laranja marcado); o escolhido se distingue pelo **✓**, pelo negrito e pela **moldura escura** (clara no modo escuro).
+
 ## 6.14.43
 
 - **Jogos bíblicos (lista):** **emojis maiores** nos seis atalhos quadrados.

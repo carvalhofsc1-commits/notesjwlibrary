@@ -18169,21 +18169,22 @@ details.fam-placar-card > summary { min-height: 0 !important; padding: 3px 8px !
 #jogosCard .jogos-painel > * { margin: 0; }
 #jogosCard .jogos-painel > .fam-trocar-rotulo { margin-bottom: -6px; line-height: 1.2; }
 .jogos-niveis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; min-width: 0; }
-/* 6.14.40: os níveis mais finos, cada um com a sua cor (Fácil azul, Médio laranja, Difícil vermelho); o marcado com ✓, fundo mais forte e moldura grossa */
-#jogosCard .jogos-nivel { position: relative; display: flex; align-items: center; justify-content: center; gap: 4px; min-width: 0; min-height: 28px; box-sizing: border-box; margin: 0; padding: 1px 6px; border: 1px solid var(--nivel-moldura); border-radius: 8px; background: var(--nivel-fundo); color: var(--nivel-texto); font-size: .85rem; font-weight: 600; line-height: 1.2; cursor: pointer; }
-#jogosCard .jogos-nivel[data-nivel="facil"] { --nivel-fundo: #dbeafe; --nivel-marcado: #93c5fd; --nivel-moldura: #3b82f6; --nivel-texto: #1e3a8a; }
-#jogosCard .jogos-nivel[data-nivel="medio"] { --nivel-fundo: #ffedd5; --nivel-marcado: #fdba74; --nivel-moldura: #f97316; --nivel-texto: #7c2d12; }
-#jogosCard .jogos-nivel[data-nivel="dificil"] { --nivel-fundo: #fee2e2; --nivel-marcado: #fca5a5; --nivel-moldura: #ef4444; --nivel-texto: #7f1d1d; }
-:root[data-theme="dark"] #jogosCard .jogos-nivel[data-nivel="facil"] { --nivel-fundo: #1d2d4a; --nivel-marcado: #2c5390; --nivel-moldura: #3b82f6; --nivel-texto: #dbeafe; }
-:root[data-theme="dark"] #jogosCard .jogos-nivel[data-nivel="medio"] { --nivel-fundo: #3a2816; --nivel-marcado: #85481a; --nivel-moldura: #f97316; --nivel-texto: #ffedd5; }
-:root[data-theme="dark"] #jogosCard .jogos-nivel[data-nivel="dificil"] { --nivel-fundo: #3d2029; --nivel-marcado: #84303a; --nivel-moldura: #f87171; --nivel-texto: #fee2e2; }
+/* 6.14.40: os níveis mais finos, cada um com a sua cor (Fácil azul, Médio laranja, Difícil vermelho).
+   6.14.44: os três com a mesma intensidade de cor; o marcado se distingue pelo ✓, pelo negrito e pela moldura escura */
+#jogosCard .jogos-nivel { position: relative; display: flex; align-items: center; justify-content: center; gap: 4px; min-width: 0; min-height: 28px; box-sizing: border-box; margin: 0; padding: 0 6px; border: 2px solid var(--nivel-moldura); border-radius: 8px; background: var(--nivel-fundo); color: var(--nivel-texto); font-size: .85rem; font-weight: 600; line-height: 1.2; cursor: pointer; }
+#jogosCard .jogos-nivel[data-nivel="facil"] { --nivel-fundo: #93c5fd; --nivel-moldura: #3b82f6; --nivel-forte: #1e3a8a; --nivel-texto: #172554; }
+#jogosCard .jogos-nivel[data-nivel="medio"] { --nivel-fundo: #fdba74; --nivel-moldura: #f97316; --nivel-forte: #7c2d12; --nivel-texto: #431407; }
+#jogosCard .jogos-nivel[data-nivel="dificil"] { --nivel-fundo: #fca5a5; --nivel-moldura: #ef4444; --nivel-forte: #7f1d1d; --nivel-texto: #450a0a; }
+:root[data-theme="dark"] #jogosCard .jogos-nivel[data-nivel="facil"] { --nivel-fundo: #2c5390; --nivel-moldura: #3b82f6; --nivel-forte: #dbeafe; --nivel-texto: #eff6ff; }
+:root[data-theme="dark"] #jogosCard .jogos-nivel[data-nivel="medio"] { --nivel-fundo: #85481a; --nivel-moldura: #f97316; --nivel-forte: #ffedd5; --nivel-texto: #fff7ed; }
+:root[data-theme="dark"] #jogosCard .jogos-nivel[data-nivel="dificil"] { --nivel-fundo: #84303a; --nivel-moldura: #f87171; --nivel-forte: #fee2e2; --nivel-texto: #fef2f2; }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) #jogosCard .jogos-nivel[data-nivel="facil"] { --nivel-fundo: #1d2d4a; --nivel-marcado: #2c5390; --nivel-moldura: #3b82f6; --nivel-texto: #dbeafe; }
-  :root:not([data-theme="light"]) #jogosCard .jogos-nivel[data-nivel="medio"] { --nivel-fundo: #3a2816; --nivel-marcado: #85481a; --nivel-moldura: #f97316; --nivel-texto: #ffedd5; }
-  :root:not([data-theme="light"]) #jogosCard .jogos-nivel[data-nivel="dificil"] { --nivel-fundo: #3d2029; --nivel-marcado: #84303a; --nivel-moldura: #f87171; --nivel-texto: #fee2e2; }
+  :root:not([data-theme="light"]) #jogosCard .jogos-nivel[data-nivel="facil"] { --nivel-fundo: #2c5390; --nivel-moldura: #3b82f6; --nivel-forte: #dbeafe; --nivel-texto: #eff6ff; }
+  :root:not([data-theme="light"]) #jogosCard .jogos-nivel[data-nivel="medio"] { --nivel-fundo: #85481a; --nivel-moldura: #f97316; --nivel-forte: #ffedd5; --nivel-texto: #fff7ed; }
+  :root:not([data-theme="light"]) #jogosCard .jogos-nivel[data-nivel="dificil"] { --nivel-fundo: #84303a; --nivel-moldura: #f87171; --nivel-forte: #fee2e2; --nivel-texto: #fef2f2; }
 }
 #jogosCard .jogos-nivel > input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
-#jogosCard .jogos-nivel:has(input:checked) { border-width: 2px; background: var(--nivel-marcado); font-weight: 800; }
+#jogosCard .jogos-nivel:has(input:checked) { border-color: var(--nivel-forte); font-weight: 800; }
 #jogosCard .jogos-nivel:has(input:checked)::before { content: "✓"; }
 #jogosCard .jogos-nivel:has(input:focus-visible) { outline: 2px solid #2563eb; outline-offset: 2px; }
 #jogosCard .jogos-painel .jogos-acoes > .jogos-ir { min-height: 36px; padding: 2px 8px; font-size: .9rem; line-height: 1.15; }
