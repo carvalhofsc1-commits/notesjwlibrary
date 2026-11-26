@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.24
+
+- **Quem disse isso?:** o rótulo acima do quadro da frase ficou alinhado à esquerda.
+
 ## 6.14.23
 
 - **Quem disse isso?:** o quadro da frase ficou menor (fonte reduzida) e o rótulo **"Quem disse isso?"** voltou em letras menores, logo acima do quadro.
