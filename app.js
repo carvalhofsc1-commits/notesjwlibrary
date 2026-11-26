@@ -155,6 +155,7 @@
       if (location.hash !== '#' + screen) history.replaceState(null, '', '#' + screen);
       if (changed && screen === 'reunioes' && document.body.dataset.reunioes === 'comentarios') { try { reunioesRecolherOpcoes('comentarios'); } catch (e) { /* ainda iniciando */ } } // voltando às opções de comentários: tudo recolhido
       if (changed && screen === 'participar') { try { participarAoEntrar(anterior); } catch (e) { /* ainda iniciando: o código da tela chama ao carregar */ } }
+      if (changed && screen === 'jogos' && anterior !== 'participar') { try { if (!jogosPreparando) jogosVista('montar'); } catch (e) { /* ainda iniciando: a tela já começa na lista */ } } // 6.14.34: pelo menu e pelo atalho, os Jogos abrem na lista
       if (changed && !(options && options.keepScroll)) window.scrollTo(0, 0);
       // O texto pode ter mudado enquanto o campo estava escondido: mede de novo a altura quando a tela aparece.
       requestAnimationFrame(() => {
@@ -420,7 +421,7 @@
     document.querySelectorAll('#appNav [data-screen-target]').forEach(btn => {
       btn.addEventListener('click', () => {
         showScreen(btn.dataset.screenTarget);
-        if (btn.dataset.screenTarget === 'jogos') { try { jogosVista('home'); } catch (e) { /* a tela dos jogos ainda está iniciando */ } } // 6.13.88: pela barra, os Jogos abrem na tela das duas opções
+        if (btn.dataset.screenTarget === 'jogos') { try { jogosVista('montar'); } catch (e) { /* a tela dos jogos ainda está iniciando */ } } // 6.13.88: pela barra, os Jogos abrem na tela inicial (a lista, 6.14.34)
       });
     });
     document.getElementById('menuAbrirBtn').addEventListener('click', menuAbrir);
@@ -7958,7 +7959,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.14.33'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.14.34'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -31258,8 +31259,8 @@ function saveTemplatesToStorage() {
     participarEls.voltar.addEventListener('click', () => {
       if (participarSecaoLista()) return; // 6.14.32: da tela de uma atividade, volta à lista das atividades
       // 6.13.52: o Voltar nunca cai no Início do app: o jogo volta aos Jogos; a adoração, à tela da Adoração em família (ou às Sugestões, se
-      // foi de lá que abriu). 6.14.28: de dentro de um jogo, à lista dos jogos; da tela do código, à tela das duas opções.
-      if (participarEhJogo()) { try { jogosVista(participar.programa ? 'montar' : 'home'); } catch (e) { /* tela dos jogos ainda iniciando */ } showScreen('jogos'); return; }
+      // foi de lá que abriu). 6.14.28: de dentro de um jogo (e, desde a 6.14.34, da tela do código), à lista dos jogos.
+      if (participarEhJogo()) { try { jogosVista('montar'); } catch (e) { /* tela dos jogos ainda iniciando */ } showScreen('jogos'); return; }
       const destino = participar.voltarPara;
       showScreen(destino === 'familia' && codigoAcessoSalvo() ? 'familia' : 'adoracao');
     });
@@ -31323,9 +31324,9 @@ function saveTemplatesToStorage() {
     const JOGOS_SALVOS_MAX = 30;
     const JOGOS_FORMACAO = 'Grupo de irmãos jogando um jogo bíblico (várias idades)';
     let jogosPreparando = false;
-    // 6.13.52: as vistas da tela: 'home' (Entrar em um jogo / Montar o meu jogo), 'montar' (o menu dos jogos), 'jogo' (um jogo aberto, com o pedido)
-    // e 'pronto' (um jogo preparado, com as opções de jogar). jogosFiltro = o jogo aberto (os "Jogos preparados" mostram só dele).
-    let jogosVistaAtual = 'home';
+    // 6.13.52: as vistas da tela: 'montar' (a tela inicial: a lista dos jogos, com "Entrar em um jogo" no fim; 6.14.34), 'jogo' (um jogo aberto,
+    // com o pedido) e 'pronto' (um jogo preparado, com as opções de jogar). jogosFiltro = o jogo aberto (os "Jogos preparados" mostram só dele).
+    let jogosVistaAtual = 'montar';
     let jogosFiltro = null;
     const jogosEls = {
       hub: document.getElementById('jogosHub'),
@@ -31387,23 +31388,22 @@ function saveTemplatesToStorage() {
       const aberto = botoes.some(b => b.getAttribute('aria-expanded') === 'true');
       botoes.forEach(b => { b.parentElement.hidden = aberto && b.getAttribute('aria-expanded') !== 'true'; b.parentElement.classList.toggle('aberto', b.getAttribute('aria-expanded') === 'true'); });
     }
-    // Mostra só o que a vista atual pede: na 'home', as duas opções; nas outras, o menu (ou o jogo aberto) e os "Jogos preparados" do jogo
-    // aberto (todos, no menu; nenhum, se não houver ou no jogo pronto).
+    // Mostra só o que a vista atual pede: na lista, a dica e "Entrar em um jogo" (que somem com um jogo aberto); os "Jogos preparados" do jogo
+    // aberto (todos, na lista; nenhum, se não houver ou no jogo pronto).
     function jogosVistaAplicar() {
       const v = jogosVistaAtual;
       const lista = jogosSalvosLer().filter(i => !jogosFiltro || i.nome === jogosFiltro);
-      jogosEls.dica.hidden = v !== 'home';
-      jogosEls.hub.hidden = v !== 'home';
-      jogosEls.grade.hidden = v === 'home';
+      const soLista = v === 'montar' && !jogosEls.grade.querySelector('.jogos-atalho[aria-expanded="true"]');
+      jogosEls.dica.hidden = !soLista;
+      jogosEls.hub.hidden = !soLista;
       jogosEls.salvosBox.hidden = !(v === 'montar' || v === 'jogo') || !lista.length;
-      document.getElementById('jogosMontarBtn').setAttribute('aria-expanded', String(v !== 'home'));
       jogosCardsAtualizar();
       jogosEls.grade.querySelectorAll('.jogos-card').forEach(c => c.classList.toggle('pronto', v === 'pronto' && c.classList.contains('aberto')));
     }
     function jogosVista(v) {
       jogosVistaAtual = v;
-      if (v === 'home' || v === 'montar') {
-        // 6.13.62: "Montar o meu jogo" abre sempre a lista dos jogos: nenhum jogo fica aberto de antes
+      if (v === 'montar') {
+        // 6.13.62: a lista dos jogos abre sempre sem nenhum jogo aberto de antes
         if (!jogosPreparando) {
           jogosEls.painel.hidden = true;
           jogosEls.painel.replaceChildren();
@@ -31421,15 +31421,15 @@ function saveTemplatesToStorage() {
       jogosEls.painel.replaceChildren();
       jogosEls.grade.querySelectorAll('.jogos-atalho').forEach(b => b.setAttribute('aria-expanded', 'false'));
       jogosCardsAtualizar();
-      if (jogosVistaAtual !== 'home') { jogosVista('montar'); }
+      jogosVista('montar');
     }
-    // O botão ◀ Voltar (6.14.28: um passo de cada vez): de um jogo aberto (o pedido ou o jogo pronto) volta à lista dos jogos; da lista, à
-    // tela das duas opções; nela, ao Início.
+    // O botão ◀ Voltar (6.14.28: um passo de cada vez): de um jogo aberto (o pedido ou o jogo pronto) volta à lista dos jogos; da lista, ao
+    // Início.
     function jogosVoltar() {
-      if (jogosVistaAtual === 'home') { showScreen('inicio'); return; }
+      if (jogosVistaAtual === 'montar') { showScreen('inicio'); return; }
       if (jogosPreparando) { jogosStatus('Espere o jogo em preparação ficar pronto.', 'erro'); return; }
       jogosStatus('');
-      jogosVista(jogosVistaAtual === 'montar' ? 'home' : 'montar');
+      jogosVista('montar');
     }
     // Tocar num jogo abre, logo abaixo dele, o pedido: tema e instrução (opcionais) e "✨ Preparar o jogo".
     function jogosAbrir(j, botao) {
@@ -31801,7 +31801,6 @@ function saveTemplatesToStorage() {
       });
     })();
     document.getElementById('jogosParticiparBtn').addEventListener('click', () => participarAbrir(''));
-    document.getElementById('jogosMontarBtn').addEventListener('click', () => jogosVista('montar'));
     // Aberta pelo endereço (#participar ou #participar=CÓDIGO) antes de esta parte do app carregar.
     if (participarInicial) participarAbrir(participarInicial);
     else if (currentScreen() === 'participar') participarAoEntrar();

@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.34
+
+- **Jogos bíblicos:** a seção agora abre **direto na lista dos jogos** (pela barra de baixo, pelo menu e pelo atalho do Início). O botão **"🔗 Entrar em um jogo"** foi para o **fim da lista**, e o botão "Montar o meu jogo" saiu. Da lista, o **← Voltar** leva ao Início.
+
 ## 6.14.33
 
 - **Adoração em família ao vivo, atividade de jogo:** o botão **"Regras"** desceu para o **final do jogo** e ficou no **formato fino**, igual ao dos Jogos bíblicos.

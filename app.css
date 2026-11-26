@@ -18313,3 +18313,7 @@ body:not(.fam-tela-grande) #participarSessao.fam-na-secao > :not(.fam-sessao-sec
 body:not(.fam-tela-grande) #participarSessao.fam-na-secao .fam-sessao-secao:not(.na-tela) { display: none !important; }
 body:not(.fam-tela-grande) #participarSessao.fam-na-secao .fam-sessao-secao.na-tela > .fam-sessao-secao-topo { cursor: default; pointer-events: none; }
 #participarSessao:not(.fam-sessao-jogo-avulso) .fam-sessao-corpo, #participarSessao:not(.fam-sessao-jogo-avulso) .fam-sessao-corpo-dentro { transition: none; }
+
+/* 6.14.34: Jogos: "Entrar em um jogo" no fim da lista, com o icone na mesma coluna dos jogos */
+#jogosHub .fam-hub-icone { justify-self: center; text-align: center; width: 64px; }
+#jogosCard > #jogosHub { margin-top: -2px; } /* com o espaco do card (12px), fica a mesma distancia de um jogo para o outro (10px) */
