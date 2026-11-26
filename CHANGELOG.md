@@ -2,6 +2,15 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.52
+
+- **Adoração em família, tela repaginada:**
+  - O texto explicativo numa moldura, com o cabeçalho centralizado e em negrito.
+  - Um card fino **"Informações sobre a família, convidados e definições gerais"**, com os **Quadros da programação** e os **convidados** dentro dele.
+  - **Assunto desta semana:** título centralizado, o botão da lista em cima, o campo **"Ou informe aqui um assunto:"** e o **Preparar a programação** (roxo) dentro do card, com a lixeira ao lado (limpa o assunto e a programação da tela).
+  - **Participar** em azul claro e **Programações salvas** no fim da página, em amarelo claro.
+  - **10 px** entre os cards e os campos na tela principal, nas telas de dentro e na adoração ao vivo.
+
 ## 6.14.51
 
 - **Formatar notas JW Library:** os cabeçalhos dos cards (os três grandes e os de dentro) **mais finos e do mesmo tamanho** (44 px) e **10 px** entre todos os campos, também com os cards abertos. O título das listas ficou **"Inserir marcadores e numeradores de lista"** (sem "no texto selecionado").

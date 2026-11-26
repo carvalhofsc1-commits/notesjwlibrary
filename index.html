@@ -2967,7 +2967,11 @@
         <button id="familiaVoltar" class="secondary" type="button">◀ Voltar</button>
         <h2 id="familiaTitulo" class="fam-titulo"><span aria-hidden="true">👨‍👩‍👧</span> Adoração em Família</h2>
       </div>
-      <p class="hint"><strong>Peça sugestões para a noite de adoração em família.</strong> A IA leva em conta as informações repassadas sobre a sua família (cadastradas por você) e monta a programação pelos quadros que você marcar, com textos, vídeos, perguntas e, se quiser, jogo e cânticos.</p>
+      <!-- 6.14.52: o texto explicativo numa moldura, com o cabeçalho centralizado em cima. -->
+      <div class="fam-intro">
+        <h3 class="fam-intro-titulo">Peça sugestões para a noite de adoração em família</h3>
+        <p class="hint">A IA leva em conta as informações repassadas sobre a sua família (cadastradas por você) e monta a programação pelos quadros que você marcar, com textos, vídeos, perguntas e, se quiser, jogo e cânticos.</p>
+      </div>
       <!-- 6.11.56: as adorações que este aparelho dirige (com a chave do dirigente): reabrir, copiar o código ou o link e apagar o compartilhamento. -->
       <details id="familiaDirigindoBox" class="fam-jogos-box fam-dirigindo-box" hidden>
         <summary>👑 Adorações compartilhadas <span id="familiaDirigindoQtd" class="opc"></span></summary>
@@ -2978,13 +2982,12 @@
       <!-- 6.11.35: o card abre numa vista exclusiva (só ele na tela); esta barra só aparece nessa vista. -->
       <div id="familiaPerfilTopo" class="fam-topo fam-perfil-topo" hidden>
         <button id="familiaPerfilVoltar" class="secondary" type="button">◀ Voltar</button>
-        <h2 class="fam-titulo"><span aria-hidden="true">👤</span> Família e definições gerais</h2>
+        <h2 class="fam-titulo"><span aria-hidden="true">👤</span> Família, convidados e definições</h2>
       </div>
 
       <details id="familiaPerfilBox" class="fam-perfil-box">
         <summary>
-          <span class="fam-perfil-titulo">👤 Família e definições gerais</span>
-          <span id="familiaPerfilResumo" class="fam-perfil-resumo"></span>
+          <span class="fam-perfil-titulo">👤 Informações sobre a família, convidados e definições gerais</span>
         </summary>
         <div class="fam-perfil-corpo">
           <div class="fam-bloco">
@@ -3029,51 +3032,70 @@
             <button id="familiaMembroAdd" class="secondary fam-fino" type="button">➕ Adicionar membro</button>
           </div>
 
-          <button id="familiaPerfilConcluir" class="secondary fam-perfil-concluir" type="button">✔ Concluir e voltar</button>
-        </div>
-      </details>
-
-      <!-- 6.12.70: os quadros da programação (vista exclusiva, como a Família e as definições gerais): a lista dos quadros (os obrigatórios marcados e
-           travados; montada pelo app a partir de QUADROS_FAMILIA), o total ao vivo, os atalhos, os cânticos inicial e final, e os 6 jogos aceitos (6.13.11: os assuntos e situações saíram para a vista própria). -->
-      <div id="familiaProgTopo" class="fam-topo fam-perfil-topo" hidden>
-        <button id="familiaProgVoltar" class="secondary" type="button">◀ Voltar</button>
-        <h2 class="fam-titulo"><span aria-hidden="true">🧩</span> Quadros da programação</h2>
-      </div>
-
-      <details id="familiaProgBox" class="fam-perfil-box">
-        <summary>
-          <span class="fam-perfil-titulo">🧩 Quadros da programação</span>
-          <span id="familiaProgResumo" class="fam-perfil-resumo"></span>
-        </summary>
-        <div class="fam-perfil-corpo">
-          <div class="fam-bloco">
-            <h3 class="fam-bloco-titulo">🧱 Quadros</h3>
-            <p class="hint fam-dica">A programação começa com a <strong>Oração inicial</strong> e termina com a <strong>Oração final</strong>. Os quadros com 🔒 entram sempre; marque os opcionais que quiser. A duração é a soma dos quadros marcados.</p>
-            <div id="familiaQuadros" class="fam-checks fam-quadros" role="group" aria-label="Quadros da programação"></div>
-            <p id="familiaQuadrosTotal" class="fam-quadros-total" aria-live="polite"></p>
-            <div class="fam-acoes-dupla">
-              <button id="familiaQuadrosCurta" class="secondary fam-fino" type="button">🌙 Noite curta</button>
-              <button id="familiaQuadrosCompleta" class="secondary fam-fino" type="button">🌟 Completa</button>
-            </div>
-            <div class="fam-checks fam-canticos-marcas" role="group" aria-label="Cânticos da abertura e do encerramento">
-              <label class="fam-check"><input id="familiaCanticoInicial" type="checkbox"><span>🎵 Cântico inicial</span></label>
-              <label class="fam-check"><input id="familiaCanticoFinal" type="checkbox"><span>🎵 Cântico final</span></label>
-            </div>
-            <!-- Jogos aceitos (6.12.70: os 6 tipos, montados pelo app a partir de FAMILIA_JOGOS): valem quando o quadro Jogo bíblico está marcado. -->
-            <details id="familiaJogosBox" class="fam-jogos-box">
-              <summary>🎲 Jogos aceitos <span id="familiaJogosQtd" class="opc"></span></summary>
-              <p class="hint fam-dica">Marque os tipos de jogo que a família gosta. A IA escolhe um deles e já traz o jogo pronto, no nível de quem já conhece bem a Bíblia, para jogar no próprio app. Vale quando o quadro “Jogo bíblico” está marcado.</p>
-              <div id="familiaJogos" class="fam-checks" role="group" aria-label="Jogos aceitos"></div>
-              <div class="fam-jogos-rodape">
+          <!-- 6.12.70: os quadros da programação: a lista dos quadros (os obrigatórios marcados e travados; montada pelo app a partir de
+               QUADROS_FAMILIA), o total ao vivo, os atalhos, os cânticos e os jogos aceitos. 6.14.52: dentro do card da família. -->
+          <details id="familiaProgBox" class="fam-perfil-box fam-sub-box">
+            <summary>
+              <span class="fam-perfil-titulo">🧩 Quadros da programação</span>
+            </summary>
+            <div class="fam-perfil-corpo">
+              <div class="fam-bloco">
+                <h3 class="fam-bloco-titulo">🧱 Quadros</h3>
+                <p class="hint fam-dica">A programação começa com a <strong>Oração inicial</strong> e termina com a <strong>Oração final</strong>. Os quadros com 🔒 entram sempre; marque os opcionais que quiser. A duração é a soma dos quadros marcados.</p>
+                <div id="familiaQuadros" class="fam-checks fam-quadros" role="group" aria-label="Quadros da programação"></div>
+                <p id="familiaQuadrosTotal" class="fam-quadros-total" aria-live="polite"></p>
                 <div class="fam-acoes-dupla">
-                  <button id="familiaJogosTodos" class="secondary fam-fino" type="button">Marcar todos</button>
-                  <button id="familiaJogosNenhum" class="secondary fam-fino" type="button">Desmarcar todos</button>
+                  <button id="familiaQuadrosCurta" class="secondary fam-fino" type="button">🌙 Noite curta</button>
+                  <button id="familiaQuadrosCompleta" class="secondary fam-fino" type="button">🌟 Completa</button>
                 </div>
+                <div class="fam-checks fam-canticos-marcas" role="group" aria-label="Cânticos da abertura e do encerramento">
+                  <label class="fam-check"><input id="familiaCanticoInicial" type="checkbox"><span>🎵 Cântico inicial</span></label>
+                  <label class="fam-check"><input id="familiaCanticoFinal" type="checkbox"><span>🎵 Cântico final</span></label>
+                </div>
+                <!-- Jogos aceitos (6.12.70: os 6 tipos, montados pelo app a partir de FAMILIA_JOGOS): valem quando o quadro Jogo bíblico está marcado. -->
+                <details id="familiaJogosBox" class="fam-jogos-box">
+                  <summary>🎲 Jogos aceitos <span id="familiaJogosQtd" class="opc"></span></summary>
+                  <p class="hint fam-dica">Marque os tipos de jogo que a família gosta. A IA escolhe um deles e já traz o jogo pronto, no nível de quem já conhece bem a Bíblia, para jogar no próprio app. Vale quando o quadro “Jogo bíblico” está marcado.</p>
+                  <div id="familiaJogos" class="fam-checks" role="group" aria-label="Jogos aceitos"></div>
+                  <div class="fam-jogos-rodape">
+                    <div class="fam-acoes-dupla">
+                      <button id="familiaJogosTodos" class="secondary fam-fino" type="button">Marcar todos</button>
+                      <button id="familiaJogosNenhum" class="secondary fam-fino" type="button">Desmarcar todos</button>
+                    </div>
+                  </div>
+                </details>
               </div>
-            </details>
-          </div>
+            </div>
+          </details>
 
-          <button id="familiaProgConcluir" class="secondary fam-perfil-concluir" type="button">✔ Concluir e voltar</button>
+          <!-- Convidados (6.11.29): campos como os dos membros; ao preencher um convidado, abre o próximo. Só neste aparelho. -->
+          <details id="familiaConvidadosBox" class="fam-perfil-box fam-sub-box">
+            <summary>
+              <span class="fam-perfil-titulo">🤝 Informar convidados <span class="opc">(opcional)</span></span>
+            </summary>
+            <div class="fam-perfil-corpo">
+              <div class="fam-bloco">
+                <p class="hint fam-dica">Se vai receber convidados na noite, informe quem são. A IA leva em conta as idades, a situação espiritual e os privilégios deles ao sugerir as partes (sem designar tarefas aos convidados). Ao preencher um convidado, o campo do próximo aparece.</p>
+                <label class="fam-rotulo" for="familiaConvidadosFormacao">Como é a família convidada <span class="opc">(opcional)</span></label>
+                <select id="familiaConvidadosFormacao" class="fam-campo">
+                  <option value="">Escolha…</option>
+                  <option value="Casal com filhos">Casal com filhos</option>
+                  <option value="Casal sem filhos">Casal sem filhos</option>
+                  <option value="Mãe ou pai sozinho">Mãe ou pai sozinho</option>
+                  <option value="Quem mora sozinho">Quem mora sozinho (estudo pessoal)</option>
+                  <option value="Família com avós ou outros">Família com avós ou outros</option>
+                </select>
+                <label class="fam-rotulo" for="familiaConvidadosFamilia">Informação da família convidada <span class="opc">(opcional)</span></label>
+                <input id="familiaConvidadosFamilia" class="fam-campo" type="text" maxlength="200" autocomplete="off" spellcheck="true" placeholder="Ex.: família Silva, casal com dois filhos pequenos">
+                <h3 class="fam-bloco-titulo">👥 Convidados <span class="opc">(apelido, relação, ano de nascimento, situação espiritual e privilégios)</span></h3>
+                <div id="familiaConvidados" class="fam-membros"></div>
+                <label class="fam-rotulo" for="familiaConvidadosNotas">Anotações gerais sobre os convidados <span class="opc">(opcional)</span></label>
+                <textarea id="familiaConvidadosNotas" class="fam-campo" rows="1" maxlength="800" spellcheck="true" placeholder="Ex.: visita pela primeira vez; a criança gosta de desenhar; evitar assuntos de saúde…"></textarea>
+              </div>
+            </div>
+          </details>
+
+          <button id="familiaPerfilConcluir" class="secondary fam-perfil-concluir" type="button">✔ Concluir e voltar</button>
         </div>
       </details>
 
@@ -3265,64 +3287,30 @@
         </div>
       </details>
 
-      <!-- Convidados (6.11.29): campos como os dos membros; ao preencher um convidado, abre o próximo. Só neste aparelho. -->
-      <div id="familiaConvidadosTopo" class="fam-topo fam-perfil-topo" hidden>
-        <button id="familiaConvidadosVoltar" class="secondary" type="button">◀ Voltar</button>
-        <h2 class="fam-titulo"><span aria-hidden="true">🤝</span> Informar convidados</h2>
-      </div>
-
-      <details id="familiaConvidadosBox" class="fam-perfil-box">
-        <summary>
-          <span class="fam-perfil-titulo">🤝 Informar convidados <span class="opc">(opcional)</span></span>
-          <span id="familiaConvidadosResumo" class="fam-perfil-resumo"></span>
-        </summary>
-        <div class="fam-perfil-corpo">
-          <div class="fam-bloco">
-            <p class="hint fam-dica">Se vai receber convidados na noite, informe quem são. A IA leva em conta as idades, a situação espiritual e os privilégios deles ao sugerir as partes (sem designar tarefas aos convidados). Ao preencher um convidado, o campo do próximo aparece.</p>
-            <label class="fam-rotulo" for="familiaConvidadosFormacao">Como é a família convidada <span class="opc">(opcional)</span></label>
-            <select id="familiaConvidadosFormacao" class="fam-campo">
-              <option value="">Escolha…</option>
-              <option value="Casal com filhos">Casal com filhos</option>
-              <option value="Casal sem filhos">Casal sem filhos</option>
-              <option value="Mãe ou pai sozinho">Mãe ou pai sozinho</option>
-              <option value="Quem mora sozinho">Quem mora sozinho (estudo pessoal)</option>
-              <option value="Família com avós ou outros">Família com avós ou outros</option>
-            </select>
-            <label class="fam-rotulo" for="familiaConvidadosFamilia">Informação da família convidada <span class="opc">(opcional)</span></label>
-            <input id="familiaConvidadosFamilia" class="fam-campo" type="text" maxlength="200" autocomplete="off" spellcheck="true" placeholder="Ex.: família Silva, casal com dois filhos pequenos">
-            <h3 class="fam-bloco-titulo">👥 Convidados <span class="opc">(apelido, relação, ano de nascimento, situação espiritual e privilégios)</span></h3>
-            <div id="familiaConvidados" class="fam-membros"></div>
-            <label class="fam-rotulo" for="familiaConvidadosNotas">Anotações gerais sobre os convidados <span class="opc">(opcional)</span></label>
-            <textarea id="familiaConvidadosNotas" class="fam-campo" rows="1" maxlength="800" spellcheck="true" placeholder="Ex.: visita pela primeira vez; a criança gosta de desenhar; evitar assuntos de saúde…"></textarea>
-          </div>
-          <button id="familiaConvidadosConcluir" class="secondary fam-perfil-concluir" type="button">✔ Concluir e voltar</button>
-        </div>
-      </details>
-
-      <div class="fam-bloco">
+      <!-- 6.14.52: a lista em cima, o campo do assunto e o "Preparar a programação" com a lixeira (limpa o assunto e a programação da tela). -->
+      <div class="fam-bloco fam-assunto-card">
         <h3 class="fam-bloco-titulo">📝 Assunto desta semana</h3>
-        <label class="fam-rotulo" for="familiaAssunto">Assunto <span id="familiaAssuntoQtd" class="opc"></span></label>
-        <textarea id="familiaAssunto" class="fam-campo" rows="1" maxlength="300" spellcheck="true" placeholder="Escreva o assunto (ex.: o perdão; a oração; o relato do filho pródigo) ou escolha na lista abaixo."></textarea>
         <button id="familiaAssuntosAbrir" class="secondary fam-fino fam-assuntos-btn" type="button">💛 Escolha um tema ou assunto na lista…</button>
+        <label class="fam-rotulo" for="familiaAssunto">Ou informe aqui um assunto: <span id="familiaAssuntoQtd" class="opc"></span></label>
+        <textarea id="familiaAssunto" class="fam-campo" rows="2" maxlength="300" spellcheck="true" placeholder="Ex.: o perdão; a oração; o relato do filho pródigo"></textarea>
+        <div class="fam-acoes fam-assunto-acoes">
+          <button id="familiaGerarBtn" data-codigo-ia="pesquisa" class="fam-fino fam-principal" type="button">✨ Preparar a programação</button>
+          <button id="familiaLimparBtn" class="secondary fam-fino limpar-btn" type="button" title="Limpar o assunto e a programação da tela" aria-label="Limpar o assunto e a programação da tela">🗑️</button>
+          <button id="familiaCancelarBtn" class="secondary fam-fino" type="button" hidden>⏹️ Cancelar</button>
+        </div>
       </div>
 
-      <div class="fam-acoes">
-        <button id="familiaGerarBtn" data-codigo-ia="pesquisa" class="fam-fino fam-principal" type="button">✨ Preparar a programação</button>
-        <button id="familiaCancelarBtn" class="secondary fam-fino" type="button" hidden>⏹️ Cancelar</button>
-        <button id="familiaLimparBtn" class="secondary fam-fino limpar-btn" type="button" title="Limpar a programação gerada" aria-label="Limpar a programação gerada" hidden>🗑️</button>
-      </div>
       <p id="familiaStatus" class="fam-status" role="status" aria-live="polite" hidden></p>
       <div id="familiaProgresso" class="fam-progresso" aria-live="polite" hidden></div>
 
-      <!-- Programações salvas (6.11.25): lista recolhível com o tema, o tempo e as atividades de cada programação já salva. -->
+      <div id="familiaResultado" class="fam-resultado" hidden></div>
+      <!-- 6.14.37: com o código de pesquisa, a Adoração abre direto nesta tela; participar fica no fim dela (6.14.52: abaixo dele, só as programações salvas). -->
+      <button id="familiaParticiparBtn" type="button" class="secondary fam-hub-btn"><span class="fam-hub-icone" aria-hidden="true">🔗</span><span class="fam-hub-nome">Participar de uma adoração em família</span><span class="fam-hub-desc">Entre com o código que o presidente da reunião passou.</span></button>
+      <!-- Programações salvas (6.11.25; 6.14.52: no fim da página): lista recolhível com o tema, o tempo e as atividades de cada programação já salva. -->
       <details id="familiaSalvasBox" class="fam-salvas">
         <summary>📂 Programações salvas <span id="familiaSalvasQtd" class="opc"></span></summary>
         <div id="familiaSalvasLista" class="fam-salvas-lista"></div>
       </details>
-
-      <div id="familiaResultado" class="fam-resultado" hidden></div>
-      <!-- 6.14.37: com o código de pesquisa, a Adoração abre direto nesta tela; participar fica no fim dela. -->
-      <button id="familiaParticiparBtn" type="button" class="secondary fam-hub-btn"><span class="fam-hub-icone" aria-hidden="true">🔗</span><span class="fam-hub-nome">Participar de uma adoração em família</span><span class="fam-hub-desc">Entre com o código que o presidente da reunião passou.</span></button>
     </section>
 
     <!-- 6.11.49: adoração em família ao vivo. Entra só com o código da sessão (não exige o código de pesquisa). -->

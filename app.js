@@ -7961,7 +7961,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.14.51'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.14.52'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -26536,34 +26536,8 @@ function saveTemplatesToStorage() {
       };
     }
 
-    function familiaPerfilResumoPintar() {
-      const resumoEl = document.getElementById('familiaPerfilResumo');
-      if (!resumoEl) return;
-      const perfil = familiaPerfilLerTela();
-      const nomes = perfil.membros.map(m => m.apelido || m.papel).filter(Boolean);
-      const partes = [];
-      if (perfil.formacao) partes.push(perfil.formacao);
-      if (nomes.length) partes.push(nomes.length === 1 ? nomes[0] : nomes.length + ' membros');
-      if (perfil.diaAdoracao || perfil.horaAdoracao) partes.push([perfil.diaAdoracao.replace('-feira', ''), perfil.horaAdoracao].filter(Boolean).join(' às '));
-      resumoEl.textContent = partes.join(' · ');
-      // Card "Quadros da programação" (6.12.70): quantos quadros, o total e as circunstâncias marcadas.
-      const progEl = document.getElementById('familiaProgResumo');
-      if (progEl) {
-        const nQuadros = perfil.quadros.filter(id => QUADROS_FAMILIA.find(q => q.id === id).minutos).length;
-        const nCirc = perfil.circunstancias.length + (perfil.outrasCircunstancias ? 1 : 0);
-        progEl.textContent = [nQuadros + (nQuadros === 1 ? ' quadro' : ' quadros'), familiaTotalTexto(perfil.quadros), ''].filter(Boolean).join(' · ');
-      }
-      const convEl = document.getElementById('familiaConvidadosResumo');
-      if (convEl) {
-        const c = perfil.convidados;
-        const n = c.membros.length;
-        convEl.textContent = [c.formacao, c.familia, n ? n + (n === 1 ? ' convidado' : ' convidados') : ''].filter(Boolean).join(' · ');
-      }
-    }
-
     function familiaPerfilSalvar() {
       try { localStorage.setItem(FAMILIA_PERFIL_KEY, JSON.stringify(familiaPerfilLerTela())); } catch (e) { /* sem localStorage */ }
-      familiaPerfilResumoPintar();
     }
 
     function familiaPerfilCarregar() {
@@ -26574,7 +26548,6 @@ function saveTemplatesToStorage() {
         familiaMembroAdd({ papel: 'Pai' });
         familiaMembroAdd({ papel: 'Mãe' });
         familiaConvidadoAdd();
-        familiaPerfilResumoPintar();
         return;
       }
       if (salvo.formacao) familiaFormacaoEl.value = salvo.formacao === 'Família monoparental' ? 'Mãe ou pai sozinho' : salvo.formacao; // o nome antigo da opção
@@ -26603,7 +26576,6 @@ function saveTemplatesToStorage() {
       familiaConvidadosEl.innerHTML = '';
       (Array.isArray(conv.membros) ? conv.membros.slice(0, 12) : []).forEach(familiaConvidadoAdd);
       familiaConvidadosProximo();
-      familiaPerfilResumoPintar();
     }
 
     function familiaStatus(msg, tipo) {
@@ -27120,7 +27092,6 @@ function saveTemplatesToStorage() {
         familiaResultadoEl.appendChild(familiaMontarCard(op, idx, rotulo + (op.duracaoTotal ? ' · ' + op.duracaoTotal + ' min' : ''), cfg));
       });
       familiaResultadoEl.hidden = !opcoes.length;
-      familiaLimparBtn.hidden = !opcoes.length;
     }
 
     // Uma parte da programação: nome, tempo, responsável, descrição, textos, vídeos, cânticos, publicações, perguntas, jogo e transição.
@@ -31818,7 +31789,7 @@ function saveTemplatesToStorage() {
     (function voltarTopoIniciar() {
       const botao = document.getElementById('voltarTopoBtn');
       if (!botao) return;
-      const IDS = ['participarNomeVoltar', 'familiaConvidadosVoltar', 'familiaAssuntosVoltar', 'familiaProgVoltar', 'familiaPerfilVoltar', 'familiaVoltar', 'participarVoltar', 'jogosVoltar', 'adoracaoVoltar', 'reunioesVoltar', 'salvasVoltar', 'anotacoesVoltarHub', 'consumoVoltarBtn', 'formatarVoltarBtn'];
+      const IDS = ['participarNomeVoltar', 'familiaAssuntosVoltar', 'familiaPerfilVoltar', 'familiaVoltar', 'participarVoltar', 'jogosVoltar', 'adoracaoVoltar', 'reunioesVoltar', 'salvasVoltar', 'anotacoesVoltarHub', 'consumoVoltarBtn', 'formatarVoltarBtn'];
       const aVista = b => Boolean(b && !b.disabled && !b.hidden && b.getClientRects().length);
       const alvo = () => {
         const secao = Array.from(document.querySelectorAll('.pesq-secao-voltar')).find(aVista);
@@ -32250,7 +32221,7 @@ function saveTemplatesToStorage() {
       // 6.13.08: a programação anterior sai da tela; a nova aparece no "📄 Exibir a programação", quando ficar pronta.
       familiaResultadoEl.innerHTML = '';
       familiaResultadoEl.hidden = true;
-      familiaLimparBtn.hidden = true;
+      familiaLimparBtn.disabled = true;
       const payload = familiaPayloadDe(perfil);
       const ger = {
         pedido, payload, perfil, plano: null, ids: familiaIdsComIa(perfil.quadros), partes: {}, estado: {}, erros: {}, modelo: '', itemId: null, refazendo: false,
@@ -32302,6 +32273,7 @@ function saveTemplatesToStorage() {
           familiaRelogioDesligar();
           familiaGerarBtn.disabled = false;
           familiaCancelarBtn.hidden = true;
+          familiaLimparBtn.disabled = false;
           familiaGerarHabilitar();
         }
       }
@@ -32339,12 +32311,11 @@ function saveTemplatesToStorage() {
     document.getElementById('familiaVoltar').addEventListener('click', () => showScreen('inicio')); // 6.14.37: é a tela inicial da Adoração
     document.getElementById('familiaParticiparBtn').addEventListener('click', () => participarAbrir(''));
     // "Família e definições gerais" (6.11.35): tocar no card abre uma vista exclusiva (só o cadastro, com Voltar); sair devolve a tela como estava.
-    // 6.11.36: o mesmo para "Informar convidados". qual = 'perfil' | 'convidados' (abre essa vista) | null (volta à tela normal, com tudo recolhido).
+    // qual = 'perfil' | 'assuntos' (abre essa vista) | null (volta à tela normal, com tudo recolhido).
     var familiaPerfilRolagem = 0; // var e função: showScreen chama familiaVista antes destas linhas rodarem
-    // 6.12.63: Estrutura da programação, Circunstâncias e Atividades aceitas ficam num card só (vista 'prog'), separado dos dados da família.
-    // 6.12.70: o card 'prog' virou "Quadros da programação" (quadros, cânticos, jogos aceitos e circunstâncias).
+    // 6.14.52: "Quadros da programação" e "Informar convidados" ficam dentro do card da família (recolhidos ao abrir a vista).
     // 6.13.11: os assuntos e situações abrangidas têm vista própria (botão sob o campo Assunto).
-    function familiaVistasIds() { return { perfil: ['familiaPerfilBox', 'familiaPerfilTopo'], prog: ['familiaProgBox', 'familiaProgTopo'], assuntos: ['familiaAssuntosBox', 'familiaAssuntosTopo'], convidados: ['familiaConvidadosBox', 'familiaConvidadosTopo'] }; }
+    function familiaVistasIds() { return { perfil: ['familiaPerfilBox', 'familiaPerfilTopo'], assuntos: ['familiaAssuntosBox', 'familiaAssuntosTopo'] }; }
     function familiaVista(qual, opcoes) {
       const card = document.getElementById('familiaCard');
       if (!card) return;
@@ -32358,6 +32329,7 @@ function saveTemplatesToStorage() {
         if (caixa) caixa.open = k === qual;
         if (topo) topo.hidden = k !== qual;
       });
+      ['familiaProgBox', 'familiaConvidadosBox'].forEach(id => { const sub = document.getElementById(id); if (sub) sub.open = false; });
       if (qual) window.scrollTo(0, 0);
       else if (ja && !(opcoes && opcoes.semRolar)) requestAnimationFrame(() => window.scrollTo(0, familiaPerfilRolagem || 0));
       // 6.13.14: de volta à tela, o campo Assunto cresce para mostrar todos os temas escolhidos (ele estava escondido quando foi preenchido).
@@ -32365,7 +32337,7 @@ function saveTemplatesToStorage() {
     }
     function familiaPerfilVista(abrir, opcoes) { familiaVista(abrir ? 'perfil' : null, opcoes); } // função (não const): showScreen a chama antes desta linha rodar
     Object.entries(familiaVistasIds()).forEach(([k, ids]) => {
-      const prefixo = ids[0].replace(/Box$/, ''); // familiaPerfil, familiaCirc, familiaAtiv, familiaConvidados
+      const prefixo = ids[0].replace(/Box$/, ''); // familiaPerfil, familiaAssuntos
       document.querySelector('#' + ids[0] + ' > summary').addEventListener('click', ev => { ev.preventDefault(); familiaVista(k); });
       document.getElementById(prefixo + 'Voltar').addEventListener('click', () => familiaVista(null));
       document.getElementById(prefixo + 'Concluir').addEventListener('click', () => familiaVista(null));
@@ -32380,15 +32352,16 @@ function saveTemplatesToStorage() {
       familiaStatus('Cancelado.');
       familiaGerarBtn.disabled = false;
       familiaCancelarBtn.hidden = true;
+      familiaLimparBtn.disabled = false;
       familiaGerarHabilitar();
     });
     familiaLimparBtn.addEventListener('click', () => {
       familiaOpcoes = null;
       familiaResultadoEl.innerHTML = '';
       familiaResultadoEl.hidden = true;
-      familiaLimparBtn.hidden = true;
       familiaProgressoLimpar();
       familiaStatus('');
+      familiaAssuntosLimpar(); // 6.14.52: a lixeira limpa também o assunto e as escolhas da lista
     });
     [familiaFormacaoEl, familiaAnosCasadosEl, document.getElementById('familiaDiaSemana'), document.getElementById('familiaHorario'), document.getElementById('familiaConvidadosFormacao'), document.getElementById('familiaCanticoInicial'), document.getElementById('familiaCanticoFinal')].forEach(el => el.addEventListener('change', familiaPerfilSalvar));
     [familiaOutrasCircEl, familiaAssuntoEl].forEach(el => el.addEventListener('input', () => { clearTimeout(el._t); el._t = setTimeout(familiaPerfilSalvar, 400); }));
@@ -32462,7 +32435,6 @@ function saveTemplatesToStorage() {
     familiaFormacaoEl.addEventListener('change', familiaAnosAjustar);
     familiaAnosAjustar();
     familiaCampoLimpavel(familiaOutrasCircEl, 'as outras circunstâncias');
-    familiaCampoLimpavel(familiaAssuntoEl, 'o assunto');
     const familiaConvFamiliaEl = document.getElementById('familiaConvidadosFamilia');
     const familiaConvNotasEl = document.getElementById('familiaConvidadosNotas');
     familiaCampoLimpavel(familiaConvFamiliaEl, 'a informação da família convidada');

@@ -2084,7 +2084,7 @@ teste("6.13.10: tempo do quadro Vídeo pela duração dos vídeos e \"Objetivo d
 
 teste("6.13.11: assuntos em vista própria pelo botão sob o Assunto, temas no campo, botão só com assunto e tudo limpo depois de preparar", async () => {
   const html = await readFile(new URL("index.html", raiz), "utf8");
-  const prog = html.slice(html.indexOf('id="familiaProgBox"'), html.indexOf('id="familiaProgConcluir"'));
+  const prog = html.slice(html.indexOf('id="familiaProgBox"'), html.indexOf('id="familiaConvidadosBox"'));
   assert.ok(!prog.includes('id="familiaCircunstancias"'), "o card Quadros não tem mais os assuntos");
   assert.ok(html.includes('id="familiaAssuntosBox"') && html.includes('id="familiaAssuntosTopo"') && html.includes('id="familiaAssuntosConcluir"'));
   assert.ok(html.includes('>💛 Escolha um tema ou assunto na lista…</button>'));
@@ -2094,6 +2094,18 @@ teste("6.13.11: assuntos em vista própria pelo botão sob o Assunto, temas no c
   assert.ok(appJs.includes("qtd.textContent = n ? '(' + n + (n === 1 ? ' escolhido)' : ' escolhidos)') : '';"));
   assert.ok(appJs.includes("familiaGerarBtn.disabled = !ok;"));
   assert.ok(appJs.includes("familiaAssuntosLimpar(); // 6.13.11"));
+});
+
+teste("tela da Adoração repaginada: um card para família, quadros e convidados; assunto com Preparar e lixeira; salvas no fim", async () => {
+  const html = await readFile(new URL("index.html", raiz), "utf8");
+  const tela = html.slice(html.indexOf('id="familiaCard"'), html.indexOf('id="participarCard"'));
+  const ordem = (...ids) => ids.map((id) => { const i = tela.indexOf(id); assert.ok(i >= 0, "falta " + id); return i; }).every((v, i, a) => !i || v > a[i - 1]);
+  assert.ok(tela.includes('<h3 class="fam-intro-titulo">Peça sugestões para a noite de adoração em família</h3>'));
+  assert.ok(tela.includes("👤 Informações sobre a família, convidados e definições gerais</span>"));
+  assert.ok(ordem('id="familiaPerfilBox"', 'id="familiaProgBox"', 'id="familiaConvidadosBox"', 'id="familiaPerfilConcluir"'));
+  assert.ok(ordem('id="familiaAssuntosAbrir"', 'id="familiaAssunto"', 'id="familiaGerarBtn"', 'id="familiaLimparBtn"', 'id="familiaResultado"', 'id="familiaParticiparBtn"', 'id="familiaSalvasBox"'));
+  assert.ok(tela.includes("Ou informe aqui um assunto:"));
+  assert.ok(appJs.includes("familiaAssuntosLimpar(); // 6.14.52: a lixeira limpa também o assunto"));
 });
 
 teste("6.13.12: objetivo começando por verbo, só na Abertura, Personagem, Jesus e Criador, e um objetivo antes de cada vídeo", async () => {
