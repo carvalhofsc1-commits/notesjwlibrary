@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.57
+
+- **Adoração em família:** o botão passou a se chamar **"Participar de uma adoração"**.
+
 ## 6.14.56
 
 - **Adoração em família:**
