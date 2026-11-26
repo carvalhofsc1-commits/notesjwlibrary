@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.18
+
+- **Quem sou eu?:** cada questão já abre **mostrando a 1ª dica**, valendo 3 pontos e com o campo da resposta liberado; o botão passa a pedir a 2ª dica. Reiniciar a questão ou jogar com novas perguntas também abre com a 1ª dica. Vale nos Jogos e na Adoração em Família; sessões criadas antes continuam como estavam.
+
 ## 6.14.17
 
 - **Modo escuro** no jogo ao vivo e nos Jogos: a barra dos números, o cartão da questão (e as cores de certa e errada), a etiqueta de pontos, o botão da dica, "Próxima questão", "Regras", "Tela grande", o botão de voltar, "Jogar em grupo" e os botões Verdadeiro/Falso passaram a ter fundos escuros. Nomes com a cor do jogo ou do jogador ficaram mais claros para ler. No modo claro nada muda.

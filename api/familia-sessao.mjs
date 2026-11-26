@@ -113,6 +113,20 @@ function naVezDaSessao(cod, tarefa) {
   return proxima;
 }
 
+// 6.14.18: no "Quem sou eu?", cada questão já abre com a 1ª dica (ela conta como dada: a questão começa valendo o máximo). "so" limita a
+// uma questão ({ parte, rodada }, no reiniciar) ou a uma parte ({ parte }).
+function abrirComPrimeiraDica(e, programa, so = null) {
+  (programa && Array.isArray(programa.partes) ? programa.partes : []).forEach((p, parte) => {
+    const jogo = p && p.jogo;
+    if (!jogo || (so && so.parte !== parte) || !(jogo.idTipo === "quem_sou_eu" || /quem sou eu/i.test(String(jogo.tipo || "")))) return;
+    (jogo.rodadas || []).forEach((r, rodada) => {
+      if ((so && so.rodada !== undefined && so.rodada !== rodada) || !/Dica\s*1\s*:/i.test(String((r && r.pergunta) || ""))) return;
+      e.dicas = { ...(e.dicas || {}) };
+      e.dicas[parte] = { ...(e.dicas[parte] || {}), [rodada]: Math.max(1, Number((e.dicas[parte] || {})[rodada]) || 0) };
+    });
+  });
+}
+
 // O estado da sessão, ou null se ela não existe ou venceu (e então é apagada). comVersao: para quem vai gravar.
 async function lerEstado(cod, comVersao = false) {
   const lido = await get(caminho(cod, "estado.json"), { comVersao });
@@ -467,7 +481,9 @@ async function atender(req, res) {
       await gravarJson(caminho(cod, "programa.json"), programa);
       // 6.13.36: no jogo avulso o jogo (a parte 0) já começa liberado e aberto
       const jogoAvulso = programa.modo === "jogos";
-      await gravarJson(caminho(cod, "estado.json"), { versao: 1, liberadas: jogoAvulso ? [0] : [], atual: jogoAvulso ? 0 : null, reveladas: {}, sorteio: null, cronometro: null, atualizadoEm: agora });
+      const inicial = { versao: 1, liberadas: jogoAvulso ? [0] : [], atual: jogoAvulso ? 0 : null, reveladas: {}, sorteio: null, cronometro: null, atualizadoEm: agora };
+      abrirComPrimeiraDica(inicial, programa);
+      await gravarJson(caminho(cod, "estado.json"), inicial);
       return res.status(200).json({ sessao: cod, chave });
     }
 
@@ -948,6 +964,7 @@ async function atender(req, res) {
             }
           }
           if (e.sorteioQuestao && e.sorteioQuestao.parte === parte) e.sorteioQuestao = null;
+          abrirComPrimeiraDica(e, programa, { parte });
         });
       }
       if (!parteValida(parte) || !Number.isInteger(rodada) || rodada < 0) return erro(res, 400, "Rodada inválida.");
@@ -959,6 +976,7 @@ async function atender(req, res) {
             e[campo] = { ...e[campo], [parte]: copia };
           }
         }
+        abrirComPrimeiraDica(e, programa, { parte, rodada });
       });
     }
 
@@ -988,6 +1006,7 @@ async function atender(req, res) {
         e.sorteio = null;
         e.sorteioQuestao = null;
         e.programaN = (Number(e.programaN) || 0) + 1;
+        abrirComPrimeiraDica(e, programa);
       });
     }
 

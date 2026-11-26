@@ -188,12 +188,19 @@ try {
 
   // Dicas (6.11.96): uma de cada vez, no máximo as que a pergunta tem (3 na rodada 2; a rodada 0 não tem marcadores e vale 1)
   assert.equal((await chamar({ acao: "dica", sessao, parte: 2, rodada: 2 })).status, 403); passo("dica sem a chave do dirigente recusada");
+  // 6.14.18: no "Quem sou eu?" a questão já abre com a 1ª dica; o primeiro pedido dá a 2ª
+  const aberta = (await chamar({ acao: "estado", sessao, chave, versao: "" })).dados.estado;
+  assert.equal(aberta.dicas[2][2], 1);
+  assert.ok(!(0 in (aberta.dicas[2] || {})), "rodada sem marcadores não recebe dica sozinha"); passo("Quem sou eu?: a questão já abre com a 1ª dica");
   const d1 = await chamar({ acao: "dica", sessao, chave, parte: 2, rodada: 2 });
-  assert.equal(d1.dados.estado.dicas[2][2], 1);
-  await chamar({ acao: "dica", sessao, chave, parte: 2, rodada: 2 });
+  assert.equal(d1.dados.estado.dicas[2][2], 2);
   await chamar({ acao: "dica", sessao, chave, parte: 2, rodada: 2 });
   const d4 = await chamar({ acao: "dica", sessao, chave, parte: 2, rodada: 2 });
-  assert.equal(d4.dados.estado.dicas[2][2], 3); passo("dicas: 1, 2, 3 e para no máximo da pergunta");
+  assert.equal(d4.dados.estado.dicas[2][2], 3); passo("dicas: 2, 3 e para no máximo da pergunta");
+  const zerou = await chamar({ acao: "reiniciar", sessao, chave, parte: 2, rodada: 2 });
+  assert.equal(zerou.dados.estado.dicas[2][2], 1); passo("reiniciar a questão volta à 1ª dica à vista");
+  await chamar({ acao: "dica", sessao, chave, parte: 2, rodada: 2 });
+  await chamar({ acao: "dica", sessao, chave, parte: 2, rodada: 2 });
   const d0 = await chamar({ acao: "dica", sessao, chave, parte: 2, rodada: 0 });
   assert.equal(d0.dados.estado.dicas[2][0], 1);
   assert.equal((await chamar({ acao: "dica", sessao, chave, parte: 2, rodada: 9 })).status, 400); passo("rodada sem marcadores vale 1 dica; rodada inexistente recusada");
@@ -402,7 +409,8 @@ try {
     assert.equal((await chamar({ acao: "julgamento-ia", sessao: ss.sessao, chave: ss.chave, parte: 2, rodada: 1, indice: 0, certo: true })).status, 409); passo("depois de respondida, a questão não aceita mais apelação");
     const tudo = await chamar({ acao: "reiniciar", sessao: ss.sessao, chave: ss.chave, parte: 2, rodada: "tudo" });
     assert.equal(tudo.status, 200);
-    for (const campo of ["dicas", "reveladas", "acertos", "referenciasReveladas", "envios", "erradas"]) assert.ok(!(tudo.dados.estado[campo] || {})["2"], campo);
+    for (const campo of ["reveladas", "acertos", "referenciasReveladas", "envios", "erradas"]) assert.ok(!(tudo.dados.estado[campo] || {})["2"], campo);
+    assert.deepEqual(tudo.dados.estado.dicas["2"], { 2: 1 }, "6.14.18: só a 1ª dica do Quem sou eu? volta à vista");
     const deNovo = await chamar({ acao: "responder", sessao: ss.sessao, participanteId: idS, parte: 2, rodada: 0, texto: "moises" });
     assert.equal(deNovo.status, 200); passo("jogar novamente: a parte inteira volta ao começo e aceita respostas de novo");
     // 6.14.15: "Jogar com novas perguntas" troca o jogo da mesma sessão

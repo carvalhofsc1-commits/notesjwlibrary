@@ -7958,7 +7958,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.14.17'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.14.18'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -29746,7 +29746,7 @@ function saveTemplatesToStorage() {
         const base = j.idTipo === 'verdadeiro_falso'
           ? 'Leia a afirmação e toque em Verdadeiro ou Falso. Acertando, você ganha o ponto; errando, a resposta aparece e a questão termina sem pontos.'
           : (dicas
-            ? 'Descubra a resposta pelas dicas. Toque em “Dar a 1ª dica” para começar: quanto menos dicas você usar, mais pontos a questão vale (a etiqueta “vale N pontos” mostra o valor de agora). Escreva a resposta (ou segure o 🎤 enquanto fala) e envie.'
+            ? 'Descubra a resposta pelas dicas. ' + (j.idTipo === 'quem_sou_eu' ? 'A 1ª dica já aparece; se precisar, peça a seguinte' : 'Toque em “Dar a 1ª dica” para começar') + ': quanto menos dicas você usar, mais pontos a questão vale (a etiqueta “vale N pontos” mostra o valor de agora). Escreva a resposta (ou segure o 🎤 enquanto fala) e envie.'
             : 'Leia a questão e escreva a resposta (ou segure o 🎤 enquanto fala), depois envie.');
         const fim = j.idTipo === 'verdadeiro_falso' ? '' : ' Se errar, tente de novo ou toque em “Apelar para a IA”, que confere se a essência da resposta está certa (um erro de grafia ou um conectivo não muda o sentido). “Não sei” mostra a resposta e a questão não pontua.';
         return base + fim + (j.idTipo === 'verdadeiro_falso' ? '' : ' Cada resposta errada tira 1 ponto daquela questão (que nunca fica abaixo de zero).') + ' Use as setas para trocar de questão; sua pontuação aparece no placar.';
