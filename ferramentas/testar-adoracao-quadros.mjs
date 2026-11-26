@@ -1179,7 +1179,7 @@ teste("6.12.76: Complete o versículo e Quem disse isso? montados pelo servidor 
   const ruins = [["Miqueias 6:8", "Jeová"], ["Mateus 6:14", "Pai"], ["Colossenses 3:13", "liberalmente"], ["Gênesis 50:20", "palavra"], ["Livro Inventado 3:1", "nada"]];
   const rodadas = [...ruins, ...boas, ["Provérbios 15:1", "furor"]].map(([referencia, resposta]) => ({ pergunta: referencia === "Provérbios 15:1" && resposta === "branda" ? "Contexto: Um conselho de Salomão sobre como falar com quem está irritado. Opções erradas: dura; rápida; branda; firme" : referencia === "Mateus 5:9" ? "Contexto: Jesus ensinava que os pacificadores são felizes. Opções erradas: mansos" : "", resposta, referencia }));
   const cp = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "jogo", jogos: ["Complete o versículo"], evitar: { jogo_versiculos: ["Lucas 23:34"] } }), montados);
-  assert.match(cp.mensagem, /QUANTIDADE: mande 12 rodadas \(no mínimo 8; ficam até 10\)\./);
+  assert.match(cp.mensagem, /QUANTIDADE: mande 15 rodadas \(no mínimo 8; ficam até 10\)\./);
   assert.match(cp.mensagem, /EVITAR \(versículos dos jogos usados nas últimas semanas — escolha outros\): Lucas 23:34/);
   const c1 = await cp.prep.montar({ descricao: "d", nome: "Complete", comoJogar: "R.", rodadas, eventos: [] });
   assert.equal(c1.contagens.rodadas, 8, JSON.stringify(c1.jogo && c1.jogo.rodadas));
@@ -1205,8 +1205,36 @@ teste("6.12.76: Complete o versículo e Quem disse isso? montados pelo servidor 
   const cp2 = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "jogo", jogos: ["Complete o versículo"], evitar: { jogo_versiculos: ["Provérbios 15:1", "Mateus 5:9"] }, jaUsados: { versiculos: ["efesios 4:32"] } }), montados);
   const c2 = await cp2.prep.montar({ descricao: "d", nome: "Complete", comoJogar: "R.", rodadas: boas.map(([referencia, resposta]) => ({ pergunta: "", resposta, referencia })), eventos: [] });
   assert.equal(c2.contagens.rodadas, 5);
-  assert.match(c2.falta, /^vieram 5 rodadas válidas; mande 12 rodadas \(no mínimo 8\)/);
+  assert.match(c2.falta, /^vieram 5 rodadas válidas; mande 15 rodadas \(no mínimo 8\)/);
   assert.equal(c2.trocarTipo, "Complete o versículo");
+  // 6.14.27: o pedido de novo diz o que foi recusado, e o registro conta por motivo.
+  assert.match(c2.falta, /o servidor recusou 3 rodadas \(corrija com o texto do versículo ou use outro\): /);
+  assert.deepEqual(c2.contagens.recusas, { versiculo_ja_usado: 3 });
+  const cr = await cp2.prep.montar({ descricao: "d", nome: "Complete", comoJogar: "R.", rodadas: [["Provérbios 3:5", "Confie"], ["Hebreus 11:1", "expectativa"], ["Livro Inventado 3:1", "nada"]].map(([referencia, resposta]) => ({ pergunta: "", resposta, referencia })), eventos: [] });
+  assert.deepEqual(cr.contagens.recusas, { repetida: 1, ausente: 1, sem_texto: 1 });
+  assert.match(cr.falta, /Hebreus 11:1, resposta "expectativa": a palavra não está no texto deste versículo \(texto do versículo: "A fé é a firme confiança/);
+  assert.match(cr.falta, /Provérbios 3:5, resposta "Confie": a palavra aparece mais de uma vez/);
+  // As duas tentativas somadas: sem repetir versículo nem palavra, até o máximo do tipo.
+  const tentativa = async (lista) => {
+    const m = await cp.prep.montar({ descricao: "d", nome: "Complete", comoJogar: "R.", rodadas: lista.map(([referencia, resposta]) => ({ pergunta: "", resposta, referencia })), eventos: [] });
+    return { parte: { nome: "Jogo", jogo: m.jogo }, memoria: m.memoria, falta: m.falta, trocarTipo: m.trocarTipo, contagens: m.contagens, repeticoes: [] };
+  };
+  const [t1, t2] = [await tentativa(boas.slice(0, 5)), await tentativa(boas.slice(2))];
+  const soma = ger.somarTentativasDoJogo(t2, t1);
+  assert.equal(soma.parte.jogo.rodadas.length, 8);
+  assert.equal(soma.contagens.rodadas, 8);
+  assert.equal(soma.contagens.somadas, 2);
+  assert.equal(soma.falta, "", "com as duas somadas, chega ao mínimo");
+  assert.equal(soma.trocarTipo, "");
+  assert.equal(soma.memoria.jogo_versiculos.length, 8);
+  const poucas = ger.somarTentativasDoJogo(await tentativa(boas.slice(0, 3)), await tentativa(boas.slice(2, 5)));
+  assert.equal(poucas.falta, "vieram 5 rodadas válidas");
+  assert.equal(poucas.trocarTipo, "Complete o versículo");
+  assert.equal(ger.somarTentativasDoJogo(t1, { parte: { jogo: null } }), t1);
+  const r = (referencia, resposta) => ({ referencia, resposta });
+  assert.deepEqual(ger.juntarRodadasDoJogo([r("João 3:16", "mundo")], [r("João 3:16, 17", "Filho"), r("Mateus 5:9", "Mundo"), r("Mateus 5:5", "terra")], { semRepetirResposta: true }).map((x) => x.referencia), ["João 3:16", "Mateus 5:5"]);
+  assert.equal(ger.juntarRodadasDoJogo([r("João 3:16", "a")], [r("Mateus 5:5", "a"), r("Mateus 5:6", "b")], { max: 2 }).length, 2);
+  assert.match(servidorJs, /r = somarTentativasDoJogo\(r, r === primeira \? r2 : primeira\);/);
   // Quem disse isso?: a fala transcrita entre aspas; sem fala entre aspas (ou curta), a rodada sai. 6.12.77: e só quando o nome de quem
   // fala está no texto antes da aspa (Rute 2:10 "ela", Lucas 2:49 "ele", Jó 1:21 "disse", Ester 4:16 começa com a aspa) e antes do
   // ouvinte (Gênesis 4:9 "Caim, a Jeová" sai; "Jeová, a Caim" fica).

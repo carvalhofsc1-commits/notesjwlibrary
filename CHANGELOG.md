@@ -2,6 +2,15 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.27
+
+- **Complete o versículo e "Quem disse isso?" com todas as rodadas:** o jogo chegava com menos rodadas que o previsto porque o servidor recusava várias que a IA mandava. Agora:
+  - a IA é chamada pedindo **15 rodadas** (antes 12), para sobrar folga até as 10 que ficam;
+  - quando precisa refazer, o pedido de novo diz **quais rodadas foram recusadas, o motivo e o texto do versículo**, para a IA corrigir a palavra;
+  - as rodadas aprovadas **das duas tentativas se somam** (antes uma tentativa substituía a outra);
+  - o registro do servidor passa a contar **quantas rodadas foram recusadas por cada motivo**.
+- O pedido à IA reforça que a palavra deve ser copiada exatamente como está na Tradução do Novo Mundo.
+
 ## 6.14.26
 
 - **Complete o versículo:** o versículo ganhou o mesmo destaque do "Quem disse isso?": rótulo pequeno à esquerda ("Complete a palavra que falta") e o versículo em negrito num quadro. Vale também para os jogos já preparados.

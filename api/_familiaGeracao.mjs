@@ -667,8 +667,9 @@ export const RODADAS_DO_JOGO = Object.freeze({
   // 6.12.78: Quem sou eu? e Verdadeiro ou falso passam pela conferência com a Bíblia (que pode tirar rodadas): pede-se mais do que ficam.
   quem_sou_eu: Object.freeze({ pedir: 10, min: 6, max: 8 }),
   verdadeiro_falso: Object.freeze({ pedir: 14, min: 10, max: 12 }),
-  quem_disse: Object.freeze({ pedir: 12, min: 8, max: 10 }),
-  complete_versiculo: Object.freeze({ pedir: 12, min: 8, max: 10 }),
+  // 6.14.27: de 12 para 15 pedidas: nos dois, o servidor chegava a recusar 5 de 12 e o jogo ficava abaixo do mínimo.
+  quem_disse: Object.freeze({ pedir: 15, min: 8, max: 10 }),
+  complete_versiculo: Object.freeze({ pedir: 15, min: 8, max: 10 }),
   abreviacoes: Object.freeze({ pedir: 10, min: 8, max: 10 }),
   ordem_data: Object.freeze({ pedir: 8, min: 6, max: 8 }),
   // 6.13.22: Perfil bíblico: 4 cartas de 10 dicas (cada uma leva uns 2 minutos); a IA escreve as cartas dos verbetes oferecidos (até 3 ficam)
@@ -769,17 +770,98 @@ const PALAVRAS_SEM_LACUNA = new Set(
 // resposta como está no versículo) ou null: palavra com espaço, número ou menos de 4 letras; palavra vazia ou proibida ("Jeová", "Deus");
 // igual ao nome do livro (que é a Dica 2); ausente do versículo ou repetida nele (a lacuna ficaria ambígua).
 export function lacunaNoVersiculo(texto, palavra, livro = "") {
+  const a = avaliarLacuna(texto, palavra, livro);
+  return a.motivo ? null : { texto: a.texto, resposta: a.resposta };
+}
+// 6.14.27: por que a palavra não serve de lacuna ("" = serve): um dos códigos de MOTIVOS_DA_RECUSA.
+export function motivoDaLacuna(texto, palavra, livro = "") {
+  return avaliarLacuna(texto, palavra, livro).motivo;
+}
+function avaliarLacuna(texto, palavra, livro) {
   const t = String(texto || "");
   const p = String(palavra || "").trim().replace(/^[^\p{L}\d]+|[^\p{L}\d]+$/gu, "");
-  if (!t || !p || /\s/.test(p) || /\d/.test(p) || !/^[\p{L}\p{M}]+$/u.test(p)) return null;
+  if (!t || !p || /\s/.test(p) || /\d/.test(p) || !/^[\p{L}\p{M}]+$/u.test(p)) return { motivo: "nao_e_palavra" };
   const alvo = normalizarTexto(p);
-  if (alvo.length < 4 || PALAVRAS_SEM_LACUNA.has(alvo)) return null;
+  if (alvo.length < 4) return { motivo: "curta" };
+  if (PALAVRAS_SEM_LACUNA.has(alvo)) return { motivo: "proibida" };
   const nomeDoLivro = semNumeroDoLivro(livro);
-  if (nomeDoLivro && alvo === nomeDoLivro) return null;
+  if (nomeDoLivro && alvo === nomeDoLivro) return { motivo: "nome_do_livro" };
   const achados = [...t.matchAll(/[\p{L}\p{M}]+/gu)].filter((m) => normalizarTexto(m[0]) === alvo);
-  if (achados.length !== 1) return null;
+  if (achados.length !== 1) return { motivo: achados.length ? "repetida" : "ausente" };
   const m = achados[0];
-  return { texto: `${t.slice(0, m.index)}______${t.slice(m.index + m[0].length)}`, resposta: m[0] };
+  return { motivo: "", texto: `${t.slice(0, m.index)}______${t.slice(m.index + m[0].length)}`, resposta: m[0] };
+}
+
+// ---------- 6.14.27: rodadas recusadas nos jogos montados pelo servidor, e a soma das duas tentativas ----------
+// Por que o servidor recusou uma rodada do Complete o versículo ou do Quem disse isso? (vai no pedido de novo à IA e, contado, no registro).
+export const MOTIVOS_DA_RECUSA = Object.freeze({
+  sem_texto: "a referência não foi achada na Bíblia",
+  nao_e_palavra: "a resposta tem de ser uma palavra só, sem número",
+  curta: "a palavra tem menos de 4 letras",
+  proibida: "essa palavra não serve de lacuna",
+  nome_do_livro: "a palavra é o nome do livro",
+  ausente: "a palavra não está no texto deste versículo",
+  repetida: "a palavra aparece mais de uma vez no versículo",
+  pergunta: "não deu para montar a questão",
+  palavra_ja_usada: "a mesma palavra já é a resposta de outra rodada",
+  versiculo_ja_usado: "o versículo já saiu neste jogo, nesta noite ou nas últimas semanas",
+  sem_fala: "o texto não tem uma fala entre aspas que dê para usar",
+  quem_fala: "o texto não mostra, antes da fala, o nome de quem fala",
+  nome_na_fala: "a fala traz o nome de quem disse",
+});
+// O que se diz à IA, no pedido de novo, sobre as rodadas recusadas: a referência, o motivo e o texto real do versículo (a IA escolhe a
+// palavra de memória; vendo o texto, acerta). Até 6, com as que têm texto para corrigir na frente. recusadas: [{ referencia, motivo,
+// palavra, texto }].
+export function textoDasRecusadasDoJogo(recusadas) {
+  const lista = Array.isArray(recusadas) ? recusadas.filter((r) => r && MOTIVOS_DA_RECUSA[r.motivo]) : [];
+  if (!lista.length) return "";
+  const corrigivel = (r) => Boolean(r.texto) && r.motivo !== "versiculo_ja_usado";
+  const curto = (t, n) => {
+    const s = String(t || "").replace(/\s+/g, " ").trim();
+    return s.length > n ? `${s.slice(0, n - 1)}…` : s;
+  };
+  const itens = [...lista]
+    .sort((a, b) => Number(corrigivel(b)) - Number(corrigivel(a)))
+    .slice(0, 6)
+    .map((r) => `${curto(r.referencia, 60) || "(sem referência)"}${r.palavra ? `, resposta "${curto(r.palavra, 40)}"` : ""}: ${MOTIVOS_DA_RECUSA[r.motivo]}${corrigivel(r) ? ` (texto do versículo: "${curto(r.texto, 320)}")` : ""}`);
+  return `o servidor recusou ${lista.length} ${lista.length === 1 ? "rodada" : "rodadas"} (corrija com o texto do versículo ou use outro): ${itens.join("; ")}`;
+}
+// As rodadas de duas tentativas juntas (as da primeira lista na frente), sem repetir versículo e, com semRepetirResposta, sem repetir a
+// palavra da resposta; até "max".
+export function juntarRodadasDoJogo(rodadas, outras, { max = 10, semRepetirResposta = false } = {}) {
+  const saida = [];
+  const versiculos = new Set();
+  const respostas = new Set();
+  for (const r of [...(Array.isArray(rodadas) ? rodadas : []), ...(Array.isArray(outras) ? outras : [])]) {
+    if (!r || saida.length >= max) continue;
+    const chaves = chavesDosVersiculos(r.referencia);
+    const resposta = normalizarTexto(r.resposta);
+    if (chaves.some((k) => versiculos.has(k)) || (semRepetirResposta && respostas.has(resposta))) continue;
+    chaves.forEach((k) => versiculos.add(k));
+    respostas.add(resposta);
+    saida.push(r);
+  }
+  return saida;
+}
+// Complete o versículo e Quem disse isso?: a tentativa escolhida recebe as rodadas válidas da outra. Cada tentativa é a de gerarQuadroFamilia:
+// { parte: { jogo }, memoria, falta, trocarTipo, contagens }.
+export function somarTentativasDoJogo(escolhida, outra) {
+  const a = escolhida && escolhida.parte && escolhida.parte.jogo;
+  const b = outra && outra.parte && outra.parte.jogo;
+  if (!a || !b || a.idTipo !== b.idTipo || !["complete_versiculo", "quem_disse"].includes(a.idTipo)) return escolhida;
+  const limite = RODADAS_DO_JOGO[a.idTipo];
+  const rodadas = juntarRodadasDoJogo(a.rodadas, b.rodadas, { max: limite.max, semRepetirResposta: a.idTipo === "complete_versiculo" });
+  const somadas = rodadas.length - a.rodadas.length;
+  if (somadas <= 0) return escolhida;
+  const n = rodadas.length;
+  return {
+    ...escolhida,
+    parte: { ...escolhida.parte, jogo: { ...a, rodadas } },
+    memoria: { ...escolhida.memoria, jogo_versiculos: rodadas.map((r) => r.referencia).filter(Boolean) },
+    falta: n < limite.min ? `vieram ${n} rodadas válidas` : "",
+    trocarTipo: n < MIN_RODADAS_PARA_MANTER_O_TIPO ? escolhida.trocarTipo : "",
+    contagens: { ...escolhida.contagens, rodadas: n, somadas },
+  };
 }
 
 // Abreviações bíblicas: as iniciais da sigla conferem, na ordem, com as palavras da resposta ("Os 12 A de C" = "Os 12 Apóstolos de

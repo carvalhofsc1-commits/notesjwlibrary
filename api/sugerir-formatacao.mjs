@@ -69,6 +69,9 @@ import {
   idDoJogo,
   itensNaPosicaoOriginal,
   lacunaNoVersiculo,
+  motivoDaLacuna,
+  textoDasRecusadasDoJogo,
+  somarTentativasDoJogo,
   lankDoLink,
   linkDeConsultaWol,
   livroDaReferencia,
@@ -3977,33 +3980,45 @@ const PREPARAR_QUADRO_FAMILIA = {
             })
           );
           let conferidas = [];
+          const recusadas = [];
           const chavesDasRodadas = new Set();
           const novaRodada = (chave) => Boolean(chave) && !chavesDasRodadas.has(chave) && Boolean(chavesDasRodadas.add(chave));
           brutas.forEach((b, i) => {
             const v = lidos[i];
             const resposta = limparTextoGerado(b.resposta, 300);
+            // 6.14.27: nos montados pelo servidor, cada rodada recusada guarda o motivo (para o pedido de novo e para o registro).
+            const recusar = (motivo) => {
+              recusadas.push({ referencia: v ? v.referencia : linhaFamilia(b.referencia, 120), motivo, palavra: resposta, texto: v ? v.texto : "" });
+            };
             if (idTipo === "complete_versiculo") {
-              if (!v) return;
+              if (!v) return recusar("sem_texto");
               const livro = livroDaReferencia(v.referencia);
               // 6.12.77: sem as aspas que ficaram sem par (a fala começou no versículo de antes ou continua no seguinte).
               const lacuna = lacunaNoVersiculo(semAspasSoltas(v.texto), resposta, livro);
-              if (!lacuna) return;
+              if (!lacuna) return recusar(motivoDaLacuna(semAspasSoltas(v.texto), resposta, livro));
               // 6.13.44: como o Quem disse isso?: o versículo com a lacuna logo no início; Dica 1 = livro e capítulo, Dica 2 = o contexto (ou as
               // letras), Dica 3 = 4 palavras para escolher.
               const outras = brutas.map((x) => x && x.resposta).filter((x) => x && normalizarTexto(x) !== normalizarTexto(lacuna.resposta));
               const pergunta = perguntaDoComplete({ lacuna: aspasSimples(lacuna.texto), referencia: v.referencia, resposta: lacuna.resposta, bruta: b.pergunta, outras, semente: ctx.semente + i });
-              if (!pergunta || pergunta.length > 900 || chavesDasRodadas.has(`p:${normalizarTexto(lacuna.resposta)}`) || !versiculoNovo(v.referencia)) return;
+              if (!pergunta || pergunta.length > 900) return recusar("pergunta");
+              if (chavesDasRodadas.has(`p:${normalizarTexto(lacuna.resposta)}`)) return recusar("palavra_ja_usada");
+              if (!versiculoNovo(v.referencia)) return recusar("versiculo_ja_usado");
               novaRodada(`p:${normalizarTexto(lacuna.resposta)}`);
               conferidas.push({ pergunta, resposta: lacuna.resposta, referencia: v.referencia });
             } else if (idTipo === "quem_disse") {
-              if (!v || !resposta) return;
+              if (!v) return recusar("sem_texto");
+              if (!resposta) return recusar("pergunta");
               const fala = semAspasSoltas(falaEntreAspas(v.texto, 300));
               const dica2 = dicaDoLivro(livroDaReferencia(v.referencia), resposta);
               // 6.12.77: só vale se o nome de quem fala está no texto, antes da fala, e o ouvinte não vem antes dele (quemFalaConfere).
-              if (!fala || !dica2 || !quemFalaConfere(v.texto, resposta) || !falaSemONome(fala, resposta) || !versiculoNovo(v.referencia)) return;
+              if (!fala) return recusar("sem_fala");
+              if (!dica2) return recusar("pergunta");
+              if (!quemFalaConfere(v.texto, resposta)) return recusar("quem_fala");
+              if (!falaSemONome(fala, resposta)) return recusar("nome_na_fala");
+              if (!versiculoNovo(v.referencia)) return recusar("versiculo_ja_usado");
               // 6.13.39: a frase aparece logo no início (não é dica); Dica 1 = livro e capítulo, Dica 2 = o contexto (da IA), Dica 3 = 4 nomes para escolher.
               const pergunta = perguntaDoQuemDisse({ fala: aspasSimples(fala), referencia: v.referencia, resposta, bruta: b.pergunta, semente: ctx.semente + i });
-              if (!pergunta) return;
+              if (!pergunta) return recusar("pergunta");
               conferidas.push({ pergunta, resposta, referencia: v.referencia });
             } else {
               // 6.12.77: a referência com o nome do livro como na Bíblia do app ("Filemon" -> "Filêmon", "Salmo" -> "Salmos").
@@ -4060,6 +4075,8 @@ const PREPARAR_QUADRO_FAMILIA = {
             }
           }
           contagensDaConferencia = { conferenciaNaBiblia: conferidasNaBiblia, rejeitadasNaBiblia: rejeitadasNaBiblia.length };
+          // 6.14.27: no registro, quantas rodadas o servidor recusou por cada motivo.
+          if (recusadas.length) contagensDaConferencia.recusas = recusadas.reduce((m, r) => ({ ...m, [r.motivo]: (m[r.motivo] || 0) + 1 }), {});
           const conferidasDaIa = conferidas.length;
           if (abrev && siglasDoBanco.length) {
             // 6.13.22: as siglas do banco entram no jogo (sem repetir uma sigla ou uma resposta da IA), misturadas com as da IA.
@@ -4082,7 +4099,7 @@ const PREPARAR_QUADRO_FAMILIA = {
           }[idTipo];
           const faltas = [];
           if (abrev && jogo) cartasDoJogo = jogo.rodadas.map((r) => r.resposta);
-          if (validas < limite.min) faltas.push(`vieram ${validas} rodadas válidas${abrev && siglasDoBanco.length ? ` (com ${siglasDoBanco.length} siglas do servidor)` : ""}; mande ${pedir} rodadas (no mínimo ${minDaIa}), em nível de adulto batizado${exigencia ? `, ${exigencia}` : ""}${semData ? ", e sem datas fora do Apêndice B" : ""}${rejeitadasNaBiblia.length ? `; ${textoDasRejeitadas(rejeitadasNaBiblia)}` : ""}`);
+          if (validas < limite.min) faltas.push(`vieram ${validas} rodadas válidas${abrev && siglasDoBanco.length ? ` (com ${siglasDoBanco.length} siglas do servidor)` : ""}; mande ${pedir} rodadas (no mínimo ${minDaIa}), em nível de adulto batizado${exigencia ? `, ${exigencia}` : ""}${semData ? ", e sem datas fora do Apêndice B" : ""}${rejeitadasNaBiblia.length ? `; ${textoDasRejeitadas(rejeitadasNaBiblia)}` : ""}${recusadas.length ? `; ${textoDasRecusadasDoJogo(recusadas)}` : ""}`);
           if (idTipo === "verdadeiro_falso" && validas) {
             const verdadeiras = jogo.rodadas.filter((r) => /^Verdadeiro\b/.test(r.resposta)).length;
             if (verdadeiras < 3 || validas - verdadeiras < 3) faltas.push(`vieram ${verdadeiras} verdadeiras e ${validas - verdadeiras} falsas; mande pelo menos 3 verdadeiras e 3 falsas`);
@@ -4325,7 +4342,10 @@ async function gerarQuadroFamilia(res, body, P) {
       refeito = true;
       const pedidoDeNovo = [r.repeticoes.length && `REPETIÇÃO A EVITAR (refaça o quadro sem repetir): ${r.repeticoes.join("; ")}.`, r.falta && `FALTOU (refaça o quadro completo): ${r.falta}.`].filter(Boolean).join("\n");
       const r2 = await gerarUma(`${pedido.mensagem}\n${pedidoDeNovo}\n`).catch(() => null);
+      const primeira = r;
       if (segundaTentativaMelhor(r, r2)) r = r2;
+      // 6.14.27: no Complete o versículo e no Quem disse isso?, as rodadas válidas das duas tentativas se somam.
+      if (id === "jogo" && r2) r = somarTentativasDoJogo(r, r === primeira ? r2 : primeira);
     }
     // 6.12.76: o Complete o versículo e o Quem disse isso? são montados pelo servidor com o texto da Bíblia; se, mesmo depois de refazer,
     // ficaram com menos de MIN_RODADAS_PARA_MANTER_O_TIPO rodadas conferidas, o jogo é feito de novo com outro tipo aceito pela família.
