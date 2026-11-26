@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.22
+
+- **Quem disse isso?:** a frase dita ganhou destaque: fonte grande e em negrito, centralizada num quadro roxo claro (escuro no modo escuro). Saiu o "Quem disse isso?" repetido antes dela. Vale também para os jogos já preparados.
+
 ## 6.14.21
 
 - Fim do jogo: **"Jogar com novas perguntas"** e **"Fechar"** passaram para o final da tela, entre o jogo e "Regras" / "Tela grande".
