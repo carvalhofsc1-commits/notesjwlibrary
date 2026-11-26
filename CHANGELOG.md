@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.15
+
+- Fim do jogo: o botão passou a ser **"✨ Jogar com novas perguntas"**. A IA prepara outro jogo do mesmo tipo, tema e instrução, com outras perguntas, e ele abre no lugar do que terminou, com a pontuação zerada.
+- No jogo em grupo, o código continua o mesmo e todos passam para o jogo novo sem entrar de novo.
+- O jogo novo também fica em 📂 Jogos preparados.
+
 ## 6.14.14
 
 - Jogos: ao terminar (todas as respostas reveladas), aparecem **"🔁 Jogar novamente"** e **"✖️ Fechar"**. Jogar novamente recomeça as mesmas questões, com a pontuação zerada (no jogo em grupo, só o administrador vê esse botão e leva todos à 1ª questão). Fechar volta à tela dos Jogos; a partida sozinho acaba.

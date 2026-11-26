@@ -398,6 +398,25 @@ try {
     for (const campo of ["dicas", "reveladas", "acertos", "referenciasReveladas", "envios", "erradas"]) assert.ok(!(tudo.dados.estado[campo] || {})["2"], campo);
     const deNovo = await chamar({ acao: "responder", sessao: ss.sessao, participanteId: idS, parte: 2, rodada: 0, texto: "moises" });
     assert.equal(deNovo.status, 200); passo("jogar novamente: a parte inteira volta ao começo e aceita respostas de novo");
+    // 6.14.15: "Jogar com novas perguntas" troca o jogo da mesma sessão
+    const outro = { modo: "jogos", titulo: "Outro", emoji: "🔤", partes: [{ nome: "Jogo", jogo: { tipo: "Quem sou eu?", idTipo: "quem_sou_eu", nome: "Novo", comoJogar: "R.", rodadas: [{ pergunta: "Dica 1: Nova pergunta.", resposta: "Abraão", referencia: "Gênesis 12:1" }] } }] };
+    const ipDeAntes = ipAtual;
+    ipAtual = "10.6.14.15"; // as recusas contam como tentativas erradas: ficam num endereço só delas
+    assert.equal((await chamar({ acao: "novo-jogo", sessao: ss.sessao, chave: ss.chave, programa: outro, codigo: "errado" })).status, 403);
+    assert.equal((await chamar({ acao: "novo-jogo", sessao: ss.sessao, programa: outro, codigo: "codigo-de-teste" })).status, 403);
+    ipAtual = ipDeAntes;
+    const trocado = await chamar({ acao: "novo-jogo", sessao: ss.sessao, chave: ss.chave, programa: outro, codigo: "codigo-de-teste" });
+    assert.equal(trocado.status, 200, JSON.stringify(trocado.dados));
+    assert.equal(trocado.dados.estado.programaN, 1);
+    assert.deepEqual(trocado.dados.estado.reveladas, {});
+    assert.ok(!JSON.stringify(trocado.dados).includes("Abraão"));
+    const reentra = await chamar({ acao: "entrar", sessao: ss.sessao, chave: ss.chave, participanteId: idS, nome: "Jogador" });
+    assert.equal(reentra.dados.programa.solo, true);
+    assert.equal(reentra.dados.programa.partes[0].jogo.rodadas[0].pergunta, "Dica 1: Nova pergunta.");
+    assert.ok(!JSON.stringify(reentra.dados).includes("Abraão"));
+    assert.equal(reentra.dados.participanteId, idS);
+    const certa = await chamar({ acao: "responder", sessao: ss.sessao, participanteId: idS, parte: 0, rodada: 0, texto: "abraao" });
+    assert.equal(certa.dados.estado.reveladas["0"]["0"], "Abraão"); passo("novas perguntas: o jogo da sessão é trocado, sem vazar respostas, e julga as respostas novas");
     await chamar({ acao: "encerrar", sessao: ss.sessao, chave: ss.chave });
   }
 

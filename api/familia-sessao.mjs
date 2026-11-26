@@ -151,6 +151,8 @@ function estadoPublico(e) {
     sorteioDicas: e.sorteioDicas && typeof e.sorteioDicas === "object" ? e.sorteioDicas : {},
     // 6.14.00: a questão em foco que quem administra o jogo escolheu para todos ({ parte: { rodada, n } }; n muda a cada escolha)
     foco: e.foco && typeof e.foco === "object" ? e.foco : {},
+    // 6.14.15: quantas vezes o jogo desta sessão foi trocado por um novo (o aparelho recarrega as perguntas quando muda)
+    programaN: Number(e.programaN) || 0,
   };
 }
 // O dirigente recebe também a lista de quem entrou; a versão dele inclui a quantidade de participantes (muda quando alguém entra).
@@ -912,6 +914,35 @@ export default async function handler(req, res) {
             e[campo] = { ...e[campo], [parte]: copia };
           }
         }
+      });
+    }
+
+    // ----- novo-jogo (6.14.15): "Jogar com novas perguntas": troca o jogo desta mesma sessão (só no jogo avulso), do começo; o código, a chave,
+    // os nomes e quem está participando continuam. "programaN" muda no estado, para cada aparelho carregar o jogo novo.
+    if (acao === "novo-jogo") {
+      await prepararCodigosPessoais();
+      if (!recursoCodigoValido("pesquisa", corpo.codigo, corpo.aparelhoId)) {
+        registrarErro(ip);
+        return erro(res, 403, "Código de pesquisa inválido.");
+      }
+      const op = corpo.programa;
+      if (!op || typeof op !== "object" || !Array.isArray(op.partes) || !op.partes.length) return erro(res, 400, "Programação inválida.");
+      if (JSON.stringify(op).length > MAX_PROGRAMA) return erro(res, 413, "A programação é grande demais para compartilhar.");
+      const atual = await lerJson(caminho(cod, "programa.json"));
+      if (!atual || atual.modo !== "jogos") return erro(res, 400, "Só um jogo pode ser trocado.");
+      const { programa, respostas, referencias, extras } = limparPrograma({ ...op, modo: "jogos", solo: atual.solo === true });
+      if (!programa.partes.length) return erro(res, 400, "Programação sem partes.");
+      programa.nomes = atual.nomes || [];
+      programa.criadoEm = atual.criadoEm;
+      segredo = { ...segredo, respostas, referencias, extras };
+      await gravarJson(caminho(cod, "respostas.json"), segredo);
+      await gravarJson(caminho(cod, "programa.json"), programa);
+      return gravarEstado((e) => {
+        for (const campo of ["dicas", "dicasOrdem", "reveladas", "acertos", "referenciasReveladas", "envios", "erradas", "ordensReveladas", "espiaram", "sorteioDicas", "foco"]) delete e[campo];
+        e.reveladas = {};
+        e.sorteio = null;
+        e.sorteioQuestao = null;
+        e.programaN = (Number(e.programaN) || 0) + 1;
       });
     }
 

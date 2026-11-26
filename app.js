@@ -7958,7 +7958,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.14.14'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.14.15'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -27986,7 +27986,7 @@ function saveTemplatesToStorage() {
     // 6.14.10: a partida sozinho não mostra código nem fica salva: a chave dela fica só na memória (o código interno, que o jogo precisa para
     // funcionar, nunca aparece). 6.14.11: ela continua enquanto o app estiver aberto ("▶️ Continuar a partida", na tela dos Jogos) e é apagada
     // do servidor ao fechar ou recarregar o app, ao começar outra ou na 🗑️.
-    let familiaSolo = null; // { cod, chave, titulo, participanteId, nome, posicoes: { parte: questão } }
+    let familiaSolo = null; // { cod, chave, titulo, participanteId, nome, posicoes: { parte: questão }, jogo: { nome, tema, instrucao } }
     function familiaSoloEsquecer(cod) {
       if (familiaSolo && familiaSolo.cod === cod) familiaSolo = null;
       jogosContinuarPintar();
@@ -28384,7 +28384,7 @@ function saveTemplatesToStorage() {
       sessao: document.getElementById('participarSessao'),
       status: document.getElementById('participarStatus')
     };
-    const participarVazio = () => ({ cod: '', chave: '', programa: null, dirigente: false, participanteId: '', nome: '', versao: '', estado: null, participantes: [], extras: null, offset: 0, secoes: [], dir: null, semConexao: false, jogos: new Map(), cron: null, presentes: [], nomesVistos: [], painel: null, ultimaPresenca: 0 });
+    const participarVazio = () => ({ cod: '', chave: '', programa: null, dirigente: false, participanteId: '', nome: '', versao: '', estado: null, participantes: [], extras: null, offset: 0, secoes: [], dir: null, semConexao: false, jogos: new Map(), cron: null, presentes: [], nomesVistos: [], painel: null, ultimaPresenca: 0, programaN: null });
     const participar = Object.assign(participarVazio(), { timer: 0, cronTimer: 0, consultando: false, fila: Promise.resolve(), voltarPara: 'inicio', nomeCod: '' });
 
     const participarCodigoLimpo = v => String(v || '').toUpperCase().replace(/[^0-9A-Z]/g, '');
@@ -29328,10 +29328,46 @@ function saveTemplatesToStorage() {
       if (Array.isArray(d.participantes)) participar.participantes = d.participantes;
       if (Array.isArray(d.presentes)) { participar.presentes = d.presentes; participarPresentesPintar(); } // 6.13.31
       if (d.estado) {
+        // 6.14.15: o jogo desta sessão foi trocado por um novo ("Jogar com novas perguntas"): carrega as perguntas novas
+        const programaN = Number(d.estado.programaN) || 0;
+        if (participar.programaN == null) participar.programaN = programaN;
+        else if (programaN !== participar.programaN) { participarRecarregarJogo(programaN); return; }
         const antes = participar.estado;
         participar.estado = d.estado;
         participarEstadoPintar(antes);
       } else if (Array.isArray(d.participantes)) participarDirigentePintar();
+    }
+
+    // 6.14.15: entra de novo na mesma sessão (mesmo nome e mesma chave) e monta o jogo novo
+    async function participarRecarregarJogo(programaN) {
+      const antes = participar.programaN;
+      participar.programaN = programaN;
+      const cod = participar.cod;
+      const corpo = { acao: 'entrar', sessao: cod };
+      if (participar.chave) corpo.chave = participar.chave;
+      if (participar.participanteId) Object.assign(corpo, { participanteId: participar.participanteId, nome: participar.nome });
+      const r = await familiaSessaoPedir(corpo);
+      if (cod !== participar.cod) return;
+      if (!r.ok || !r.data.programa) { // tenta de novo na próxima consulta
+        participar.programaN = antes;
+        participar.versao = '';
+        participarStatus(r.erro || 'Não consegui carregar o jogo novo. Tentando de novo…', 'erro');
+        participarAgendar();
+        return;
+      }
+      const d = r.data;
+      const quem = { cod, chave: participar.chave, dirigente: participar.dirigente, participanteId: d.participanteId || participar.participanteId, nome: d.nome || participar.nome, participantes: d.participantes || participar.participantes, extras: d.extras || null, programa: d.programa };
+      participarLimpar();
+      Object.assign(participar, quem, { programaN: Number(d.estado && d.estado.programaN) || 0 });
+      if (familiaSolo && familiaSolo.cod === cod) familiaSolo.posicoes = {};
+      participarTextosModo();
+      participarMontar();
+      participarAplicar(d);
+      participarVista('sessao');
+      if (d.programa.modo === 'jogos' && participar.secoes && participar.secoes[0] && !participar.secoes[0].aberta) participarSecaoAbrir(0, true);
+      participarStatus('✨ Jogo novo, com outras perguntas!', 'ok');
+      window.scrollTo(0, 0);
+      participarAgendar();
     }
 
     function participarEstadoPintar(antes) {
@@ -30533,8 +30569,19 @@ function saveTemplatesToStorage() {
     }
 
     // Respostas reveladas e o nome sorteado, a cada mudança do estado.
-    // 6.14.14: o fim do jogo avulso (todas as respostas reveladas): "Jogar novamente" (quem administra ou joga sozinho: as mesmas questões, do
-    // começo, com a pontuação zerada) e "Fechar" (volta à tela dos Jogos; a partida sozinho acaba).
+    // 6.14.14: o fim do jogo avulso (todas as respostas reveladas): "Jogar com novas perguntas" (6.14.15; quem administra ou joga sozinho: a
+    // IA prepara outro jogo do mesmo tipo, tema e instrução, que entra na mesma sessão, com a pontuação zerada) e "Fechar" (volta à tela dos
+    // Jogos; a partida sozinho acaba).
+    // O jogo que está sendo jogado (tipo, tema e instrução), para preparar outro igual.
+    function participarJogoDeAgora() {
+      const solo = familiaSolo && familiaSolo.cod === participar.cod ? familiaSolo : null;
+      const progId = String((familiaSessoesLer()[participar.cod] || {}).progId || '');
+      const item = solo && solo.jogo ? solo.jogo : jogosSalvosLer().find(x => 'jogo:' + x.id === progId);
+      const parte = participar.programa && participar.programa.partes && participar.programa.partes[0];
+      const idTipo = parte && parte.jogo ? parte.jogo.idTipo : '';
+      const j = (item && jogosDoNome(item.nome)) || JOGOS_BIBLICOS[['quem_sou_eu', 'verdadeiro_falso', 'ordem_data', 'quem_disse', 'complete_versiculo', 'abreviacoes', 'perfil_biblico'].indexOf(idTipo)];
+      return j ? { j, tema: (item && item.tema) || '', instrucao: (item && item.instrucao) || '' } : null;
+    }
     function participarFimMontar() {
       const caixa = document.createElement('div');
       caixa.className = 'fam-jogo-fim';
@@ -30542,17 +30589,34 @@ function saveTemplatesToStorage() {
       const novo = document.createElement('button');
       novo.type = 'button';
       novo.className = 'fam-fino fam-principal';
-      novo.textContent = '🔁 Jogar novamente';
+      const rotuloNovo = '✨ Jogar com novas perguntas';
+      novo.textContent = rotuloNovo;
       novo.hidden = !participar.dirigente;
+      const nota = familiaGerarBtn.getAttribute('data-ia-nota');
+      if (nota) novo.setAttribute('data-ia-nota', nota);
+      const aviso = document.createElement('p');
+      aviso.className = 'fam-status';
+      aviso.setAttribute('role', 'status');
+      aviso.hidden = true;
+      const avisar = (msg, tipo) => { aviso.hidden = !msg; aviso.className = 'fam-status' + (tipo ? ' ' + tipo : ''); aviso.textContent = msg || ''; };
       novo.addEventListener('click', async () => {
-        for (const [i, ref] of [...participar.jogos]) {
-          ref.atual = 0;
-          ref.rodadas.forEach(r => { r.recolhida = false; if (r.campoResp) { r.campoResp.value = ''; r.campoResp.dispatchEvent(new Event('input', { bubbles: true })); } });
-          if (!(await participarAcao({ acao: 'reiniciar', parte: i, rodada: 'tudo' }, novo))) return;
-          // no jogo em grupo, todos voltam à 1ª questão junto com quem administra
-          if (!(participar.programa && participar.programa.solo) && ref.sync !== false && ref.rodadas.length) participarAcao({ acao: 'foco', parte: i, rodada: 0 }, null);
-        }
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        const codigo = codigoAcessoSalvo();
+        if (!codigo) { avisar('Para preparar novas perguntas, informe o código de pesquisa em Ajustes → 🔐 Autorização de acessos.', 'erro'); return; }
+        const pedido = participarJogoDeAgora();
+        if (!pedido) { avisar('Não achei o tipo deste jogo. Prepare outro na tela dos Jogos.', 'erro'); return; }
+        const cod = participar.cod;
+        novo.disabled = true;
+        novo.textContent = '⏳ Preparando…';
+        avisar('⏳ A IA está preparando novas perguntas. Pode levar alguns minutos; deixe esta tela aberta.');
+        const g = await jogosGerar(pedido.j, pedido.tema, pedido.instrucao, codigo);
+        const voltarBotao = () => { novo.disabled = false; novo.textContent = rotuloNovo; };
+        if (g.erro) { voltarBotao(); avisar(g.erro, 'erro'); return; }
+        if (cod !== participar.cod) return; // saiu do jogo enquanto preparava: o jogo novo fica em 📂 Jogos preparados
+        const titulo = (g.item.op.emoji ? g.item.op.emoji + ' ' : '') + g.item.op.titulo;
+        if (familiaSolo && familiaSolo.cod === cod) Object.assign(familiaSolo, { titulo, posicoes: {}, jogo: { nome: g.item.nome, tema: g.item.tema, instrucao: g.item.instrucao } });
+        else familiaSessaoGuardar(cod, { progId: 'jogo:' + g.item.id, titulo });
+        avisar('⏳ Carregando o jogo novo…');
+        if (!(await participarAcao({ acao: 'novo-jogo', programa: familiaProgramaParaCompartilhar(g.item.op), codigo }, null))) { voltarBotao(); avisar('O jogo novo ficou em 📂 Jogos preparados, mas não consegui abri-lo aqui. Tente de novo.', 'erro'); }
       });
       const fechar = document.createElement('button');
       fechar.type = 'button';
@@ -30562,7 +30626,7 @@ function saveTemplatesToStorage() {
         if (participar.programa && participar.programa.solo) familiaSoloEncerrar(participar.cod, participar.chave);
         participarEls.voltar.click();
       });
-      caixa.append(novo, fechar);
+      caixa.append(novo, fechar, aviso);
       return { caixa };
     }
     function participarFimPintar() {
@@ -31250,12 +31314,22 @@ function saveTemplatesToStorage() {
       };
       const codigo = codigoAcessoSalvo();
       if (!codigo) { avisar('Para preparar um jogo, informe o código de pesquisa em Ajustes → 🔐 Autorização de acessos. (Para entrar num jogo, só o código do jogo basta.)', 'erro'); return; }
-      const q = QUADROS_FAMILIA.find(x => x.id === 'jogo');
-      const tema = String(temaBruto || '').replace(/\s+/g, ' ').trim().slice(0, 300);
-      jogosPreparando = true;
       botao.disabled = true;
       botao.textContent = '⏳ Preparando…';
       avisar('⏳ A IA está preparando o jogo ' + j.titulo + '. Pode levar alguns minutos; deixe esta tela aberta.');
+      const g = await jogosGerar(j, temaBruto, instrBruta, codigo);
+      if (botao.isConnected) { botao.disabled = false; botao.textContent = '✨ Preparar o jogo'; }
+      if (g.erro) { avisar(g.erro, 'erro'); return; }
+      jogosProntoMostrar(g.item, g.salvo ? '✅ Jogo pronto e guardado em 📂 Jogos preparados.' : '✅ Jogo pronto (não coube na memória do aparelho para guardar).', g.avisoIa ? '⚠️ ' + g.avisoIa.charAt(0).toUpperCase() + g.avisoIa.slice(1) + '.' : '');
+    }
+    // A IA prepara um jogo e ele entra nos "Jogos preparados": { item, salvo, avisoIa } ou { erro }. Usado em "✨ Preparar o jogo" e, no fim
+    // de um jogo, em "✨ Jogar com novas perguntas" (6.14.15).
+    async function jogosGerar(j, temaBruto, instrBruta, codigo) {
+      if (jogosPreparando) return { erro: 'Espere o jogo em preparação ficar pronto.' };
+      const q = QUADROS_FAMILIA.find(x => x.id === 'jogo');
+      const tema = String(temaBruto || '').replace(/\s+/g, ' ').trim().slice(0, 300);
+      const instrucao = String(instrBruta || '').replace(/\s+/g, ' ').trim().slice(0, 300);
+      jogosPreparando = true;
       try {
         const r = await postStudy({
           tarefa: 'adoracao-familia',
@@ -31277,31 +31351,26 @@ function saveTemplatesToStorage() {
           plano: { titulo: '', objetivo: '' },
           evitar: familiaEvitarLer(),
           jaUsados: {},
-          instrucao: String(instrBruta || '').replace(/\s+/g, ' ').trim().slice(0, 300)
+          instrucao
         }, IA_ESPERA_MS);
         const parte = r.ok && r.data && q ? familiaParteDoQuadro(r.data.parte, q) : null;
-        if (!parte || !parte.jogo) {
-          avisar('O jogo não foi preparado: ' + String((r.data && r.data.erro) || (r.unavailable ? 'serviço indisponível no momento' : 'tente de novo')).replace(/\.$/, '') + '.', 'erro');
-          return;
-        }
+        if (!parte || !parte.jogo) return { erro: 'O jogo não foi preparado: ' + String((r.data && r.data.erro) || (r.unavailable ? 'serviço indisponível no momento' : 'tente de novo')).replace(/\.$/, '') + '.' };
         if (r.data.memoria && typeof r.data.memoria === 'object') familiaEvitarRegistrar([r.data.memoria]);
         const item = {
           id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
           nome: j.nome,
           tema,
+          instrucao,
           em: Date.now(),
           op: { modo: 'jogos', titulo: j.titulo + (tema ? ' · ' + tema : ''), emoji: j.emoji, partes: [parte], duracaoTotal: parte.minutos || 0 }
         };
         const salvo = jogosSalvosGravar([item, ...jogosSalvosLer()]);
         jogosSalvosPintar();
-        jogosPreparando = false;
-        const avisoIa = r.data.aviso ? String(r.data.aviso).replace(/^[^:]{1,80}:\s*/, '').replace(/\.$/, '').slice(0, 300) : '';
-        jogosProntoMostrar(item, salvo ? '✅ Jogo pronto e guardado em 📂 Jogos preparados.' : '✅ Jogo pronto (não coube na memória do aparelho para guardar).', avisoIa ? '⚠️ ' + avisoIa.charAt(0).toUpperCase() + avisoIa.slice(1) + '.' : '');
+        return { item, salvo, avisoIa: r.data.aviso ? String(r.data.aviso).replace(/^[^:]{1,80}:\s*/, '').replace(/\.$/, '').slice(0, 300) : '' };
       } catch (e) {
-        avisar('O jogo não foi preparado. Confira a conexão e tente de novo.', 'erro');
+        return { erro: 'O jogo não foi preparado. Confira a conexão e tente de novo.' };
       } finally {
         jogosPreparando = false;
-        if (botao.isConnected) { botao.disabled = false; botao.textContent = '✨ Preparar o jogo'; }
       }
     }
     // O jogo pronto: as rodadas com as respostas (só para quem administra) e "🔗 Jogar em grupo" (o código, igual ao da Adoração).
@@ -31436,7 +31505,7 @@ function saveTemplatesToStorage() {
         }
         if (familiaSolo) familiaSoloEncerrar(familiaSolo.cod, familiaSolo.chave);
         const titulo = (item.op.emoji ? item.op.emoji + ' ' : '') + item.op.titulo;
-        familiaSolo = { cod: r.data.sessao, chave: r.data.chave, titulo, posicoes: {} };
+        familiaSolo = { cod: r.data.sessao, chave: r.data.chave, titulo, posicoes: {}, jogo: { nome: item.nome, tema: item.tema || '', instrucao: item.instrucao || '' } };
         participarAbrir(r.data.sessao);
       });
       acoes.appendChild(iniciar);
