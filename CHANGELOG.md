@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.49
+
+- **Jogos bíblicos:** o card **"Jogos preparados"** em **amarelo claro** (mais fechado no modo escuro).
+
 ## 6.14.48
 
 - **Jogos bíblicos (lista):** desfeita a mudança no atalho **Perfil bíblico**: o emoji voltou para o **lado do texto**. O botão "Entrar em um jogo em grupo" continua como na 6.14.47.

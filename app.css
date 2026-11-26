@@ -18233,6 +18233,11 @@ body[data-screen="jogos"] main { padding-top: 10px; padding-bottom: 6px; }
 #jogosCard #jogosParticiparBtn#jogosParticiparBtn .fam-hub-desc { line-height: 1.15; }
 #jogosCard #jogosContinuar > button { min-height: 36px; padding-top: 2px; padding-bottom: 2px; font-size: .9rem; line-height: 1.15; }
 
+/* 6.14.49: o card "Jogos preparados" em amarelo claro */
+#jogosCard > #jogosSalvosBox { background: #fef9c3; border: 1px solid #eab308; }
+:root[data-theme="dark"] #jogosCard > #jogosSalvosBox { background: #332b10; border-color: #a16207; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #jogosCard > #jogosSalvosBox { background: #332b10; border-color: #a16207; } }
+
 /* 6.14.14: o botao da dica com fundo cinza; no fim do jogo, "Jogar novamente" e "Fechar" na largura toda */
 #participarSessao button.fam-sessao-dar-dica { background: #e5e7eb !important; border: 1.5px solid #9ca3af !important; color: #1f2937 !important; }
 #participarSessao .fam-jogo-fim { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; margin: 12px 0 8px; }
