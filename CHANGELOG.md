@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.43
+
+- **Jogos bíblicos (lista):** **emojis maiores** nos seis atalhos quadrados.
+
 ## 6.14.42
 
 - **Jogos bíblicos (lista):** **10 px** em todos os espaços (do texto do alto aos atalhos, entre os atalhos e até o "Entrar em um jogo"); **texto do alto centralizado**; no **Perfil bíblico**, **emoji e letras maiores**; os atalhos voltaram ao **fundo na cor de cada jogo**.
