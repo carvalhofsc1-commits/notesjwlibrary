@@ -810,9 +810,9 @@ export function confereAbreviacao(sigla, resposta) {
     } else if (/^\p{Lu}\.?$/u.test(s)) {
       if (normalizarTexto(w).charAt(0) !== normalizarTexto(s).charAt(0)) return false;
       iniciais++;
-    } else if (normalizarTexto(s) === normalizarTexto(w)) {
-      // a palavra por extenso (de, da, "Os", "Uma"…)
-    } else if (/^\p{Lu}\p{Ll}{1,2}$/u.test(s) && normalizarTexto(w).startsWith(normalizarTexto(s))) {
+    } else if (normalizarTexto(s) === normalizarTexto(w) && MINUSCULAS_NA_SIGLA.has(normalizarTexto(s))) {
+      // por extenso, só o artigo, a preposição e o "e" (de, da, "Os", "Uma"…): 6.14.12, nunca uma palavra inteira ("a A Completa de D")
+    } else if (/^\p{Lu}\p{Ll}{1,2}$/u.test(s) && normalizarTexto(w).startsWith(normalizarTexto(s)) && normalizarTexto(w).length > normalizarTexto(s).length) {
       // 6.13.22: o começo da palavra com 2 ou 3 letras ("C Go" = Corpo Governante, "G Mu" = Grande Multidão), para desfazer a dúvida
       iniciais++;
     } else return false;
@@ -841,8 +841,21 @@ export function siglaCurta(sigla) {
 // 6.14.03: na sigla (e no começo das palavras), os artigos e as palavras de ligação por extenso ficam em minúsculas ("os 12 A de C",
 // "o P da P"); a maiúscula fica só nas palavras. Uma letra sozinha só é artigo quando a resposta traz a mesma letra ali ("A L do M" = "A Luz do
 // Mundo" → "a L do M"; em "Os 12 A de C", o "A" é de "Apóstolos" e continua maiúsculo).
-const MINUSCULAS_NA_SIGLA = new Set(["a", "as", "o", "os", "um", "uma", "uns", "umas", "de", "da", "do", "das", "dos", "e", "em", "no", "na", "nos", "nas", "ao", "aos", "com", "por", "para"]);
+const MINUSCULAS_NA_SIGLA = new Set(["a", "as", "o", "os", "um", "uma", "uns", "umas", "de", "da", "do", "das", "dos", "e", "em", "no", "na", "nos", "nas", "ao", "aos", "com", "por", "para", "pelo", "pela", "sem"]);
 const minusculaSeLigacao = (w) => (MINUSCULAS_NA_SIGLA.has(normalizarTexto(w)) ? w.toLocaleLowerCase("pt-BR") : w);
+// 6.14.12: o jogo é de siglas, não de palavras: a palavra inteira que veio na sigla vira só a inicial ("a A Completa de D" → "a A C de D").
+export function siglaSemPalavrasInteiras(sigla, resposta) {
+  const tokens = String(sigla || "").trim().split(/\s+/);
+  const palavras = String(resposta || "").replace(/\s*\([^)]*\)\s*\.?$/, "").trim().split(/\s+/);
+  if (tokens.length !== palavras.length) return tokens.join(" ");
+  return tokens
+    .map((t, i) => {
+      const n = normalizarTexto(t);
+      const inteira = n.length > 1 && !/^\d+$/.test(n) && !MINUSCULAS_NA_SIGLA.has(n) && n === normalizarTexto(palavras[i]);
+      return inteira ? t.charAt(0).toLocaleUpperCase("pt-BR") : t;
+    })
+    .join(" ");
+}
 export function siglaComArtigosMinusculos(sigla, resposta) {
   const palavras = String(resposta || "").trim().split(/\s+/);
   let i = 0;
@@ -903,7 +916,7 @@ export function perguntaDaAbreviacao(sigla, resposta, onde, pistas = []) {
   const principal = palavraPrincipal(resposta);
   const reveladora = forte || (principal ? `Uma das palavras é “${principal}”.` : `${lugar}.`);
   const [d1, d2] = generica ? [generica, `${reveladora} ${lugar}.`] : [`${lugar}.`, reveladora];
-  return `O que significa a sigla “${siglaComArtigosMinusculos(sigla, resposta)}”? Dica 1: ${d1} Dica 2: ${d2} Dica 3: O começo de cada palavra: “${comecoDasPalavras(resposta)}”.`;
+  return `O que significa a sigla “${siglaComArtigosMinusculos(siglaSemPalavrasInteiras(sigla, resposta), resposta)}”? Dica 1: ${d1} Dica 2: ${d2} Dica 3: O começo de cada palavra: “${comecoDasPalavras(resposta)}”.`;
 }
 
 // 6.14.02: a expressão cortada: a resposta "O Rio da Vida" para Apocalipse 22:1, que diz "um rio de ÁGUA da vida". É cortada quando as palavras

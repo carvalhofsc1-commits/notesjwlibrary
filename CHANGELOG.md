@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.12
+
+- Abreviações: a sigla **não traz mais palavras inteiras**, só as iniciais (ex.: “a A C de D”). Por extenso ficam apenas artigos, preposições, o “e” e os números.
+- Se a IA mandar uma palavra inteira, o servidor a troca pela inicial. As siglas fixas que tinham “foi”, “tem”, “têm”, “está”, “é” e “Só” foram corrigidas.
+- Nos jogos já preparados, as palavras de 4 letras ou mais passam a aparecer só com a inicial.
+
 ## 6.14.11
 
 - Jogar sozinho: a partida agora **continua enquanto o app estiver aberto**. Dá para ir à Bíblia ou a outra tela e voltar pelo botão **"▶️ Continuar a partida"**, na tela dos Jogos, na mesma questão e com a mesma pontuação.

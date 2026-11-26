@@ -1750,7 +1750,7 @@ teste("6.14.03: Abreviações: artigos em minúsculas na sigla, maiúsculas só 
 teste("6.14.04: Abreviações: sigla de fato muito conhecido, com \"Fato conhecido\" no lugar do versículo", async () => {
   const banco = await import("../api/_jogosBanco.mjs");
   assert.ok(banco.ehFatoConhecido("Fato conhecido") && banco.ehFatoConhecido("(fato bíblico conhecido).") && !banco.ehFatoConhecido("Êxodo 20:1"));
-  assert.deepEqual(banco.SIGLAS_BANCO.filter((s) => s[2] === "fato").map((s) => s[0]), ["A B tem 66 L", "As E H têm 39 L", "As E G C têm 27 L"]);
+  assert.deepEqual(banco.SIGLAS_BANCO.filter((s) => s[2] === "fato").map((s) => s[0]), ["A B T 66 L", "As E H T 39 L", "As E G T 27 L"]);
   const ab = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "jogo", jogos: ["Abreviações bíblicas (ex.: Os 12 A de C)"] }), montados);
   const r = await ab.prep.montar({ descricao: "d", nome: "Siglas", comoJogar: "R.", rodadas: [
     { pergunta: "T do M V Dica 1: Foi uma libertação que ninguém esqueceu. Dica 2: Moisés estendeu o bastão e o povo passou em terra seca.", resposta: "Travessia do Mar Vermelho", referencia: "Fato conhecido" },
@@ -1771,6 +1771,16 @@ teste("6.14.09: Abreviações: a 1ª dica é genérica e curta", async () => {
   assert.equal(ger.perguntaDaAbreviacao("os 12 A de C", "Os 12 Apóstolos de Cristo", "Está em Mateus", ["Dias de Jesus", "Pedro e João faziam parte desse grupo."]),
     "O que significa a sigla “os 12 A de C”? Dica 1: Dias de Jesus. Dica 2: Pedro e João faziam parte desse grupo. Está em Mateus. Dica 3: O começo de cada palavra: “os 12 Ap de Cr”.");
   assert.match(promptsJs, /a Dica 1 é BEM GENÉRICA e curta/);
+});
+
+teste("6.14.12: Abreviações: sigla sem palavras inteiras", () => {
+  assert.equal(ger.confereAbreviacao("a A Completa de D", "A Armadura Completa de Deus"), false);
+  assert.equal(ger.confereAbreviacao("a A C de D", "A Armadura Completa de Deus"), true);
+  assert.equal(ger.confereAbreviacao("O F está P", "O Fim está Próximo"), false);
+  assert.equal(ger.confereAbreviacao("C Go", "Corpo Governante"), true);
+  assert.equal(ger.siglaSemPalavrasInteiras("a A Completa de D", "A Armadura Completa de Deus"), "a A C de D");
+  assert.equal(ger.siglaSemPalavrasInteiras("os 12 A de C", "Os 12 Apóstolos de Cristo"), "os 12 A de C");
+  assert.match(ger.perguntaDaAbreviacao("a A Completa de D", "A Armadura Completa de Deus", "Está em Efésios"), /“a A C de D”/);
 });
 
 teste("6.12.81 (2): o jogo de Abreviações tira as siglas longas e o pedido de novo diz o que fazer", async () => {
