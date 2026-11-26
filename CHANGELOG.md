@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.59
+
+- **Assuntos e situações:** o texto do alto ficou só **"Marque até 2 itens relacionados entre si"** e saiu o segundo título repetido.
+
 ## 6.14.58
 
 - **Adoração em família:**
