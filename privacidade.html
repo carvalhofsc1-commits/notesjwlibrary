@@ -79,17 +79,17 @@
     <div class="topo">
       <img src="icon-header.png?v=3" alt="" width="512" height="512" decoding="async">
       <h1>Política de Privacidade</h1>
-      <p class="atualizacao">NoteStyle · Versão 2.3 · Última atualização: 20 de novembro de 2026</p>
+      <p class="atualizacao">NoteStyle · Versão 2.4 · Última atualização: 26 de novembro de 2026</p>
     </div>
 
     <section class="resumo">
       <h2>Resumo em linguagem simples</h2>
       <ul>
         <li>Não há anúncios, rastreadores nem ferramentas de publicidade.</li>
-        <li>Para usar o app, você se <strong>identifica uma vez</strong> (nome, idade aproximada, cidade, congregação e como conheceu o NoteStyle). Isso fica no servidor, ligado ao aparelho, e o administrador pode ver.</li>
-        <li>Seus textos, notas, pesquisas salvas e backups ficam <strong>no seu aparelho</strong>.</li>
-        <li><strong>Nada é publicado</strong> em lugar público: o NoteStyle não posta, não compartilha e não divulga o que você escreve.</li>
-        <li>Só sai algo do aparelho quando você usa um recurso que precisa disso (IA, leitura em voz alta, transcrição de áudio, consulta ao wol.jw.org, áudio da Bíblia da jw.org), e apenas o necessário para aquele pedido.</li>
+        <li>Para usar o app, você se <strong>identifica uma vez</strong> (nome, telefone de contato, idade aproximada, cidade, congregação e como conheceu o NoteStyle). Isso fica no servidor, ligado ao aparelho, e o administrador pode ver.</li>
+        <li>Seus textos, notas, pesquisas salvas, gravações e backups ficam <strong>no seu aparelho</strong>. Algumas coisas ficam também no servidor para o recurso funcionar: <strong>adorações e jogos em grupo</strong> (até 48 horas sem uso), as <strong>transcrições das gravações das Anotações</strong> (até você apagar), o <strong>resultado de pedidos demorados</strong> da IA (algumas horas) e o <strong>extrato dos créditos</strong>.</li>
+        <li><strong>Nada é publicado</strong> em lugar público: o NoteStyle não posta nem divulga o que você escreve. Numa adoração ou num jogo em grupo, quem tem o código vê o que é compartilhado ali.</li>
+        <li>Só sai algo do aparelho quando você usa um recurso que precisa disso (IA, leitura em voz alta, transcrição de áudio, adoração ou jogo em grupo, consulta ao wol.jw.org, busca na internet, áudio da Bíblia da jw.org ou pagamento por Pix), e apenas o necessário para aquele pedido.</li>
         <li>O backup do JW Library <strong>nunca é enviado</strong>: ele é lido e editado só no aparelho.</li>
         <li>Antes do primeiro uso da IA ou da voz, o aplicativo pede a sua concordância, e você pode apagar os dados locais em Ajustes → Privacidade e dados deste aparelho. Para o cadastro no servidor, use Meus dados ou fale conosco (item 8).</li>
       </ul>
@@ -102,13 +102,14 @@
     <h2>2. Quais dados tratamos e para quê</h2>
 
     <h3>2.1 Dados que ficam só no seu aparelho</h3>
-    <p>Guardados no armazenamento local do navegador ou do aplicativo (localStorage), sem sair do aparelho:</p>
+    <p>Guardados no armazenamento local do navegador ou do aplicativo (localStorage e IndexedDB):</p>
     <ul>
       <li>textos que você digita ou cola, modelos, rascunhos, <strong>anotações</strong> de reunião/assembleia/congresso e preferências (tema, formatação, opções de IA, limites de uso);</li>
-      <li>pesquisas e respostas salvas (as 60 mais recentes), esboços importados por você e dados temporários para agilizar o aplicativo (títulos, perguntas, semanas de estudo, textos do dia);</li>
+      <li>pesquisas e respostas salvas (até 3.000), esboços importados por você, os <strong>jogos preparados</strong> (os 30 mais recentes) e dados temporários para agilizar o aplicativo (títulos, perguntas, semanas de estudo, textos do dia);</li>
+      <li>as <strong>gravações de áudio</strong> das Anotações (para ouvir, exportar ou apagar em Ajustes → Privacidade e dados deste aparelho → Gravações guardadas no app) e as transcrições delas (veja no item 2.3 a cópia no servidor);</li>
       <li>o texto do <strong>Assistente de leitura em voz</strong> (extraído por você de um arquivo PDF ou Word, ou colado) os trechos que você marcou com o marca-texto e o ponto em que a leitura parou, para você continuar depois: só um texto fica guardado por vez, o novo substitui o anterior, e o botão Limpar o apaga. O arquivo em si não é guardado nem enviado: ele é lido no aparelho;</li>
       <li>as marcações da <strong>Leitura diária da Bíblia</strong> (capítulos lidos e a data de cada leitura), os resumos de capítulos que você gerou e a sua escolha de seguir para o próximo capítulo;</li>
-      <li>o perfil da <strong>Adoração em Família</strong> (formação da família, apelidos, papéis, ano de nascimento — usado só no aparelho para calcular a idade na hora —, circunstâncias, atividades aceitas, duração e assunto);</li>
+      <li>o perfil da <strong>Adoração em Família</strong> (formação da família, apelidos, papéis, ano de nascimento — usado só no aparelho para calcular a idade na hora —, situação espiritual e privilégios, convidados, dia e horário, quadros e jogos escolhidos, assuntos e situações marcados, que podem incluir temas delicados como luto ou doença na família) e as chaves das adorações e dos jogos que este aparelho dirige;</li>
       <li>os códigos de acesso que você informou em Ajustes;</li>
       <li>o <strong>backup do JW Library</strong>, quando você abre um: ele é lido e editado na memória do aparelho, e o arquivo novo é gerado e baixado por você. Ele não é enviado a nenhum servidor.</li>
     </ul>
@@ -119,12 +120,13 @@
     <ul>
       <li><strong>dados do cadastro:</strong> nome, sobrenome, telefone de contato, mês e ano de nascimento (usados só para calcular a idade aproximada), cidade, estado (UF), congregação e como você conheceu o aplicativo;</li>
       <li><strong>identificador do aparelho:</strong> um código gerado no navegador (UUID), salvo localmente e enviado junto aos pedidos, para ligar o cadastro e as estatísticas àquele aparelho;</li>
-      <li><strong>estatísticas de acesso e de IA:</strong> datas de visita, se o nível no aparelho é normal ou administrador (quando a senha de administrador é conferida), quais tipos de código de recurso estão salvos no aparelho (apenas “sim/não”, sem as senhas), e, quando você usa a IA, a tarefa (por exemplo, resumo de capítulo) e a quantidade de tokens.</li>
+      <li><strong>estatísticas de acesso e de IA:</strong> datas de visita, se o nível no aparelho é normal ou administrador (quando a senha de administrador é conferida), quais tipos de código de recurso estão salvos no aparelho (apenas “sim/não”, sem as senhas), e, quando você usa a IA, a voz ou a transcrição, a tarefa (por exemplo, resumo de capítulo) e a quantidade usada (tokens, caracteres ou tempo de áudio);</li>
+      <li><strong>créditos:</strong> o saldo em reais, o extrato (créditos recebidos e consumo, com data e valor; até 1.000 movimentos), o número e o valor dos pagamentos por Pix e os códigos pessoais de recurso que o administrador criar para o aparelho.</li>
     </ul>
     <p>Esses dados <strong>não são públicos</strong>: só o administrador do NoteStyle os consulta, para autorizar aparelhos, entender o uso do serviço e controlar custos. Você pode corrigir o cadastro em Ajustes → <strong>Meus dados</strong>. O administrador pode revogar o acesso do aparelho. <strong>Finalidade:</strong> controle de acesso ao serviço e operação do aplicativo. <strong>Base legal:</strong> execução do serviço pedido e legítimo interesse na segurança e na administração do site (LGPD, art. 7º, V e IX), e o consentimento ao enviar o formulário de cadastro (art. 7º, I).</p>
 
     <h3>2.3 Dados enviados quando você usa recursos específicos</h3>
-    <p>Todo envio é feito por conexão segura (HTTPS), ao servidor do NoteStyle, e só ocorre quando você toca no botão correspondente.</p>
+    <p>Todo envio é feito por conexão segura (HTTPS), ao servidor do NoteStyle, e só ocorre quando você usa o recurso. Na tabela, <strong>“IA”</strong> é o serviço que o administrador escolher para cada tipo de pedido: <strong>Claude</strong> (Anthropic ou Google Cloud) ou <strong>Gemini</strong> (Google Cloud).</p>
     <div class="rolagem">
       <table class="tabela">
         <thead>
@@ -134,25 +136,55 @@
           <tr>
             <td data-rotulo="Recurso">Sugestões de formatação com IA; respostas a partir de texto colado (só com o código de pesquisa)</td>
             <td data-rotulo="O que é enviado">O texto do campo (ou trecho colado), suas opções de formatação, a orientação extra que você escrever e o código de pesquisa salvo</td>
-            <td data-rotulo="Para quem">Servidor do NoteStyle → Anthropic (IA Claude)</td>
+            <td data-rotulo="Para quem">Servidor do NoteStyle → IA</td>
             <td data-rotulo="Para quê">Gerar as sugestões e as respostas</td>
           </tr>
           <tr>
             <td data-rotulo="Recurso">Reuniões: comentários (A Sentinela, Tesouros da Palavra de Deus, Estudo Bíblico), perguntas para dirigir, esboços de discursos, comentários do texto diário</td>
-            <td data-rotulo="O que é enviado">Semana, parágrafos ou tema escolhidos, suas opções, a orientação extra, o código de acesso e, nos esboços, o texto/esboço necessário. O servidor lê o wol.jw.org e entrega à IA só o trecho pedido</td>
-            <td data-rotulo="Para quem">Servidor do NoteStyle → wol.jw.org (leitura) e Anthropic (IA)</td>
-            <td data-rotulo="Para quê">Montar o material e gerar a resposta</td>
+            <td data-rotulo="O que é enviado">Semana, parágrafos ou tema escolhidos, suas opções, a orientação extra, o código de acesso e, nos esboços, o texto/esboço necessário (inclusive o esboço que você importar e as gravuras que escolher, reduzidas no aparelho). O servidor lê o wol.jw.org e entrega à IA só o trecho pedido</td>
+            <td data-rotulo="Para quem">Servidor do NoteStyle → wol.jw.org (leitura) e IA</td>
+            <td data-rotulo="Para quê">Montar o material e gerar a resposta. O resultado de um esboço fica no servidor por até algumas horas, para você recuperá-lo se a conexão cair</td>
           </tr>
           <tr>
-            <td data-rotulo="Recurso">Adoração em Família (só com o código de pesquisa)</td>
-            <td data-rotulo="O que é enviado">Formação da família, apelidos, papéis e idades calculadas no aparelho (nunca a data de nascimento), circunstâncias e atividades marcadas, duração, assunto opcional e o código de pesquisa salvo. O servidor consulta matérias no wol.jw.org e a lista de vídeos do jw.org</td>
-            <td data-rotulo="Para quem">Servidor do NoteStyle → wol.jw.org / jw.org (consulta) e Anthropic ou Google Cloud (IA)</td>
-            <td data-rotulo="Para quê">Preparar 3 opções de programação para a noite da família. Nada do perfil fica gravado no servidor</td>
+            <td data-rotulo="Recurso">Anotações: formatar e organizar com IA</td>
+            <td data-rotulo="O que é enviado">O texto das anotações que você pedir para formatar ou ligar às perguntas e o código salvo</td>
+            <td data-rotulo="Para quem">Servidor do NoteStyle → IA</td>
+            <td data-rotulo="Para quê">Formatar e organizar as anotações</td>
+          </tr>
+          <tr>
+            <td data-rotulo="Recurso">Assistente de pesquisas (só com o código de pesquisa)</td>
+            <td data-rotulo="O que é enviado">O assunto ou o texto bíblico, o contexto ou foco que você escrever, as fontes escolhidas ou o link do vídeo e o código de pesquisa. Se você pedir a pesquisa na internet, a busca é feita com o que você informou</td>
+            <td data-rotulo="Para quem">Servidor do NoteStyle → wol.jw.org / jw.org (consulta), IA e, na internet, a busca na web do Google ou da Anthropic</td>
+            <td data-rotulo="Para quê">Reunir as fontes e escrever a resposta. O resultado fica no servidor por até algumas horas, para recuperação</td>
+          </tr>
+          <tr>
+            <td data-rotulo="Recurso">Adoração em Família: preparar a programação (só com o código de pesquisa)</td>
+            <td data-rotulo="O que é enviado">Formação da família, apelidos, papéis, situação espiritual, privilégios e idades calculadas no aparelho (nunca a data de nascimento), os convidados informados, os quadros e jogos escolhidos, os assuntos e situações, o assunto e o código de pesquisa salvo. O servidor consulta matérias no wol.jw.org e a lista de vídeos do jw.org</td>
+            <td data-rotulo="Para quem">Servidor do NoteStyle → wol.jw.org / jw.org (consulta) e IA</td>
+            <td data-rotulo="Para quê">Preparar a programação da noite. O perfil não é gravado no servidor; o resultado fica por até algumas horas, para recuperação</td>
+          </tr>
+          <tr>
+            <td data-rotulo="Recurso">Jogos bíblicos: preparar um jogo (só com o código de pesquisa)</td>
+            <td data-rotulo="O que é enviado">O jogo, o nível de dificuldade, o tema, a instrução que você escrever e o código de pesquisa</td>
+            <td data-rotulo="Para quem">Servidor do NoteStyle → IA</td>
+            <td data-rotulo="Para quê">Criar as perguntas do jogo</td>
+          </tr>
+          <tr>
+            <td data-rotulo="Recurso">Adoração em família ao vivo e jogos (em grupo ou sozinho)</td>
+            <td data-rotulo="O que é enviado">A programação ou o jogo (perguntas e respostas), os apelidos informados e os de quem entra, as respostas enviadas e os pontos</td>
+            <td data-rotulo="Para quem">Servidor do NoteStyle (armazenamento privado). Quem tem o código vê o que for liberado, quem está participando e as respostas enviadas</td>
+            <td data-rotulo="Para quê">Fazer todos acompanharem ao vivo. A sessão é apagada ao encerrar ou depois de 48 horas sem uso (a partida sozinho, ao fechar o app ou começar outra)</td>
+          </tr>
+          <tr>
+            <td data-rotulo="Recurso">Voz e ajuda da IA na adoração e nos jogos</td>
+            <td data-rotulo="O que é enviado">Os textos da programação ou as perguntas a ler; a resposta falada no microfone, por quem administra o jogo ou joga sozinho; e, ao “apelar para a IA”, a pergunta, a resposta esperada e a resposta dada</td>
+            <td data-rotulo="Para quem">Servidor do NoteStyle → Google Cloud (voz e reconhecimento de voz) e IA</td>
+            <td data-rotulo="Para quê">Ler em voz alta, transformar a fala em texto (o áudio não é guardado) e julgar de novo uma resposta. Quem entrou com o código da adoração não precisa de código nem gasta créditos para ouvir a leitura</td>
           </tr>
           <tr>
             <td data-rotulo="Recurso">Leitura diária da Bíblia: resumo de um capítulo com IA (só com o código de resumo)</td>
             <td data-rotulo="O que é enviado">O capítulo escolhido (livro e número), as opções marcadas, a orientação extra que você escrever, o texto de um resumo já salvo (se você pedir para melhorá-lo) e o código de resumo salvo. O servidor lê os versículos e os verbetes da sua base de consulta e, quando pedido, o wol.jw.org, e entrega à IA só o trecho necessário</td>
-            <td data-rotulo="Para quem">Servidor do NoteStyle → wol.jw.org (leitura) e Anthropic (IA Claude)</td>
+            <td data-rotulo="Para quem">Servidor do NoteStyle → wol.jw.org (leitura) e IA</td>
             <td data-rotulo="Para quê">Escrever o resumo do capítulo. O resumo fica guardado só no seu aparelho</td>
           </tr>
           <tr>
@@ -182,13 +214,25 @@
           <tr>
             <td data-rotulo="Recurso">Áudio em texto (só com o código de texto)</td>
             <td data-rotulo="O que é enviado">O áudio que você escolheu ou gravou na hora com o microfone do aparelho, cortado no seu aparelho em trechos de cerca de 50 segundos (um por pedido), e o código de texto salvo. Se você pedir o resumo, o texto transcrito (que você pode ter corrigido) e, se você os preencher, os campos “Sobre o áudio” e “Como fazer o resumo”. Se você anexar documentos relacionados (Word, PDF, Excel, PowerPoint, texto ou imagens), o texto extraído deles e as imagens (reduzidas) vão junto, só no pedido do resumo</td>
-            <td data-rotulo="Para quem">Servidor do NoteStyle → Google (reconhecimento de voz) e, no resumo, → Anthropic (IA Claude)</td>
+            <td data-rotulo="Para quem">Servidor do NoteStyle → Google (reconhecimento de voz) e, no resumo, → IA</td>
             <td data-rotulo="Para quê">Transformar o áudio em texto e resumi-lo. Os trechos de áudio e o texto são processados na hora e não são gravados pelo NoteStyle; o app também não salva a transcrição nem o resumo. Só se você ligar a caixa “Identificar quem fala”, o áudio inteiro (e não em trechos) é enviado direto do seu aparelho a um espaço privado do Google Cloud (Cloud Storage), onde fica apenas o tempo da transcrição: o arquivo é apagado assim que ela termina (ou se você cancelar) e, por garantia, o espaço o apaga sozinho depois de 1 dia. Esse arquivo não fica público nem é compartilhado</td>
+          </tr>
+          <tr>
+            <td data-rotulo="Recurso">Anotações: transcrever uma gravação (só com o código de texto)</td>
+            <td data-rotulo="O que é enviado">O áudio gravado, em trechos; depois, o texto transcrito, o título e a duração</td>
+            <td data-rotulo="Para quem">Servidor do NoteStyle → Google (reconhecimento de voz); a transcrição fica num armazenamento privado do servidor, ligada ao aparelho</td>
+            <td data-rotulo="Para quê">Transformar a gravação em texto e guardar a transcrição na íntegra (no aparelho e no servidor, até 200), até você apagá-la na lista “Transcrições na íntegra”. O áudio não é guardado no servidor</td>
+          </tr>
+          <tr>
+            <td data-rotulo="Recurso">Créditos por Pix (quando disponível)</td>
+            <td data-rotulo="O que é enviado">O valor escolhido e o identificador do aparelho. Ao Mercado Pago vão o valor, a descrição do crédito, uma referência do aparelho e um e-mail genérico do aplicativo (seus dados de cadastro não são enviados)</td>
+            <td data-rotulo="Para quem">Servidor do NoteStyle → Mercado Pago</td>
+            <td data-rotulo="Para quê">Gerar o Pix, conferir o pagamento e lançar o crédito. Os dados do pagador no banco são tratados pelo Mercado Pago e pela instituição financeira, pelas regras deles</td>
           </tr>
           <tr>
             <td data-rotulo="Recurso">Aprender com as suas correções (piloto, recurso do administrador)</td>
             <td data-rotulo="O que é enviado">Só quando o administrador marca a caixa “Aprender com esta correção” ao salvar uma alteração: o texto escrito pela IA e o texto como ficou depois da edição, a tarefa de origem (por exemplo, comentário ou esboço) e a senha de administrador salva no aparelho</td>
-            <td data-rotulo="Para quem">Servidor do NoteStyle → Anthropic (IA Claude)</td>
+            <td data-rotulo="Para quem">Servidor do NoteStyle → IA</td>
             <td data-rotulo="Para quê">Comparar os dois textos e registrar apenas a lição da correção (o que mudou, o provável motivo e uma regra curta). Os dois textos são descartados e não são gravados</td>
           </tr>
           <tr>
@@ -200,7 +244,7 @@
         </tbody>
       </table>
     </div>
-    <p><strong>Importante:</strong> os textos que você envia à IA ou à voz podem conter dados pessoais ou, dependendo do assunto, informações que revelam crenças religiosas. <strong>Não envie dados pessoais ou sigilosos seus ou de outras pessoas</strong> (nomes, endereços, telefones, informações de saúde, relatos reservados). O NoteStyle não lê o conteúdo para outros fins e não guarda esses textos no servidor.</p>
+    <p><strong>Importante:</strong> os textos que você envia à IA ou à voz podem conter dados pessoais ou, dependendo do assunto, informações que revelam crenças religiosas. <strong>Não envie dados pessoais ou sigilosos seus ou de outras pessoas</strong> (nomes, endereços, telefones, informações de saúde, relatos reservados). O NoteStyle não usa o conteúdo para outros fins e só o guarda no servidor nos casos descritos na tabela: sessões de adoração e de jogos, transcrições das Anotações e o resultado temporário de pedidos demorados.</p>
     <p><strong>Base legal:</strong> consentimento, manifestado no aviso que o aplicativo mostra antes do primeiro uso da IA e da voz (botão “Concordo”) e, a cada envio, ao tocar no botão correspondente (LGPD, arts. 7º, I e 11, I), e execução do serviço pedido. A sua escolha fica salva só no aparelho. Você pode retirar a concordância a qualquer momento em Ajustes → Privacidade e dados deste aparelho e deixar de usar esses recursos; o restante do aplicativo continua funcionando.</p>
     <p><strong>Convidar alguém:</strong> na página Sobre, o convite é uma mensagem com o endereço do aplicativo (sem códigos de acesso nem dados seus; o texto dela é definido pelo administrador e baixado do servidor do NoteStyle ao abrir a página, sem enviar nada seu) e a entrega ao aplicativo de mensagens que você escolher (WhatsApp, a folha de compartilhar do aparelho ou a área de transferência). O NoteStyle não recebe nem guarda essa mensagem nem o contato escolhido: o envio é feito por você, no aplicativo de mensagens, sob as regras dele.</p>
     <p><strong>Relatar problema com a IA:</strong> o botão “Relatar um problema”, em Ajustes, abre o aplicativo de e-mail do seu aparelho com uma mensagem pronta para o contato do item 1 (versão do aplicativo e tipo de pedido). O aplicativo não envia nada por conta própria: a mensagem só chega a nós se você a enviar, e você pode apagar ou mudar qualquer parte antes. Usamos o que você enviar apenas para analisar e corrigir o problema.</p>
@@ -209,7 +253,7 @@
 
     <p><strong>Lições das correções (piloto):</strong> é um recurso <strong>exclusivo do administrador</strong>, desligado por padrão e não disponível para os demais usuários. Quando o administrador o usa, a IA compara o texto que ela escreveu com o texto corrigido e o servidor guarda, num armazenamento privado do Google Cloud (Cloud Storage), apenas a <strong>lição</strong>: o tipo da mudança, o que mudou, o provável motivo e uma regra curta e geral, escrita sem nomes, números ou frases dos textos. Os textos originais e corrigidos <strong>não são guardados</strong>. Mudanças só de digitação ou de conteúdo pessoal não geram lição. As lições ativas podem ser acrescentadas, como orientação de estilo, aos pedidos de IA feitos <strong>apenas pelo administrador</strong>; as respostas dos demais usuários não as recebem. O administrador pode ver, desativar e apagar cada lição, ou todas, em Ajustes → Prompts da IA. As lições não identificam nem se relacionam a nenhum usuário. Se um dia esse recurso for aberto a outros usuários, esta política será atualizada antes, com aviso no aplicativo e consentimento próprio.</p>
 
-    <p><strong>Áudio em texto:</strong> o áudio pode conter a voz e o conteúdo de conversas de outras pessoas. Use só gravações que você tem direito de usar e <strong>avise as pessoas</strong> antes de gravá-las ou transcrevê-las; o NoteStyle não identifica quem fala. Antes do primeiro uso, o aplicativo pede a sua concordância específica (botão “Concordo”), que fica salva só no aparelho e pode ser retirada em Ajustes → Privacidade e dados deste aparelho. O microfone só é usado quando você toca em “Gravar um áudio agora” (o navegador pede a sua permissão) e a gravação fica só no aparelho até você parar; o app não a guarda, e você pode salvá-la no aparelho se quiser. O áudio é decodificado e cortado no seu aparelho; o arquivo inteiro não é enviado, apenas os trechos, e trechos em silêncio não são enviados. O Google trata o áudio conforme a sua própria política. Os documentos e imagens que você anexa em “Documentos relacionados” são lidos no seu aparelho e só são enviados à IA quando você pede o resumo; o app não os guarda.</p>
+    <p><strong>Áudio em texto:</strong> o áudio pode conter a voz e o conteúdo de conversas de outras pessoas. Use só gravações que você tem direito de usar e <strong>avise as pessoas</strong> antes de gravá-las ou transcrevê-las; as pessoas só são diferenciadas se você ligar “Identificar quem fala”.Antes do primeiro uso, o aplicativo pede a sua concordância específica (botão “Concordo”), que fica salva só no aparelho e pode ser retirada em Ajustes → Privacidade e dados deste aparelho. O microfone só é usado quando você toca em “Gravar um áudio agora” (o navegador pede a sua permissão) e a gravação fica só no aparelho até você parar; na tela Áudio em texto o app não a guarda (você pode salvá-la no aparelho), e nas Anotações ela fica guardada no aparelho. O áudio é decodificado e cortado no seu aparelho; o arquivo inteiro não é enviado (salvo com “Identificar quem fala” ligado), apenas os trechos, e trechos em silêncio não são enviados.O Google trata o áudio conforme a sua própria política. Os documentos e imagens que você anexa em “Documentos relacionados” são lidos no seu aparelho e só são enviados à IA quando você pede o resumo; o app não os guarda.</p>
 
     <h3>2.4 Dados técnicos automáticos</h3>
     <ul>
@@ -236,18 +280,19 @@
     <p>Só com os prestadores de serviço que realizam o trabalho pedido, na condição de operadores, e apenas durante o uso do recurso:</p>
     <ul>
       <li><strong>Google LLC</strong> (Google Cloud: Cloud Run, Cloud Storage e Firebase Hosting, em São Paulo, Brasil) — hospedagem do aplicativo e das funções do servidor, e armazenamento privado dos dados do servidor. <a href="https://policies.google.com/privacy" rel="noopener noreferrer">Política de privacidade</a>.</li>
-      <li><strong>Anthropic PBC</strong> (EUA) — IA (Claude), que gera as sugestões e respostas a partir do texto enviado. <a href="https://www.anthropic.com/legal/privacy" rel="noopener noreferrer">Política de privacidade</a>.</li>
-      <li><strong>Google LLC</strong> (EUA) — leitura em voz alta (Google Cloud Text-to-Speech) e transcrição de áudio em texto (Google Cloud Speech-to-Text). <a href="https://policies.google.com/privacy" rel="noopener noreferrer">Política de privacidade</a>.</li>
+      <li><strong>Anthropic PBC</strong> (EUA) — IA (Claude), que gera as sugestões e respostas a partir do que é enviado, inclusive a busca na web quando pedida. <a href="https://www.anthropic.com/legal/privacy" rel="noopener noreferrer">Política de privacidade</a>.</li>
+      <li><strong>Google LLC</strong> (fora do Brasil ou em regiões globais) — IA (Gemini e Claude pelo Google Cloud), busca na web, leitura em voz alta (Text-to-Speech) e transcrição de áudio (Speech-to-Text). <a href="https://policies.google.com/privacy" rel="noopener noreferrer">Política de privacidade</a>.</li>
+      <li><strong>Mercado Pago</strong> (Brasil) — pagamento dos créditos por Pix, quando você escolhe comprar. <a href="https://www.mercadopago.com.br/privacidade" rel="noopener noreferrer">Política de privacidade</a>.</li>
       <li><strong>wol.jw.org</strong> (Biblioteca on-line) — site consultado pelo nosso servidor. Os pedidos a ele saem do servidor do NoteStyle, não do seu aparelho; o seu endereço IP não é repassado. A exceção é o <strong>áudio da Bíblia</strong> (item 2.4), que o seu aparelho obtém direto dos servidores de mídia da jw.org.</li>
     </ul>
-    <p>Esses prestadores têm suas próprias políticas e podem manter registros pelo prazo que definirem. Como alguns prestadores (a IA da Anthropic e os serviços de voz do Google) ficam fora do Brasil, ocorre transferência internacional de dados, que realizamos com base no seu consentimento específico e destacado ao usar o recurso e na necessidade de execução do serviço pedido (LGPD, art. 33).</p>
+    <p>Esses prestadores têm suas próprias políticas e podem manter registros pelo prazo que definirem. Como alguns serviços (a IA e a busca da Anthropic e do Google e os serviços de voz) podem ficar fora do Brasil, ocorre transferência internacional de dados, que realizamos com base no seu consentimento específico e destacado ao usar o recurso e na necessidade de execução do serviço pedido (LGPD, art. 33).</p>
     <p>Também podemos divulgar informações se uma lei ou ordem judicial exigir.</p>
 
     <h2>6. Por quanto tempo guardamos</h2>
     <ul>
       <li><strong>No aparelho:</strong> até você apagar (limpando os dados do aplicativo ou do navegador, ou removendo o aplicativo).</li>
-      <li><strong>No servidor do NoteStyle:</strong> o conteúdo dos pedidos de IA/voz é processado na hora e não é gravado como texto. Ficam guardados: o <strong>cadastro e as estatísticas</strong> do item 2.2 (até o administrador revogar o aparelho ou atender a um pedido de exclusão); as configurações do administrador (instruções da IA, limites e escolhas de voz); e, se o administrador usar o piloto de aprendizado com correções, as lições do item 2.3 (regras curtas e gerais, sem os textos), até ele apagá-las.</li>
-      <li><strong>Nos prestadores (Google, Anthropic):</strong> pelo prazo previsto em suas respectivas políticas.</li>
+      <li><strong>No servidor do NoteStyle:</strong> o conteúdo dos pedidos de IA/voz é processado na hora; os resultados de pedidos demorados (esboços, pesquisas e programação da família) ficam por até algumas horas (os não buscados são apagados depois de 6 horas). Ficam guardados: as <strong>sessões</strong> de adoração e de jogos (até encerrar ou 48 horas sem uso); as <strong>transcrições das Anotações</strong> (até você apagá-las); o <strong>cadastro, as estatísticas, os créditos e o extrato</strong> do item 2.2 (até o administrador revogar o aparelho ou atender a um pedido de exclusão); as configurações do administrador (instruções da IA, limites e escolhas de voz); e, se o administrador usar o piloto de aprendizado com correções, as lições do item 2.3 (regras curtas e gerais, sem os textos), até ele apagá-las.</li>
+      <li><strong>Nos prestadores (Google, Anthropic, Mercado Pago):</strong> pelo prazo previsto em suas respectivas políticas.</li>
     </ul>
 
     <h2>7. Segurança</h2>
@@ -260,12 +305,13 @@
       <li><strong>apagar</strong> pesquisas salvas individualmente (Reuniões → Pesquisas e respostas salvas), ou <strong>apagar os dados locais</strong> em Ajustes → Privacidade e dados deste aparelho → “Apagar os dados deste aparelho” (ou limpando os dados do aplicativo/navegador);</li>
       <li><strong>levar os dados locais</strong> com “Fazer backup” e “Restaurar um backup” (item 2.3);</li>
       <li><strong>revogar o consentimento da IA/voz</strong> com “Retirar a minha concordância”, em Ajustes → Privacidade e dados deste aparelho, e apagando seus códigos em Ajustes → Autorização de acessos;</li>
-      <li><strong>pedir a exclusão do cadastro e das estatísticas no servidor</strong> pelo contato do item 1 (ou pedindo ao administrador que revogue o aparelho).</li>
+      <li><strong>apagar transcrições</strong> na lista “Transcrições na íntegra” das Anotações e <strong>apagar uma adoração ou um jogo compartilhado</strong> (o código deixa de valer) no próprio app;</li>
+      <li><strong>pedir a exclusão do cadastro, das estatísticas, do extrato e das transcrições no servidor</strong> pelo contato do item 1 (ou pedindo ao administrador que revogue o aparelho).</li>
     </ul>
     <p>Para qualquer pedido ou dúvida, use o contato do item 1. Você também pode reclamar à Autoridade Nacional de Proteção de Dados (ANPD).</p>
 
     <h2>9. Crianças e adolescentes</h2>
-    <p>O NoteStyle não é voltado a crianças e não coleta intencionalmente dados de menores de 13 anos. O uso por adolescentes deve ocorrer com a ciência e a orientação dos pais ou responsáveis, que também podem falar conosco sobre qualquer dado que tenha sido enviado.</p>
+    <p>O NoteStyle não é voltado a crianças e não coleta intencionalmente dados de menores de 13 anos. O uso por adolescentes deve ocorrer com a ciência e a orientação dos pais ou responsáveis, que também podem falar conosco sobre qualquer dado que tenha sido enviado. Na Adoração em Família e nos jogos em grupo, os responsáveis podem informar apelidos e idades dos filhos, e quem entra numa sessão escolhe como quer aparecer: <strong>use só apelidos</strong>, nunca o nome completo.</p>
 
     <h2>10. Cookies e armazenamento local</h2>
     <p>O NoteStyle não usa cookies de rastreamento nem de publicidade. O armazenamento local do aparelho serve apenas para guardar suas preferências, seus textos e suas pesquisas, como descrito no item 2.1.</p>

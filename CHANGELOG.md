@@ -2,6 +2,14 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.62
+
+- **Sobre, Termos de Uso (1.3) e Política de Privacidade (2.4)** revisados para as funções novas:
+  - Adoração em Família por quadros e ao vivo, Jogos bíblicos, Assistente de pesquisas (com a internet), Anotações com gravação e transcrição, esboço importado com gravuras.
+  - O que passa a ficar no servidor: sessões de adoração e jogos (48 h), transcrições das Anotações (até apagar), resultado de pedidos demorados (algumas horas) e o extrato dos créditos.
+  - Créditos em reais e compra por Pix (Mercado Pago); IA Claude ou Gemini; cadastro sempre em análise até a aprovação; cuidado com apelidos de crianças.
+- **Avisos dentro do app** atualizados: o de antes de usar a IA e a voz e o de antes de transcrever um áudio agora citam Claude ou Gemini e dizem o que fica no servidor. Aviso mais alto que a tela agora **rola por dentro** (antes o título e os botões podiam sair da tela).
+
 ## 6.14.61
 
 - **Adoração em família:** o título **Programações salvas** e a contagem numa linha só (antes quebravam em duas colunas), e o aviso de lista vazia centralizado.

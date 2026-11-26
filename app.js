@@ -7961,7 +7961,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.14.61'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.14.62'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -9393,8 +9393,8 @@
     }
 
     // ---------- Privacidade: concordância com a IA e a voz, relato de problema e apagar os dados do aparelho ----------
-    // Textos só saem do aparelho quando a pessoa toca num botão de IA ou de voz. Antes do primeiro envio o app pede a concordância (a
-    // Anthropic gera os textos; o Google gera a voz). A escolha fica só neste aparelho e pode ser retirada em Ajustes.
+    // Textos só saem do aparelho quando a pessoa usa um recurso de IA ou de voz. Antes do primeiro envio o app pede a concordância (a
+    // Anthropic ou o Google geram os textos; o Google gera a voz). A escolha fica só neste aparelho e pode ser retirada em Ajustes.
     const CONSENT_IA_KEY = 'jwLibraryNoteAplicarConsentimentoIaV1';
     const REPORT_EMAIL = 'carvalhofsc1@gmail.com'; // o mesmo contato da página Sobre
     const MSG_SEM_CONSENTIMENTO = 'Para usar a IA e a leitura em voz alta é preciso concordar com o envio do texto. Toque no botão de novo quando quiser concordar.';
@@ -9423,7 +9423,7 @@
       const quando = data && !isNaN(new Date(data)) ? new Date(data).toLocaleDateString('pt-BR') : '';
       botao.disabled = !consentimentoIaDado();
       info.textContent = consentimentoIaDado()
-        ? '✅ Você concordou' + (quando ? ' em ' + quando : '') + '. O texto dos seus pedidos vai à Anthropic (IA) e ao Google (voz) só quando você toca num botão de IA ou de voz.'
+        ? '✅ Você concordou' + (quando ? ' em ' + quando : '') + '. O texto dos seus pedidos vai à IA (Anthropic ou Google) e à voz (Google) só quando você usa um recurso de IA ou de voz.'
         : 'Você ainda não concordou. O app pergunta na primeira vez que você usar a IA ou a leitura em voz alta.';
     }
 
@@ -9437,8 +9437,8 @@
       link.rel = 'noopener';
       link.textContent = '🔒 Ler a Política de Privacidade';
       const pergunta = askConfirm(
-        'Para usar a IA (formatação, respostas, perguntas e esboços) e a leitura em voz alta, o NoteStyle envia o texto do pedido, pela internet, a serviços de terceiros: a Anthropic (que gera os textos com IA) e o Google (que gera a voz).\n\n' +
-        'O envio só acontece quando você toca num botão de IA ou de voz, e o texto não fica guardado no servidor do NoteStyle.\n\n' +
+        'Para usar a IA (formatação, respostas, pesquisas, perguntas, esboços, programações e jogos) e a leitura em voz alta, o NoteStyle envia o texto do pedido, pela internet, a serviços de terceiros: a Anthropic (IA Claude) ou o Google (IA Gemini), que geram os textos, e o Google, que gera a voz.\n\n' +
+        'O envio só acontece quando você usa um recurso de IA ou de voz. O NoteStyle não publica o que você escreve. No servidor ficam, quando é o caso, as adorações e os jogos compartilhados (até 48 horas sem uso) e, por algumas horas, o resultado de pedidos demorados.\n\n' +
         'Não escreva nem cole dados pessoais ou sigilosos seus ou de outras pessoas (nomes, endereços, telefones, saúde, relatos reservados). A IA pode errar: confira sempre o resultado.\n\n' +
         'Você pode retirar a concordância quando quiser, em Ajustes → Privacidade e dados deste aparelho.',
         'Antes de usar a IA e a voz',
@@ -24450,8 +24450,8 @@ function saveTemplatesToStorage() {
       link.rel = 'noopener';
       link.textContent = '🔒 Ler a Política de Privacidade';
       return askConfirm(
-        'Para transformar áudio em texto, o NoteStyle envia o áudio, em trechos e pela internet, ao Google (reconhecimento de voz) e, se você pedir o resumo, o texto transcrito à Anthropic (IA).\n\n' +
-        'O envio só acontece quando você escolhe um arquivo ou toca em Resumir, e nada fica guardado no servidor do NoteStyle. O áudio pode conter vozes e conversas de outras pessoas: use só gravações que você tem direito de usar e não grave nem transcreva alguém sem avisar. A transcrição pode errar: confira sempre.\n\n' +
+        'Para transformar áudio em texto, o NoteStyle envia o áudio, em trechos e pela internet, ao Google (reconhecimento de voz) e, se você pedir o resumo ou a correção, o texto transcrito à IA (Anthropic ou Google).\n\n' +
+        'O envio só acontece quando você pede a transcrição ou um recurso de IA. O áudio não fica guardado no servidor do NoteStyle (com “Identificar quem fala” ligado, o arquivo fica num espaço privado só durante a transcrição). Nas Anotações, a transcrição fica no aparelho e também no servidor, até você apagá-la. O áudio pode conter vozes e conversas de outras pessoas: use só gravações que você tem direito de usar e não grave nem transcreva alguém sem avisar. A transcrição pode errar: confira sempre.\n\n' +
         'Você pode retirar a concordância quando quiser, em Ajustes → Privacidade e dados deste aparelho.',
         'Antes de transcrever um áudio',
         { ok: '✅ Concordo', cancel: 'Agora não', extra: link }

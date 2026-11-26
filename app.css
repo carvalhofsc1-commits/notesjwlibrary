@@ -3816,6 +3816,12 @@
 
     .modal-card {
       width: min(520px, 100%);
+      /* 6.14.62: um aviso mais alto que a tela rola por dentro (antes o título e os botões saíam da tela) */
+      max-height: calc(100vh - 36px);
+      max-height: calc(100dvh - 36px);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      box-sizing: border-box;
       background: var(--card);
       border-radius: 22px;
       padding: 22px;
