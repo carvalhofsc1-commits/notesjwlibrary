@@ -1363,27 +1363,16 @@
         <details class="subsection acessos-box" id="acessosSection">
           <summary>🔐 Autorização de acessos</summary>
           <div class="subsection-body">
-            <p class="hint">Informe cada código uma única vez: ele é conferido no servidor e fica salvo neste aparelho. Os outros lugares do app usam o que estiver salvo aqui.</p>
-
-            <div class="acesso-item acesso-master">
-              <label for="masterSenha">⭐ Senha master</label>
-              <p class="hint">Se o administrador gerou uma senha master para você, informe aqui: ela libera, só neste aparelho, todas as funções que pedem código. Não dá acesso à administração do app.</p>
-              <div class="acesso-linha">
-                <input autocomplete="off" id="masterSenha" type="password" maxlength="100" placeholder="Senha master">
-                <button id="acessoVerMaster" class="secondary acesso-ver" type="button" aria-label="Mostrar a senha" aria-pressed="false"><svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
-              </div>
-              <div class="bk-row">
-                <button id="acessoSalvarMaster" type="button">💾 Salvar</button>
-                <button id="acessoApagarMaster" class="secondary" type="button">🗑️ Apagar</button>
-              </div>
-              <p id="acessoStatusMaster" class="hint acesso-status" role="status" aria-live="polite"></p>
-            </div>
-
-            <div class="acesso-item">
-              <label for="aiStudyCode">🔑 Código de pesquisa</label>
+            <!-- 6.14.76: três cards recolhíveis (códigos, senha master e senha do administrador); cada código também é um card -->
+            <details class="acesso-grupo" id="acessoGrupoCodigos">
+              <summary>🔑 Códigos de acesso</summary>
+              <div class="acesso-grupo-corpo">
+            <details class="acesso-item">
+              <summary>🔑 Código de pesquisa</summary>
+              <div class="acesso-corpo">
               <p class="hint">Libera os recursos de pesquisa de "Preparar para comentar": o estudo de A Sentinela lido no site, as Joias e o Estudo Bíblico, e também o texto diário da tela Início (inclusive ouvi-lo em voz alta). Sem ele, esses recursos ficam desabilitados.</p>
               <div class="acesso-linha">
-                <input autocomplete="off" id="aiStudyCode" type="password" maxlength="100" placeholder="Código de pesquisa">
+                <input autocomplete="off" id="aiStudyCode" type="password" maxlength="100" placeholder="Código de pesquisa" aria-label="Código de pesquisa">
                 <button id="acessoVerCodigo" class="secondary acesso-ver" type="button" aria-label="Mostrar o código" aria-pressed="false"><svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
               </div>
               <div class="bk-row">
@@ -1391,13 +1380,15 @@
                 <button id="acessoApagarCodigo" class="secondary" type="button">🗑️ Apagar</button>
               </div>
               <p id="acessoStatusCodigo" class="hint acesso-status" role="status" aria-live="polite"></p>
-            </div>
+              </div>
+            </details>
 
-            <div class="acesso-item">
-              <label for="dirigenteCode">🎤 Código do dirigente</label>
+            <details class="acesso-item">
+              <summary>🎤 Código do dirigente</summary>
+              <div class="acesso-corpo">
               <p class="hint">Libera as opções do dirigente, sem precisar do código de pesquisa: a tela Reuniões → <img class="icone-img" src="icone-dirigentes.png?v=1" alt=""> Preparar para dirigir, a Preparação de discursos e esboços e o atalho Dirigentes da tela Início. Sem ele, essas opções ficam desabilitadas neste aparelho.</p>
               <div class="acesso-linha">
-                <input autocomplete="off" id="dirigenteCode" type="password" maxlength="100" placeholder="Código do dirigente">
+                <input autocomplete="off" id="dirigenteCode" type="password" maxlength="100" placeholder="Código do dirigente" aria-label="Código do dirigente">
                 <button id="acessoVerDirigente" class="secondary acesso-ver" type="button" aria-label="Mostrar o código" aria-pressed="false"><svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
               </div>
               <div class="bk-row">
@@ -1405,13 +1396,15 @@
                 <button id="acessoApagarDirigente" class="secondary" type="button">🗑️ Apagar</button>
               </div>
               <p id="acessoStatusDirigente" class="hint acesso-status" role="status" aria-live="polite"></p>
-            </div>
+              </div>
+            </details>
 
-            <div class="acesso-item">
-              <label for="leituraCode">🔊 Código de leitura</label>
+            <details class="acesso-item">
+              <summary>🔊 Código de leitura</summary>
+              <div class="acesso-corpo">
               <p class="hint">Libera o Assistente de leitura em voz da tela Início: importar um PDF ou um Word, ou colar um texto, e ouvi-lo com a frase lida em destaque. Sem ele, esse atalho fica desabilitado neste aparelho.</p>
               <div class="acesso-linha">
-                <input autocomplete="off" id="leituraCode" type="password" maxlength="100" placeholder="Código de leitura">
+                <input autocomplete="off" id="leituraCode" type="password" maxlength="100" placeholder="Código de leitura" aria-label="Código de leitura">
                 <button id="acessoVerLeitura" class="secondary acesso-ver" type="button" aria-label="Mostrar o código" aria-pressed="false"><svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
               </div>
               <div class="bk-row">
@@ -1419,13 +1412,15 @@
                 <button id="acessoApagarLeitura" class="secondary" type="button">🗑️ Apagar</button>
               </div>
               <p id="acessoStatusLeitura" class="hint acesso-status" role="status" aria-live="polite"></p>
-            </div>
+              </div>
+            </details>
 
-            <div class="acesso-item">
-              <label for="textoCode">🎙️ Código de texto</label>
+            <details class="acesso-item">
+              <summary>🎙️ Código de texto</summary>
+              <div class="acesso-corpo">
               <p class="hint">Libera a tela Áudio em texto, da tela Início: transcrever um arquivo de áudio em texto e resumi-lo com a IA. Sem ele, esse atalho fica desabilitado neste aparelho.</p>
               <div class="acesso-linha">
-                <input autocomplete="off" id="textoCode" type="password" maxlength="100" placeholder="Código de texto">
+                <input autocomplete="off" id="textoCode" type="password" maxlength="100" placeholder="Código de texto" aria-label="Código de texto">
                 <button id="acessoVerTexto" class="secondary acesso-ver" type="button" aria-label="Mostrar o código" aria-pressed="false"><svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
               </div>
               <div class="bk-row">
@@ -1433,13 +1428,15 @@
                 <button id="acessoApagarTexto" class="secondary" type="button">🗑️ Apagar</button>
               </div>
               <p id="acessoStatusTexto" class="hint acesso-status" role="status" aria-live="polite"></p>
-            </div>
+              </div>
+            </details>
 
-            <div class="acesso-item">
-              <label for="resumoCode">📝 Código de resumo</label>
+            <details class="acesso-item">
+              <summary>📝 Código de resumo</summary>
+              <div class="acesso-corpo">
               <p class="hint">Libera o botão 🔑 Gerar resumo da tela Leitura diária da Bíblia: o resumo de cada capítulo (e as opções adicionais) feito com a IA. Sem ele, o botão fica desabilitado neste aparelho.</p>
               <div class="acesso-linha">
-                <input autocomplete="off" id="resumoCode" type="password" maxlength="100" placeholder="Código de resumo">
+                <input autocomplete="off" id="resumoCode" type="password" maxlength="100" placeholder="Código de resumo" aria-label="Código de resumo">
                 <button id="acessoVerResumo" class="secondary acesso-ver" type="button" aria-label="Mostrar o código" aria-pressed="false"><svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
               </div>
               <div class="bk-row">
@@ -1447,13 +1444,15 @@
                 <button id="acessoApagarResumo" class="secondary" type="button">🗑️ Apagar</button>
               </div>
               <p id="acessoStatusResumo" class="hint acesso-status" role="status" aria-live="polite"></p>
-            </div>
+              </div>
+            </details>
 
-            <div class="acesso-item">
-              <label for="s34Code">📜 Código do S-34</label>
+            <details class="acesso-item">
+              <summary>📜 Código do S-34</summary>
+              <div class="acesso-corpo">
               <p class="hint">Libera a seção Discurso público - lista de temas (esboços do S-34), em Reuniões → Preparação de discursos e esboços. Sem ele, a seção fica escondida neste aparelho.</p>
               <div class="acesso-linha">
-                <input autocomplete="off" id="s34Code" type="password" maxlength="100" placeholder="Código do S-34">
+                <input autocomplete="off" id="s34Code" type="password" maxlength="100" placeholder="Código do S-34" aria-label="Código do S-34">
                 <button id="acessoVerS34" class="secondary acesso-ver" type="button" aria-label="Mostrar o código" aria-pressed="false"><svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
               </div>
               <div class="bk-row">
@@ -1461,13 +1460,33 @@
                 <button id="acessoApagarS34" class="secondary" type="button">🗑️ Apagar</button>
               </div>
               <p id="acessoStatusS34" class="hint acesso-status" role="status" aria-live="polite"></p>
-            </div>
+              </div>
+            </details>
+              </div>
+            </details>
 
-            <div class="acesso-item">
-              <label for="adminSenha">🛡️ Senha de administrador</label>
+            <details class="acesso-grupo acesso-master" id="acessoGrupoMaster">
+              <summary>⭐ Senha master</summary>
+              <div class="acesso-grupo-corpo acesso-corpo">
+              <p class="hint">Se o administrador gerou uma senha master para você, informe aqui: ela libera, só neste aparelho, todas as funções que pedem código. Não dá acesso à administração do app.</p>
+              <div class="acesso-linha">
+                <input autocomplete="off" id="masterSenha" type="password" maxlength="100" placeholder="Senha master" aria-label="Senha master">
+                <button id="acessoVerMaster" class="secondary acesso-ver" type="button" aria-label="Mostrar a senha" aria-pressed="false"><svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+              </div>
+              <div class="bk-row">
+                <button id="acessoSalvarMaster" type="button">💾 Salvar</button>
+                <button id="acessoApagarMaster" class="secondary" type="button">🗑️ Apagar</button>
+              </div>
+              <p id="acessoStatusMaster" class="hint acesso-status" role="status" aria-live="polite"></p>
+              </div>
+            </details>
+
+            <details class="acesso-grupo" id="acessoGrupoSenha">
+              <summary>🛡️ Senha do administrador</summary>
+              <div class="acesso-grupo-corpo acesso-corpo">
               <p class="hint">Só para o administrador: prompts da IA, voz para todos e configurações padrão de todos os usuários.</p>
               <div class="acesso-linha">
-                <input autocomplete="off" id="adminSenha" type="password" inputmode="numeric" maxlength="100" placeholder="Senha de administrador">
+                <input autocomplete="off" id="adminSenha" type="password" inputmode="numeric" maxlength="100" placeholder="Senha de administrador" aria-label="Senha de administrador">
                 <button id="acessoVerSenha" class="secondary acesso-ver" type="button" aria-label="Mostrar a senha" aria-pressed="false"><svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
               </div>
               <div class="bk-row">
@@ -1475,7 +1494,8 @@
                 <button id="acessoApagarSenha" class="secondary" type="button">🗑️ Apagar</button>
               </div>
               <p id="acessoStatusSenha" class="hint acesso-status" role="status" aria-live="polite"></p>
-            </div>
+              </div>
+            </details>
           </div>
         </details>
         <details class="subsection sub-tint-4" id="meusDadosSection">

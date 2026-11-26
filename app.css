@@ -9686,21 +9686,86 @@
       border-color: #f59e0b;
     }
 
-    .acesso-item {
-      margin-top: 12px;
-      padding: 10px 12px;
+    /* 6.14.76: três cards recolhíveis (códigos, senha master, senha do administrador); dentro dos códigos, um card por código */
+    #acessosSection .acesso-grupo,
+    #acessosSection .acesso-item {
+      display: block;
+      min-width: 0;
+      margin: 10px 0 0;
+      padding: 0;
       border: 1px solid var(--line);
       border-radius: 12px;
       background: var(--card);
+      overflow: hidden;
     }
 
-    .acesso-item label {
-      display: block;
+    #acessosSection .acesso-grupo:first-child,
+    #acessosSection .acesso-item:first-child {
+      margin-top: 0;
+    }
+
+    #acessosSection .acesso-item {
+      margin-top: 8px;
+    }
+
+    #acessosSection :is(.acesso-grupo, .acesso-item) > summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      min-height: 44px;
+      margin: 0;
+      padding: 8px 12px;
+      box-sizing: border-box;
+      cursor: pointer;
+      list-style: none;
       font-weight: 800;
+      line-height: 1.25;
     }
 
-    .acesso-item .hint {
-      margin: 2px 0 8px;
+    #acessosSection .acesso-item > summary {
+      min-height: 40px;
+      font-weight: 700;
+    }
+
+    #acessosSection :is(.acesso-grupo, .acesso-item) > summary::-webkit-details-marker {
+      display: none;
+    }
+
+    #acessosSection :is(.acesso-grupo, .acesso-item) > summary::before {
+      content: none;
+    }
+
+    #acessosSection :is(.acesso-grupo, .acesso-item) > summary::after {
+      content: '▾';
+      flex: 0 0 auto;
+      margin: 0;
+      color: var(--muted);
+      font-weight: 400;
+    }
+
+    #acessosSection :is(.acesso-grupo, .acesso-item)[open] > summary {
+      border-bottom: 1px solid var(--line);
+    }
+
+    #acessosSection :is(.acesso-grupo, .acesso-item)[open] > summary::after {
+      transform: rotate(180deg);
+    }
+
+    #acessosSection .acesso-grupo > .acesso-grupo-corpo {
+      padding: 8px;
+    }
+
+    #acessosSection .acesso-item > .acesso-corpo {
+      padding: 8px 10px;
+    }
+
+    #acessosSection .acesso-grupo > .acesso-grupo-corpo.acesso-corpo {
+      padding: 8px 10px;
+    }
+
+    #acessosSection .acesso-corpo .hint {
+      margin: 0 0 8px;
     }
 
     /* Resumo do que está guardado no aparelho (Ajustes → Privacidade e dados deste aparelho). */
@@ -9789,7 +9854,7 @@
       padding: 4px 8px;
     }
 
-    .acesso-item .bk-row button {
+    .acesso-corpo .bk-row button {
       flex: 1 1 0;
     }
 
@@ -18591,7 +18656,8 @@ body.modo-convidado { padding-bottom: 0; }
 #jogosCard .jogos-card .fam-hub-icone > img.icone-img { display: block; width: 1.1em; height: 1.1em; margin: 0 auto; }
 #participarTitulo .fam-titulo-jogo-emoji > img.icone-img { display: block; width: 1.2em; height: 1.2em; margin: -0.1em 0; }
 /* 6.14.72: senha master: card próprio, de outra cor (laranja suave), nos Ajustes e na administração de usuários */
-.acesso-item.acesso-master, .acesso-site-master { border: 1.5px solid #f59e0b; border-radius: 12px; background: color-mix(in srgb, #f59e0b 12%, var(--card)); }
+#acessosSection .acesso-grupo.acesso-master, .acesso-site-master { border: 1.5px solid #f59e0b; border-radius: 12px; background: color-mix(in srgb, #f59e0b 12%, var(--card)); }
+#acessosSection .acesso-grupo.acesso-master[open] > summary { border-color: #f59e0b; }
 .acesso-site-master { font-size: .88rem; }
 .acesso-site-master .hint { margin: 0 0 8px; }
 .acesso-site-master-valor { display: block; margin: 0 0 8px; padding: 8px; border: 1px dashed #f59e0b; border-radius: 8px; background: var(--card); text-align: center; font-size: clamp(.68rem, 3.4vw, .95rem); font-weight: 800; overflow-wrap: anywhere; user-select: all; }
