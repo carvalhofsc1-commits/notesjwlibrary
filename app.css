@@ -18529,3 +18529,12 @@ body:not(.fam-tela-grande) #participarSessao.fam-na-secao .fam-sessao-secao.na-t
 #familiaCard[data-vista] .fam-perfil-corpo > button.fam-perfil-concluir:hover:not(:disabled) { background: #93c5fd; }
 :root[data-theme="dark"] #familiaCard[data-vista] .fam-perfil-corpo > button.fam-perfil-concluir { background: #1d3a5f; border-color: #3b82f6; color: #dbeafe; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #familiaCard[data-vista] .fam-perfil-corpo > button.fam-perfil-concluir { background: #1d3a5f; border-color: #3b82f6; color: #dbeafe; } }
+
+/* 6.14.56: "Jogos aceitos" num card próprio, abaixo dos Quadros: sem o quadro Jogo bíblico, fica à vista, apagado e sem abrir */
+#familiaCard #familiaJogosBox.fam-card-desligado { background: var(--inicio-cinza); }
+#familiaCard #familiaJogosBox.fam-card-desligado > summary { cursor: not-allowed; opacity: .55; }
+#familiaCard #familiaJogosBox.fam-card-desligado > summary::after { visibility: hidden; }
+/* 6.14.56: o card das informações sobre a família (tela principal) em marrom bem claro */
+#familiaCard:not([data-vista]) > #familiaPerfilBox { background: #f5ebe0; border: 1px solid #c4a484; }
+:root[data-theme="dark"] #familiaCard:not([data-vista]) > #familiaPerfilBox { background: #33281f; border-color: #8a6a4a; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #familiaCard:not([data-vista]) > #familiaPerfilBox { background: #33281f; border-color: #8a6a4a; } }

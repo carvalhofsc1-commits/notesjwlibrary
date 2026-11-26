@@ -7961,7 +7961,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.14.55'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.14.56'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -26261,8 +26261,12 @@ function saveTemplatesToStorage() {
     function familiaJogosAtualizar() {
       const n = familiaJogosEl.querySelectorAll('input:checked').length;
       const ativo = familiaQuadrosLidos().includes('jogo');
-      document.getElementById('familiaJogosQtd').textContent = !ativo ? '(desligado: marque o quadro “Jogo bíblico”)' : n ? '(' + n + ')' : '(nenhum marcado: vale qualquer um dos 6)';
-      familiaJogosEl.classList.toggle('fam-desligado', !ativo);
+      document.getElementById('familiaJogosQtd').textContent = !ativo ? '(marque o quadro “Jogo bíblico”)' : n ? '(' + n + ')' : '(nenhum marcado: vale qualquer um dos 6)';
+      // 6.14.56: o card fica sempre à vista; sem o quadro Jogo bíblico, apagado, fechado e sem abrir.
+      const caixa = document.getElementById('familiaJogosBox');
+      caixa.classList.toggle('fam-card-desligado', !ativo);
+      caixa.querySelector(':scope > summary').setAttribute('aria-disabled', String(!ativo));
+      if (!ativo) caixa.open = false;
     }
     // Põe na tela os quadros, os cânticos e os jogos ({ quadros, canticoInicial, canticoFinal, jogos }, como familiaQuadrosMigrados devolve).
     function familiaQuadrosAplicar(q) {
@@ -32346,7 +32350,7 @@ function saveTemplatesToStorage() {
         if (caixa) caixa.open = k === qual;
         if (topo) topo.hidden = k !== qual;
       });
-      ['familiaProgBox', 'familiaConvidadosBox'].forEach(id => { const sub = document.getElementById(id); if (sub) sub.open = false; });
+      ['familiaProgBox', 'familiaJogosBox', 'familiaConvidadosBox'].forEach(id => { const sub = document.getElementById(id); if (sub) sub.open = false; });
       if (qual) window.scrollTo(0, 0);
       else if (ja && !(opcoes && opcoes.semRolar)) requestAnimationFrame(() => window.scrollTo(0, familiaPerfilRolagem || 0));
       // 6.13.14: de volta à tela, o campo Assunto cresce para mostrar todos os temas escolhidos (ele estava escondido quando foi preenchido).
@@ -32398,6 +32402,7 @@ function saveTemplatesToStorage() {
     document.getElementById('familiaQuadrosCompleta').addEventListener('click', () => familiaQuadrosAtalho(true));
     // Jogos aceitos: salva ao marcar; o título mostra quantos estão marcados; a lista só vale com o quadro Jogo bíblico marcado.
     familiaJogosEl.addEventListener('change', () => { familiaJogosAtualizar(); familiaPerfilSalvar(); });
+    document.querySelector('#familiaJogosBox > summary').addEventListener('click', ev => { if (document.getElementById('familiaJogosBox').classList.contains('fam-card-desligado')) ev.preventDefault(); });
     document.getElementById('familiaJogosTodos').addEventListener('click', () => { familiaJogosEl.querySelectorAll('input').forEach(el => { el.checked = true; }); familiaJogosAtualizar(); familiaPerfilSalvar(); });
     document.getElementById('familiaJogosNenhum').addEventListener('click', () => { familiaJogosEl.querySelectorAll('input').forEach(el => { el.checked = false; }); familiaJogosAtualizar(); familiaPerfilSalvar(); });
     familiaPerfilCarregar();

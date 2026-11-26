@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.56
+
+- **Adoração em família:**
+  - **Jogos aceitos** num card próprio, logo abaixo dos Quadros da programação: sempre à vista, mas só abre com o quadro **Jogo bíblico** marcado.
+  - O card **Informações sobre a família, convidados e definições gerais** em marrom bem claro.
+
 ## 6.14.55
 
 - **Adoração em família:** o botão **Concluir e voltar** em azul claro e o título **Dados da família** centralizado.

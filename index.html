@@ -3052,18 +3052,24 @@
                   <label class="fam-check"><input id="familiaCanticoInicial" type="checkbox"><span>🎵 Cântico inicial</span></label>
                   <label class="fam-check"><input id="familiaCanticoFinal" type="checkbox"><span>🎵 Cântico final</span></label>
                 </div>
-                <!-- Jogos aceitos (6.12.70: os 6 tipos, montados pelo app a partir de FAMILIA_JOGOS): valem quando o quadro Jogo bíblico está marcado. -->
-                <details id="familiaJogosBox" class="fam-jogos-box">
-                  <summary>🎲 Jogos aceitos <span id="familiaJogosQtd" class="opc"></span></summary>
-                  <p class="hint fam-dica">Marque os tipos de jogo que a família gosta. A IA escolhe um deles e já traz o jogo pronto, no nível de quem já conhece bem a Bíblia, para jogar no próprio app. Vale quando o quadro “Jogo bíblico” está marcado.</p>
-                  <div id="familiaJogos" class="fam-checks" role="group" aria-label="Jogos aceitos"></div>
-                  <div class="fam-jogos-rodape">
-                    <div class="fam-acoes-dupla">
-                      <button id="familiaJogosTodos" class="secondary fam-fino" type="button">Marcar todos</button>
-                      <button id="familiaJogosNenhum" class="secondary fam-fino" type="button">Desmarcar todos</button>
-                    </div>
-                  </div>
-                </details>
+              </div>
+            </div>
+          </details>
+
+          <!-- Jogos aceitos (6.12.70: os 6 tipos, montados pelo app a partir de FAMILIA_JOGOS). 6.14.56: card próprio, sempre à vista; só abre
+               (fica habilitado) com o quadro Jogo bíblico marcado. -->
+          <details id="familiaJogosBox" class="fam-perfil-box fam-sub-box">
+            <summary>
+              <span class="fam-perfil-titulo">🎲 Jogos aceitos <span id="familiaJogosQtd" class="opc"></span></span>
+            </summary>
+            <div class="fam-perfil-corpo">
+              <div class="fam-bloco">
+                <p class="hint fam-dica">Marque os tipos de jogo que a família gosta. A IA escolhe um deles e já traz o jogo pronto, no nível de quem já conhece bem a Bíblia, para jogar no próprio app. Vale quando o quadro “Jogo bíblico” está marcado.</p>
+                <div id="familiaJogos" class="fam-checks" role="group" aria-label="Jogos aceitos"></div>
+                <div class="fam-acoes-dupla">
+                  <button id="familiaJogosTodos" class="secondary fam-fino" type="button">Marcar todos</button>
+                  <button id="familiaJogosNenhum" class="secondary fam-fino" type="button">Desmarcar todos</button>
+                </div>
               </div>
             </div>
           </details>
