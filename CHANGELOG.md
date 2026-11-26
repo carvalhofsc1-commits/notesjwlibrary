@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.10
+
+- Jogar sozinho: **sem código e sem registro**. A partida não aparece mais nos recentes nem na lista de compartilhamentos, e nada fica salvo no aparelho; as partidas sozinho que estavam na lista saem dela.
+- Ao sair do jogo (ou fechar o app), a partida **acaba** e é apagada do servidor; "Iniciar partida sozinho" começa uma nova, do zero.
+
 ## 6.14.09
 
 - Jogo ao vivo: cada **dica ganhou uma moldura** em volta.

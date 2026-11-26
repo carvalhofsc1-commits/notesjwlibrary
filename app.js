@@ -7958,7 +7958,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.14.09'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.14.10'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -27983,6 +27983,20 @@ function saveTemplatesToStorage() {
       }
     }
 
+    // 6.14.10: a partida sozinho não mostra código nem fica salva: a chave dela fica só na memória e, ao sair do jogo, a partida é apagada
+    // do servidor (o código interno, que o jogo precisa para funcionar, nunca aparece).
+    let familiaSolo = null; // { cod, chave }
+    function familiaSoloEncerrar(cod, chave) {
+      if (familiaSolo && familiaSolo.cod === cod) familiaSolo = null;
+      if (!cod || !chave) return;
+      const corpo = { acao: 'encerrar', sessao: cod, chave };
+      const admin = senhaAdminSalva();
+      if (admin) corpo.codigoAdmin = admin;
+      const id = aparelhoId();
+      if (id) corpo.aparelhoId = id;
+      try { fetch(FAMILIA_SESSAO_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo), keepalive: true }).catch(() => {}); } catch (e) { /* sem rede: vence sozinha */ }
+    }
+
     // As sessões que este aparelho administra (criou, ou assumiu a direção). As vencidas saem sozinhas. 6.14.07: de quem só entrou com o
     // código nada fica guardado (os registros antigos, sem a chave, são apagados na leitura).
     function familiaSessoesLer() {
@@ -27990,7 +28004,7 @@ function saveTemplatesToStorage() {
       try { dados = JSON.parse(localStorage.getItem(FAMILIA_SESSOES_KEY) || '{}') || {}; } catch (e) { dados = {}; }
       const agora = Date.now();
       let tirou = false;
-      Object.keys(dados).forEach(cod => { if (!dados[cod] || !dados[cod].chave || agora - (Number(dados[cod].em) || 0) > FAMILIA_SESSAO_VALIDADE_MS) { delete dados[cod]; tirou = true; } });
+      Object.keys(dados).forEach(cod => { if (!dados[cod] || !dados[cod].chave || dados[cod].solo || agora - (Number(dados[cod].em) || 0) > FAMILIA_SESSAO_VALIDADE_MS) { delete dados[cod]; tirou = true; } });
       if (tirou) { try { localStorage.setItem(FAMILIA_SESSOES_KEY, JSON.stringify(dados)); } catch (e) { /* sem espaço */ } }
       return dados;
     }
@@ -28429,7 +28443,8 @@ function saveTemplatesToStorage() {
       participarVista(participarEls.nomePasso.hidden ? 'entrada' : 'nome');
     }
     function participarAoSair() {
-      participarSairAvisar(); // 6.13.31: sai do painel de participantes
+      if (participar.programa && participar.programa.solo) familiaSoloEncerrar(participar.cod, participar.chave); // 6.14.10: saiu, a partida acabou
+      else participarSairAvisar(); // 6.13.31: sai do painel de participantes
       participarLimpar();
       participarStatus('');
       participarVista('entrada');
@@ -28473,7 +28488,7 @@ function saveTemplatesToStorage() {
         b.append(linhaNome, linhaCod);
         const linhaDir = document.createElement('span');
         linhaDir.className = 'fam-recente-dirige';
-        linhaDir.textContent = dados[cod].solo ? '🎮 partida sozinho (toque para reabrir)' : dados[cod].modo === 'jogos' ? '👑 você administra (toque para reabrir)' : '👑 você preside (toque para reabrir)';
+        linhaDir.textContent = dados[cod].modo === 'jogos' ? '👑 você administra (toque para reabrir)' : '👑 você preside (toque para reabrir)';
         b.appendChild(linhaDir);
         b.addEventListener('click', () => participarAbrir(cod));
         const apagar = document.createElement('button'); // apagar o compartilhamento (criar outro código depois)
@@ -28494,7 +28509,8 @@ function saveTemplatesToStorage() {
 
     // Entrar: com a chave guardada, como dirigente; sem nome (e sem ter entrado antes), o servidor só confere o código e pede o nome.
     async function participarEntrar(cod, nome) {
-      const guardada = familiaSessoesLer()[cod] || {};
+      const solo = familiaSolo && familiaSolo.cod === cod ? familiaSolo : null;
+      const guardada = solo || familiaSessoesLer()[cod] || {};
       const corpo = { acao: 'entrar', sessao: cod };
       if (guardada.chave) corpo.chave = guardada.chave;
       // 6.13.26: o presidente da reunião que entrou no jogo com um nome (🎮 Jogar também) volta com o mesmo nome e responde como os outros
@@ -28513,8 +28529,9 @@ function saveTemplatesToStorage() {
         r = await familiaSessaoPedir(corpo);
       }
       participarOcupado(false);
-      if (currentScreen() !== 'participar') return; // saiu da tela enquanto esperava
+      if (currentScreen() !== 'participar') { if (solo) familiaSoloEncerrar(cod, solo.chave); return; } // saiu da tela enquanto esperava
       if (!r.ok) {
+        if (solo) familiaSoloEncerrar(cod, solo.chave);
         if (r.status === 404) familiaSessaoGuardar(cod, null);
         participarStatus(r.erro || 'Não consegui entrar.', 'erro');
         participarRecentesPintar();
@@ -28534,8 +28551,8 @@ function saveTemplatesToStorage() {
         nome: d.nome || nomeUsado, participantes: d.participantes || [], extras: d.extras || null
       });
       const titulo = (d.programa.emoji ? d.programa.emoji + ' ' : '') + (d.programa.titulo || 'Adoração em Família');
-      // 6.14.07: só quem administra fica com a sessão na lista; de quem entrou com o código nada é guardado
-      familiaSessaoGuardar(cod, d.dirigente ? Object.assign({ titulo }, d.programa.modo === 'jogos' ? { modo: 'jogos' } : {}, d.programa.solo ? { solo: true } : {}, d.participanteId ? { participanteId: d.participanteId, nome: d.nome || nomeUsado } : {}) : null);
+      // 6.14.07: só quem administra fica com a sessão na lista; de quem entrou com o código nada é guardado (nem da partida sozinho, 6.14.10)
+      familiaSessaoGuardar(cod, d.dirigente && !d.programa.solo ? Object.assign({ titulo }, d.programa.modo === 'jogos' ? { modo: 'jogos' } : {}, d.participanteId ? { participanteId: d.participanteId, nome: d.nome || nomeUsado } : {}) : null);
       participarStatus('');
       participarTextosModo(); // 6.13.45: adoração ou jogo avulso
       participarMontar();
@@ -29600,7 +29617,11 @@ function saveTemplatesToStorage() {
       if (id) corpo.aparelhoId = id;
       try { fetch(FAMILIA_SESSAO_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo), keepalive: true }).catch(() => {}); } catch (e) { /* sem rede */ }
     }
-    window.addEventListener('pagehide', () => { if (currentScreen() === 'participar') participarSairAvisar(); });
+    window.addEventListener('pagehide', ev => {
+      if (currentScreen() !== 'participar') return;
+      if (!(participar.programa && participar.programa.solo)) participarSairAvisar();
+      else if (!ev.persisted) familiaSoloEncerrar(participar.cod, participar.chave); // 6.14.10: fechou ou recarregou o app
+    });
     function participarMascotes(nomes) {
       const hash = txt => { let h = 2166136261; for (const c of String(txt)) { h ^= c.codePointAt(0); h = Math.imul(h, 16777619) >>> 0; } return h; };
       const usadosA = new Set();
@@ -31302,7 +31323,8 @@ function saveTemplatesToStorage() {
       desenhar();
     }
     // 6.13.50: Jogar sozinho (padrão): "▶️ Iniciar partida" cria uma partida nova só para este aparelho (sessão com solo: true; o servidor põe o
-    // administrador no jogo com um nome fixo e o placar mostra só a pontuação) e abre o jogo. A partida anterior deste jogo é encerrada.
+    // administrador no jogo com um nome fixo e o placar mostra só a pontuação) e abre o jogo. 6.14.10: sem código à vista e nada salvo; ao sair,
+    // a partida acaba (familiaSoloEncerrar).
     function jogosSoloMontar(item) {
       const caixa = document.createElement('div');
       caixa.className = 'jogos-solo';
@@ -31322,13 +31344,6 @@ function saveTemplatesToStorage() {
         iniciar.disabled = true;
         iniciar.textContent = '⏳ Preparando a partida…';
         status.hidden = true;
-        const progId = 'jogo-solo:' + item.id;
-        const titulo = (item.op.emoji ? item.op.emoji + ' ' : '') + item.op.titulo;
-        const anterior = familiaSessaoDaProgramacao(progId, titulo);
-        if (anterior) { // a partida anterior deste jogo sai (a pontuação começa do zero)
-          await familiaSessaoPedir({ acao: 'encerrar', sessao: anterior.cod, chave: anterior.chave || '' }).catch(() => null);
-          familiaSessaoGuardar(anterior.cod, null);
-        }
         const r = await familiaSessaoPedir({ acao: 'criar', programa: Object.assign(familiaProgramaParaCompartilhar(item.op), { solo: true }), nomes: [], codigo });
         iniciar.disabled = false;
         iniciar.textContent = '▶️ Iniciar partida sozinho';
@@ -31338,7 +31353,7 @@ function saveTemplatesToStorage() {
           status.textContent = r.erro || 'Não consegui iniciar a partida.';
           return;
         }
-        familiaSessaoGuardar(r.data.sessao, { chave: r.data.chave, titulo, progId, modo: 'jogos', solo: true });
+        familiaSolo = { cod: r.data.sessao, chave: r.data.chave };
         participarAbrir(r.data.sessao);
       });
       acoes.appendChild(iniciar);
