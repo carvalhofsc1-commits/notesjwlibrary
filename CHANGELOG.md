@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.41
+
+- **Jogos bíblicos:** a lista passou ao padrão dos atalhos da tela Início: **Perfil bíblico** em primeiro, na linha inteira, e os outros seis em **duas colunas**, da mesma altura, com fundo cinza claro e **moldura fina na cor de cada jogo**. O jogo aberto continua ocupando a linha toda.
+
 ## 6.14.40
 
 - **Nível de dificuldade:** botões **mais finos** e com cor própria: **Fácil azul**, **Médio laranja**, **Difícil vermelho**; o marcado ganha **✓**, fundo mais forte e moldura grossa (também no modo escuro).

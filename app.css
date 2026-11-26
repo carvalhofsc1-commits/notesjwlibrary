@@ -18191,6 +18191,16 @@ details.fam-placar-card > summary { min-height: 0 !important; padding: 3px 8px !
 #jogosCard .jogos-painel .jogos-acoes > .jogos-ir[data-ia-nota]::after { margin-top: 0; }
 #jogosCard .jogos-painel .jogos-acoes > .jogos-cancelar { min-height: 36px; }
 
+/* 6.14.41: a lista dos jogos no padrão dos atalhos do Início: o primeiro (Perfil bíblico) na linha inteira e os outros em duas colunas,
+   da mesma altura, com fundo cinza claro e moldura fina na cor do jogo; o jogo aberto volta a ocupar a linha toda, como antes */
+#jogosCard #jogosGrade { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: 1fr; gap: 6px; }
+#jogosCard #jogosGrade > .jogos-card:first-child, #jogosCard #jogosGrade > .jogos-card.aberto { grid-column: 1 / -1; }
+#jogosCard .jogos-card:not(.aberto):not([hidden]) { display: grid; border-width: 1px; border-color: color-mix(in srgb, var(--cor-jogo) 75%, #fff); box-shadow: 0 3px 10px var(--shadow); }
+#jogosCard .jogos-card:not(.aberto) > .jogos-atalho { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-height: 108px; padding: 8px; text-align: center; background: var(--inicio-cinza) !important; }
+#jogosCard .jogos-card:not(.aberto) .fam-hub-icone { width: auto; font-size: 2.1rem; line-height: 1.1; }
+#jogosCard .jogos-card:not(.aberto) .fam-hub-nome { font-size: .95rem; line-height: 1.15; }
+#jogosCard .jogos-card:not(.aberto) .fam-hub-desc { font-size: .75rem; line-height: 1.2; }
+
 /* 6.14.14: o botao da dica com fundo cinza; no fim do jogo, "Jogar novamente" e "Fechar" na largura toda */
 #participarSessao button.fam-sessao-dar-dica { background: #e5e7eb !important; border: 1.5px solid #9ca3af !important; color: #1f2937 !important; }
 #participarSessao .fam-jogo-fim { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; margin: 12px 0 8px; }
