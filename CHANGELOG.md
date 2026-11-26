@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.26
+
+- **Complete o versículo:** o versículo ganhou o mesmo destaque do "Quem disse isso?": rótulo pequeno à esquerda ("Complete a palavra que falta") e o versículo em negrito num quadro. Vale também para os jogos já preparados.
+
 ## 6.14.25
 
 - **"✨ Preparar o jogo"** e **"✨ Jogar com novas perguntas"**: enquanto a IA trabalha, o botão mostra o **ícone girando** e o **relógio** correndo ("Preparando… ⏱️ 0:42").
