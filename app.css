@@ -18579,3 +18579,6 @@ body.sem-credito .app-topbar { background: #fee2e2; border-bottom-color: #fca5a5
 .recibos-lista > button { width: 100%; margin: 0; }
 .acesso-site-creditar-linha.acesso-site-creditar-botoes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .acesso-site-creditar-linha.acesso-site-creditar-botoes > button { width: 100%; min-width: 0; margin: 0; white-space: normal; }
+
+/* 6.14.64: atalho com imagem no lugar do emoji (Dirigentes): do tamanho dos emojis dos outros atalhos */
+.atalho-icone > img.atalho-img { display: block; width: 1.24em; height: 1.24em; margin: -0.12em auto; object-fit: contain; }

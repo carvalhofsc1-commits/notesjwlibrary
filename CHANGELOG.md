@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.64
+
+- **Início:** o atalho **Dirigentes** ganhou um ícone próprio (orador na tribuna) no lugar do emoji 🎤.
+
 ## 6.14.63
 
 - **Créditos:**
