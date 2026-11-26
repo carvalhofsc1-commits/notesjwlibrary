@@ -85,6 +85,97 @@ function lancarExtrato(reg, { tipo, rotulo, delta }) {
   return efetivo;
 }
 
+// ---------- Crédito de emergência (6.14.63) ----------
+// Quando o saldo acaba pelo consumo, o usuário recebe o crédito de emergência (valor definido pelo administrador) para continuar usando;
+// o valor concedido fica como dívida (emergenciaDivida) e é abatido na próxima recarga. Um novo só é concedido depois que o anterior for
+// abatido. Valor zero desliga a emergência.
+export const CREDITO_EMERGENCIA_PADRAO = 10;
+function emergenciaDe(dados) {
+  const n = Number(dados && dados.creditoEmergencia);
+  return dados && dados.creditoEmergencia != null && Number.isFinite(n) && n >= 0 ? arredondarSaldo(n) : CREDITO_EMERGENCIA_PADRAO;
+}
+function dividaDe(reg) {
+  const n = Number(reg && reg.emergenciaDivida);
+  return Number.isFinite(n) && n > 0 ? arredondarSaldo(n) : 0;
+}
+// Tem direito: saldo zerado, nada a abater e o último movimento foi um consumo (um zero deixado por correção ou abatimento não conta).
+function temDireitoAEmergencia(reg, dados) {
+  if (!reg || emergenciaDe(dados) <= 0 || creditosDe(reg) > 0 || dividaDe(reg) > 0) return false;
+  const ultimo = Array.isArray(reg.extrato) ? reg.extrato[reg.extrato.length - 1] : null;
+  return Boolean(ultimo && ultimo.tipo === "consumo");
+}
+function concederEmergencia(reg, dados) {
+  if (!temDireitoAEmergencia(reg, dados)) return false;
+  const valor = emergenciaDe(dados);
+  lancarExtrato(reg, { tipo: "emergencia", rotulo: "Crédito de emergência (abatido na próxima recarga)", delta: valor });
+  reg.emergenciaDivida = valor;
+  reg.emergenciaEm = agoraIso();
+  return true;
+}
+// Concede na hora, se for o caso, e devolve os dados já atualizados.
+async function concederSePreciso(id, dados) {
+  if (!id || !temDireitoAEmergencia(dados.aprovados[id], dados)) return dados;
+  await comDados((novos) => ({ ok: concederEmergencia(novos.aprovados[id], novos) }));
+  return lerRecente();
+}
+// Toda recarga (compra ou lançamento do administrador) abate primeiro o que houver do crédito de emergência. Devolve o valor abatido.
+function aplicarRecarga(reg, { rotulo, soma }) {
+  lancarExtrato(reg, { tipo: "credito", rotulo, delta: soma });
+  const divida = dividaDe(reg);
+  const abate = Math.min(divida, creditosDe(reg));
+  if (abate > 0) {
+    lancarExtrato(reg, { tipo: "abatimento", rotulo: "Abatimento do crédito de emergência", delta: -abate });
+    reg.emergenciaDivida = arredondarSaldo(divida - abate);
+  }
+  return abate;
+}
+// Define o valor (R$) do crédito de emergência das próximas concessões (0 = sem emergência). O que já foi concedido não muda.
+export async function definirCreditoEmergencia({ valor, codigoAdmin }) {
+  if (!textosIguais(codigoAdmin, process.env.CODIGO_ADMIN)) return { erro: "Código de administrador incorreto." };
+  const n = valorEmReais(valor);
+  if (!Number.isFinite(n) || n < 0 || n > 100000) return { erro: "Informe um valor em reais entre 0 e 100.000 (0 = sem crédito de emergência)." };
+  return comDados((dados) => {
+    dados.creditoEmergencia = arredondarSaldo(n);
+    return { ok: true, creditoEmergencia: dados.creditoEmergencia };
+  });
+}
+
+// ---------- Recibos das compras de créditos (6.14.63) ----------
+const MAX_RECIBOS = 500;
+const contaDoRecibo = (reg, aparelhoId) => ({
+  nome: `${reg.nome || ""} ${reg.sobrenome || ""}`.trim(),
+  telefone: telefoneFormatado(reg.telefone),
+  cidade: cidadeEstadoDe({ cidade: reg.cidade, estado: reg.estado, cidadeEstado: reg.cidadeEstado }),
+  aparelho: aparelhoId,
+});
+function emitirRecibo(reg, aparelhoId, dadosDoPagamento) {
+  const agora = agoraIso();
+  const recibo = {
+    numero: `NS-${agora.slice(0, 10).replace(/-/g, "")}-${randomBytes(4).toString("hex").toUpperCase()}`,
+    emitidoEm: agora,
+    ...dadosDoPagamento,
+    conta: contaDoRecibo(reg, aparelhoId),
+  };
+  if (!Array.isArray(reg.recibos)) reg.recibos = [];
+  reg.recibos.push(recibo);
+  if (reg.recibos.length > MAX_RECIBOS) reg.recibos = reg.recibos.slice(-MAX_RECIBOS);
+  return recibo;
+}
+// Os recibos do próprio aparelho, do mais novo para o mais antigo (os Pix creditados antes dos recibos também ganham um).
+export async function recibosDoUsuario({ aparelhoId } = {}) {
+  const id = aparelhoIdLimpo(aparelhoId);
+  if (!id || !acessoSiteConfigurado()) return { erro: "Aparelho inválido." };
+  cacheDados = { em: 0, dados: null };
+  const reg = (await lerRecente()).aprovados[id];
+  if (!reg) return { erro: "Este aparelho ainda não está identificado." };
+  const emitidos = Array.isArray(reg.recibos) ? reg.recibos : [];
+  const comRecibo = new Set(emitidos.map((r) => r.pagamentoId).filter(Boolean));
+  const antigos = (Array.isArray(reg.pixHistorico) ? reg.pixHistorico : [])
+    .filter((p) => !comRecibo.has(p.pagamentoId))
+    .map((p) => ({ numero: `NS-PIX-${p.pagamentoId}`, emitidoEm: p.em, pagoEm: p.em, valor: p.valor, forma: "Pix (Mercado Pago)", pagamentoId: p.pagamentoId, conta: contaDoRecibo(reg, id) }));
+  return { ok: true, recibos: [...antigos, ...emitidos].sort((x, y) => String(y.emitidoEm).localeCompare(String(x.emitidoEm))) };
+}
+
 // O extrato do próprio aparelho (público, pelo aparelhoId): saldo inicial, movimentos em ordem de data e saldo atual.
 export async function extratoDoUsuario({ aparelhoId } = {}) {
   const id = aparelhoIdLimpo(aparelhoId);
@@ -382,6 +473,8 @@ function identidadeDe(a) {
     pedidoId: a.pedidoId || "",
     creditos: creditosDe(a),
     creditoBoasVindas: Number(a.creditoBoasVindas) > 0 ? Number(a.creditoBoasVindas) : 0, // o app avisa uma vez (só nos aprovados com o crédito)
+    emergenciaDivida: dividaDe(a), // 6.14.63: quanto do crédito de emergência ainda será abatido na próxima recarga
+    ultimoRecibo: Array.isArray(a.recibos) && a.recibos.length ? a.recibos[a.recibos.length - 1].numero : "",
     codigos: codigosDe(a),
   };
 }
@@ -473,9 +566,10 @@ export async function estadoAcessoSite({ aparelhoId, recente = false } = {}) {
     return { configurado: false, restringir: true, ok: true };
   }
   if (!recente) cacheDados = { em: 0, dados: null };
-  const dados = await lerRecente();
+  let dados = await lerRecente();
   const id = aparelhoIdLimpo(aparelhoId);
   if (id && dados.aprovados[id]) {
+    dados = await concederSePreciso(id, dados); // quem já estava com o saldo zerado pelo consumo recebe ao abrir o app
     // Os códigos personalizados não vão nesta resposta pública (só o administrador os vê, na Administração de usuários).
     const { codigos, ...cadastro } = identidadeDe(dados.aprovados[id]);
     return {
@@ -519,7 +613,11 @@ export async function mensagemSeSemCredito({ aparelhoId, codigoAdmin } = {}) {
   const dados = await lerRecente();
   if (!dados.aprovados[id]) return null; // quem ainda não cadastrou já é barrado pelo gate do site
   if (creditosDe(dados.aprovados[id]) > 0) return null;
-  return "Seus créditos de IA acabaram. Peça ao administrador para carregar mais créditos.";
+  const atuais = await concederSePreciso(id, dados); // 6.14.63: crédito de emergência
+  if (creditosDe(atuais.aprovados[id]) > 0) return null;
+  return dividaDe(atuais.aprovados[id]) > 0
+    ? "Seu crédito de emergência acabou. Faça uma recarga em Ajustes → Consumo de IA e faturamento para voltar a usar a IA."
+    : "Seus créditos de IA acabaram. Faça uma recarga em Ajustes → Consumo de IA e faturamento ou peça ao administrador.";
 }
 
 export async function pedirAcessoSite(corpo) {
@@ -562,6 +660,9 @@ export async function atualizarCadastroSite(corpo) {
       ...(Array.isArray(anterior.extrato) ? { extrato: anterior.extrato, extratoInicial: anterior.extratoInicial, extratoDesde: anterior.extratoDesde } : {}),
       ...(Array.isArray(anterior.pixHistorico) ? { pixHistorico: anterior.pixHistorico } : {}),
       ...(anterior.creditosAtualizadoEm ? { creditosAtualizadoEm: anterior.creditosAtualizadoEm } : {}),
+      // 6.14.63: a dívida do crédito de emergência e os recibos também ficam.
+      ...(dividaDe(anterior) > 0 ? { emergenciaDivida: dividaDe(anterior), emergenciaEm: anterior.emergenciaEm } : {}),
+      ...(Array.isArray(anterior.recibos) ? { recibos: anterior.recibos } : {}),
     });
     return { ok: true, atualizado: true, cadastro: identidadeDe(dados.aprovados[id]) };
   });
@@ -611,6 +712,7 @@ export async function lerAcessoSiteAdmin() {
     aprovados: aprovados.slice(0, 100),
     recursosCodigo: RECURSOS_CODIGO,
     creditoBoasVindas: boasVindasDe(dados),
+    creditoEmergencia: emergenciaDe(dados),
   };
 }
 
@@ -685,7 +787,8 @@ export async function revogarAcessoSite({ aparelhoId, codigoAdmin }) {
 }
 
 // Soma créditos em R$ ao usuário (valor positivo). O saldo não fica negativo ao creditar.
-export async function creditarUsuario({ aparelhoId, valor, codigoAdmin }) {
+// 6.14.63: pagamento = true quando é um pagamento recebido (gera recibo e conta como crédito pago); senão é bônus. Os dois abatem a emergência.
+export async function creditarUsuario({ aparelhoId, valor, codigoAdmin, pagamento = false }) {
   if (!textosIguais(codigoAdmin, process.env.CODIGO_ADMIN)) return { erro: "Código de administrador incorreto." };
   const id = aparelhoIdLimpo(aparelhoId);
   if (!id) return { erro: "Aparelho inválido." };
@@ -696,8 +799,13 @@ export async function creditarUsuario({ aparelhoId, valor, codigoAdmin }) {
   return comDados((dados) => {
     const reg = dados.aprovados[id];
     if (!reg) return { erro: "Este aparelho não está na lista de identificados." };
-    lancarExtrato(reg, { tipo: soma > 0 ? "credito" : "ajuste", rotulo: soma > 0 ? "Crédito lançado pelo administrador" : "Correção lançada pelo administrador", delta: soma });
-    return { ok: true, creditos: reg.creditos, aparelhoId: id };
+    if (soma < 0) {
+      lancarExtrato(reg, { tipo: "ajuste", rotulo: "Correção lançada pelo administrador", delta: soma });
+      return { ok: true, creditos: reg.creditos, aparelhoId: id };
+    }
+    const abatido = aplicarRecarga(reg, { rotulo: pagamento ? "Recarga paga (lançada pelo administrador)" : "Crédito de bônus lançado pelo administrador", soma });
+    const recibo = pagamento ? emitirRecibo(reg, id, { pagoEm: agoraIso(), valor: soma, forma: "Pagamento recebido pelo administrador", abatido, saldoDepois: creditosDe(reg) }) : null;
+    return { ok: true, creditos: reg.creditos, aparelhoId: id, abatido, ...(recibo ? { recibo: recibo.numero } : {}) };
   });
 }
 
@@ -713,7 +821,7 @@ export async function aparelhoIdentificado(aparelhoId) {
 // Credita um pagamento Pix já confirmado no Mercado Pago. Cada pagamento (pelo número dele) só credita UMA vez, mesmo que o aviso (webhook) e a
 // consulta do aplicativo cheguem juntos: a conferência e a gravação acontecem na mesma fila. Guarda os últimos pagamentos para dar o extrato.
 const MAX_PIX_GUARDADOS = 3000;
-export async function creditarPagamentoPix({ aparelhoId, pagamentoId, valor }) {
+export async function creditarPagamentoPix({ aparelhoId, pagamentoId, valor, detalhes = {} }) {
   const id = aparelhoIdLimpo(aparelhoId);
   const pag = String(pagamentoId || "").trim();
   const soma = Math.round(Number(valor) * 100) / 100;
@@ -723,14 +831,15 @@ export async function creditarPagamentoPix({ aparelhoId, pagamentoId, valor }) {
     if (!reg) return { erro: "Este aparelho não está na lista de identificados." };
     if (!dados.pixPagamentos || typeof dados.pixPagamentos !== "object") dados.pixPagamentos = {};
     if (dados.pixPagamentos[pag]) return { ok: true, jaCreditado: true, creditos: creditosDe(reg), valor: dados.pixPagamentos[pag].valor };
-    lancarExtrato(reg, { tipo: "credito", rotulo: "Crédito por Pix", delta: soma });
+    const abatido = aplicarRecarga(reg, { rotulo: "Crédito por Pix", soma });
+    const recibo = emitirRecibo(reg, id, { ...detalhes, valor: soma, forma: "Pix (Mercado Pago)", pagamentoId: pag, abatido, saldoDepois: creditosDe(reg) });
     dados.pixPagamentos[pag] = { aparelhoId: id, valor: soma, em: agoraIso() };
     const chaves = Object.keys(dados.pixPagamentos);
     if (chaves.length > MAX_PIX_GUARDADOS) chaves.slice(0, chaves.length - MAX_PIX_GUARDADOS).forEach((k) => delete dados.pixPagamentos[k]);
     if (!Array.isArray(reg.pixHistorico)) reg.pixHistorico = [];
     reg.pixHistorico.push({ pagamentoId: pag, valor: soma, em: agoraIso() });
     if (reg.pixHistorico.length > 30) reg.pixHistorico = reg.pixHistorico.slice(-30);
-    return { ok: true, jaCreditado: false, creditos: reg.creditos, valor: soma };
+    return { ok: true, jaCreditado: false, creditos: reg.creditos, valor: soma, abatido, recibo: recibo.numero };
   });
 }
 
@@ -811,6 +920,7 @@ export async function debitarCreditosUso({ aparelhoId, tarefa, entrada, saida, c
       const reg = dados.aprovados[id];
       if (!reg) return null;
       lancarExtrato(reg, { tipo: "consumo", rotulo: recurso ? recurso.rotulo : "Outros usos de IA", delta: -valor });
+      concederEmergencia(reg, dados); // 6.14.63: o consumo zerou o saldo: entra o crédito de emergência
       return { ok: true, creditos: reg.creditos, debitado: valor };
     });
   } catch (e) {

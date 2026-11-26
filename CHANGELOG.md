@@ -2,6 +2,15 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.63
+
+- **Créditos:**
+  - **Crédito de emergência** (valor definido pelo administrador, começa em **R$ 10,00**): liberado quando o saldo acaba pelo uso, abatido na próxima recarga; um novo só depois de abatido o anterior. Valor 0 desliga.
+  - Sem crédito (ou usando a emergência): **aviso** ao abrir o app e a cada 24 horas, e a **barra do alto em vermelho suave**. Gasta a emergência, a IA, a voz e a transcrição param até a recarga.
+  - O administrador lança cada crédito como **Pagamento recebido** (gera recibo) ou **Bônus**.
+  - **Recibo em PDF** a cada compra (Pix ou pagamento registrado), oferecido na hora ou ao abrir o app, e em **Meus recibos**.
+- **Termos de Uso 1.4** e **Privacidade 2.5:** emergência, recibo, sem devolução com repasse a outro usuário, arrependimento de 7 dias (art. 49 do CDC) e devolução dos créditos pagos só no encerramento definitivo.
+
 ## 6.14.62
 
 - **Sobre, Termos de Uso (1.3) e Política de Privacidade (2.4)** revisados para as funções novas:

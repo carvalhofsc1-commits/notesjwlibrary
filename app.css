@@ -18570,3 +18570,12 @@ body[data-screen="familia"] main { padding-bottom: 3px; } /* com a folga de 7 px
 #familiaCard > #familiaSalvasBox > summary { flex-wrap: wrap; column-gap: 6px; row-gap: 0; font-size: clamp(.8rem, 4vw, .98rem); line-height: 1.25; }
 #familiaCard > #familiaSalvasBox > summary > .opc { white-space: nowrap; }
 #familiaCard #familiaSalvasLista > .fam-dica { text-align: center; } /* 6.14.61: o aviso de que ainda não há programações */
+
+/* 6.14.63: sem crédito, a barra do alto fica em vermelho suave; recibos e lançamento do administrador na largura toda */
+body.sem-credito .app-topbar { background: #fee2e2; border-bottom-color: #fca5a5; }
+:root[data-theme="dark"] body.sem-credito .app-topbar { background: #3f1d22; border-bottom-color: #7f1d1d; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) body.sem-credito .app-topbar { background: #3f1d22; border-bottom-color: #7f1d1d; } }
+.recibos-lista { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.recibos-lista > button { width: 100%; margin: 0; }
+.acesso-site-creditar-linha.acesso-site-creditar-botoes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.acesso-site-creditar-linha.acesso-site-creditar-botoes > button { width: 100%; min-width: 0; margin: 0; white-space: normal; }

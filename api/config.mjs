@@ -22,6 +22,8 @@ import {
   estadoAcessoSite,
   expirarCodigoUsuario,
   extratoDoUsuario,
+  recibosDoUsuario,
+  definirCreditoEmergencia,
   gerarCodigoUsuario,
   lerAcessoSiteAdmin,
   pedirAcessoSite,
@@ -280,6 +282,14 @@ export default async function handler(req, res) {
     if (acao === "extrato-meu") {
       if (!acessoSiteConfigurado()) return erro(res, 503, "O armazenamento privado (Blob) ainda não está configurado no servidor.");
       const r = await extratoDoUsuario({ aparelhoId: corpo.aparelhoId });
+      if (r && r.erro) return erro(res, 404, r.erro);
+      return res.status(200).json(r);
+    }
+
+    // Pública (Ajustes → Meus recibos, 6.14.63): os recibos das compras de créditos do próprio aparelho.
+    if (acao === "recibos-meus") {
+      if (!acessoSiteConfigurado()) return erro(res, 503, "O armazenamento privado (Blob) ainda não está configurado no servidor.");
+      const r = await recibosDoUsuario({ aparelhoId: corpo.aparelhoId });
       if (r && r.erro) return erro(res, 404, r.erro);
       return res.status(200).json(r);
     }
@@ -559,6 +569,15 @@ export default async function handler(req, res) {
       if (!r || r.erro) return erro(res, 400, (r && r.erro) || "Não foi possível salvar o valor agora.");
       return res.status(200).json({ ok: true, creditoBoasVindas: r.creditoBoasVindas, acesso: await lerAcessoSiteAdmin() });
     }
+    // Crédito de emergência (R$, 6.14.63) liberado quando o saldo de um usuário acaba pelo uso.
+    if (acao === "acesso-site-credito-emergencia") {
+      if (!acessoSiteConfigurado()) {
+        return erro(res, 503, "O armazenamento privado (Blob) ainda não está configurado no servidor para o controle de acesso.");
+      }
+      const r = await definirCreditoEmergencia({ valor: corpo.valor, codigoAdmin: corpo.codigo });
+      if (!r || r.erro) return erro(res, 400, (r && r.erro) || "Não foi possível salvar o valor agora.");
+      return res.status(200).json({ ok: true, creditoEmergencia: r.creditoEmergencia, acesso: await lerAcessoSiteAdmin() });
+    }
     if (acao === "acesso-site-restringir") {
       if (!acessoSiteConfigurado()) {
         return erro(res, 503, "O armazenamento privado (Blob) ainda não está configurado no servidor para o controle de acesso.");
@@ -586,7 +605,7 @@ export default async function handler(req, res) {
       if (!acessoSiteConfigurado()) {
         return erro(res, 503, "O armazenamento privado (Blob) ainda não está configurado no servidor para o controle de acesso.");
       }
-      const r = await creditarUsuario({ aparelhoId: corpo.aparelhoId, valor: corpo.valor, codigoAdmin: corpo.codigo });
+      const r = await creditarUsuario({ aparelhoId: corpo.aparelhoId, valor: corpo.valor, codigoAdmin: corpo.codigo, pagamento: corpo.pagamento === true });
       if (!r || r.erro) return erro(res, 400, (r && r.erro) || "Não foi possível creditar agora.");
       return res.status(200).json({ ok: true, creditos: r.creditos, acesso: await lerAcessoSiteAdmin() });
     }

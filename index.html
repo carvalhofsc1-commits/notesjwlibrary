@@ -1529,8 +1529,16 @@
               <div id="extratoResumo" class="extrato-resumo" hidden></div>
               <div id="extratoLista" class="extrato-lista" hidden></div>
             </details>
+            <!-- 6.14.63: os recibos das compras de créditos -->
+            <details class="prompt-item" id="recibosSection">
+              <summary><h3>🧾 Meus recibos</h3></summary>
+              <p class="hint">Baixe e guarde o recibo de cada compra: ele é necessário numa eventual devolução, se o aplicativo for encerrado definitivamente.</p>
+              <div id="recibosLista" class="recibos-lista"></div>
+              <p id="recibosStatus" class="hint" role="status" aria-live="polite"></p>
+            </details>
             <details class="prompt-item" id="pixCredito" hidden>
               <summary><h3>⚡ Adicionar crédito por Pix</h3></summary>
+              <p id="pixCreditoDivida" class="warn" hidden></p>
               <p class="hint">Informe o valor, pague o Pix gerado e o crédito entra sozinho no seu saldo, em poucos segundos (sem enviar comprovante). O Pix vale por 30 minutos.</p>
               <div class="pix-credito-linha">
                 <input id="pixCreditoValor" type="text" inputmode="decimal" autocomplete="off" placeholder="Valor em R$, ex.: 20,00" aria-label="Valor do crédito em reais">
@@ -2250,6 +2258,16 @@
                 <button id="acessoSiteBoasVindasBtn" type="button">💾 Salvar</button>
               </div>
               <p class="hint">Vale para os próximos cadastros aprovados (quem já foi aprovado não muda). 0 = sem crédito.</p>
+            </div>
+
+            <!-- 6.14.63: o valor do crédito de emergência, liberado quando o saldo acaba pelo uso -->
+            <div class="acesso-site-boasvindas">
+              <label for="acessoSiteEmergencia">🆘 Crédito de emergência (R$)</label>
+              <div class="acesso-site-creditar-linha">
+                <input id="acessoSiteEmergencia" type="text" inputmode="decimal" autocomplete="off" placeholder="Ex.: 10,00" title="Valor liberado quando o saldo do usuário acaba; é abatido na próxima recarga. 0 = sem crédito de emergência.">
+                <button id="acessoSiteEmergenciaBtn" type="button">💾 Salvar</button>
+              </div>
+              <p class="hint">Liberado quando o saldo acaba pelo uso e abatido na próxima recarga. Vale para as próximas liberações. 0 = sem emergência.</p>
             </div>
 
             <details class="prompt-item prompt-tint-codigo" open>

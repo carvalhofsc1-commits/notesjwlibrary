@@ -76,6 +76,21 @@ export async function criarPix({ aparelhoId, valor }) {
   return { ok: true, pagamentoId: String(dados.id), valor: n, codigo: info.qr_code, qrBase64: info.qr_code_base64 || "", minutos: MINUTOS_VALIDADE };
 }
 
+// Os dados do pagamento que vão para o recibo (6.14.63). Só entra o que o Mercado Pago informar; o identificador da transação Pix
+// (E2E) é reconhecido pelo formato ("E" seguido de 31 letras ou números), onde quer que venha.
+export function detalhesDoPagamento(p) {
+  const poi = (p && p.point_of_interaction && p.point_of_interaction.transaction_data) || {};
+  const det = (p && p.transaction_details) || {};
+  const texto = (v) => (typeof v === "string" ? v.replace(/\s+/g, " ").trim().slice(0, 120) : "");
+  const e2e = [poi.e2e_id, poi.bank_transfer_id, poi.transaction_id, det.transaction_id, det.bank_transfer_id].map(texto).find((v) => /^E[A-Za-z0-9]{31}$/.test(v)) || "";
+  const pagador = (poi.bank_info && poi.bank_info.payer) || {};
+  const saida = { pagoEm: texto(p && p.date_approved) || new Date().toISOString() };
+  if (e2e) saida.e2e = e2e;
+  if (texto(pagador.long_name)) saida.instituicaoPagador = texto(pagador.long_name);
+  if (texto(pagador.account_holder_name)) saida.nomePagador = texto(pagador.account_holder_name);
+  return saida;
+}
+
 // Lê o pagamento no Mercado Pago e, se estiver aprovado e válido, credita (uma vez só). Devolve o estado para o app.
 // aparelhoEsperado (opcional): quando o app consulta, o pagamento precisa ser DESTE aparelho.
 export async function confirmarPagamento(pagamentoId, aparelhoEsperado = "") {
@@ -96,9 +111,9 @@ export async function confirmarPagamento(pagamentoId, aparelhoEsperado = "") {
   if (p.payment_method_id !== "pix" || p.currency_id !== "BRL") return { ok: true, estado: "ignorado" };
   const valor = Math.round(Number(p.transaction_amount) * 100) / 100;
   if (!Number.isFinite(valor) || valor < PIX_MINIMO || valor > PIX_MAXIMO) return { ok: true, estado: "ignorado" };
-  const credito = await creditarPagamentoPix({ aparelhoId: aparelho, pagamentoId: pag, valor });
+  const credito = await creditarPagamentoPix({ aparelhoId: aparelho, pagamentoId: pag, valor, detalhes: detalhesDoPagamento(p) });
   if (!credito || credito.erro) return { erro: (credito && credito.erro) || "Não consegui creditar agora.", status: 500 };
-  return { ok: true, estado: "aprovado", valor: credito.valor, creditos: credito.creditos, jaCreditado: Boolean(credito.jaCreditado), aparelhoId: aparelho };
+  return { ok: true, estado: "aprovado", valor: credito.valor, creditos: credito.creditos, jaCreditado: Boolean(credito.jaCreditado), aparelhoId: aparelho, ...(credito.recibo ? { recibo: credito.recibo } : {}) };
 }
 
 // Assinatura do aviso (cabeçalho x-signature: "ts=...,v1=..."): HMAC-SHA256 de "id:<data.id>;request-id:<x-request-id>;ts:<ts>;" com a chave

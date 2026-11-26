@@ -7961,7 +7961,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.14.62'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.14.63'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -12459,7 +12459,7 @@ function saveTemplatesToStorage() {
       consumoListaEl.replaceChildren();
       const cats = {};
       (d.categorias || []).forEach(c => { cats[c.id] = c; });
-      const saldoTxt = d.creditos == null ? '' : 'Saldo de créditos: ' + consumoReais(d.creditos) + (d.creditos <= 0 ? ' (IA pausada até o administrador carregar mais)' : '');
+      const saldoTxt = d.creditos == null ? '' : 'Saldo de créditos: ' + consumoReais(d.creditos) + (d.creditos <= 0 ? ' (IA pausada até a próxima recarga)' : '');
       // Em primeiro lugar fica o campo "Total do mês · Saldo de créditos"; tocar nele abre (ou fecha) o consumo detalhado por recurso.
       const totalTxt = d.recursos.length ? 'Total de ' + consumoMesNome(d.mes) + ': ' + consumoReais(d.total) : '';
       consumoTotalEl.textContent = [totalTxt, saldoTxt].filter(Boolean).join(' · ') || 'Sem consumo neste mês';
@@ -12612,6 +12612,8 @@ function saveTemplatesToStorage() {
         pixCredito.status.textContent = '✅ Pix confirmado! ' + consumoReais(r.data.valor) + ' creditados. Seu saldo agora é ' + consumoReais(r.data.creditos) + '.';
         consumoCarregar(consumoMesEl.value);
         if (extrato.secao.open) extratoCarregar();
+        if (r.data.recibo) reciboOferecer(r.data.recibo); // 6.14.63
+        acessoSiteVerificarGate();
       } else if (estado === 'expirado' || estado === 'recusado') {
         pixCreditoAtual = null; pixCreditoGuardar(); pixCreditoMostrar();
         pixCredito.status.className = 'warn';
@@ -13252,6 +13254,9 @@ function saveTemplatesToStorage() {
       acessoSiteBoasVindas = Number(acesso.creditoBoasVindas);
       if (!Number.isFinite(acessoSiteBoasVindas)) acessoSiteBoasVindas = 100;
       if (document.activeElement !== acessoSiteBoasVindasCampo) acessoSiteBoasVindasCampo.value = acessoSiteBoasVindas.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      const emergencia = Number(acesso.creditoEmergencia); // 6.14.63
+      const emergenciaCampo = document.getElementById('acessoSiteEmergencia');
+      if (Number.isFinite(emergencia) && document.activeElement !== emergenciaCampo) emergenciaCampo.value = emergencia.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       const pendentes = Array.isArray(acesso.pendentes) ? acesso.pendentes : [];
       acessoSitePedidos.innerHTML = pendentes.length
         ? pendentes.map(p =>
@@ -13356,10 +13361,15 @@ function saveTemplatesToStorage() {
           '<div class="acesso-site-tabela-dados" role="table" aria-label="Créditos">' +
           linhaCadastro('Consumo de IA em ' + mesNome, '<strong>' + acessoSiteReais(consumoTotal) + '</strong>') +
           linhaCadastro('Saldo restante', '<strong>' + acessoSiteReais(creditos) + '</strong>') +
+          (Number(a.emergenciaDivida) > 0 ? linhaCadastro('Emergência a abater', '<strong>' + acessoSiteReais(a.emergenciaDivida) + '</strong>') : '') +
           '</div>' +
           '<div class="acesso-site-creditar-linha">' +
           '<input type="text" inputmode="decimal" class="acesso-site-creditar-valor" placeholder="Ex.: 10,00" title="Valor em reais a somar ao saldo (um valor negativo, como -5,00, corrige um lançamento)" aria-label="Valor a creditar">' +
-          '<button type="button" class="acesso-site-creditar" data-aparelho="' + acessoSiteEscapar(idCompleto) + '">💳 Creditar</button>' +
+          '</div>' +
+          // 6.14.63: o administrador diz se é pagamento recebido (gera recibo) ou bônus
+          '<div class="acesso-site-creditar-linha acesso-site-creditar-botoes">' +
+          '<button type="button" class="acesso-site-creditar" data-pagamento="1" data-aparelho="' + acessoSiteEscapar(idCompleto) + '">💳 Pagamento recebido</button>' +
+          '<button type="button" class="secondary acesso-site-creditar" data-aparelho="' + acessoSiteEscapar(idCompleto) + '">🎁 Bônus</button>' +
           '</div></div>' +
           '<div class="acesso-site-consumo">' +
           '<strong class="acesso-site-codigos-titulo">Consumo em ' + acessoSiteEscapar(mesNome) + '</strong>' +
@@ -13441,6 +13451,20 @@ function saveTemplatesToStorage() {
       acessoSiteRenderAdmin(r.data.acesso, 'Crédito de boas-vindas: ' + acessoSiteReais(r.data.creditoBoasVindas) + ' para os próximos cadastros aprovados. ');
     }
     document.getElementById('acessoSiteBoasVindasBtn').addEventListener('click', acessoSiteSalvarBoasVindas);
+    async function acessoSiteSalvarEmergencia() { // 6.14.63
+      const codigo = codigoAdminAtual();
+      if (!codigo) return;
+      const campo = document.getElementById('acessoSiteEmergencia');
+      const valor = campo.value.trim();
+      if (!valor) { acessoSiteStatus.textContent = 'Informe o valor em reais (0 = sem crédito de emergência).'; campo.focus(); return; }
+      acessoSiteStatus.textContent = 'Salvando…';
+      const r = await postConfig({ acao: 'acesso-site-credito-emergencia', codigo, valor });
+      if (!r.ok) { acessoSiteStatus.textContent = (r.data && r.data.erro) || configErrorMessage(r, 'Não foi possível salvar o valor.'); return; }
+      campo.blur();
+      acessoSiteRenderAdmin(r.data.acesso, 'Crédito de emergência: ' + acessoSiteReais(r.data.creditoEmergencia) + ' nas próximas liberações. ');
+    }
+    document.getElementById('acessoSiteEmergenciaBtn').addEventListener('click', acessoSiteSalvarEmergencia);
+    document.getElementById('acessoSiteEmergencia').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); acessoSiteSalvarEmergencia(); } });
     acessoSiteBoasVindasCampo.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); acessoSiteSalvarBoasVindas(); } });
 
     acessoSitePedidos.addEventListener('click', async e => {
@@ -13479,17 +13503,19 @@ function saveTemplatesToStorage() {
       }
       const creditar = e.target.closest('button.acesso-site-creditar');
       if (creditar && creditar.dataset.aparelho) {
-        const campo = creditar.parentElement && creditar.parentElement.querySelector('.acesso-site-creditar-valor');
+        const campo = creditar.closest('.acesso-site-creditos').querySelector('.acesso-site-creditar-valor');
         const valor = campo ? campo.value.trim() : '';
+        const pagamento = creditar.dataset.pagamento === '1'; // 6.14.63
         if (!valor) {
           acessoSiteStatus.textContent = 'Informe o valor em reais para creditar.';
           if (campo) campo.focus();
           return;
         }
+        if (pagamento && !/^\s*(r\$\s*)?-/i.test(valor) && !(await askConfirm('Registrar ' + valor.replace(/^\s*(r\$\s*)?/i, 'R$ ') + ' como pagamento recebido deste usuário? Será gerado um recibo, e o valor conta como crédito pago.', 'Registrar pagamento', { ok: 'Registrar pagamento', cancel: 'Cancelar' }))) return;
         // Valor negativo corrige um lançamento errado: pede confirmação.
         if (/^\s*(r\$\s*)?-/i.test(valor) && !(await askConfirm('Tirar ' + valor.replace(/^\s*(r\$\s*)?-\s*/i, 'R$ ') + ' do saldo deste usuário? (Use para corrigir um crédito lançado errado; o saldo não fica abaixo de zero.)', 'Corrigir o saldo', { ok: 'Tirar do saldo', cancel: 'Cancelar' }))) return;
         acessoSiteStatus.textContent = 'Creditando…';
-        const r = await postConfig({ acao: 'acesso-site-creditar', codigo, aparelhoId: creditar.dataset.aparelho, valor });
+        const r = await postConfig({ acao: 'acesso-site-creditar', codigo, aparelhoId: creditar.dataset.aparelho, valor, pagamento });
         if (!r.ok) {
           acessoSiteStatus.textContent = (r.data && r.data.erro) || configErrorMessage(r, 'Não foi possível creditar.');
           return;
@@ -13666,6 +13692,185 @@ function saveTemplatesToStorage() {
         '🎉 Bem-vindo ao NoteStyle!'
       ), 700);
     }
+    // ---------- 6.14.63: sem crédito (aviso e barra do alto em vermelho) e recibos das compras ----------
+    // Sem crédito = saldo zerado ou usando o crédito de emergência. O aviso aparece ao abrir o app e, com ele aberto, a cada 24 horas.
+    const CREDITO_BARRA_KEY = 'notestyleSemCreditoV1';
+    const RECIBO_VISTO_KEY = 'notestyleReciboVistoV1';
+    const CREDITO_AVISO_MS = 24 * 60 * 60 * 1000;
+    let creditoAvisadoEm = 0; // zera a cada abertura do app
+    function creditoSituacao(estado) {
+      const c = estado && estado.cadastro;
+      if (!c || !estado.identificado || c.creditos == null) return null;
+      const saldo = Number(c.creditos) || 0;
+      const divida = Number(c.emergenciaDivida) || 0;
+      return { saldo, divida, semCredito: saldo <= 0 || divida > 0, emergencia: divida > 0 && saldo > 0 };
+    }
+    const creditoReais = n => (Number(n) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    function creditoMensagem(s) {
+      if (s.emergencia) return 'Seu crédito acabou. Para você não parar, foi liberado um crédito de emergência de ' + creditoReais(s.divida) + ', para uso geral (saldo agora: ' + creditoReais(s.saldo) + '). Esse valor será abatido na próxima recarga.\n\nReponha os créditos em Ajustes → Consumo de IA e faturamento. Quando a emergência acabar, os recursos de IA param.';
+      if (s.divida > 0) return 'Seu crédito de emergência acabou. Os recursos que usam IA, voz e transcrição estão parados até a próxima recarga.\n\nDo que você recarregar, ' + creditoReais(s.divida) + ' abatem o crédito de emergência e o restante fica como saldo.';
+      return 'Você está sem crédito. Os recursos que usam IA, voz e transcrição estão parados até a próxima recarga.\n\nReponha os créditos em Ajustes → Consumo de IA e faturamento.';
+    }
+    function creditoBarra(semCredito) {
+      document.body.classList.toggle('sem-credito', Boolean(semCredito));
+      try { if (semCredito) localStorage.setItem(CREDITO_BARRA_KEY, '1'); else localStorage.removeItem(CREDITO_BARRA_KEY); } catch (e) { /* sem armazenamento */ }
+    }
+    try { if (localStorage.getItem(CREDITO_BARRA_KEY)) document.body.classList.add('sem-credito'); } catch (e) { /* sem armazenamento */ }
+    // Abre Ajustes direto no card de consumo, com a recarga por Pix à vista.
+    function creditoRecarregar() {
+      extratoAbrir();
+      extrato.secao.open = false;
+      const pix = document.getElementById('pixCredito');
+      setTimeout(() => { pix.open = true; pix.scrollIntoView({ block: 'center' }); }, 400);
+    }
+    // Os avisos esperam a vez: nunca por cima de outro aviso ou da tela de identificação.
+    function quandoLivre(fn, tentativas = 40) {
+      if (!confirmOverlay.classList.contains('open') && acessoSiteOverlay.hidden) { fn(); return; }
+      if (tentativas > 0) setTimeout(() => quandoLivre(fn, tentativas - 1), 3000);
+    }
+    function creditoAtualizar(estado) {
+      if (senhaAdminSalva()) { creditoBarra(false); return; } // o administrador usa a IA sem crédito
+      const s = creditoSituacao(estado);
+      if (!s) return;
+      creditoBarra(s.semCredito);
+      const avisoPix = document.getElementById('pixCreditoDivida');
+      avisoPix.hidden = !(s.divida > 0);
+      avisoPix.textContent = s.divida > 0 ? 'Há ' + creditoReais(s.divida) + ' do crédito de emergência a abater: o que passar disso fica como saldo.' : '';
+      const novoRecibo = estado.cadastro.ultimoRecibo;
+      if (novoRecibo) {
+        let visto = '';
+        try { visto = localStorage.getItem(RECIBO_VISTO_KEY) || ''; } catch (e) { /* sem armazenamento */ }
+        if (visto !== novoRecibo) setTimeout(() => quandoLivre(() => reciboOferecer(novoRecibo)), 900);
+      }
+      if (s.semCredito && Date.now() - creditoAvisadoEm >= CREDITO_AVISO_MS) {
+        creditoAvisadoEm = Date.now();
+        setTimeout(() => quandoLivre(async () => {
+          if (await askConfirm(creditoMensagem(s), '⚠️ Você está sem crédito', { ok: '💳 Recarregar', cancel: 'Depois' })) creditoRecarregar();
+        }), 1500);
+      }
+    }
+    // Com o app aberto: confere o saldo de tempos em tempos (a barra acompanha o consumo e o aviso volta depois de 24 horas).
+    setInterval(() => { if (document.visibilityState === 'visible' && Date.now() - acessoUltimaChecagem > 9 * 60 * 1000) acessoSiteVerificarGate(); }, 10 * 60 * 1000);
+
+    let recibosCache = [];
+    async function recibosBuscar() {
+      const r = await postConfig({ acao: 'recibos-meus', aparelhoId: aparelhoId() });
+      if (!r.ok || !r.data || !Array.isArray(r.data.recibos)) return null;
+      recibosCache = r.data.recibos;
+      return recibosCache;
+    }
+    async function reciboBaixar(numero) {
+      let recibo = recibosCache.find(x => x.numero === numero);
+      if (!recibo) recibo = ((await recibosBuscar()) || []).find(x => x.numero === numero);
+      if (!recibo) { await showAlert('Não consegui ler o recibo agora. Tente de novo em Ajustes → Consumo de IA e faturamento → Meus recibos.', 'Recibo'); return; }
+      const url = URL.createObjectURL(reciboPdf(recibo));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'recibo-notestyle-' + recibo.numero + '.pdf';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    }
+    let reciboOferecido = '';
+    async function reciboOferecer(numero) {
+      if (!numero || reciboOferecido === numero) return;
+      reciboOferecido = numero;
+      safeSetItem(RECIBO_VISTO_KEY, numero);
+      if (await askConfirm('Sua compra de créditos foi registrada.\n\nBaixe o recibo e guarde-o: ele é necessário numa eventual devolução, se o aplicativo for encerrado definitivamente. Você também o encontra em Ajustes → Consumo de IA e faturamento → Meus recibos.', '🧾 Recibo disponível', { ok: '⬇️ Baixar recibo', cancel: 'Depois' })) reciboBaixar(numero);
+    }
+    async function recibosMostrar() {
+      const lista = document.getElementById('recibosLista');
+      const status = document.getElementById('recibosStatus');
+      status.textContent = 'Carregando…';
+      const recibos = navigator.onLine && servidoPelaWeb() ? await recibosBuscar() : null;
+      lista.replaceChildren();
+      if (!recibos) { status.textContent = 'Os recibos aparecem com internet, no site publicado, para quem já se identificou.'; return; }
+      status.textContent = recibos.length ? '' : 'Ainda não há recibos: eles aparecem a cada compra de créditos.';
+      recibos.forEach(recibo => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'secondary recibo-baixar';
+        b.textContent = '⬇️ ' + new Date(recibo.pagoEm || recibo.emitidoEm).toLocaleDateString('pt-BR') + ' · ' + creditoReais(recibo.valor) + ' · recibo (PDF)';
+        b.addEventListener('click', () => reciboBaixar(recibo.numero));
+        lista.appendChild(b);
+      });
+    }
+    document.getElementById('recibosSection').addEventListener('toggle', () => { if (document.getElementById('recibosSection').open) recibosMostrar(); });
+
+    // Recibo em PDF de uma página (texto simples, fonte Helvetica), montado no aparelho.
+    function reciboLinhas(r) {
+      const quando = v => { const d = new Date(v); return isNaN(d) ? '' : d.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) + ' (horário de Brasília)'; };
+      const conta = r.conta || {};
+      const par = (rotulo, valor) => (valor ? [{ t: rotulo + ': ' + valor }] : []);
+      return [
+        { t: 'RECIBO DE COMPRA DE CRÉDITOS', b: true, tam: 15 },
+        { t: 'NoteStyle · Carvalho Apps (Fernando S. Carvalho) · www.notestyle.com.br' },
+        { t: 'Recibo nº ' + r.numero, b: true },
+        ...par('Emitido em', quando(r.emitidoEm)),
+        { t: 'Pagamento', b: true, tam: 12, antes: 12 },
+        ...par('Valor pago', creditoReais(r.valor)),
+        ...par('Data da confirmação', quando(r.pagoEm)),
+        ...par('Forma de pagamento', r.forma),
+        ...par('Número do pagamento no Mercado Pago', r.pagamentoId),
+        ...par('Identificador da transação Pix (E2E)', r.e2e),
+        ...par('Instituição do pagador', r.instituicaoPagador),
+        ...par('Nome do pagador', r.nomePagador),
+        { t: 'Conta creditada', b: true, tam: 12, antes: 12 },
+        ...par('Nome', conta.nome),
+        ...par('Telefone', conta.telefone),
+        ...par('Cidade', conta.cidade),
+        ...par('Identificador do aparelho', conta.aparelho),
+        { t: 'Créditos', b: true, tam: 12, antes: 12 },
+        ...par('Crédito comprado', creditoReais(r.valor)),
+        ...(Number(r.abatido) > 0 ? par('Abatido do crédito de emergência', creditoReais(r.abatido)) : []),
+        ...(r.saldoDepois != null ? par('Saldo depois da recarga', creditoReais(r.saldoDepois)) : []),
+        { t: 'Este recibo comprova a compra de créditos de uso do NoteStyle e não é nota fiscal. Guarde-o: ele é necessário para a devolução de créditos pagos e não utilizados em caso de encerramento definitivo do aplicativo (Termos de Uso, item 4).', antes: 16, tam: 9 }
+      ];
+    }
+    function reciboPdf(r) {
+      const WINANSI = { '€': 128, '…': 133, '‘': 145, '’': 146, '“': 147, '”': 148, '•': 149, '–': 150, '—': 151 };
+      const escapar = s => Array.from(String(s).normalize('NFC').replace(/\s/g, ' ')).map(ch => {
+        const n = WINANSI[ch] || ch.codePointAt(0);
+        if (n > 255 || n < 32) return '';
+        if (ch === '(' || ch === ')' || ch === '\\') return '\\' + ch;
+        return n > 126 ? '\\' + n.toString(8).padStart(3, '0') : ch;
+      }).join('');
+      let y = 800, conteudo = '';
+      reciboLinhas(r).forEach(l => {
+        const tam = l.tam || 10;
+        y -= l.antes || 0;
+        const max = Math.floor(495 / (tam * 0.55)); // letras por linha na largura útil
+        const saida = [];
+        let atual = '';
+        String(l.t).split(' ').forEach(p => {
+          if (atual && (atual + ' ' + p).length > max) { saida.push(atual); atual = p; }
+          else atual = atual ? atual + ' ' + p : p;
+        });
+        if (atual) saida.push(atual);
+        saida.forEach(linha => {
+          conteudo += 'BT /' + (l.b ? 'F2' : 'F1') + ' ' + tam + ' Tf 50 ' + y + ' Td (' + escapar(linha) + ') Tj ET\n';
+          y -= Math.round(tam * 1.6);
+        });
+      });
+      const fonte = nome => '<< /Type /Font /Subtype /Type1 /BaseFont /' + nome + ' /Encoding /WinAnsiEncoding >>';
+      const objetos = [
+        '<< /Type /Catalog /Pages 2 0 R >>',
+        '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+        '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >>',
+        fonte('Helvetica'),
+        fonte('Helvetica-Bold'),
+        '<< /Length ' + conteudo.length + ' >>\nstream\n' + conteudo + 'endstream'
+      ];
+      // tudo em ASCII (os acentos vão como \ooo), então o tamanho em letras é o tamanho em bytes
+      let pdf = '%PDF-1.4\n';
+      const posicoes = objetos.map((o, i) => { const p = pdf.length; pdf += (i + 1) + ' 0 obj\n' + o + '\nendobj\n'; return p; });
+      const xref = pdf.length;
+      pdf += 'xref\n0 ' + (objetos.length + 1) + '\n0000000000 65535 f \n' + posicoes.map(p => String(p).padStart(10, '0') + ' 00000 n \n').join('');
+      pdf += 'trailer\n<< /Size ' + (objetos.length + 1) + ' /Root 1 0 R >>\nstartxref\n' + xref + '\n%%EOF';
+      return new Blob([pdf], { type: 'application/pdf' });
+    }
+
     let acessoUltimaChecagem = 0;
     async function acessoSiteVerificarGate() {
       if (!servidoPelaWeb() || /^(localhost|127\.0\.0\.1|\[::1\])$|\.localhost$/.test(location.hostname)) return; // testes locais não têm a API
@@ -13683,6 +13888,7 @@ function saveTemplatesToStorage() {
           if (r.data.configurado) acessoConfirmadoGravar(id);
           acessoSiteLiberarOverlay();
           acessoBoasVindasAvisar(id, r.data);
+          creditoAtualizar(r.data); // 6.14.63: barra vermelha, aviso de sem crédito e recibo novo
           return;
         }
         acessoConfirmadoGravar('');
