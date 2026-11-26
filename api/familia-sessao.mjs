@@ -103,7 +103,7 @@ async function limparVencidas() {
 // "fulano já respondeu"). Dentro da instância, as ações que gravam de uma mesma sessão também esperam a vez.
 const versoesDoEstado = new WeakMap();
 const gravarEstadoLido = (cod, estado) => put(caminho(cod, "estado.json"), JSON.stringify(estado), { contentType: "application/json; charset=utf-8", seVersao: versoesDoEstado.get(estado) });
-const ACOES_QUE_GRAVAM = new Set(["responder", "voltar-inicio", "liberar", "bloquear", "revelar", "revelar-ordem", "espiar", "dica", "modo-dicas", "sortear-dica", "pontuar", "reiniciar", "novo-jogo", "sortear", "limpar-sorteio", "sortear-questao", "julgar", "julgamento-ia", "foco", "cronometro", "assumir", "passar-direcao"]);
+const ACOES_QUE_GRAVAM = new Set(["responder", "voltar-inicio", "liberar", "bloquear", "revelar", "revelar-ordem", "espiar", "dica", "modo-dicas", "sortear-dica", "pontuar", "reiniciar", "novo-jogo", "sortear", "limpar-sorteio", "sortear-questao", "julgar", "julgamento-ia", "foco", "cronometro", "assumir", "passar-direcao", "conferir-ordem"]);
 const TENTATIVAS_DE_GRAVAR = 12;
 const filasDasSessoes = new Map();
 function naVezDaSessao(cod, tarefa) {
@@ -741,7 +741,7 @@ async function atender(req, res) {
 
     // ----- Daqui em diante, só o dirigente -----
     if (!(await exigirDirigente())) return;
-    const programa = ["liberar", "bloquear", "revelar", "revelar-ordem", "dica", "pontuar", "reiniciar", "sortear", "sortear-questao", "limpar-sorteio", "cronometro", "julgar", "sortear-dica", "modo-dicas", "julgamento-ia", "foco"].includes(acao) ? await lerJson(caminho(cod, "programa.json")) : null;
+    const programa = ["liberar", "bloquear", "revelar", "revelar-ordem", "dica", "pontuar", "reiniciar", "sortear", "sortear-questao", "limpar-sorteio", "cronometro", "julgar", "sortear-dica", "modo-dicas", "julgamento-ia", "foco", "conferir-ordem"].includes(acao) ? await lerJson(caminho(cod, "programa.json")) : null;
     const parteValida = (i) => programa && Number.isInteger(i) && i >= 0 && i < programa.partes.length;
     // 6.12.76: a referência secreta da rodada (respostas.json; sessões antigas não a têm) e a revelação dela junto com a resposta.
     const referenciaDaRodada = (parte, rodada) => String((((segredo && segredo.referencias) || {})[parte] || [])[rodada] || "");
@@ -892,6 +892,32 @@ async function atender(req, res) {
       });
     }
 
+    // ----- conferir-ordem (6.14.20): na partida sozinho, no "Ordem e data", a pessoa arruma os acontecimentos e o servidor confere: acertando
+    // todos, 1 ponto por acontecimento, menos 1 por conferência errada de antes, e a ordem é revelada; errando, diz quais já estão no lugar. -----
+    if (acao === "conferir-ordem") {
+      const parte = Number(corpo.parte);
+      if (!parteValida(parte) || programa.solo !== true) return erro(res, 400, "Esta conferência vale só para a partida sozinho.");
+      const certa = ordemDaParte(parte);
+      if (!certa) return erro(res, 400, "Esta parte não tem ordem para conferir.");
+      if ((estado.ordensReveladas || {})[parte] || ((estado.acertos || {})[parte] || {}).ordem) return erro(res, 409, "A ordem já foi revelada.");
+      const tentativa = lista(corpo.ordem, 12, (t) => texto(t, 600));
+      if (tentativa.length !== certa.length) return erro(res, 400, "Mande todos os acontecimentos, na sua ordem.");
+      const feitas = (((estado.erradas || {})[parte] || {}).ordem) || [];
+      if (feitas.length && JSON.stringify(feitas[feitas.length - 1].ordem) === JSON.stringify(tentativa)) return erro(res, 409, "Mude a ordem antes de conferir de novo.");
+      const chave = (t) => String(t).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().slice(0, 280);
+      const certos = tentativa.map((t, i) => (chave(t) === chave(certa[i].evento) ? i : -1)).filter((i) => i >= 0);
+      return gravarEstado((e) => {
+        if (certos.length === certa.length) {
+          e.acertos = e.acertos || {};
+          e.acertos[parte] = { ...(e.acertos[parte] || {}), ordem: { nome: "Jogador", pts: Math.max(0, certa.length - feitas.length) } };
+          revelarOrdem(e, parte, certa);
+        } else {
+          e.erradas = e.erradas || {};
+          e.erradas[parte] = { ...(e.erradas[parte] || {}), ordem: [...feitas, { nome: "Jogador", ordem: tentativa, certos }].slice(-20) };
+        }
+      });
+    }
+
     // ----- pontuar (6.11.97): quem acertou a rodada ganha os pontos de agora (total de dicas − dicas dadas + 1) e a resposta é revelada -----
     if (acao === "pontuar") {
       const parte = Number(corpo.parte);
@@ -949,6 +975,11 @@ async function atender(req, res) {
             const copia = { ...e.ordensReveladas };
             delete copia[parte];
             e.ordensReveladas = copia;
+          }
+          if (e.erradas && e.erradas[parte]) { // 6.14.20: e as conferências erradas
+            const copia = { ...e.erradas[parte] };
+            delete copia.ordem;
+            e.erradas = { ...e.erradas, [parte]: copia };
           }
         });
       }

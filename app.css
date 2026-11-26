@@ -18248,3 +18248,32 @@ details.fam-placar-card > summary { min-height: 0 !important; padding: 3px 8px !
 #participarSessao .fam-sessao-eventos > .fam-secao-titulo { margin: 0; }
 #participarSessao .fam-sessao-eventos > ol { display: grid; gap: 6px; margin: 0; padding: 0; list-style-position: inside; }
 #participarSessao .fam-sessao-eventos li { padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); overflow-wrap: anywhere; line-height: 1.35; }
+
+/* 6.14.20: Ordem e data: o placar em cima, como nos outros jogos; sozinho, a lista para arrumar */
+#participarSessao.fam-sessao-jogo-avulso .fam-sessao-jogo > .fam-sessao-eventos,
+#participarSessao.fam-sessao-jogo-avulso .fam-sessao-jogo > .fam-sessao-ordem,
+#participarSessao.fam-sessao-jogo-avulso .fam-sessao-jogo > .fam-jogo-itens { order: 6; }
+#participarSessao .fam-ordem-solo { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; min-width: 0; }
+#participarSessao .fam-ordem-solo > [hidden] { display: none; }
+#participarSessao .fam-ordem-topo { display: grid; justify-items: center; gap: 6px; margin: 0; text-align: center; }
+#participarSessao .fam-ordem-topo > strong { font-size: 1.25rem; font-weight: 900; }
+#participarSessao .fam-ordem-vale { padding: 4px 12px; border-radius: 999px; background: #fef3c7; border: 1.5px solid #f59e0b; color: #92400e; font-weight: 900; }
+#participarSessao .fam-ordem-vale:empty { display: none; }
+#participarSessao .fam-ordem-arrumar { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+#participarSessao .fam-ordem-arrumar > li { display: flex; align-items: center; gap: 6px; min-width: 0; padding: 6px 6px 6px 8px; border: 1.5px solid var(--line); border-radius: 10px; background: var(--card); }
+#participarSessao .fam-ordem-arrumar > li.certo { border-color: #8b5cf6; background: color-mix(in srgb, #8b5cf6 20%, var(--card)); }
+#participarSessao .fam-ordem-num { flex: 0 0 1.5em; font-weight: 900; text-align: center; }
+#participarSessao .fam-ordem-texto { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; line-height: 1.3; }
+#participarSessao .fam-ordem-arrumar button.fam-ordem-seta { flex: 0 0 40px; width: 40px; min-width: 40px; height: 40px; min-height: 40px; margin: 0; padding: 0; display: inline-flex; align-items: center; justify-content: center; font-size: .95rem; }
+#participarSessao .fam-ordem-arrumar button.fam-ordem-seta:disabled { opacity: .3; }
+#participarSessao .fam-ordem-aviso, #participarSessao .fam-ordem-solo > .fam-sessao-ordem-resultado { margin: 0; text-align: center; font-weight: 700; }
+#participarSessao .fam-ordem-acoes > button { margin: 0; min-height: 44px; }
+#participarSessao .fam-ordem-acoes > button.fam-principal { background: #2563eb; border-color: #1d4ed8; color: #fff; }
+#participarSessao .fam-ordem-acoes > button.fam-principal:disabled { opacity: .55; }
+#participarSessao .fam-ordem-acoes > button.fam-nao-sei { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; line-height: 1.1; background: #dc2626; border-color: #b91c1c; color: #fff; }
+#participarSessao .fam-ordem-certa { display: grid; gap: 6px; margin: 0; padding: 0; list-style-position: inside; }
+#participarSessao .fam-ordem-certa > li { padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); overflow-wrap: anywhere; line-height: 1.35; }
+:root[data-theme="dark"] #participarSessao .fam-ordem-vale { background: #33270f; border-color: #b45309; color: #fcd34d; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) #participarSessao .fam-ordem-vale { background: #33270f; border-color: #b45309; color: #fcd34d; }
+}

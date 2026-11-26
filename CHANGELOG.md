@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.20
+
+- **Ordem e data, jogando sozinho:** os acontecimentos são arrumados na própria tela com as setas **▲ ▼**. **"✅ Conferir a ordem"** dá os pontos sozinho: 1 por acontecimento, menos 1 a cada conferência errada, que mostra em roxo os que já estão no lugar certo. **"Não sei / Revelar"** mostra a ordem certa com as datas, sem pontos.
+- Sozinho, saíram o campo "Quem acertou a ordem?", a escolha de pontos e o botão de pontuar.
+- O **placar passou para cima**, como nos outros jogos (também no jogo em grupo).
+
 ## 6.14.19
 
 - **Ordem e data dos acontecimentos:** os acontecimentos voltaram a aparecer. Estavam num quadro fechado ("Material para jogar") sem indicação de que abria; agora ficam sempre à vista, em lista numerada.

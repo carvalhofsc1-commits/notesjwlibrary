@@ -325,6 +325,32 @@ try {
   assert.deepEqual(po2.dados.estado.ordensReveladas["2"], v2.partes[2].jogo.ordem); passo("pontuar a ordem (mesmo com 0 ponto) também revela a ordem");
   await chamar({ acao: "encerrar", sessao: cv2.sessao, chave: cv2.chave });
 
+  // 6.14.20: sozinho, no "Ordem e data", o servidor confere a ordem arrumada e dá os pontos
+  {
+    const eventos = ["Criação de Adão", "Dilúvio", "Êxodo", "Batismo de Jesus"];
+    const parteOrdem = { quadro: "jogo", nome: "Ordem", jogo: { tipo: "Ordem e data", idTipo: "ordem_data", nome: "Ordem", comoJogar: "Ordenem.", rodadas: [], itens: [eventos[2], eventos[0], eventos[3], eventos[1]], ordem: eventos.map((evento, i) => ({ data: `${i + 1} AEC`, evento })) } };
+    const so = (await chamar({ acao: "criar", programa: { modo: "jogos", solo: true, titulo: "Ordem", partes: [parteOrdem] }, codigo: "codigo-de-teste" })).dados;
+    const conferir = (ordem) => chamar({ acao: "conferir-ordem", sessao: so.sessao, chave: so.chave, parte: 0, ordem });
+    assert.equal((await conferir(eventos.slice(0, 2))).status, 400);
+    const errada = [eventos[0], eventos[2], eventos[1], eventos[3]];
+    const c1 = await conferir(errada);
+    assert.equal(c1.status, 200, JSON.stringify(c1.dados));
+    assert.deepEqual(c1.dados.estado.erradas["0"].ordem, [{ nome: "Jogador", ordem: errada, certos: [0, 3] }]);
+    assert.deepEqual(c1.dados.estado.ordensReveladas, {});
+    assert.ok(!JSON.stringify(c1.dados).includes("1 AEC")); passo("ordem errada: diz quais estão no lugar, sem revelar a ordem nem as datas");
+    assert.equal((await conferir(errada)).status, 409); passo("a mesma ordem de novo não é conferida (não perde ponto à toa)");
+    const c2 = await conferir(eventos);
+    assert.deepEqual(c2.dados.estado.acertos["0"].ordem, { nome: "Jogador", pts: 3 });
+    assert.equal(c2.dados.estado.ordensReveladas["0"].length, 4); passo("ordem certa: 4 acontecimentos menos 1 erro = 3 pontos, e a ordem é revelada");
+    assert.equal((await conferir(errada)).status, 409);
+    const re = await chamar({ acao: "reiniciar", sessao: so.sessao, chave: so.chave, parte: 0, rodada: "ordem" });
+    assert.ok(!(re.dados.estado.erradas["0"] || {}).ordem && !(re.dados.estado.acertos["0"] || {}).ordem); passo("reiniciar a ordem também apaga as conferências erradas");
+    await chamar({ acao: "encerrar", sessao: so.sessao, chave: so.chave });
+    const grupo = (await chamar({ acao: "criar", programa: { modo: "jogos", titulo: "Ordem", partes: [parteOrdem] }, codigo: "codigo-de-teste" })).dados;
+    assert.equal((await chamar({ acao: "conferir-ordem", sessao: grupo.sessao, chave: grupo.chave, parte: 0, ordem: eventos })).status, 400); passo("no jogo em grupo não há conferência automática da ordem");
+    await chamar({ acao: "encerrar", sessao: grupo.sessao, chave: grupo.chave });
+  }
+
   // 6.13.45: Verdadeiro ou falso é julgado na hora pelo servidor (certa: pontos; errada: resposta revelada, sem pontos, sem esperar o presidente)
   {
     const pvf = JSON.parse(JSON.stringify(programa));
