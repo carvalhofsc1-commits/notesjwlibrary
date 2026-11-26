@@ -7963,7 +7963,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.14.72'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.14.73'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -13279,6 +13279,8 @@ function saveTemplatesToStorage() {
       acessoSiteAprovados.querySelectorAll('details.acesso-site-item[open][data-aparelho]').forEach(el => {
         if (el.dataset.aparelho) manterAbertos.add(el.dataset.aparelho);
       });
+      // 6.14.73: dentro do usuário, cada seção é um card recolhível; as abertas continuam abertas depois do redesenho.
+      const secoesAbertas = new Set(Array.from(acessoSiteAprovados.querySelectorAll('details.acesso-site-sec[open]'), s => s.closest('details.acesso-site-item').dataset.aparelho + '|' + s.dataset.sec));
       const recursosLista = Array.isArray(acesso.recursosCodigo) && acesso.recursosCodigo.length ? acesso.recursosCodigo : acessoSiteRecursosCodigo;
       const aprovados = Array.isArray(acesso.aprovados) ? acesso.aprovados : [];
       acessoSiteAprovados.innerHTML = aprovados.length
@@ -13349,10 +13351,12 @@ function saveTemplatesToStorage() {
             '<td class="acesso-site-consumo-valor">' + acessoSiteEscapar(acessoSiteReais(consumoTotal)) + '</td>' +
             '</tr>'
             : '<tr><td colspan="3" class="hint">Nenhum consumo de IA em ' + acessoSiteEscapar(mesNome) + '.</td></tr>';
+          // Um card recolhível por seção do usuário (6.14.73)
+          const secao = (id, titulo, corpo) => '<details class="acesso-site-sec acesso-site-' + id + '" data-sec="' + id + '"' + (secoesAbertas.has(idCompleto + '|' + id) ? ' open' : '') + '>' +
+            '<summary>' + titulo + '</summary><div class="acesso-site-sec-corpo">' + corpo + '</div></details>';
           // 6.14.72: a senha master deste usuário, num card próprio e de outra cor
           const master = a.master && a.master.ativo && a.master.codigo ? a.master.codigo : '';
-          const masterHtml = '<div class="acesso-site-master">' +
-            '<strong class="acesso-site-codigos-titulo">⭐ Senha master</strong>' +
+          const masterHtml = secao('master', '⭐ Senha master',
             '<p class="hint">Libera, só no aparelho desta pessoa, todas as funções que pedem código. Não dá acesso à administração do app.</p>' +
             (master
               ? '<code class="acesso-site-master-valor">' + acessoSiteEscapar(master) + '</code>' +
@@ -13364,19 +13368,19 @@ function saveTemplatesToStorage() {
                   : '') +
                 '<button type="button" class="secondary acesso-site-expirar-master" data-aparelho="' + acessoSiteEscapar(idCompleto) + '">Expirar</button>' +
                 '</div>'
-              : '<div class="acesso-site-master-botoes"><button type="button" class="acesso-site-gerar-master" data-aparelho="' + acessoSiteEscapar(idCompleto) + '">⭐ Gerar senha master</button></div>') +
-            '</div>';
+              : '<div class="acesso-site-master-botoes"><button type="button" class="acesso-site-gerar-master" data-aparelho="' + acessoSiteEscapar(idCompleto) + '">⭐ Gerar senha master</button></div>'));
           return '<details class="acesso-site-item" data-aparelho="' + acessoSiteEscapar(idCompleto) + '" data-busca="' + acessoSiteEscapar(busca) + '" data-nome="' + acessoSiteEscapar(nome) + '" data-saldo="' + creditos + '"' + aberto + '>' +
           '<summary class="acesso-site-resumo">' + resumoHtml + '</summary>' +
           '<div class="acesso-site-detalhe">' +
+          secao('dados', '👤 Dados do cadastro',
           '<div class="acesso-site-tabela-dados" role="table" aria-label="Dados do cadastro">' +
           linhaCadastro('Nível', '<strong>' + nivel + '</strong>') +
           (a.telefone ? linhaCadastro('Telefone', acessoSiteEscapar(a.telefone)) : '') +
           (a.congregacao ? linhaCadastro('Congregação', acessoSiteEscapar(a.congregacao)) : '') +
           linhaCadastro('Recursos especiais', especiais.length ? acessoSiteEscapar(especiais.join(', ')) : 'nenhum código salvo neste aparelho') +
           linhaCadastro('Aparelho', acessoSiteEscapar(a.aparelhoId) + '… · ' + estatisticasQuando(a.aprovadoEm)) +
-          '</div>' +
-          '<div class="acesso-site-creditos">' +
+          '</div>') +
+          secao('creditos', '💳 Créditos',
           '<div class="acesso-site-tabela-dados" role="table" aria-label="Créditos">' +
           linhaCadastro('Consumo de IA em ' + mesNome, '<strong>' + acessoSiteReais(consumoTotal) + '</strong>') +
           linhaCadastro('Saldo restante', '<strong>' + acessoSiteReais(creditos) + '</strong>') +
@@ -13389,20 +13393,18 @@ function saveTemplatesToStorage() {
           '<div class="acesso-site-creditar-linha acesso-site-creditar-botoes">' +
           '<button type="button" class="acesso-site-creditar" data-pagamento="1" data-aparelho="' + acessoSiteEscapar(idCompleto) + '">💳 Pagamento recebido</button>' +
           '<button type="button" class="secondary acesso-site-creditar" data-aparelho="' + acessoSiteEscapar(idCompleto) + '">🎁 Bônus</button>' +
-          '</div></div>' +
-          '<div class="acesso-site-consumo">' +
-          '<strong class="acesso-site-codigos-titulo">Consumo em ' + acessoSiteEscapar(mesNome) + '</strong>' +
+          '</div>') +
+          secao('consumo', '📊 Consumo em ' + acessoSiteEscapar(mesNome),
           '<div class="acesso-site-tabela-wrap">' +
           '<table class="acesso-site-tabela-codigos acesso-site-tabela-consumo">' +
           '<thead><tr><th scope="col">Recurso</th><th scope="col">Uso</th><th scope="col">Valor</th></tr></thead>' +
-          '<tbody>' + linhasConsumo + '</tbody></table></div></div>' +
+          '<tbody>' + linhasConsumo + '</tbody></table></div>') +
           masterHtml +
-          '<div class="acesso-site-codigos">' +
-          '<strong class="acesso-site-codigos-titulo">Códigos personalizados</strong>' +
+          secao('codigos', '🔑 Códigos personalizados',
           '<div class="acesso-site-tabela-wrap">' +
           '<table class="acesso-site-tabela-codigos">' +
           '<thead><tr><th scope="col">Recurso</th><th scope="col">Código</th><th scope="col">Ações</th></tr></thead>' +
-          '<tbody>' + linhasCodigo + '</tbody></table></div></div>' +
+          '<tbody>' + linhasCodigo + '</tbody></table></div>') +
           '<div class="button-row">' +
           '<button type="button" class="secondary acesso-site-revogar" data-aparelho="' + acessoSiteEscapar(idCompleto) + '">🗑️ Revogar</button>' +
           '</div></div></details>';

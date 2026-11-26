@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.73
+
+- **Administração de usuários:** dentro de cada pessoa, cada seção (Dados do cadastro, Créditos, Consumo, Senha master e Códigos personalizados) é um card recolhível; as abertas continuam abertas depois de uma ação.
+- No celular, o nome da tela no consumo (e o do recurso nos códigos) ocupa a linha toda, numa faixa fina, com molduras de dentro mais estreitas.
+
 ## 6.14.72
 
 - **Senha master:** o administrador gera, no cadastro de cada usuário (card próprio, laranja), uma senha individual que libera, só no aparelho dessa pessoa, todas as funções que pedem código. Ela é informada em Ajustes → Autorização de acessos, não dá acesso à administração do app e pode ser expirada ou trocada. O consumo de IA continua saindo dos créditos do usuário.
