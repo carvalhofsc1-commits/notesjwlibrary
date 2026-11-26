@@ -2,6 +2,15 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.21
+
+- Fim do jogo: **"Jogar com novas perguntas"** e **"Fechar"** passaram para o final da tela, entre o jogo e "Regras" / "Tela grande".
+- **Ordem e data com 3 rodadas:** cada jogo novo traz 3 tabelas de 6 a 8 acontecimentos, sem repetir, escolhidos de épocas variadas. Jogos preparados antes continuam com 1 rodada.
+- **Em grupo:** cada jogador arruma a sua ordem e toca em **"📨 Enviar minha ordem"** (uma vez por rodada). Todos veem quantos cada um acertou; os pontos vão para **quem enviar primeiro a ordem toda certa**. A ordem certa aparece quando todos os presentes enviarem ou quando o administrador revelar. Saiu o campo "Quem acertou a ordem?".
+- Sozinho: setas, conferência e pontos valem em cada uma das rodadas.
+- A resposta não aparece mais dentro de "Regras" para quem administra o jogo em grupo.
+- Partidas de Ordem e data abertas antes desta versão precisam ser iniciadas de novo.
+
 ## 6.14.20
 
 - **Ordem e data, jogando sozinho:** os acontecimentos são arrumados na própria tela com as setas **▲ ▼**. **"✅ Conferir a ordem"** dá os pontos sozinho: 1 por acontecimento, menos 1 a cada conferência errada, que mostra em roxo os que já estão no lugar certo. **"Não sei / Revelar"** mostra a ordem certa com as datas, sem pontos.

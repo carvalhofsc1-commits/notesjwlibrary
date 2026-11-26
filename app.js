@@ -7958,7 +7958,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.14.20'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.14.21'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -26661,6 +26661,8 @@ function saveTemplatesToStorage() {
     const familiaRodadaTexto = r => r.pergunta + ' → Resposta: ' + r.resposta + (r.referencia ? ' (' + r.referencia + ')' : '');
     // O conteúdo do jogo como lista de textos (rodadas com a resposta e, depois, os itens sem resposta), para a tela, a cópia e o Word.
     function familiaJogoTextos(j) {
+      // 6.14.21: "Ordem e data" com várias rodadas: os eventos de cada uma (as respostas vão no fim de "como jogar")
+      if (j && Array.isArray(j.tabelas) && j.tabelas.length > 1) return j.tabelas.map((t, k) => 'Rodada ' + (k + 1) + ': ' + (t.itens || []).join('; '));
       const c = familiaConteudoDoJogo(j);
       return c.rodadas.map(familiaRodadaTexto).concat(c.itens);
     }
@@ -26686,6 +26688,13 @@ function saveTemplatesToStorage() {
         const x = t.replace(/^\d+\.\s*/, '').split(/\s+—\s+/);
         return x.length > 1 ? { data: x[0].trim(), evento: x.slice(1).join(' — ').trim() } : { data: '', evento: x[0].trim() };
       }).filter(o => o.evento);
+    }
+    // 6.14.21: as tabelas (rodadas) do "Ordem e data": jogo.tabelas; os jogos de antes, com uma ordem só, são uma tabela.
+    function familiaTabelasDaOrdem(j) {
+      const validas = (Array.isArray(j && j.tabelas) ? j.tabelas : []).filter(t => t && Array.isArray(t.itens) && Array.isArray(t.ordem) && t.ordem.length);
+      if (validas.length) return validas;
+      const ordem = familiaOrdemDoJogo(j || {});
+      return ordem.length ? [{ itens: Array.isArray(j.itens) ? j.itens.filter(Boolean) : [], ordem }] : [];
     }
     // A pergunta de uma rodada separada em introdução e dicas ("Dica 1: … Dica 2: …"); sem dicas, a pergunta inteira.
     function familiaDicasDaRodada(r) {
@@ -26848,49 +26857,55 @@ function saveTemplatesToStorage() {
       }
 
       if (ordem.length) {
-        // "Ordem e data": os eventos embaralhados à mostra; a ordem certa, com as datas, recolhida.
-        if (c.itens.length) {
-          caixa.appendChild(el('p', 'fam-secao-titulo', '🔀 Eventos fora de ordem'));
+        // "Ordem e data": os eventos embaralhados à mostra; a ordem certa, com as datas, recolhida. 6.14.21: uma tabela por rodada.
+        const tabelas = familiaTabelasDaOrdem(j);
+        const pintores = tabelas.map((tabela, t) => {
+          const chaveRodada = t ? 'ordem' + (t + 1) : 'ordem';
+          const rodadaTexto = tabelas.length > 1 ? 'Rodada ' + (t + 1) + ': ' : '';
+          if (tabela.itens.length) {
+            caixa.appendChild(el('p', 'fam-secao-titulo', '🔀 ' + rodadaTexto + 'Eventos fora de ordem'));
+            const ol = el('ol', 'fam-lista');
+            tabela.itens.forEach(x => ol.appendChild(el('li', '', x)));
+            caixa.appendChild(ol);
+          }
+          const det = el('details', 'fam-jogo-itens fam-jogo-ordem');
+          det.appendChild(el('summary', '', '🔑 ' + rodadaTexto + 'Ordem certa (com as datas)'));
           const ol = el('ol', 'fam-lista');
-          c.itens.forEach(t => ol.appendChild(el('li', '', t)));
-          caixa.appendChild(ol);
-        }
-        const det = el('details', 'fam-jogo-itens fam-jogo-ordem');
-        det.appendChild(el('summary', '', '🔑 Ordem certa (com as datas)'));
-        const ol = el('ol', 'fam-lista');
-        ordem.forEach(o => ol.appendChild(el('li', '', [o.data, o.evento].filter(Boolean).join(' — '))));
-        det.appendChild(ol);
-        caixa.appendChild(det);
-        // Placar local: quem acertou a ordem e quantos pontos (de 0 até o número de eventos + 2), escolhidos por quem dirige.
-        const acertoOrdem = el('div', 'fam-jogo-questao-acerto fam-jogo-ordem-acerto');
-        const selPts = el('select');
-        selPts.setAttribute('aria-label', 'Pontos pela ordem');
-        for (let p = 0; p <= ordem.length + 2; p++) { const o = el('option', '', ptsTexto(p)); o.value = String(p); selPts.appendChild(o); }
-        selPts.value = String(ordem.length);
-        selPts.addEventListener('change', () => { const a = placar.porQuestao.ordem; if (a && a.jogador) { a.pts = Number(selPts.value) || 0; pintarPlacar(); } });
-        caixa.appendChild(acertoOrdem);
-        pintarOrdem = () => {
-          const a = placar.porQuestao.ordem;
-          acertoOrdem.hidden = !placar.jogadores.length;
-          if (acertoOrdem.hidden) return;
-          const marcar = valor => {
-            const atual = placar.porQuestao.ordem;
-            const igual = atual && (valor === null ? atual.ninguem : atual.jogador === valor);
-            if (igual) delete placar.porQuestao.ordem;
-            else placar.porQuestao.ordem = valor === null ? { ninguem: true } : { jogador: valor, pts: Number(selPts.value) || 0 };
-            pintarPlacar();
+          tabela.ordem.forEach(o => ol.appendChild(el('li', '', [o.data, o.evento].filter(Boolean).join(' — '))));
+          det.appendChild(ol);
+          caixa.appendChild(det);
+          // Placar local: quem acertou a ordem e quantos pontos (de 0 até o número de eventos + 2), escolhidos por quem dirige.
+          const acertoOrdem = el('div', 'fam-jogo-questao-acerto fam-jogo-ordem-acerto');
+          const selPts = el('select');
+          selPts.setAttribute('aria-label', 'Pontos pela ordem');
+          for (let p = 0; p <= tabela.ordem.length + 2; p++) { const o = el('option', '', ptsTexto(p)); o.value = String(p); selPts.appendChild(o); }
+          selPts.value = String(tabela.ordem.length);
+          selPts.addEventListener('change', () => { const a = placar.porQuestao[chaveRodada]; if (a && a.jogador) { a.pts = Number(selPts.value) || 0; pintarPlacar(); } });
+          caixa.appendChild(acertoOrdem);
+          return () => {
+            const a = placar.porQuestao[chaveRodada];
+            acertoOrdem.hidden = !placar.jogadores.length;
+            if (acertoOrdem.hidden) return;
+            const marcar = valor => {
+              const atual = placar.porQuestao[chaveRodada];
+              const igual = atual && (valor === null ? atual.ninguem : atual.jogador === valor);
+              if (igual) delete placar.porQuestao[chaveRodada];
+              else placar.porQuestao[chaveRodada] = valor === null ? { ninguem: true } : { jogador: valor, pts: Number(selPts.value) || 0 };
+              pintarPlacar();
+            };
+            const opcoes = placar.jogadores.map(n => {
+              const b = botao('fam-jogo-questao-quem', '', () => marcar(n));
+              b.textContent = bicho(n) + ' ' + n;
+              b.setAttribute('aria-pressed', a && a.jogador === n ? 'true' : 'false');
+              return b;
+            });
+            const bNinguem = botao('fam-jogo-questao-quem', '🚫 Ninguém', () => marcar(null));
+            bNinguem.setAttribute('aria-pressed', a && a.ninguem ? 'true' : 'false');
+            const resultado = a ? el('p', 'fam-jogo-questao-quem-titulo', a.ninguem ? '🚫 Ninguém acertou a ordem' : '🏆 ' + a.jogador + ' ganhou ' + ptsTexto(a.pts)) : null;
+            acertoOrdem.replaceChildren(el('p', 'fam-jogo-questao-quem-titulo', 'Quem acertou a ordem?'), selPts, ...opcoes, bNinguem, ...(resultado ? [resultado] : []));
           };
-          const opcoes = placar.jogadores.map(n => {
-            const b = botao('fam-jogo-questao-quem', '', () => marcar(n));
-            b.textContent = bicho(n) + ' ' + n;
-            b.setAttribute('aria-pressed', a && a.jogador === n ? 'true' : 'false');
-            return b;
-          });
-          const bNinguem = botao('fam-jogo-questao-quem', '🚫 Ninguém', () => marcar(null));
-          bNinguem.setAttribute('aria-pressed', a && a.ninguem ? 'true' : 'false');
-          const resultado = a ? el('p', 'fam-jogo-questao-quem-titulo', a.ninguem ? '🚫 Ninguém acertou a ordem' : '🏆 ' + a.jogador + ' ganhou ' + ptsTexto(a.pts)) : null;
-          acertoOrdem.replaceChildren(el('p', 'fam-jogo-questao-quem-titulo', 'Quem acertou a ordem?'), selPts, ...opcoes, bNinguem, ...(resultado ? [resultado] : []));
-        };
+        });
+        pintarOrdem = () => pintores.forEach(f => f());
         pintarOrdem();
       } else if (c.itens.length) {
         const det = el('details', 'fam-jogo-itens');
@@ -29742,8 +29757,7 @@ function saveTemplatesToStorage() {
       // 6.13.97: partida sozinho: as regras falam de quem joga sozinho (as do jogo em grupo falam de presidente e de quem acerta primeiro)
       const soloRegras = Boolean(participar.programa && participar.programa.solo);
       const regrasSolo = (() => {
-        // 6.14.19: no "Ordem e data" não há questões a escrever: a pessoa pensa na ordem, confere e marca os pontos
-        if (j.idTipo === 'ordem_data') return 'Arrume os acontecimentos na ordem em que ocorreram, com as setas ▲ ▼, e toque em “Conferir a ordem”. Acertando tudo, você ganha 1 ponto por acontecimento; cada conferência errada tira 1 ponto (nunca abaixo de zero) e mostra em roxo os que já estão no lugar certo. “Não sei” mostra a ordem certa, com as datas, e o jogo não pontua.';
+        if (j.idTipo === 'ordem_data') return 'Em cada rodada, arrume os acontecimentos na ordem em que ocorreram, com as setas ▲ ▼, e toque em “Conferir a ordem”. Acertando tudo, você ganha 1 ponto por acontecimento; cada conferência errada tira 1 ponto (nunca abaixo de zero) e mostra em roxo os que já estão no lugar certo. “Não sei” mostra a ordem certa, com as datas, e a rodada não pontua.';
         const dicas = ['perfil_biblico', 'quem_sou_eu'].includes(j.idTipo);
         const base = j.idTipo === 'verdadeiro_falso'
           ? 'Leia a afirmação e toque em Verdadeiro ou Falso. Acertando, você ganha o ponto; errando, a resposta aparece e a questão termina sem pontos.'
@@ -29754,29 +29768,13 @@ function saveTemplatesToStorage() {
         return base + fim + (j.idTipo === 'verdadeiro_falso' ? '' : ' Cada resposta errada tira 1 ponto daquela questão (que nunca fica abaixo de zero).') + ' Use as setas para trocar de questão; sua pontuação aparece no placar.';
       })();
       const regraPenalidade = 'Cada resposta errada tira 1 ponto da questão em que foi dada (a questão nunca fica abaixo de zero, e o desconto não passa para as outras questões).';
-      (soloRegras ? [regrasSolo] : [j.comoJogar, j.material ? '✏️ Material: ' + j.material : '', j.idTipo && j.idTipo !== 'verdadeiro_falso' && j.idTipo !== 'ordem_data' && !/tira 1 ponto/.test(String(j.comoJogar || '')) ? regraPenalidade : '']).filter(Boolean).forEach(txt => {
+      const regrasOrdemGrupo = 'Em cada rodada, cada jogador arruma os acontecimentos no próprio aparelho, com as setas ▲ ▼, e toca em “Enviar minha ordem” (uma vez por rodada). Todos veem quantos cada um acertou; os pontos (1 por acontecimento) são de quem enviar primeiro a ordem toda certa. A ordem certa, com as datas, aparece quando todos enviarem ou quando o ' + participarPapel() + ' revelar.';
+      (soloRegras ? [regrasSolo] : [j.idTipo === 'ordem_data' ? regrasOrdemGrupo : j.comoJogar, j.material ? '✏️ Material: ' + j.material : '', j.idTipo && j.idTipo !== 'verdadeiro_falso' && j.idTipo !== 'ordem_data' && !/tira 1 ponto/.test(String(j.comoJogar || '')) ? regraPenalidade : '']).filter(Boolean).forEach(txt => {
         const p = document.createElement('p');
         p.className = 'fam-parte-desc';
         p.textContent = txt;
         enunciado.appendChild(p);
       });
-      // 6.12.74: no "Ordem e data", a ordem certa (com as datas do Apêndice B) só chega a quem dirige (extras.ordens da sessão).
-      const ordemCerta = participar.dirigente && participar.extras && participar.extras.ordens ? participar.extras.ordens[parteIdx] : null;
-      if (Array.isArray(ordemCerta) && ordemCerta.length && !(participar.programa && participar.programa.solo)) { // 6.14.19: sozinho, a resposta não fica nas regras
-        const det = document.createElement('details');
-        det.className = 'fam-jogo-itens fam-jogo-ordem';
-        const sm = document.createElement('summary');
-        sm.textContent = '🔑 Ordem certa (só o ' + participarPapel() + ' vê)';
-        const ol = document.createElement('ol');
-        ol.className = 'fam-lista';
-        ordemCerta.forEach(o => {
-          const li = document.createElement('li');
-          li.textContent = [o && o.data, o && o.evento].filter(Boolean).join(' — ');
-          ol.appendChild(li);
-        });
-        det.append(sm, ol);
-        enunciado.appendChild(det);
-      }
       // O placar (nomes e pontos de cada um) fica no topo do jogo, antes das regras.
       const placar = document.createElement('div');
       placar.className = 'fam-sessao-placar';
@@ -29920,6 +29918,12 @@ function saveTemplatesToStorage() {
         const ol = document.createElement('ol');
         ol.className = 'fam-lista fam-sessao-rodadas';
         rodadas.forEach((r, k) => {
+          if (Array.isArray(r.itens)) { // 6.14.21: "Ordem e data": cada rodada é uma tabela de acontecimentos para arrumar
+            const o = participarOrdemRodadaMontar(r, parteIdx, k, rodadas.length);
+            ref.rodadas.push({ li: o.card, ordem: o });
+            ol.appendChild(o.card);
+            return;
+          }
           const li = document.createElement('li');
           li.className = 'fam-sessao-questao'; // cada questão do jogo num card exclusivo
           const num = document.createElement('p');
@@ -30304,7 +30308,7 @@ function saveTemplatesToStorage() {
             const seguir = document.createElement('button');
             seguir.type = 'button';
             seguir.className = 'secondary fam-fino fam-sessao-proxima';
-            seguir.textContent = '▶ Próxima questão';
+            seguir.textContent = rd.ordem ? '▶ Próxima rodada' : '▶ Próxima questão';
             seguir.addEventListener('click', () => { mover(1); requestAnimationFrame(() => nav.scrollIntoView({ block: 'start', behavior: 'smooth' })); });
             rd.li.appendChild(seguir);
           });
@@ -30313,24 +30317,7 @@ function saveTemplatesToStorage() {
         }
         caixa.appendChild(ol);
       }
-      // 6.14.19: no "Ordem e data", os acontecimentos são o próprio jogo: ficam sempre à vista (antes, num card fechado sem setinha)
-      // 6.14.20: sozinho, a pessoa arruma os acontecimentos na própria lista (participarOrdemSoloMontar)
-      const ordemSolo = j.idTipo === 'ordem_data' && soloRegras && (j.itens || []).length;
-      if (ordemSolo) {
-        const o = participarOrdemSoloMontar(j, parteIdx);
-        caixa.appendChild(o.card);
-        ref.ordem = o;
-      } else if ((j.itens || []).length && (j.idTipo === 'ordem_data' || /ordem e data/i.test(String(j.tipo || '')))) {
-        const eventos = document.createElement('div');
-        eventos.className = 'fam-sessao-eventos';
-        const tit = document.createElement('p');
-        tit.className = 'fam-secao-titulo';
-        tit.textContent = '📜 Ponha na ordem (' + j.itens.length + ' acontecimentos)';
-        const ol = document.createElement('ol');
-        j.itens.forEach(txt => { const li = document.createElement('li'); li.textContent = txt; ol.appendChild(li); });
-        eventos.append(tit, ol);
-        caixa.appendChild(eventos);
-      } else if ((j.itens || []).length) {
+      if ((j.itens || []).length) {
         const det = document.createElement('details');
         det.className = 'fam-jogo-itens';
         det.open = false; // 6.12.07: todos os cards recolhíveis da adoração ao vivo começam fechados
@@ -30342,150 +30329,163 @@ function saveTemplatesToStorage() {
         det.append(sm, ol);
         caixa.appendChild(det);
       }
-      // 6.12.77: "Ordem e data": quem dirige revela a ordem certa (com as datas) a todos e pontua de boca: quem acertou e quantos pontos
-      // (de 0 até o número de eventos + 2). Antes da revelação, a ordem fica só no aparelho de quem dirige (extras.ordens).
-      if (!ordemSolo && (j.idTipo === 'ordem_data' || (Array.isArray(ordemCerta) && ordemCerta.length))) {
-        const card = document.createElement('div');
-        card.className = 'fam-sessao-ordem';
-        const tit = document.createElement('p');
-        tit.className = 'fam-secao-titulo';
-        tit.textContent = '🔑 Ordem certa';
-        const lista = document.createElement('ol');
-        lista.className = 'fam-lista';
-        const aguarda = document.createElement('p');
-        aguarda.className = 'fam-sessao-aguarda';
-        aguarda.textContent = '⏳ O ' + participarPapel() + ' vai revelar a ordem certa.';
-        const resultado = document.createElement('p');
-        resultado.className = 'fam-sessao-ordem-resultado';
-        card.append(tit, lista, aguarda, resultado);
-        const o = { card, lista, aguarda, resultado, total: Array.isArray(ordemCerta) ? ordemCerta.length : 0, sig: null };
-        if (participar.dirigente) {
-          o.btnRevelar = document.createElement('button');
-          o.btnRevelar.type = 'button';
-          o.btnRevelar.className = 'secondary fam-fino fam-sessao-revelar';
-          o.btnRevelar.innerHTML = ICONE_OLHO + ' Revelar a ordem a todos';
-          o.btnRevelar.addEventListener('click', () => participarAcao({ acao: 'revelar-ordem', parte: parteIdx }, o.btnRevelar));
-          o.linhaAcerto = document.createElement('div');
-          o.linhaAcerto.className = 'fam-sessao-acerto';
-          o.sel = document.createElement('select');
-          o.sel.setAttribute('aria-label', 'Quem acertou a ordem?');
-          o.selPts = document.createElement('select');
-          o.selPts.setAttribute('aria-label', 'Pontos pela ordem');
-          for (let p = 0; p <= o.total + 2; p++) { const op = document.createElement('option'); op.value = String(p); op.textContent = p + (p === 1 ? ' ponto' : ' pontos'); o.selPts.appendChild(op); }
-          o.selPts.value = String(o.total);
-          o.btnPontuar = document.createElement('button');
-          o.btnPontuar.type = 'button';
-          o.btnPontuar.className = 'secondary fam-fino';
-          o.btnPontuar.textContent = '✅ Pontuar a ordem';
-          o.btnPontuar.addEventListener('click', () => {
-            if (!o.sel.value) { participarStatus('Escolha quem acertou (ou Ninguém acertou).', 'erro'); return; }
-            if (o.sel.value === NINGUEM_ACERTOU) participarAcao({ acao: 'pontuar', parte: parteIdx, rodada: 'ordem', ninguem: true }, o.btnPontuar);
-            else participarAcao({ acao: 'pontuar', parte: parteIdx, rodada: 'ordem', nome: o.sel.value, pts: Number(o.selPts.value) }, o.btnPontuar);
-          });
-          o.linhaAcerto.append(o.sel, o.selPts, o.btnPontuar);
-          o.btnReiniciar = document.createElement('button');
-          o.btnReiniciar.type = 'button';
-          o.btnReiniciar.className = 'secondary fam-fino fam-sessao-revelar';
-          o.btnReiniciar.textContent = '🔄 Esconder a ordem e tirar os pontos';
-          o.btnReiniciar.addEventListener('click', async () => {
-            if (!(await askConfirm('Esconder de novo a ordem certa? Os pontos dados pela ordem são tirados.', 'Esconder a ordem'))) return;
-            participarAcao({ acao: 'reiniciar', parte: parteIdx, rodada: 'ordem' }, o.btnReiniciar);
-          });
-          card.append(o.btnRevelar, o.linhaAcerto, o.btnReiniciar);
-        }
-        caixa.appendChild(card);
-        ref.ordem = o;
-      }
       participar.jogos.set(parteIdx, ref);
       participarJogoPintar(parteIdx, true);
       return caixa;
     }
 
-    // 6.14.20: "Ordem e data" sozinho: a lista com ▲ ▼ para arrumar, "Conferir a ordem" (o servidor confere e dá os pontos) e "Não sei".
-    // A arrumação fica na memória enquanto o app está aberto (familiaSolo.arrumacao), para não se perder ao trocar de tela.
-    function participarOrdemSoloMontar(j, parteIdx) {
+    // 6.14.21: "Ordem e data": cada rodada é uma tabela de acontecimentos que cada um arruma com ▲ ▼. Sozinho: "Conferir a ordem" (dá para
+    // tentar de novo) e "Não sei". Em grupo: "Enviar minha ordem" (uma vez por rodada); o servidor julga todos, mostra quantos cada um
+    // acertou e dá os pontos a quem enviou primeiro a ordem toda certa. A arrumação (e a ordem enviada) fica na memória enquanto o app está
+    // aberto, para não se perder ao trocar de tela.
+    const participarArrumacoes = new Map(); // "COD|parte|rodada|jogo" -> { arrumacao, enviada }
+    function participarOrdemRodadaMontar(r, parteIdx, k, total) {
       const criar = (tag, classe, texto) => { const x = document.createElement(tag); if (classe) x.className = classe; if (texto != null) x.textContent = texto; return x; };
-      const itens = j.itens.map(String);
-      const guardada = familiaSolo && familiaSolo.cod === participar.cod && familiaSolo.arrumacao;
+      const botao = (classe, texto, aoTocar) => { const b = criar('button', classe, texto); b.type = 'button'; b.addEventListener('click', () => aoTocar(b)); return b; };
+      const itens = r.itens.map(String);
+      const chave = [participar.cod, parteIdx, k, participar.programaN || (participar.estado && participar.estado.programaN) || 0].join('|');
       const mesmaLista = a => Array.isArray(a) && a.length === itens.length && JSON.stringify([...a].sort()) === JSON.stringify([...itens].sort());
-      const o = { solo: true, total: itens.length, arrumacao: mesmaLista(guardada) ? guardada.slice() : itens.slice() };
-      o.card = criar('div', 'fam-sessao-ordem fam-ordem-solo');
-      const topo = criar('p', 'fam-ordem-topo');
-      o.titulo = criar('strong', '', '📜 Ponha na ordem');
-      o.vale = criar('span', 'fam-ordem-vale');
-      topo.append(o.titulo, o.vale);
+      let memoria = participarArrumacoes.get(chave);
+      if (!memoria || !mesmaLista(memoria.arrumacao)) { memoria = { arrumacao: itens.slice(), enviada: null }; participarArrumacoes.set(chave, memoria); }
+      const o = { memoria, total: itens.length, parte: parteIdx, k };
+      o.card = criar('li', 'fam-sessao-questao fam-ordem-rodada');
+      const num = criar('p', 'fam-sessao-qnum');
+      o.vale = criar('span');
+      num.append(criar('span', '', 'Rodada ' + (k + 1) + ' de ' + total), o.vale);
+      o.card.appendChild(num);
+      if (participar.dirigente) {
+        o.btnReiniciar = botao('secondary fam-sessao-reiniciar', '🔄', async b => {
+          if (!(await askConfirm('Reiniciar a rodada ' + (k + 1) + '? As ordens enviadas e os pontos dessa rodada são apagados.', 'Reiniciar rodada'))) return;
+          [...participarArrumacoes.keys()].filter(c => c === chave).forEach(c => { participarArrumacoes.get(c).enviada = null; });
+          participarAcao({ acao: 'reiniciar', parte: parteIdx, rodada: k }, b);
+        });
+        o.btnReiniciar.title = 'Reiniciar esta rodada';
+        o.btnReiniciar.setAttribute('aria-label', 'Reiniciar a rodada ' + (k + 1));
+        o.card.appendChild(o.btnReiniciar);
+      }
+      o.dica = criar('p', 'fam-ordem-dica', '📜 Ponha na ordem em que aconteceram:');
       o.ol = criar('ol', 'fam-ordem-arrumar');
       o.linhas = new Map(itens.map(txt => {
         const li = criar('li');
-        const num = criar('span', 'fam-ordem-num');
+        const n = criar('span', 'fam-ordem-num');
         const seta = (sinal, simbolo, rotulo) => {
-          const b = criar('button', 'secondary fam-ordem-seta', simbolo);
-          b.type = 'button';
-          b.setAttribute('aria-label', rotulo + ': ' + txt);
-          b.addEventListener('click', () => {
-            const de = o.arrumacao.indexOf(txt), para = de + sinal;
-            if (para < 0 || para >= o.arrumacao.length) return;
-            [o.arrumacao[de], o.arrumacao[para]] = [o.arrumacao[para], o.arrumacao[de]];
-            if (familiaSolo && familiaSolo.cod === participar.cod) familiaSolo.arrumacao = o.arrumacao.slice();
+          const b = botao('secondary fam-ordem-seta', simbolo, () => {
+            const lista = o.memoria.arrumacao;
+            const de = lista.indexOf(txt), para = de + sinal;
+            if (para < 0 || para >= lista.length) return;
+            [lista[de], lista[para]] = [lista[para], lista[de]];
             participarJogoPintar(parteIdx, false);
-            (b.disabled ? li.querySelector('button:not(:disabled)') : b).focus({ preventScroll: true });
+            const volta = b.disabled ? li.querySelector('button:not(:disabled)') : b;
+            if (volta) volta.focus({ preventScroll: true });
           });
+          b.setAttribute('aria-label', rotulo + ': ' + txt);
           return b;
         };
         const sobe = seta(-1, '▲', 'Subir'), desce = seta(1, '▼', 'Descer');
-        li.append(num, criar('span', 'fam-ordem-texto', txt), sobe, desce);
-        return [txt, { li, num, sobe, desce }];
+        li.append(n, criar('span', 'fam-ordem-texto', txt), sobe, desce);
+        return [txt, { li, num: n, sobe, desce }];
       }));
       o.aviso = criar('p', 'fam-ordem-aviso');
       o.aviso.setAttribute('role', 'status');
-      o.btnConferir = criar('button', 'fam-fino fam-principal', '✅ Conferir a ordem');
-      o.btnConferir.type = 'button';
-      o.btnConferir.addEventListener('click', () => participarAcao({ acao: 'conferir-ordem', parte: parteIdx, ordem: o.arrumacao }, o.btnConferir));
-      o.btnNaoSei = criar('button', 'secondary fam-fino fam-nao-sei');
-      o.btnNaoSei.type = 'button';
-      o.btnNaoSei.innerHTML = '<span class="fam-nao-sei-1">Não sei</span><span class="fam-nao-sei-2">' + ICONE_OLHO + ' Revelar</span>';
-      o.btnNaoSei.addEventListener('click', () => participarAcao({ acao: 'pontuar', parte: parteIdx, rodada: 'ordem', ninguem: true }, o.btnNaoSei));
-      o.acoes = criar('div', 'fam-acoes-dupla fam-ordem-acoes');
-      o.acoes.append(o.btnConferir, o.btnNaoSei);
+      // sozinho: Conferir e Não sei; em grupo: Enviar (quem joga) e, para quem administra, Revelar
+      const enviar = async b => {
+        const ordem = o.memoria.arrumacao.slice();
+        const d = await familiaSessaoPedir({ acao: 'enviar-ordem', sessao: participar.cod, participanteId: participar.participanteId, parte: parteIdx, rodada: k, ordem });
+        b.disabled = false;
+        if (!d.ok) { participarStatus(d.erro || 'Não consegui enviar a ordem.', 'erro'); participarJogoPintar(parteIdx, false); return; }
+        participarStatus('');
+        o.memoria.enviada = ordem;
+        participarAplicar(d.data);
+      };
+      const solo = Boolean(participar.programa && participar.programa.solo);
+      o.btnEnviar = botao('fam-fino fam-principal', solo ? '✅ Conferir a ordem' : '📨 Enviar minha ordem', b => { b.disabled = true; enviar(b); });
+      o.acoes = criar('div', solo ? 'fam-acoes-dupla fam-ordem-acoes' : 'fam-ordem-acoes');
+      o.acoes.appendChild(o.btnEnviar);
+      if (solo) {
+        o.btnNaoSei = botao('secondary fam-fino fam-nao-sei', null, b => participarAcao({ acao: 'revelar-ordem', parte: parteIdx, rodada: k }, b));
+        o.btnNaoSei.innerHTML = '<span class="fam-nao-sei-1">Não sei</span><span class="fam-nao-sei-2">' + ICONE_OLHO + ' Revelar</span>';
+        o.acoes.appendChild(o.btnNaoSei);
+      } else if (participar.dirigente) {
+        o.btnRevelar = botao('secondary fam-fino fam-ordem-revelar', null, async b => {
+          if (!(await askConfirm('Revelar a ordem certa desta rodada a todos? Quem ainda não enviou fica sem enviar.', 'Revelar a ordem'))) return;
+          participarAcao({ acao: 'revelar-ordem', parte: parteIdx, rodada: k }, b);
+        });
+        o.btnRevelar.innerHTML = ICONE_OLHO + ' Revelar a ordem a todos';
+      }
       o.resultado = criar('p', 'fam-sessao-ordem-resultado');
-      o.lista = criar('ol', 'fam-ordem-certa');
-      o.card.append(topo, o.ol, o.aviso, o.acoes, o.resultado, o.lista);
+      o.certa = criar('ol', 'fam-ordem-certa');
+      o.envios = criar('ul', 'fam-ordem-envios');
+      o.card.append(o.dica, o.ol, o.aviso, o.acoes, ...(o.btnRevelar ? [o.btnRevelar] : []), o.resultado, o.envios, o.certa);
       return o;
     }
-    function participarOrdemSoloPintar(o, e, i) {
-      const revelada = (e.ordensReveladas || {})[i];
+    function participarOrdemRodadaPintar(o, e, i, k) {
+      const solo = Boolean(participar.programa && participar.programa.solo);
+      const daRodada = campo => ((e[campo] || {})[i] || {})[k];
+      const revelada = daRodada('ordensReveladas');
       const fim = Array.isArray(revelada) && revelada.length > 0;
-      const ac = ((e.acertos || {})[i] || {}).ordem;
-      const erradas = (((e.erradas || {})[i] || {}).ordem) || [];
-      const ultima = erradas[erradas.length - 1];
-      o.titulo.textContent = fim ? '🔑 Ordem certa' : '📜 Ponha na ordem';
+      const ac = daRodada('acertos');
+      const erradas = (solo && daRodada('erradas')) || [];
+      const enviadas = (!solo && daRodada('ordensEnviadas')) || [];
+      const minha = enviadas.find(x => x.nome === participar.nome) || null;
+      const ganhador = ac && !ac.ninguem ? ac : null;
+      const pts = n => n + (n === 1 ? ' ponto' : ' pontos');
       const vale = Math.max(0, o.total - erradas.length);
-      o.vale.textContent = fim ? '' : '⭐ vale ' + vale + (vale === 1 ? ' ponto' : ' pontos');
-      [o.ol, o.aviso, o.acoes].forEach(x => { x.hidden = fim; });
-      o.resultado.hidden = !fim;
-      o.lista.hidden = !fim;
-      if (fim) {
-        o.resultado.textContent = ac && !ac.ninguem ? '🎉 Você acertou a ordem! +' + ac.pts + (ac.pts === 1 ? ' ponto' : ' pontos') : '🚫 Você não pontuou desta vez. Esta é a ordem certa:';
-        o.lista.replaceChildren(...revelada.map(x => { const li = document.createElement('li'); li.textContent = [x && x.data, x && x.evento].filter(Boolean).join(' — '); return li; }));
-        return;
-      }
-      o.arrumacao.forEach((txt, k) => {
+      o.vale.textContent = fim ? '' : ganhador ? '🏆 ' + ganhador.nome + ' acertou primeiro' : '⭐ vale ' + pts(vale);
+      const sorteado = e.sorteio && e.sorteio.nome && (e.sorteio.parte == null || e.sorteio.parte === i) ? e.sorteio.nome : '';
+      const jogo = Boolean(participar.participanteId);
+      const podeMexer = !fim && jogo && !minha;
+      o.dica.hidden = fim;
+      o.ol.hidden = fim;
+      // a ordem na tela: a enviada (travada) ou a que a pessoa está arrumando
+      const lista = minha && o.memoria.enviada ? o.memoria.enviada : o.memoria.arrumacao;
+      const ultima = erradas[erradas.length - 1];
+      lista.forEach((txt, n) => {
         const l = o.linhas.get(txt);
-        if (o.ol.children[k] !== l.li) o.ol.insertBefore(l.li, o.ol.children[k] || null);
-        l.num.textContent = String(k + 1);
-        l.sobe.disabled = k === 0;
-        l.desce.disabled = k === o.arrumacao.length - 1;
-        // roxo: estava no lugar certo na última conferência e continua ali
-        l.li.classList.toggle('certo', Boolean(ultima && (ultima.certos || []).includes(k) && (ultima.ordem || [])[k] === txt));
+        if (!l) return;
+        if (o.ol.children[n] !== l.li) o.ol.insertBefore(l.li, o.ol.children[n] || null);
+        l.num.textContent = String(n + 1);
+        l.sobe.hidden = l.desce.hidden = !podeMexer;
+        l.sobe.disabled = n === 0;
+        l.desce.disabled = n === lista.length - 1;
+        // roxo: estava no lugar certo na última conferência (sozinho) e continua ali
+        l.li.classList.toggle('certo', Boolean(ultima && (ultima.certos || []).includes(n) && (ultima.ordem || [])[n] === txt));
       });
-      const igual = Boolean(ultima && JSON.stringify(ultima.ordem) === JSON.stringify(o.arrumacao));
-      o.btnConferir.disabled = igual;
-      o.btnNaoSei.disabled = false;
-      o.aviso.hidden = !ultima;
-      if (ultima) {
+      const igual = Boolean(ultima && JSON.stringify(ultima.ordem) === JSON.stringify(o.memoria.arrumacao));
+      o.acoes.hidden = fim || !podeMexer;
+      o.btnEnviar.disabled = igual || Boolean(sorteado && sorteado !== participar.nome);
+      if (o.btnNaoSei) o.btnNaoSei.disabled = false;
+      if (o.btnRevelar) o.btnRevelar.hidden = fim;
+      if (o.btnReiniciar) o.btnReiniciar.hidden = !fim && !enviadas.length;
+      let aviso = '';
+      if (!fim && ultima) {
         const n = (ultima.certos || []).length;
-        o.aviso.textContent = 'Ainda não: ' + n + ' de ' + o.total + ' no lugar certo' + (n ? ' (em roxo)' : '') + '. Mude a ordem e confira de novo.';
+        aviso = 'Ainda não: ' + n + ' de ' + o.total + ' no lugar certo' + (n ? ' (em roxo)' : '') + '. Mude a ordem e confira de novo.';
+      } else if (!fim && minha) {
+        aviso = minha.certa
+          ? (ganhador && ganhador.nome === participar.nome ? '🎉 Você acertou tudo e foi a primeira ordem certa: +' + pts(ganhador.pts) + '!' : '✅ Você acertou tudo, mas outra pessoa enviou a ordem certa antes.')
+          : '📨 Ordem enviada: ' + minha.certos + ' de ' + minha.total + ' no lugar certo.';
+      } else if (!fim && sorteado && sorteado !== participar.nome && jogo) aviso = '🔒 Agora é a vez de ' + sorteado + '.';
+      o.aviso.hidden = !aviso;
+      o.aviso.textContent = aviso;
+      o.resultado.hidden = !fim;
+      if (fim) {
+        o.resultado.textContent = !ganhador ? (solo ? '🚫 Você não pontuou nesta rodada. Esta é a ordem certa:' : '🚫 Ninguém acertou a ordem. Esta é a ordem certa:')
+          : solo ? '🎉 Você acertou a ordem! +' + pts(ganhador.pts)
+          : '🏆 ' + ganhador.nome + ' ganhou ' + pts(ganhador.pts) + '. A ordem certa:';
       }
+      o.envios.hidden = !enviadas.length;
+      o.envios.replaceChildren(...enviadas.map(x => {
+        const li = document.createElement('li');
+        const venceu = Boolean(ganhador && ganhador.nome === x.nome);
+        li.className = x.certa ? 'certa' : '';
+        li.textContent = (venceu ? '🏆 ' : x.certa ? '✅ ' : '📨 ') + x.nome + ': ' + x.certos + ' de ' + x.total + ' no lugar certo' + (venceu ? ' · +' + pts(ganhador.pts) : '');
+        return li;
+      }));
+      o.certa.hidden = !fim;
+      o.certa.replaceChildren(...(fim ? revelada : []).map(x => { const li = document.createElement('li'); li.textContent = [x && x.data, x && x.evento].filter(Boolean).join(' — '); return li; }));
+      const acertei = solo ? Boolean(ganhador) : Boolean(minha && minha.certa);
+      o.card.classList.toggle('fam-sessao-questao-certa', acertei);
+      o.card.classList.toggle('fam-sessao-questao-errada', !acertei && (solo ? fim || erradas.length > 0 : Boolean(minha) || (fim && jogo)));
     }
 
     // 6.13.46: animação do sorteio da dica (em todos os aparelhos): os números 1..total giram uns 2 s, o número sorteado aparece em destaque e,
@@ -30741,9 +30741,7 @@ function saveTemplatesToStorage() {
       const partes = [...participar.jogos];
       participar.fimJogo.caixa.hidden = !partes.length || !partes.every(([i, ref]) => {
         const rev = (e.reveladas && e.reveladas[i]) || {};
-        const ordem = (e.ordensReveladas || {})[i];
-        if (!ref.rodadas.length && !ref.ordem) return false;
-        return ref.rodadas.every((_, k) => rev[k] != null && rev[k] !== '') && (!ref.ordem || Boolean(Array.isArray(ordem) && ordem.length));
+        return ref.rodadas.length > 0 && ref.rodadas.every((_, k) => rev[k] != null && rev[k] !== '');
       });
     }
 
@@ -30875,31 +30873,6 @@ function saveTemplatesToStorage() {
         ref.progBarra.setAttribute('aria-valuemax', String(totalPerg));
         ref.progBarra.setAttribute('aria-valuenow', String(feitas));
       }
-      if (ref.ordem && ref.ordem.solo) participarOrdemSoloPintar(ref.ordem, e, i);
-      else if (ref.ordem) { // 6.12.77: "Ordem e data": a ordem revelada (para todos), quem acertou e os botões de quem dirige
-        const o = ref.ordem;
-        const revelada = ((e.ordensReveladas || {})[i]);
-        const temOrdem = Array.isArray(revelada) && revelada.length > 0;
-        const ac = acertos.ordem;
-        o.lista.hidden = !temOrdem;
-        o.lista.replaceChildren(...(temOrdem ? revelada : []).map(x => { const li = document.createElement('li'); li.textContent = [x && x.data, x && x.evento].filter(Boolean).join(' — '); return li; }));
-        o.aguarda.hidden = temOrdem || participar.dirigente;
-        o.resultado.hidden = !ac;
-        o.resultado.textContent = ac ? (ac.ninguem ? '🚫 Ninguém acertou a ordem' : '🏆 ' + (participar.programa.solo ? 'Você ganhou ' : ac.nome + ' ganhou ') + ac.pts + (ac.pts === 1 ? ' ponto' : ' pontos')) : '';
-        o.card.hidden = !participar.dirigente && !temOrdem && !ac;
-        if (participar.dirigente) {
-          o.btnRevelar.hidden = temOrdem;
-          o.linhaAcerto.hidden = Boolean(ac);
-          o.btnReiniciar.hidden = !temOrdem && !ac;
-          const sig = nomes.join('|');
-          if (o.sig !== sig) {
-            const atual = o.sel.value;
-            o.sel.replaceChildren(...[['', 'Quem acertou a ordem?'], ...nomes.map(x => [x, x]), [NINGUEM_ACERTOU, '🚫 Ninguém acertou']].map(([v, tx]) => { const op = document.createElement('option'); op.value = v; op.textContent = tx; return op; }));
-            if (nomes.includes(atual) || atual === NINGUEM_ACERTOU) o.sel.value = atual;
-            o.sig = sig;
-          }
-        }
-      }
       let anteriorRespondida = true; // jogo de dicas: a questão seguinte só aparece depois que a anterior foi respondida (resposta revelada)
       // 6.13.17: quem pode responder agora (sorteio de jogador ou de questão) e as respostas enviadas pelo app
       const envios = (e.envios && e.envios[i]) || {};
@@ -30907,6 +30880,12 @@ function saveTemplatesToStorage() {
       const sorteadoNome = e.sorteio && e.sorteio.nome && (e.sorteio.parte == null || e.sorteio.parte === i) ? e.sorteio.nome : '';
       const questaoSorteada = e.sorteioQuestao && e.sorteioQuestao.parte === i && !(rev[e.sorteioQuestao.rodada] != null && rev[e.sorteioQuestao.rodada] !== '') ? e.sorteioQuestao.rodada : null;
       ref.rodadas.forEach((r, k) => {
+        if (r.ordem) { // 6.14.21: rodada do "Ordem e data"
+          r.li.hidden = k !== ref.atual;
+          participarOrdemRodadaPintar(r.ordem, e, i, k);
+          anteriorRespondida = rev[k] != null && rev[k] !== '';
+          return;
+        }
         {
           const revK = rev[k] != null && rev[k] !== '';
           const ac = acertos[k];
@@ -31268,7 +31247,7 @@ function saveTemplatesToStorage() {
       try { localStorage.setItem(JOGOS_SALVOS_KEY, JSON.stringify(lista.slice(0, JOGOS_SALVOS_MAX))); return true; } catch (e) { return false; }
     }
     const jogosDoNome = nome => JOGOS_BIBLICOS.find(j => j.nome === nome) || null;
-    const jogosRodadas = item => { const parte = item.op.partes[0]; return parte && parte.jogo ? familiaConteudoDoJogo(parte.jogo).rodadas.length : 0; };
+    const jogosRodadas = item => { const parte = item.op.partes[0]; return parte && parte.jogo ? ((parte.jogo.tabelas || []).length || familiaConteudoDoJogo(parte.jogo).rodadas.length) : 0; };
     const jogosQuando = em => { const d = new Date(em); return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); };
 
     // A tela inicial dos jogos: um atalho para cada jogo, com o emoji dele.

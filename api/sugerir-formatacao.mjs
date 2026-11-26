@@ -3436,6 +3436,8 @@ const chaveDoTrechoCriador = (l) => chaveDoTrecho(l.trecho);
 
 // 6.12.73: o mínimo do jogo; 6.12.76: as rodadas de cada tipo ficam em RODADAS_DO_JOGO (_familiaGeracao.mjs), ajustadas aos 10 minutos.
 const MIN_EVENTOS_JOGO = 6;
+const MAX_EVENTOS_JOGO = 8;
+const TABELAS_DA_ORDEM = 3; // 6.14.21: o "Ordem e data" tem 3 rodadas
 // 6.12.76: as Lições da vida de Jesus trazem um EPISÓDIO narrado (o que Jesus fez ou viveu), não só um ensino: com menos versículos, refaz uma vez.
 const MIN_VERSOS_EPISODIO = 3;
 
@@ -3869,7 +3871,7 @@ const PREPARAR_QUADRO_FAMILIA = {
     const listas =
       `\nTIPO DO JOGO DESTA NOITE (use só este): ${tipo}\n` +
       (ordem
-        ? `\nACONTECIMENTOS DO APÊNDICE B DA BÍBLIA DE ESTUDO (data — acontecimento; escolha de 6 a 8 em "eventos" pelo identificador):\n${eventos.map((e, i) => `[B${i + 1}] ${e.data} — ${e.evento}`).join("\n")}\n`
+        ? `\nACONTECIMENTOS DO APÊNDICE B DA BÍBLIA DE ESTUDO (data — acontecimento; escolha de ${TABELAS_DA_ORDEM * MIN_EVENTOS_JOGO} a ${TABELAS_DA_ORDEM * MAX_EVENTOS_JOGO} em "eventos" pelo identificador; o servidor monta ${TABELAS_DA_ORDEM} rodadas):\n${eventos.map((e, i) => `[B${i + 1}] ${e.data} — ${e.evento}`).join("\n")}\n`
         : perfil
           ? candidatos.length
             ? `QUANTIDADE: mande uma rodada para cada carta [C#] abaixo (${candidatos.length} rodadas), com 10 dicas cada.\n\nCARTAS DO PERFIL BÍBLICO (escreva as dicas SÓ com o que está no texto do verbete de cada carta):\n${candidatos.map((c, i) => `[C${i + 1}] ${c.categoria} — resposta: ${c.resposta} — Estudo Perspicaz das Escrituras, verbete “${c.verbete}”: ${c.texto}`).join("\n\n")}\n`
@@ -3921,26 +3923,37 @@ const PREPARAR_QUADRO_FAMILIA = {
             falta = `vieram ${ia.length} cartas válidas; mande uma rodada para cada carta [C#] recebida, com a pergunta começando pelo identificador ("[C1] Dica 1: … Dica 2: …"), de ${MIN_DICAS_PERFIL} a 12 dicas tiradas só do texto do verbete, da mais difícil para a mais fácil, e nenhuma dica com a resposta (nem uma palavra dela)`;
         } else if (ordem) {
           const porData = (e) => valorDaData(e.data);
-          const escolhidos = semRepetirFamilia(escolhasValidas(o.eventos, "B", eventos.length, 8).map((i) => eventos[i]), porData);
-          // 6.12.73: pelo menos 6 acontecimentos (com menos, o servidor pede de novo uma vez; se ainda faltar, completa com o Apêndice B).
-          if (escolhidos.length < MIN_EVENTOS_JOGO) falta = `vieram ${escolhidos.length} acontecimentos válidos; escolha de ${MIN_EVENTOS_JOGO} a 8 identificadores [B#] com datas diferentes`;
+          // 6.14.21: TABELAS_DA_ORDEM rodadas (tabelas) por jogo, cada uma com 6 a 8 acontecimentos.
+          const cabem = TABELAS_DA_ORDEM * MAX_EVENTOS_JOGO;
+          const escolhidos = semRepetirFamilia(escolhasValidas(o.eventos, "B", eventos.length, cabem).map((i) => eventos[i]), porData);
+          // 6.12.73: com menos que o mínimo, o servidor pede de novo uma vez; o que faltar é completado com o Apêndice B.
+          const minimo = TABELAS_DA_ORDEM * MIN_EVENTOS_JOGO;
+          if (escolhidos.length < minimo) falta = `vieram ${escolhidos.length} acontecimentos válidos; escolha de ${minimo} a ${cabem} identificadores [B#] com datas diferentes (são ${TABELAS_DA_ORDEM} rodadas)`;
           for (const e of embaralhar(eventos, ctx.semente + 7)) {
-            if (escolhidos.length >= MIN_EVENTOS_JOGO) break;
+            if (escolhidos.length >= cabem) break;
             if (!escolhidos.some((x) => porData(x) === porData(e))) escolhidos.push(e);
           }
-          const certa = escolhidos.slice().sort((a, b) => porData(a) - porData(b));
-          let itens = embaralhar(certa, ctx.semente).map((e) => e.evento);
-          if (itens.every((t, i) => t === certa[i].evento)) itens = itens.reverse();
-          const regras = limparTextoGerado(o.comoJogar, 600) || "Ponham os acontecimentos na ordem em que aconteceram e digam a data de cada um.";
+          // em ordem de data, um acontecimento para cada tabela por vez: cada rodada fica espalhada pelas épocas
+          const porEpoca = escolhidos.slice().sort((a, b) => porData(a) - porData(b));
+          const quantas = Math.max(1, Math.min(TABELAS_DA_ORDEM, Math.floor(porEpoca.length / MIN_EVENTOS_JOGO)));
+          const tabelas = Array.from({ length: quantas }, (_, t) => {
+            const certa = porEpoca.filter((_, i) => i % quantas === t);
+            let itens = embaralhar(certa, ctx.semente + t).map((e) => e.evento);
+            if (itens.every((x, i) => x === certa[i].evento)) itens = itens.reverse();
+            return { itens, ordem: certa.map((e) => ({ data: e.data, evento: e.evento })) };
+          });
+          const regras = limparTextoGerado(o.comoJogar, 600) || "Em cada rodada, ponham os acontecimentos na ordem em que aconteceram.";
+          const respostasDasTabelas = tabelas.map((t, k) => `Rodada ${k + 1}: ${t.ordem.map((e, i) => `${i + 1}. ${e.data} — ${e.evento}`).join("; ")}`).join(" | ");
           jogo = {
             tipo,
             idTipo,
             nome,
-            comoJogar: `${regras} Ordem certa (datas do Apêndice B da Bíblia de Estudo): ${certa.map((e, i) => `${i + 1}. ${e.data} — ${e.evento}`).join("; ")}.`.slice(0, 2400),
+            comoJogar: `${regras} Ordem certa (datas do Apêndice B da Bíblia de Estudo): ${respostasDasTabelas}.`.slice(0, 6000),
             material: "",
             rodadas: [],
-            itens,
-            ordem: certa.map((e) => ({ data: e.data, evento: e.evento })),
+            itens: tabelas[0].itens,
+            ordem: tabelas[0].ordem,
+            tabelas,
           };
         } else {
           const brutas = (Array.isArray(o.rodadas) ? o.rodadas : []).filter((r) => r && typeof r === "object").slice(0, 25);
@@ -4085,7 +4098,7 @@ const PREPARAR_QUADRO_FAMILIA = {
           memoria: { jogos: [tipo], ...(versiculosDoJogo.length ? { jogo_versiculos: versiculosDoJogo } : {}), ...(cartasDoJogo.length ? { jogo_cartas: cartasDoJogo } : {}) },
           falta,
           trocarTipo,
-          contagens: { tiradas, rodadas: jogo ? (ordem ? jogo.itens.length : jogo.rodadas.length) : 0, idTipo, ...contagensDaConferencia, ...(perfil ? { cartasDaIa: jogo.rodadas.filter((r) => candidatos.some((c) => c.resposta === r.resposta)).length } : {}) },
+          contagens: { tiradas, rodadas: jogo ? (ordem ? jogo.tabelas.length : jogo.rodadas.length) : 0, idTipo, ...contagensDaConferencia, ...(perfil ? { cartasDaIa: jogo.rodadas.filter((r) => candidatos.some((c) => c.resposta === r.resposta)).length } : {}) },
         };
       },
     };

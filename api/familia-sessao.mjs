@@ -103,7 +103,7 @@ async function limparVencidas() {
 // "fulano já respondeu"). Dentro da instância, as ações que gravam de uma mesma sessão também esperam a vez.
 const versoesDoEstado = new WeakMap();
 const gravarEstadoLido = (cod, estado) => put(caminho(cod, "estado.json"), JSON.stringify(estado), { contentType: "application/json; charset=utf-8", seVersao: versoesDoEstado.get(estado) });
-const ACOES_QUE_GRAVAM = new Set(["responder", "voltar-inicio", "liberar", "bloquear", "revelar", "revelar-ordem", "espiar", "dica", "modo-dicas", "sortear-dica", "pontuar", "reiniciar", "novo-jogo", "sortear", "limpar-sorteio", "sortear-questao", "julgar", "julgamento-ia", "foco", "cronometro", "assumir", "passar-direcao", "conferir-ordem"]);
+const ACOES_QUE_GRAVAM = new Set(["responder", "voltar-inicio", "liberar", "bloquear", "revelar", "revelar-ordem", "espiar", "dica", "modo-dicas", "sortear-dica", "pontuar", "reiniciar", "novo-jogo", "sortear", "limpar-sorteio", "sortear-questao", "julgar", "julgamento-ia", "foco", "cronometro", "assumir", "passar-direcao", "enviar-ordem"]);
 const TENTATIVAS_DE_GRAVAR = 12;
 const filasDasSessoes = new Map();
 function naVezDaSessao(cod, tarefa) {
@@ -175,8 +175,10 @@ function estadoPublico(e) {
     referenciasReveladas: e.referenciasReveladas && typeof e.referenciasReveladas === "object" ? e.referenciasReveladas : {},
     dicas: e.dicas && typeof e.dicas === "object" ? e.dicas : {}, // quantas dicas de cada rodada já foram dadas: { parte: { rodada: n } }
     acertos: e.acertos && typeof e.acertos === "object" ? e.acertos : {}, // quem acertou cada rodada e quantos pontos ganhou: { parte: { rodada: { nome, pts } } }
-    // 6.12.77: a ordem certa do "Ordem e data" que quem dirige já revelou ({ parte: [{ data, evento }] }); antes disso ela fica só em respostas.json.
+    // 6.12.77: a ordem certa do "Ordem e data" já revelada ({ parte: { rodada: [{ data, evento }] } }); antes disso ela fica só em respostas.json.
     ordensReveladas: e.ordensReveladas && typeof e.ordensReveladas === "object" ? e.ordensReveladas : {},
+    // 6.14.21: em grupo, quem já enviou a sua ordem e quantos acertou ({ parte: { rodada: [{ nome, certos, total, certa }] } }), sem a ordem enviada
+    ordensEnviadas: e.ordensEnviadas && typeof e.ordensEnviadas === "object" ? e.ordensEnviadas : {},
     sorteio: e.sorteio || null,
     sorteioQuestao: e.sorteioQuestao || null, // { parte, rodada, n }: a questão sorteada para ser respondida
     cronometro: e.cronometro || null,
@@ -379,15 +381,25 @@ function limparPrograma(op) {
       // 6.12.76: a referência de cada rodada também é resposta (no Complete o versículo e no Quem disse isso? ela entrega a resposta): vai
       // para respostas.json e só chega a todos quando quem dirige revela a rodada (estado.referenciasReveladas).
       if (rodadas.some((r) => r.referencia)) referencias[i] = rodadas.map((r) => r.referencia);
-      const ordem = lista(j.ordem, 12, (o) => (o && typeof o === "object" && texto(o.evento, 300) ? { data: texto(o.data, 40), evento: texto(o.evento, 300) } : null));
-      if (ordem.length) ordens[i] = ordem;
+      // 6.14.21: "Ordem e data": cada rodada é uma tabela de acontecimentos (j.tabelas: [{ itens, ordem }]); os jogos preparados antes, com
+      // uma ordem só, viram 1 rodada. A ordem certa de cada tabela é a resposta (respostas.json, extras.ordens).
+      const eventosDaOrdem = (v) => lista(v, 12, (o) => (o && typeof o === "object" && texto(o.evento, 300) ? { data: texto(o.data, 40), evento: texto(o.evento, 300) } : null));
+      const tabelas = (Array.isArray(j.tabelas) && j.tabelas.length ? j.tabelas : [{ itens: j.itens, ordem: j.ordem }])
+        .slice(0, 5)
+        .map((t) => ({ itens: lista(t && t.itens, 12, (x) => texto(x, 600)), ordem: eventosDaOrdem(t && t.ordem) }))
+        .filter((t) => t.ordem.length >= 2 && t.itens.length === t.ordem.length);
+      if (tabelas.length) {
+        ordens[i] = tabelas.map((t) => t.ordem);
+        respostas[i] = tabelas.map(() => "ordem");
+        delete referencias[i];
+      }
       parte.jogo = {
         tipo: texto(j.tipo, 120),
         nome: texto(j.nome, 160),
-        comoJogar: texto(ordem.length ? String(j.comoJogar || "").replace(SUFIXO_ORDEM_CERTA, "") : j.comoJogar, 3000),
+        comoJogar: texto(tabelas.length ? String(j.comoJogar || "").replace(SUFIXO_ORDEM_CERTA, "") : j.comoJogar, 3000),
         material: texto(j.material, 600),
-        rodadas: rodadas.map((r) => ({ pergunta: r.pergunta })),
-        itens: lista(j.itens, 80, (t) => texto(t, 600)),
+        rodadas: tabelas.length ? tabelas.map((t, k) => ({ pergunta: `Ordem ${k + 1}`, itens: t.itens })) : rodadas.map((r) => ({ pergunta: r.pergunta })),
+        itens: tabelas.length ? [] : lista(j.itens, 80, (t) => texto(t, 600)),
       };
       // 6.12.76: o identificador fixo do tipo do jogo (quem_sou_eu, verdadeiro_falso, ordem_data, quem_disse, complete_versiculo, abreviacoes).
       if (ID_TIPO_VALIDO.test(String(j.idTipo || ""))) parte.jogo.idTipo = String(j.idTipo);
@@ -412,8 +424,15 @@ function limparPrograma(op) {
     dicaParaOChefe: texto(op.dicaParaOChefe, 800),
     // 6.12.70: o FunPlayB saiu (extras.funplayb não é mais guardado; programações antigas com ele continuam sendo compartilhadas sem esse extra).
   };
-  if (Object.keys(ordens).length) extras.ordens = ordens; // { índice da parte: [{ data, evento }] } (só quem dirige)
+  if (Object.keys(ordens).length) extras.ordens = ordens; // { índice da parte: [tabela: [{ data, evento }]] } (só quem dirige)
   return { programa, respostas, referencias, extras };
+}
+
+// 6.14.21: revela a todos a ordem certa (com as datas) de uma rodada do "Ordem e data"; a rodada conta como respondida.
+function revelarOrdemDaRodada(e, parte, rodada, ordem) {
+  const antes = (campo) => ((e[campo] || {})[parte]) || {};
+  e.ordensReveladas = { ...(e.ordensReveladas || {}), [parte]: { ...antes("ordensReveladas"), [rodada]: ordem } };
+  e.reveladas = { ...(e.reveladas || {}), [parte]: { ...antes("reveladas"), [rodada]: "ordem" } };
 }
 
 // ---------- Handler ----------
@@ -739,9 +758,63 @@ async function atender(req, res) {
       });
     }
 
+    // ----- enviar-ordem (6.14.21): no "Ordem e data", cada jogador arruma a sua ordem de uma rodada e envia; o servidor confere na hora.
+    // Sozinho: dá para tentar de novo (1 ponto por acontecimento, menos 1 por conferência errada) e, acertando, a ordem é revelada.
+    // Em grupo: um envio por jogador em cada rodada; todos veem quantos cada um acertou; os pontos são de quem enviar primeiro a ordem toda
+    // certa; a ordem certa aparece quando todos os presentes enviarem (ou quando o administrador revelar). -----
+    if (acao === "enviar-ordem") {
+      const participanteId = idLimpo(corpo.participanteId);
+      const quem = participanteId ? await lerJson(caminho(cod, `participantes/${participanteId}.json`)) : null;
+      if (!quem || !quem.nome) return erro(res, 403, "Entre com o seu nome para enviar a sua ordem.");
+      const parte = Number(corpo.parte);
+      const rodada = Number(corpo.rodada);
+      const programa = await lerJson(caminho(cod, "programa.json"));
+      segredo ||= await lerJson(caminho(cod, "respostas.json"));
+      const jogo = programa && Number.isInteger(parte) && programa.partes && programa.partes[parte] && programa.partes[parte].jogo;
+      const r = jogo && Number.isInteger(rodada) ? (jogo.rodadas || [])[rodada] : null;
+      const certa = (((((segredo && segredo.extras) || {}).ordens || {})[parte]) || [])[rodada];
+      if (!r || !Array.isArray(r.itens) || !Array.isArray(certa)) return erro(res, 400, "Rodada inválida.");
+      if (!(estado.liberadas || []).includes(parte)) return erro(res, 403, "Esta parte ainda não foi liberada pelo presidente da reunião.");
+      if (((estado.reveladas || {})[parte] || {})[rodada]) return erro(res, 409, "A ordem desta rodada já foi revelada.");
+      const sorteado = estado.sorteio;
+      if (sorteado && sorteado.nome && (sorteado.parte == null || sorteado.parte === parte) && sorteado.nome !== quem.nome) return erro(res, 403, `Agora é a vez de ${sorteado.nome}.`);
+      const tentativa = lista(corpo.ordem, 12, (t) => texto(t, 600));
+      if (tentativa.length !== certa.length) return erro(res, 400, "Mande todos os acontecimentos, na sua ordem.");
+      const chave = (t) => String(t).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().slice(0, 280);
+      const certos = tentativa.map((t, i) => (chave(t) === chave(certa[i].evento) ? i : -1)).filter((i) => i >= 0);
+      const acertou = certos.length === certa.length;
+      const daRodada = (campo) => ((((estado[campo] || {})[parte]) || {})[rodada]) || [];
+      if (programa.solo) {
+        const feitas = daRodada("erradas");
+        if (feitas.length && JSON.stringify(feitas[feitas.length - 1].ordem) === JSON.stringify(tentativa)) return erro(res, 409, "Mude a ordem antes de conferir de novo.");
+        return gravarEstado((e) => {
+          if (acertou) {
+            e.acertos = e.acertos || {};
+            e.acertos[parte] = { ...(e.acertos[parte] || {}), [rodada]: { nome: quem.nome, pts: Math.max(0, certa.length - feitas.length) } };
+            revelarOrdemDaRodada(e, parte, rodada, certa);
+          } else {
+            e.erradas = e.erradas || {};
+            e.erradas[parte] = { ...(e.erradas[parte] || {}), [rodada]: [...feitas, { nome: quem.nome, ordem: tentativa, certos }].slice(-20) };
+          }
+        });
+      }
+      const enviadas = daRodada("ordensEnviadas");
+      if (enviadas.some((x) => x.nome === quem.nome)) return erro(res, 409, "Você já enviou a sua ordem desta rodada.");
+      const aqui = presentes(await lerParticipantes(cod)).map((p) => p.nome);
+      return gravarEstado((e) => {
+        const todas = [...enviadas, { nome: quem.nome, certos: certos.length, total: certa.length, certa: acertou }];
+        e.ordensEnviadas = { ...(e.ordensEnviadas || {}), [parte]: { ...(((e.ordensEnviadas || {})[parte]) || {}), [rodada]: todas } };
+        if (acertou && !(((e.acertos || {})[parte] || {})[rodada])) {
+          e.acertos = e.acertos || {};
+          e.acertos[parte] = { ...(e.acertos[parte] || {}), [rodada]: { nome: quem.nome, pts: certa.length } };
+        }
+        if (aqui.length && aqui.every((nome) => todas.some((x) => x.nome === nome))) revelarOrdemDaRodada(e, parte, rodada, certa);
+      });
+    }
+
     // ----- Daqui em diante, só o dirigente -----
     if (!(await exigirDirigente())) return;
-    const programa = ["liberar", "bloquear", "revelar", "revelar-ordem", "dica", "pontuar", "reiniciar", "sortear", "sortear-questao", "limpar-sorteio", "cronometro", "julgar", "sortear-dica", "modo-dicas", "julgamento-ia", "foco", "conferir-ordem"].includes(acao) ? await lerJson(caminho(cod, "programa.json")) : null;
+    const programa = ["liberar", "bloquear", "revelar", "revelar-ordem", "dica", "pontuar", "reiniciar", "sortear", "sortear-questao", "limpar-sorteio", "cronometro", "julgar", "sortear-dica", "modo-dicas", "julgamento-ia", "foco"].includes(acao) ? await lerJson(caminho(cod, "programa.json")) : null;
     const parteValida = (i) => programa && Number.isInteger(i) && i >= 0 && i < programa.partes.length;
     // 6.12.76: a referência secreta da rodada (respostas.json; sessões antigas não a têm) e a revelação dela junto com a resposta.
     const referenciaDaRodada = (parte, rodada) => String((((segredo && segredo.referencias) || {})[parte] || [])[rodada] || "");
@@ -751,14 +824,8 @@ async function atender(req, res) {
       e.referenciasReveladas = e.referenciasReveladas || {};
       e.referenciasReveladas[parte] = { ...(e.referenciasReveladas[parte] || {}), [rodada]: ref };
     };
-    // 6.12.77: a ordem certa do "Ordem e data" (respostas.json, extras.ordens) e a revelação dela para todos (estado.ordensReveladas).
-    const ordemDaParte = (parte) => {
-      const o = (((segredo && segredo.extras) || {}).ordens || {})[parte];
-      return Array.isArray(o) && o.length ? o : null;
-    };
-    const revelarOrdem = (e, parte, ordem) => {
-      e.ordensReveladas = { ...(e.ordensReveladas || {}), [parte]: ordem };
-    };
+    // 6.14.21: a rodada é do "Ordem e data" (uma tabela de acontecimentos)? Essas não têm "revelar", "pontuar" nem "julgar" de texto.
+    const rodadaDeOrdem = (parte, rodada) => Boolean(((((((programa || {}).partes || [])[parte] || {}).jogo || {}).rodadas || [])[rodada] || {}).itens);
 
     // ----- voltar-inicio (6.12.37): volta à tela de boas-vindas: nenhuma parte liberada e nenhuma atual -----
     if (acao === "voltar-inicio") {
@@ -786,7 +853,7 @@ async function atender(req, res) {
       const rodada = Number(corpo.rodada);
       if (!parteValida(parte)) return erro(res, 400, "Parte inválida.");
       const respostas = (segredo.respostas || {})[parte] || [];
-      if (!Number.isInteger(rodada) || rodada < 0 || rodada >= respostas.length) return erro(res, 400, "Rodada inválida.");
+      if (!Number.isInteger(rodada) || rodada < 0 || rodada >= respostas.length || rodadaDeOrdem(parte, rodada)) return erro(res, 400, "Rodada inválida.");
       return gravarEstado((e) => {
         e.reveladas = e.reveladas || {};
         e.reveladas[parte] = { ...(e.reveladas[parte] || {}), [rodada]: respostas[rodada] };
@@ -795,13 +862,14 @@ async function atender(req, res) {
       });
     }
 
-    // ----- revelar-ordem (6.12.77): no "Ordem e data", mostra a todos a ordem certa com as datas (sem pontuar ninguém) -----
+    // ----- revelar-ordem (6.12.77): no "Ordem e data", mostra a todos a ordem certa de uma rodada, com as datas (sem pontuar ninguém) -----
     if (acao === "revelar-ordem") {
       const parte = Number(corpo.parte);
+      const rodada = Number(corpo.rodada);
       if (!parteValida(parte)) return erro(res, 400, "Parte inválida.");
-      const ordem = ordemDaParte(parte);
-      if (!ordem) return erro(res, 400, "Esta parte não tem ordem para revelar.");
-      return gravarEstado((e) => revelarOrdem(e, parte, ordem));
+      const ordem = (((((segredo.extras || {}).ordens || {})[parte]) || [])[rodada]);
+      if (!Array.isArray(ordem) || !rodadaDeOrdem(parte, rodada)) return erro(res, 400, "Esta rodada não tem ordem para revelar.");
+      return gravarEstado((e) => revelarOrdemDaRodada(e, parte, rodada, ordem));
     }
 
     // ----- espiar (6.12.06): só o dirigente vê a resposta da rodada, sem revelá-la aos participantes (nada é gravado no estado) -----
@@ -892,32 +960,6 @@ async function atender(req, res) {
       });
     }
 
-    // ----- conferir-ordem (6.14.20): na partida sozinho, no "Ordem e data", a pessoa arruma os acontecimentos e o servidor confere: acertando
-    // todos, 1 ponto por acontecimento, menos 1 por conferência errada de antes, e a ordem é revelada; errando, diz quais já estão no lugar. -----
-    if (acao === "conferir-ordem") {
-      const parte = Number(corpo.parte);
-      if (!parteValida(parte) || programa.solo !== true) return erro(res, 400, "Esta conferência vale só para a partida sozinho.");
-      const certa = ordemDaParte(parte);
-      if (!certa) return erro(res, 400, "Esta parte não tem ordem para conferir.");
-      if ((estado.ordensReveladas || {})[parte] || ((estado.acertos || {})[parte] || {}).ordem) return erro(res, 409, "A ordem já foi revelada.");
-      const tentativa = lista(corpo.ordem, 12, (t) => texto(t, 600));
-      if (tentativa.length !== certa.length) return erro(res, 400, "Mande todos os acontecimentos, na sua ordem.");
-      const feitas = (((estado.erradas || {})[parte] || {}).ordem) || [];
-      if (feitas.length && JSON.stringify(feitas[feitas.length - 1].ordem) === JSON.stringify(tentativa)) return erro(res, 409, "Mude a ordem antes de conferir de novo.");
-      const chave = (t) => String(t).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().slice(0, 280);
-      const certos = tentativa.map((t, i) => (chave(t) === chave(certa[i].evento) ? i : -1)).filter((i) => i >= 0);
-      return gravarEstado((e) => {
-        if (certos.length === certa.length) {
-          e.acertos = e.acertos || {};
-          e.acertos[parte] = { ...(e.acertos[parte] || {}), ordem: { nome: "Jogador", pts: Math.max(0, certa.length - feitas.length) } };
-          revelarOrdem(e, parte, certa);
-        } else {
-          e.erradas = e.erradas || {};
-          e.erradas[parte] = { ...(e.erradas[parte] || {}), ordem: [...feitas, { nome: "Jogador", ordem: tentativa, certos }].slice(-20) };
-        }
-      });
-    }
-
     // ----- pontuar (6.11.97): quem acertou a rodada ganha os pontos de agora (total de dicas − dicas dadas + 1) e a resposta é revelada -----
     if (acao === "pontuar") {
       const parte = Number(corpo.parte);
@@ -925,22 +967,9 @@ async function atender(req, res) {
       const ninguem = corpo.ninguem === true; // 6.12.06: "Ninguém acertou": revela a resposta sem pontuar ninguém
       const nome = ninguem ? "" : nomeLimpo(corpo.nome);
       if (!parteValida(parte)) return erro(res, 400, "Parte inválida.");
-      // 6.12.77: no "Ordem e data" (rodada "ordem"), quem dirige escolhe quem acertou e quantos pontos (0 até o número de eventos + 2); a ordem é revelada.
-      if (corpo.rodada === "ordem") {
-        const ordem = ordemDaParte(parte);
-        if (!ordem) return erro(res, 400, "Esta parte não tem ordem para pontuar.");
-        if (!nome && !ninguem) return erro(res, 400, "Escolha quem acertou.");
-        const ptsOrdem = Number(corpo.pts);
-        if (!ninguem && (!Number.isInteger(ptsOrdem) || ptsOrdem < 0 || ptsOrdem > ordem.length + 2)) return erro(res, 400, "Pontos inválidos.");
-        return gravarEstado((e) => {
-          e.acertos = e.acertos || {};
-          e.acertos[parte] = { ...(e.acertos[parte] || {}), ordem: ninguem ? { nome: "", pts: 0, ninguem: true } : { nome, pts: ptsOrdem } };
-          revelarOrdem(e, parte, ordem);
-        });
-      }
       const r = programa.partes[parte].jogo && (programa.partes[parte].jogo.rodadas || [])[rodada];
       const respostas = (segredo.respostas || {})[parte] || [];
-      if (!Number.isInteger(rodada) || !r || rodada >= respostas.length) return erro(res, 400, "Rodada inválida.");
+      if (!Number.isInteger(rodada) || !r || rodada >= respostas.length || r.itens) return erro(res, 400, "Rodada inválida.");
       if (!nome && !ninguem) return erro(res, 400, "Escolha quem acertou.");
       const total = Math.max(1, (String(r.pergunta).match(/Dica\s*\d+\s*:/gi) || []).length);
       const dadas = Math.min(total, Number(((estado.dicas || {})[parte] || {})[rodada]) || 0);
@@ -962,32 +991,11 @@ async function atender(req, res) {
     if (acao === "reiniciar") {
       const parte = Number(corpo.parte);
       const rodada = Number(corpo.rodada);
-      // 6.12.77: "ordem" esconde de novo a ordem certa do "Ordem e data" e tira os pontos dela.
-      if (corpo.rodada === "ordem") {
-        if (!parteValida(parte)) return erro(res, 400, "Parte inválida.");
-        return gravarEstado((e) => {
-          if (e.acertos && e.acertos[parte]) {
-            const copia = { ...e.acertos[parte] };
-            delete copia.ordem;
-            e.acertos = { ...e.acertos, [parte]: copia };
-          }
-          if (e.ordensReveladas) {
-            const copia = { ...e.ordensReveladas };
-            delete copia[parte];
-            e.ordensReveladas = copia;
-          }
-          if (e.erradas && e.erradas[parte]) { // 6.14.20: e as conferências erradas
-            const copia = { ...e.erradas[parte] };
-            delete copia.ordem;
-            e.erradas = { ...e.erradas, [parte]: copia };
-          }
-        });
-      }
       // 6.14.14: "tudo" ("Jogar novamente", no fim do jogo): a parte inteira volta ao começo, de uma vez.
       if (corpo.rodada === "tudo") {
         if (!parteValida(parte)) return erro(res, 400, "Parte inválida.");
         return gravarEstado((e) => {
-          for (const campo of ["dicas", "dicasOrdem", "reveladas", "acertos", "referenciasReveladas", "envios", "erradas", "ordensReveladas"]) {
+          for (const campo of ["dicas", "dicasOrdem", "reveladas", "acertos", "referenciasReveladas", "envios", "erradas", "ordensReveladas", "ordensEnviadas"]) {
             if (e[campo] && e[campo][parte] !== undefined) {
               const copia = { ...e[campo] };
               delete copia[parte];
@@ -1000,7 +1008,7 @@ async function atender(req, res) {
       }
       if (!parteValida(parte) || !Number.isInteger(rodada) || rodada < 0) return erro(res, 400, "Rodada inválida.");
       return gravarEstado((e) => {
-        for (const campo of ["dicas", "dicasOrdem", "reveladas", "acertos", "referenciasReveladas", "envios", "erradas"]) {
+        for (const campo of ["dicas", "dicasOrdem", "reveladas", "acertos", "referenciasReveladas", "envios", "erradas", "ordensReveladas", "ordensEnviadas"]) {
           if (e[campo] && e[campo][parte]) {
             const copia = { ...e[campo][parte] };
             delete copia[rodada];
@@ -1032,7 +1040,7 @@ async function atender(req, res) {
       await gravarJson(caminho(cod, "respostas.json"), segredo);
       await gravarJson(caminho(cod, "programa.json"), programa);
       return gravarEstado((e) => {
-        for (const campo of ["dicas", "dicasOrdem", "reveladas", "acertos", "referenciasReveladas", "envios", "erradas", "ordensReveladas", "espiaram", "sorteioDicas", "foco"]) delete e[campo];
+        for (const campo of ["dicas", "dicasOrdem", "reveladas", "acertos", "referenciasReveladas", "envios", "erradas", "ordensReveladas", "ordensEnviadas", "espiaram", "sorteioDicas", "foco"]) delete e[campo];
         e.reveladas = {};
         e.sorteio = null;
         e.sorteioQuestao = null;

@@ -611,7 +611,7 @@ teste("jogo no servidor: tipo da noite na mensagem; Ordem e data com [B#] do Ap�
   const doApendice = ger.eventosDoApendiceB(textoApendice);
   for (const e of ordem) assert.ok(doApendice.some((x) => x.data === e.data && x.evento === e.evento), "fora do Apêndice B: " + e.data);
   assert.deepEqual(parte.jogo.itens.slice().sort(), ordem.map((e) => e.evento).sort());
-  assert.match(parte.jogo.comoJogar, /Ordem certa \(datas do Apêndice B da Bíblia de Estudo\): 1\. /);
+  assert.match(parte.jogo.comoJogar, /Ordem certa \(datas do Apêndice B da Bíblia de Estudo\): Rodada 1: 1\. /);
   assert.deepEqual(parte.memoria, { jogos: ["Ordem e data dos acontecimentos"] });
 });
 
@@ -776,7 +776,7 @@ teste("6.12.73: prompts do Personagem (ângulo), do Jogo (8 a 12, sem respostas 
   assert.match(s.personagem, /EPISÓDIO INTEIRO, do começo ao desfecho/);
   assert.match(s.jogo, /QUANTIDADE: mande o número de "rodadas" pedido na linha QUANTIDADE/);
   assert.match(s.jogo, /SEM RESPOSTAS ÓBVIAS/);
-  assert.match(s.jogo, /de 6 a 8 identificadores \[B#\]/);
+  assert.match(s.jogo, /de 18 a 24 identificadores \[B#\]/);
   assert.match(s.ministerio, /SÓ sobre COMO PROCEDER/);
   assert.match(s.ministerio, /Nunca perguntas sobre sentimentos/);
   assert.match(s.abertura, /Fuja das leituras e dos relatos bíblicos já usados/);
@@ -806,10 +806,22 @@ teste("6.12.73/6.12.76: jogo pede de novo quando faltam rodadas (mínimo do tipo
   assert.equal(semVF.contagens.rodadas, 0, "resposta sem Verdadeiro/Falso sai");
   if (!comFontes) return console.log("      (sem FONTES_DIR: Ordem e data pulada)");
   const ordem = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "jogo", jogos: ["Ordem e data dos acontecimentos"] }), montados);
-  assert.match(ordem.mensagem, /escolha de 6 a 8 em "eventos"/);
+  assert.match(ordem.mensagem, /escolha de 18 a 24 em "eventos"/);
   const parte = await ordem.prep.montar({ descricao: "d", nome: "Linha", comoJogar: "Ordem.", rodadas: [], eventos: ["B1", "B5", "B9"] });
   assert.match(parte.falta, /^vieram 3 acontecimentos válidos/);
   assert.ok(parte.jogo.ordem.length >= 6, "completa até 6 com o Apêndice B");
+  // 6.14.21: 3 rodadas (tabelas) com 6 a 8 acontecimentos, sem repetir, cada uma em ordem de data
+  assert.equal(parte.jogo.tabelas.length, 3);
+  const todos = parte.jogo.tabelas.flatMap((t) => t.ordem.map((e) => e.evento));
+  assert.equal(new Set(todos).size, todos.length, "nenhum acontecimento repetido entre as rodadas");
+  for (const t of parte.jogo.tabelas) {
+    assert.ok(t.ordem.length >= 6 && t.ordem.length <= 8, "6 a 8 por rodada");
+    const valores = t.ordem.map((e) => ger.valorDaData(e.data));
+    assert.deepEqual(valores, valores.slice().sort((a, b) => a - b));
+    assert.deepEqual(t.itens.slice().sort(), t.ordem.map((e) => e.evento).sort());
+    assert.notDeepEqual(t.itens, t.ordem.map((e) => e.evento), "embaralhados");
+  }
+  assert.match(parte.jogo.comoJogar, /Rodada 3: 1\. /);
 });
 
 teste("6.12.73: Abertura guarda leitura e relato; o trecho lido sai da lista na outra noite; EVITAR dos relatos (com FONTES_DIR)", async () => {
@@ -1304,7 +1316,7 @@ teste("6.12.77: telas dos jogos (uma questão por vez, Mostrar resposta, ordem r
   assert.match(appJs, /'💡 Próxima dica \(vale '/);
   assert.match(appJs, /ICONE_OLHO \+ ' Mostrar resposta'/);
   assert.match(appJs, /'💡 Resposta: ' \+ r\.resposta \+ \(r\.referencia \? ' \(' \+ r\.referencia \+ '\)' : ''\)/, "a referência só aparece com a resposta");
-  assert.match(appJs, /'🔑 Ordem certa \(com as datas\)'/);
+  assert.match(appJs, /'🔑 ' \+ rodadaTexto \+ 'Ordem certa \(com as datas\)'/);
   assert.match(appJs, /'🏆 Placar \(opcional, não é salvo\)'/);
   assert.match(appJs, /const bicho = nome => PLACAR_ANIMAIS\[/);
   assert.match(appJs, /'\+ jogador'/);
@@ -1321,11 +1333,11 @@ teste("6.12.77: telas dos jogos (uma questão por vez, Mostrar resposta, ordem r
   assert.deepEqual(familiaOrdemDoJogo({ comoJogar: "Coloquem em ordem. Ordem certa (datas do Apêndice B da Bíblia de Estudo): 1. 4026 a.C. — Criação de Adão; 2. 2370 a.C. — Dilúvio." }),
     [{ data: "4026 a.C.", evento: "Criação de Adão" }, { data: "2370 a.C.", evento: "Dilúvio" }]);
   assert.deepEqual(familiaOrdemDoJogo({ comoJogar: "Sem ordem." }), []);
-  // Compartilhada: revelar a ordem a todos e pontuar de boca (rodada "ordem"), com o estado.ordensReveladas.
-  assert.match(appJs, /participarAcao\(\{ acao: 'revelar-ordem', parte: parteIdx \}/);
-  assert.match(appJs, /rodada: 'ordem', nome: o\.sel\.value, pts: Number\(o\.selPts\.value\)/);
-  assert.match(appJs, /rodada: 'ordem' \}, o\.btnReiniciar\)/);
-  assert.match(appJs, /e\.ordensReveladas \|\| \{\}\)\[i\]/);
+  // Compartilhada (6.14.21): cada rodada é arrumada e enviada por cada jogador; revelar vale por rodada.
+  assert.match(appJs, /acao: 'enviar-ordem', sessao: participar\.cod, participanteId: participar\.participanteId, parte: parteIdx, rodada: k, ordem/);
+  assert.match(appJs, /participarAcao\(\{ acao: 'revelar-ordem', parte: parteIdx, rodada: k \}/);
+  assert.match(appJs, /participarAcao\(\{ acao: 'reiniciar', parte: parteIdx, rodada: k \}, b\)/);
+  assert.match(appJs, /daRodada\('ordensReveladas'\)/);
   // CSS: botões na largura toda (crescem e quebram a linha), sem verde.
   const bloco = css.slice(css.indexOf("6.12.77: jogo sem compartilhar"));
   assert.match(bloco, /\.fam-jogo-questao-botoes > button, \.fam-jogo-questao-nav > button \{ flex: 1 1 140px/);

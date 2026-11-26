@@ -18277,3 +18277,18 @@ details.fam-placar-card > summary { min-height: 0 !important; padding: 3px 8px !
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) #participarSessao .fam-ordem-vale { background: #33270f; border-color: #b45309; color: #fcd34d; }
 }
+
+/* 6.14.21: os botoes do fim do jogo logo antes de Regras e Tela grande; o "Ordem e data" em rodadas */
+#participarSessao.fam-sessao-jogo-avulso > .fam-jogo-fim { order: 7; }
+#participarSessao li.fam-ordem-rodada > [hidden], #participarSessao li.fam-ordem-rodada .fam-ordem-seta[hidden] { display: none !important; }
+#participarSessao .fam-ordem-dica { margin: 4px 0 8px; font-weight: 700; text-align: center; }
+#participarSessao li.fam-ordem-rodada .fam-ordem-arrumar { margin-bottom: 10px; }
+#participarSessao li.fam-ordem-rodada .fam-ordem-aviso { margin: 0 0 10px; }
+#participarSessao li.fam-ordem-rodada > div.fam-ordem-acoes:not(.fam-acoes-dupla) { display: grid; grid-template-columns: minmax(0, 1fr); }
+#participarSessao li.fam-ordem-rodada .fam-ordem-acoes > button { width: 100%; }
+#participarSessao li.fam-ordem-rodada > button.fam-ordem-revelar { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; min-height: 44px; margin: 8px 0 0; }
+#participarSessao .fam-ordem-envios { display: grid; gap: 6px; margin: 10px 0 0; padding: 0; list-style: none; }
+#participarSessao .fam-ordem-envios > li { padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); overflow-wrap: anywhere; font-weight: 600; }
+#participarSessao .fam-ordem-envios > li.certa { border-color: #8b5cf6; background: color-mix(in srgb, #8b5cf6 20%, var(--card)); }
+#participarSessao li.fam-ordem-rodada > .fam-sessao-ordem-resultado { margin: 4px 0 10px; text-align: center; font-weight: 700; }
+#participarSessao li.fam-ordem-rodada > .fam-ordem-certa { margin-top: 10px; }

@@ -282,7 +282,7 @@ try {
   const part2 = await chamar({ acao: "entrar", sessao: cv2.sessao, nome: "Ana" });
   assert.ok(!JSON.stringify(part2.dados).includes(DATA_SECRETA) && !("extras" in part2.dados)); passo("participante não recebe a ordem nem as datas");
   const dir2 = await chamar({ acao: "entrar", sessao: cv2.sessao, chave: cv2.chave });
-  assert.deepEqual(dir2.dados.extras.ordens["2"], v2.partes[2].jogo.ordem); passo("quem dirige recebe a ordem certa em extras.ordens[índice da parte]");
+  assert.deepEqual(dir2.dados.extras.ordens["2"], [v2.partes[2].jogo.ordem]); passo("quem dirige recebe a ordem certa de cada rodada em extras.ordens[índice da parte]");
   // 6.13.36: jogo avulso (tela Jogos bíblicos): programa.modo = "jogos" e o jogo já começa liberado e aberto
   const avulso = (await chamar({ acao: "criar", programa: { modo: "jogos", titulo: "Quem sou eu?", emoji: "🕵️", partes: [v2.partes[2]] }, codigo: "codigo-de-teste" })).dados;
   const entAvulso = await chamar({ acao: "entrar", sessao: avulso.sessao, nome: "Ana" });
@@ -302,53 +302,72 @@ try {
   const progAntigo = JSON.parse(programaArq);
   assert.ok(!("versao" in progAntigo) && progAntigo.partes.every((p) => !("quadro" in p)) && !("ordens" in d.dados.extras)); passo("programação antiga continua sem versao, quadro e ordens");
 
-  // 6.12.77: "Ordem e data": revelar a ordem a todos, pontuar de boca (quem acertou e quantos pontos) e esconder de novo
-  assert.deepEqual(part2.dados.estado.ordensReveladas, {}); passo("estado público começa com ordensReveladas vazio");
-  assert.equal((await chamar({ acao: "revelar-ordem", sessao: cv2.sessao, parte: 2 })).status, 403); passo("revelar-ordem sem a chave do dirigente recusado");
-  assert.equal((await chamar({ acao: "revelar-ordem", sessao: cv2.sessao, chave: cv2.chave, parte: 0 })).status, 400); passo("revelar-ordem numa parte sem ordem recusado");
-  const ro = await chamar({ acao: "revelar-ordem", sessao: cv2.sessao, chave: cv2.chave, parte: 2 });
+  // 6.14.21: "Ordem e data" em rodadas (tabelas): cada jogador envia a sua ordem; sozinho, dá para tentar de novo
+  assert.deepEqual(part2.dados.estado.ordensReveladas, {});
+  assert.deepEqual(part2.dados.programa.partes[2].jogo.rodadas, [{ pergunta: "Ordem 1", itens: ["Criação de Adão", "Dilúvio"] }]); passo("jogo antigo com uma ordem só vira 1 rodada, sem a ordem certa");
+  assert.equal((await chamar({ acao: "revelar-ordem", sessao: cv2.sessao, parte: 2, rodada: 0 })).status, 403); passo("revelar-ordem sem a chave do dirigente recusado");
+  assert.equal((await chamar({ acao: "revelar-ordem", sessao: cv2.sessao, chave: cv2.chave, parte: 0, rodada: 0 })).status, 400);
+  assert.equal((await chamar({ acao: "revelar-ordem", sessao: cv2.sessao, chave: cv2.chave, parte: 2, rodada: 3 })).status, 400); passo("revelar-ordem numa parte ou rodada sem ordem recusado");
+  const ro = await chamar({ acao: "revelar-ordem", sessao: cv2.sessao, chave: cv2.chave, parte: 2, rodada: 0 });
   assert.equal(ro.status, 200);
-  assert.deepEqual(ro.dados.estado.ordensReveladas["2"], v2.partes[2].jogo.ordem); passo("revelar-ordem mostra a todos a ordem certa com as datas");
-  const est2 = await chamar({ acao: "estado", sessao: cv2.sessao });
-  assert.ok(JSON.stringify(est2.dados.estado.ordensReveladas).includes(DATA_SECRETA)); passo("o participante recebe a ordem revelada no estado");
-  assert.equal((await chamar({ acao: "pontuar", sessao: cv2.sessao, chave: cv2.chave, parte: 2, rodada: "ordem", nome: "Ana", pts: 5 })).status, 400); passo("pontuar a ordem com mais pontos que eventos + 2 recusado");
-  assert.equal((await chamar({ acao: "pontuar", sessao: cv2.sessao, chave: cv2.chave, parte: 2, rodada: "ordem", nome: "", pts: 2 })).status, 400); passo("pontuar a ordem sem escolher quem acertou recusado");
-  const po = await chamar({ acao: "pontuar", sessao: cv2.sessao, chave: cv2.chave, parte: 2, rodada: "ordem", nome: "Ana", pts: 4 });
-  assert.equal(po.status, 200);
-  assert.deepEqual(po.dados.estado.acertos["2"].ordem, { nome: "Ana", pts: 4 }); passo("pontuar a ordem grava quem acertou e os pontos escolhidos (acertos[parte].ordem)");
-  const pn = await chamar({ acao: "pontuar", sessao: cv2.sessao, chave: cv2.chave, parte: 2, rodada: "ordem", ninguem: true });
-  assert.deepEqual(pn.dados.estado.acertos["2"].ordem, { nome: "", pts: 0, ninguem: true }); passo("\"Ninguém acertou\" na ordem: sem pontos");
-  const reo = await chamar({ acao: "reiniciar", sessao: cv2.sessao, chave: cv2.chave, parte: 2, rodada: "ordem" });
-  assert.equal(reo.status, 200);
-  assert.ok(!("ordem" in (reo.dados.estado.acertos["2"] || {})) && !("2" in reo.dados.estado.ordensReveladas)); passo("reiniciar a ordem esconde de novo a ordem e tira os pontos");
-  const po2 = await chamar({ acao: "pontuar", sessao: cv2.sessao, chave: cv2.chave, parte: 2, rodada: "ordem", nome: "Ana", pts: 0 });
-  assert.deepEqual(po2.dados.estado.ordensReveladas["2"], v2.partes[2].jogo.ordem); passo("pontuar a ordem (mesmo com 0 ponto) também revela a ordem");
+  assert.deepEqual(ro.dados.estado.ordensReveladas["2"]["0"], v2.partes[2].jogo.ordem);
+  assert.equal(ro.dados.estado.reveladas["2"]["0"], "ordem"); passo("revelar-ordem mostra a todos a ordem certa da rodada, com as datas");
+  assert.equal((await chamar({ acao: "revelar", sessao: cv2.sessao, chave: cv2.chave, parte: 2, rodada: 0 })).status, 400);
+  assert.equal((await chamar({ acao: "pontuar", sessao: cv2.sessao, chave: cv2.chave, parte: 2, rodada: 0, nome: "Ana" })).status, 400); passo("rodada de ordem não aceita revelar nem pontuar de texto");
   await chamar({ acao: "encerrar", sessao: cv2.sessao, chave: cv2.chave });
 
-  // 6.14.20: sozinho, no "Ordem e data", o servidor confere a ordem arrumada e dá os pontos
   {
-    const eventos = ["Criação de Adão", "Dilúvio", "Êxodo", "Batismo de Jesus"];
-    const parteOrdem = { quadro: "jogo", nome: "Ordem", jogo: { tipo: "Ordem e data", idTipo: "ordem_data", nome: "Ordem", comoJogar: "Ordenem.", rodadas: [], itens: [eventos[2], eventos[0], eventos[3], eventos[1]], ordem: eventos.map((evento, i) => ({ data: `${i + 1} AEC`, evento })) } };
+    const eventos = [["Criação de Adão", "Dilúvio", "Êxodo", "Batismo de Jesus"], ["Torre de Babel", "Morte de José", "Queda de Jericó"]];
+    const tabela = (lista, ano) => ({ itens: [...lista].reverse(), ordem: lista.map((evento, i) => ({ data: `${ano + i} AEC`, evento })) });
+    const parteOrdem = { quadro: "jogo", nome: "Ordem", jogo: { tipo: "Ordem e data", idTipo: "ordem_data", nome: "Ordem", comoJogar: "Ordenem.", rodadas: [], itens: [...eventos[0]].reverse(), ordem: tabela(eventos[0], 100).ordem, tabelas: [tabela(eventos[0], 100), tabela(eventos[1], 200)] } };
+
+    // sozinho
     const so = (await chamar({ acao: "criar", programa: { modo: "jogos", solo: true, titulo: "Ordem", partes: [parteOrdem] }, codigo: "codigo-de-teste" })).dados;
-    const conferir = (ordem) => chamar({ acao: "conferir-ordem", sessao: so.sessao, chave: so.chave, parte: 0, ordem });
-    assert.equal((await conferir(eventos.slice(0, 2))).status, 400);
-    const errada = [eventos[0], eventos[2], eventos[1], eventos[3]];
-    const c1 = await conferir(errada);
+    const ent = (await chamar({ acao: "entrar", sessao: so.sessao, chave: so.chave })).dados;
+    assert.equal(ent.programa.partes[0].jogo.rodadas.length, 2);
+    assert.ok(!JSON.stringify(ent.programa).includes("AEC")); passo("duas tabelas viram duas rodadas, sem datas na programação");
+    const enviarSo = (rodada, ordem) => chamar({ acao: "enviar-ordem", sessao: so.sessao, participanteId: ent.participanteId, parte: 0, rodada, ordem });
+    assert.equal((await enviarSo(0, eventos[0].slice(0, 2))).status, 400);
+    const errada = [eventos[0][0], eventos[0][2], eventos[0][1], eventos[0][3]];
+    const c1 = await enviarSo(0, errada);
     assert.equal(c1.status, 200, JSON.stringify(c1.dados));
-    assert.deepEqual(c1.dados.estado.erradas["0"].ordem, [{ nome: "Jogador", ordem: errada, certos: [0, 3] }]);
-    assert.deepEqual(c1.dados.estado.ordensReveladas, {});
-    assert.ok(!JSON.stringify(c1.dados).includes("1 AEC")); passo("ordem errada: diz quais estão no lugar, sem revelar a ordem nem as datas");
-    assert.equal((await conferir(errada)).status, 409); passo("a mesma ordem de novo não é conferida (não perde ponto à toa)");
-    const c2 = await conferir(eventos);
-    assert.deepEqual(c2.dados.estado.acertos["0"].ordem, { nome: "Jogador", pts: 3 });
-    assert.equal(c2.dados.estado.ordensReveladas["0"].length, 4); passo("ordem certa: 4 acontecimentos menos 1 erro = 3 pontos, e a ordem é revelada");
-    assert.equal((await conferir(errada)).status, 409);
-    const re = await chamar({ acao: "reiniciar", sessao: so.sessao, chave: so.chave, parte: 0, rodada: "ordem" });
-    assert.ok(!(re.dados.estado.erradas["0"] || {}).ordem && !(re.dados.estado.acertos["0"] || {}).ordem); passo("reiniciar a ordem também apaga as conferências erradas");
+    assert.deepEqual(c1.dados.estado.erradas["0"]["0"], [{ nome: "Jogador", ordem: errada, certos: [0, 3] }]);
+    assert.ok(!JSON.stringify(c1.dados).includes("100 AEC")); passo("sozinho, ordem errada: diz quais estão no lugar, sem revelar");
+    assert.equal((await enviarSo(0, errada)).status, 409); passo("a mesma ordem de novo não é conferida (não perde ponto à toa)");
+    const c2 = await enviarSo(0, eventos[0]);
+    assert.deepEqual(c2.dados.estado.acertos["0"]["0"], { nome: "Jogador", pts: 3 });
+    assert.equal(c2.dados.estado.ordensReveladas["0"]["0"].length, 4);
+    assert.ok(!JSON.stringify(c2.dados).includes("200 AEC")); passo("sozinho, ordem certa: 4 menos 1 erro = 3 pontos; só aquela rodada é revelada");
+    assert.equal((await enviarSo(0, errada)).status, 409);
+    const rei = await chamar({ acao: "reiniciar", sessao: so.sessao, chave: so.chave, parte: 0, rodada: 0 });
+    assert.ok(!(rei.dados.estado.erradas["0"] || {})["0"] && !(rei.dados.estado.acertos["0"] || {})["0"] && !(rei.dados.estado.ordensReveladas["0"] || {})["0"]); passo("reiniciar a rodada apaga as tentativas, os pontos e a revelação");
     await chamar({ acao: "encerrar", sessao: so.sessao, chave: so.chave });
-    const grupo = (await chamar({ acao: "criar", programa: { modo: "jogos", titulo: "Ordem", partes: [parteOrdem] }, codigo: "codigo-de-teste" })).dados;
-    assert.equal((await chamar({ acao: "conferir-ordem", sessao: grupo.sessao, chave: grupo.chave, parte: 0, ordem: eventos })).status, 400); passo("no jogo em grupo não há conferência automática da ordem");
-    await chamar({ acao: "encerrar", sessao: grupo.sessao, chave: grupo.chave });
+
+    // em grupo
+    const g = (await chamar({ acao: "criar", programa: { modo: "jogos", titulo: "Ordem", partes: [parteOrdem] }, codigo: "codigo-de-teste" })).dados;
+    const ids = {};
+    for (const nome of ["Ana", "Bia", "Caio"]) ids[nome] = (await chamar({ acao: "entrar", sessao: g.sessao, nome })).dados.participanteId;
+    const enviar = (nome, rodada, ordem) => chamar({ acao: "enviar-ordem", sessao: g.sessao, participanteId: ids[nome], parte: 0, rodada, ordem });
+    const a = await enviar("Ana", 0, errada);
+    assert.equal(a.status, 200, JSON.stringify(a.dados));
+    assert.deepEqual(a.dados.estado.ordensEnviadas["0"]["0"], [{ nome: "Ana", certos: 2, total: 4, certa: false }]);
+    assert.ok(!JSON.stringify(a.dados.estado).includes("AEC"), "sem as datas"); passo("em grupo: o envio é julgado na hora, sem a ordem enviada nem a certa no estado");
+    assert.equal((await enviar("Ana", 0, eventos[0])).status, 409); passo("um envio por jogador em cada rodada");
+    const b = await enviar("Bia", 0, eventos[0]);
+    assert.deepEqual(b.dados.estado.acertos["0"]["0"], { nome: "Bia", pts: 4 });
+    assert.ok(!(b.dados.estado.reveladas["0"] || {})["0"], "ainda falta o Caio"); passo("a primeira ordem certa leva os pontos e a rodada segue aberta para os outros");
+    const c = await enviar("Caio", 0, eventos[0]);
+    assert.deepEqual(c.dados.estado.acertos["0"]["0"], { nome: "Bia", pts: 4 });
+    assert.equal(c.dados.estado.ordensEnviadas["0"]["0"][2].certa, true);
+    assert.equal(c.dados.estado.ordensReveladas["0"]["0"].length, 4); passo("todos enviaram: quem acertou depois não leva pontos, e a ordem certa é revelada");
+    // sem ninguém certo, o administrador revela
+    await enviar("Ana", 1, [...eventos[1]].reverse());
+    const rv = await chamar({ acao: "revelar-ordem", sessao: g.sessao, chave: g.chave, parte: 0, rodada: 1 });
+    assert.ok(!(rv.dados.estado.acertos["0"] || {})["1"]);
+    assert.equal((await enviar("Bia", 1, eventos[1])).status, 409); passo("depois de revelada pelo administrador, ninguém mais envia");
+    const tudo = await chamar({ acao: "reiniciar", sessao: g.sessao, chave: g.chave, parte: 0, rodada: "tudo" });
+    assert.ok(!tudo.dados.estado.ordensEnviadas["0"] && !tudo.dados.estado.ordensReveladas["0"]); passo("recomeçar o jogo apaga os envios");
+    await chamar({ acao: "encerrar", sessao: g.sessao, chave: g.chave });
   }
 
   // 6.13.45: Verdadeiro ou falso é julgado na hora pelo servidor (certa: pontos; errada: resposta revelada, sem pontos, sem esperar o presidente)
