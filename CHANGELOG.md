@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.51
+
+- **Formatar notas JW Library:** os cabeçalhos dos cards (os três grandes e os de dentro) **mais finos e do mesmo tamanho** (44 px) e **10 px** entre todos os campos, também com os cards abertos. O título das listas ficou **"Inserir marcadores e numeradores de lista"** (sem "no texto selecionado").
+
 ## 6.14.50
 
 - **Jogos bíblicos:** o título **"Jogos preparados"** centralizado no card e o botão **"Entrar em um jogo em grupo"** em **azul claro** (azul fechado no modo escuro).

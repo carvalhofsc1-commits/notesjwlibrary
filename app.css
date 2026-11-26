@@ -18245,6 +18245,23 @@ body[data-screen="jogos"] main { padding-top: 10px; padding-bottom: 6px; }
 :root[data-theme="dark"] #jogosCard #jogosParticiparBtn#jogosParticiparBtn { background: #1d2d4a; border-color: #3b82f6; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #jogosCard #jogosParticiparBtn#jogosParticiparBtn { background: #1d2d4a; border-color: #3b82f6; } }
 
+/* 6.14.51: Formatar notas: os cabeçalhos dos cards (os três grandes e os de dentro) mais finos e todos do mesmo tamanho (44 px, com
+   espaço para título em duas linhas) e 10 px entre tudo, inclusive com os cards abertos */
+:is(#principaisBox, #outrasOpcoesBox, #opcoesIaBox) > summary,
+:is(#principaisBox, #outrasOpcoesBox, #opcoesIaBox) details.subsection > summary { box-sizing: border-box; min-height: 44px; margin: 0; padding: 3px 10px; gap: 6px; font-size: .88rem; line-height: 1.2; }
+:is(#principaisBox, #outrasOpcoesBox, #opcoesIaBox) > summary > *,
+:is(#principaisBox, #outrasOpcoesBox, #opcoesIaBox) details.subsection > summary > * { margin-top: 0; margin-bottom: 0; line-height: 1.2; }
+:is(#principaisBox, #outrasOpcoesBox, #opcoesIaBox) > .group-box-body,
+:is(#principaisBox, #outrasOpcoesBox, #opcoesIaBox) details.subsection > .subsection-body { display: flex; flex-direction: column; gap: 10px; padding: 10px; }
+:is(#principaisBox, #outrasOpcoesBox, #opcoesIaBox) :is(.ai-box, .ai-colado, .style-full-row, .symbol-search, .symbol-toolbar > div, .template-toolbar > div, .ai-sources) { display: flex; flex-direction: column; gap: 10px; }
+:is(#principaisBox, #outrasOpcoesBox, #opcoesIaBox) :is(.group-box-body, .subsection-body, .ai-box, .ai-colado, .style-full-row, .symbol-search, .symbol-toolbar, .symbol-toolbar > div, .template-toolbar, .template-toolbar > div, .ai-sources) > * { margin-top: 0; margin-bottom: 0; }
+:is(#principaisBox, #outrasOpcoesBox, #opcoesIaBox) .ai-colado { padding: 10px; }
+:is(#principaisBox, #outrasOpcoesBox, #opcoesIaBox) :is(.main-actions, .option-buttons, .list-buttons, .templates) { gap: 10px; }
+:is(#principaisBox, #outrasOpcoesBox, #opcoesIaBox) details.ia-extra { padding: 10px 12px; }
+:is(#principaisBox, #outrasOpcoesBox, #opcoesIaBox) details.ia-extra > summary { margin: 0; padding: 0; min-height: 22px; }
+:is(#principaisBox, #outrasOpcoesBox, #opcoesIaBox) details.ia-extra > :not(summary) { display: block; margin: 10px 0 0; }
+:is(#principaisBox, #outrasOpcoesBox, #opcoesIaBox) [hidden] { display: none !important; }
+
 /* 6.14.14: o botao da dica com fundo cinza; no fim do jogo, "Jogar novamente" e "Fechar" na largura toda */
 #participarSessao button.fam-sessao-dar-dica { background: #e5e7eb !important; border: 1.5px solid #9ca3af !important; color: #1f2937 !important; }
 #participarSessao .fam-jogo-fim { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; margin: 12px 0 8px; }
