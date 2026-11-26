@@ -18209,6 +18209,26 @@ details.fam-placar-card > summary { min-height: 0 !important; padding: 3px 8px !
 #jogosCard #jogosGrade > .jogos-card:first-child:not(.aberto) .fam-hub-nome { font-size: 1.4rem; }
 #jogosCard #jogosGrade > .jogos-card:first-child:not(.aberto) .fam-hub-desc { font-size: .92rem; }
 
+/* 6.14.45: a lista dos jogos cabe numa tela, sem rolar: o Perfil bíblico deitado (emoji ao lado), os quadrados mais baixos e as margens
+   da tela menores; nas telas mais altas os atalhos e os emojis crescem junto com a altura */
+body[data-screen="jogos"] main { padding-top: 10px; padding-bottom: 6px; }
+#jogosCard { padding-top: 10px; padding-bottom: 8px; }
+#jogosCard > #jogosDica { font-size: .85rem; line-height: 1.25; }
+#jogosCard #jogosGrade { grid-template-rows: auto; grid-auto-rows: 1fr; }
+#jogosCard .jogos-card:not(.aberto) > .jogos-atalho { gap: 1px; min-height: clamp(0px, calc((100vh - 470px) / 3), 140px); min-height: clamp(0px, calc((100dvh - 470px) / 3), 140px); padding: 3px 4px; }
+#jogosCard .jogos-card:not(.aberto) .fam-hub-icone { font-size: clamp(1.75rem, calc(100vh / 26), 2.75rem); font-size: clamp(1.75rem, calc(100dvh / 26), 2.75rem); line-height: 1.1; }
+#jogosCard .jogos-card:not(.aberto) .fam-hub-nome { font-size: .88rem; line-height: 1.12; }
+#jogosCard .jogos-card:not(.aberto) .fam-hub-desc { font-size: .7rem; line-height: 1.15; }
+#jogosCard #jogosGrade > .jogos-card:first-child:not(.aberto) > .jogos-atalho { display: grid; grid-template-columns: auto minmax(0, 1fr); align-content: center; column-gap: 10px; row-gap: 2px; min-height: 0; padding: 6px 10px; }
+#jogosCard #jogosGrade > .jogos-card:first-child:not(.aberto) .fam-hub-icone { grid-row: 1 / span 2; align-self: center; font-size: 3rem; }
+#jogosCard #jogosGrade > .jogos-card:first-child:not(.aberto) .fam-hub-nome { font-size: 1.3rem; }
+#jogosCard #jogosGrade > .jogos-card:first-child:not(.aberto) .fam-hub-desc { font-size: .84rem; }
+#jogosCard > #jogosSalvosBox > summary { min-height: 34px; }
+#jogosCard > #jogosSalvosBox:not([open]) { padding-bottom: 0; }
+#jogosCard #jogosParticiparBtn#jogosParticiparBtn { min-height: 0; padding-top: 3px; padding-bottom: 3px; }
+#jogosCard #jogosParticiparBtn#jogosParticiparBtn .fam-hub-desc { line-height: 1.15; }
+#jogosCard #jogosContinuar > button { min-height: 36px; padding-top: 2px; padding-bottom: 2px; font-size: .9rem; line-height: 1.15; }
+
 /* 6.14.14: o botao da dica com fundo cinza; no fim do jogo, "Jogar novamente" e "Fechar" na largura toda */
 #participarSessao button.fam-sessao-dar-dica { background: #e5e7eb !important; border: 1.5px solid #9ca3af !important; color: #1f2937 !important; }
 #participarSessao .fam-jogo-fim { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; margin: 12px 0 8px; }

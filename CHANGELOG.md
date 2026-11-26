@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.45
+
+- **Jogos bíblicos (lista):** agora **cabe numa tela, sem rolar** (medido em 360×740, 375×812 e 412×915): **Perfil bíblico deitado** (emoji ao lado do nome), quadrados mais baixos, margens menores e "Entrar em um jogo", "Continuar a partida" e "Jogos preparados" mais finos. Nas telas mais altas os atalhos crescem junto.
+
 ## 6.14.44
 
 - **Início:** o atalho **Jogos bíblicos** passou a dizer **"Para atividades em grupo e reuniões sociais"**.
