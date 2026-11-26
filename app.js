@@ -138,6 +138,7 @@
       if (changed && currentScreen() === 'leitura') leituraAoSair(); // saindo da tela Leitura, a leitura em voz alta para
       if (changed && (currentScreen() === 'biblia' || currentScreen() === 'pesquisa')) bibliaVideoParar(); // saindo da Bíblia ou das Pesquisas, o vídeo que estiver tocando para
       document.body.dataset.screen = screen;
+      try { acessoUsuarioFechar(true); } catch (e) { /* ainda iniciando */ } // 6.14.75: sair (ou reabrir Ajustes) fecha a tela do usuário
       // O modo "só o Consumo" (atalho Extrato) vale só até a próxima troca de tela; extratoAbrir o liga de novo logo depois.
       document.body.classList.remove('so-consumo');
       const consumoVoltar = document.getElementById('consumoVoltarBarra');
@@ -7963,7 +7964,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.14.74'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.14.75'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -13274,11 +13275,6 @@ function saveTemplatesToStorage() {
           '</div></div>'
         ).join('')
         : '<p class="hint">Nenhum cadastro pendente.</p>';
-      // Mantém abertos os cards que já estavam (ou o que acabou de ser alterado), senão o Gerar/Creditar fecha o card ao redesenhar.
-      const manterAbertos = new Set(opts && opts.manterAbertos ? opts.manterAbertos : []);
-      acessoSiteAprovados.querySelectorAll('details.acesso-site-item[open][data-aparelho]').forEach(el => {
-        if (el.dataset.aparelho) manterAbertos.add(el.dataset.aparelho);
-      });
       // 6.14.73: dentro do usuário, cada seção é um card recolhível; as abertas continuam abertas depois do redesenho.
       const secoesAbertas = new Set(Array.from(acessoSiteAprovados.querySelectorAll('details.acesso-site-sec[open]'), s => s.closest('details.acesso-site-item').dataset.aparelho + '|' + s.dataset.sec));
       const recursosLista = Array.isArray(acesso.recursosCodigo) && acesso.recursosCodigo.length ? acesso.recursosCodigo : acessoSiteRecursosCodigo;
@@ -13292,7 +13288,6 @@ function saveTemplatesToStorage() {
           const idCompleto = a.aparelhoIdCompleto || '';
           const creditos = Number(a.creditos) || 0;
           const codigos = a.codigos && typeof a.codigos === 'object' ? a.codigos : {};
-          const aberto = manterAbertos.has(idCompleto) ? ' open' : '';
           const resumo = [
             acessoSiteEscapar(nome),
             a.idade ? acessoSiteEscapar(a.idade) + ' anos' : '',
@@ -13369,7 +13364,7 @@ function saveTemplatesToStorage() {
                 '<button type="button" class="secondary acesso-site-expirar-master" data-aparelho="' + acessoSiteEscapar(idCompleto) + '">Expirar</button>' +
                 '</div>'
               : '<div class="acesso-site-master-botoes"><button type="button" class="acesso-site-gerar-master" data-aparelho="' + acessoSiteEscapar(idCompleto) + '">⭐ Gerar senha master</button></div>'));
-          return '<details class="acesso-site-item" data-aparelho="' + acessoSiteEscapar(idCompleto) + '" data-busca="' + acessoSiteEscapar(busca) + '" data-nome="' + acessoSiteEscapar(nome) + '" data-saldo="' + creditos + '"' + aberto + '>' +
+          return '<details class="acesso-site-item" data-aparelho="' + acessoSiteEscapar(idCompleto) + '" data-busca="' + acessoSiteEscapar(busca) + '" data-nome="' + acessoSiteEscapar(nome) + '" data-saldo="' + creditos + '">' +
           '<summary class="acesso-site-resumo">' + resumoHtml + '</summary>' +
           '<div class="acesso-site-detalhe">' +
           secao('dados', '👤 Dados do cadastro',
@@ -13401,7 +13396,8 @@ function saveTemplatesToStorage() {
           '<tbody>' + linhasConsumo + '</tbody></table></div>') +
           masterHtml +
           secao('codigos', '🔑 Códigos personalizados', linhasCodigo) +
-          '<div class="button-row">' +
+          '<div class="acesso-site-usuario-fim">' +
+          '<button type="button" class="acesso-site-fechar">✖️ Fechar</button>' +
           '<button type="button" class="secondary acesso-site-revogar" data-aparelho="' + acessoSiteEscapar(idCompleto) + '">🗑️ Revogar</button>' +
           '</div></div></details>';
         }).join('')
@@ -13422,7 +13418,43 @@ function saveTemplatesToStorage() {
       acessoSiteFiltro.hidden = aprovados.length < 6;
       if (acessoSiteFiltro.hidden) acessoSiteFiltro.value = '';
       acessoSiteFiltrar();
+      // 6.14.75: com a tela de um usuário aberta, ela continua depois do redesenho; revogado, volta para a lista.
+      if (acessoUsuarioAberto) {
+        const item = acessoUsuarioItem(acessoUsuarioAberto);
+        if (item) { item.open = true; item.classList.add('usuario-tela'); } else acessoUsuarioFechar();
+      }
     }
+
+    // 6.14.75: tocar num usuário da lista abre a tela dele (Ajustes só com ele, classe so-usuario no body). A seta do alto e o Fechar
+    // voltam para a lista, na mesma posição; sair de Ajustes também desfaz.
+    let acessoUsuarioAberto = '';
+    let acessoUsuarioRolagem = 0;
+    function acessoUsuarioItem(id) {
+      return Array.from(acessoSiteAprovados.querySelectorAll('details.acesso-site-item')).find(el => el.dataset.aparelho === id) || null;
+    }
+    function acessoUsuarioAbrir(item) {
+      acessoUsuarioAberto = item.dataset.aparelho;
+      acessoUsuarioRolagem = window.scrollY;
+      item.open = true;
+      item.classList.add('usuario-tela');
+      document.body.classList.add('so-usuario');
+      document.getElementById('usuarioVoltarBarra').hidden = false;
+      window.scrollTo(0, 0);
+    }
+    function acessoUsuarioFechar(semRolar) {
+      if (!document.body.classList.contains('so-usuario')) return;
+      const item = acessoUsuarioItem(acessoUsuarioAberto);
+      if (item) {
+        item.open = false;
+        item.classList.remove('usuario-tela');
+        item.querySelectorAll('details.acesso-site-sec').forEach(s => { s.open = false; });
+      }
+      acessoUsuarioAberto = '';
+      document.body.classList.remove('so-usuario');
+      document.getElementById('usuarioVoltarBarra').hidden = true;
+      if (!semRolar) window.scrollTo({ top: acessoUsuarioRolagem, behavior: 'instant' }); // a lista já voltou: a posição é a de antes
+    }
+    document.getElementById('usuarioVoltarBtn').addEventListener('click', () => acessoUsuarioFechar());
 
     const acessoSiteFiltro = document.getElementById('acessoSiteFiltro');
     function acessoSiteFiltrar() {
@@ -13504,6 +13536,14 @@ function saveTemplatesToStorage() {
       // Clique em botão dentro do card não pode fechar o <details> (nem o da lista "Usuários identificados").
       const acaoBtn = e.target.closest('button');
       if (acaoBtn) e.stopPropagation();
+      // 6.14.75: o nome abre a tela do usuário (na tela dele, o cabeçalho não recolhe); o Fechar volta para a lista
+      const cabeca = e.target.closest('summary.acesso-site-resumo');
+      if (cabeca) {
+        e.preventDefault();
+        if (!cabeca.parentElement.classList.contains('usuario-tela')) acessoUsuarioAbrir(cabeca.parentElement);
+        return;
+      }
+      if (e.target.closest('button.acesso-site-fechar')) { acessoUsuarioFechar(); return; }
       const codigo = codigoAdminAtual();
       if (!codigo) {
         if (acaoBtn) acessoSiteStatus.textContent = 'Salve a senha de administrador em Autorização de acessos.';
@@ -32177,7 +32217,7 @@ function saveTemplatesToStorage() {
     (function voltarTopoIniciar() {
       const botao = document.getElementById('voltarTopoBtn');
       if (!botao) return;
-      const IDS = ['participarNomeVoltar', 'familiaAssuntosVoltar', 'familiaPerfilVoltar', 'familiaVoltar', 'participarVoltar', 'jogosVoltar', 'adoracaoVoltar', 'reunioesVoltar', 'salvasVoltar', 'anotacoesVoltarHub', 'consumoVoltarBtn', 'formatarVoltarBtn'];
+      const IDS = ['participarNomeVoltar', 'familiaAssuntosVoltar', 'familiaPerfilVoltar', 'familiaVoltar', 'participarVoltar', 'jogosVoltar', 'adoracaoVoltar', 'reunioesVoltar', 'salvasVoltar', 'anotacoesVoltarHub', 'usuarioVoltarBtn', 'consumoVoltarBtn', 'formatarVoltarBtn'];
       const aVista = b => Boolean(b && !b.disabled && !b.hidden && b.getClientRects().length);
       const alvo = () => {
         const secao = Array.from(document.querySelectorAll('.pesq-secao-voltar')).find(aVista);

@@ -17846,7 +17846,7 @@ header.app-topbar::after { content: none; }
 .voltar-topo { flex: 0 0 36px; width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; padding: 0; margin: 0; border: 0; border-radius: 12px; background: transparent; color: var(--accent, #4f46e5); box-shadow: none; }
 .voltar-topo:hover { background: var(--soft); transform: none; }
 .voltar-topo svg { display: block; }
-#formatarVoltarBtn, #anotacoesVoltarHub, #reunioesVoltar, #salvasVoltar, #consumoVoltarBtn, #adoracaoVoltar, #jogosVoltar, #familiaVoltar, #familiaPerfilVoltar, #familiaAssuntosVoltar, #participarVoltar {
+#formatarVoltarBtn, #anotacoesVoltarHub, #reunioesVoltar, #salvasVoltar, #usuarioVoltarBtn, #consumoVoltarBtn,#adoracaoVoltar, #jogosVoltar, #familiaVoltar, #familiaPerfilVoltar, #familiaAssuntosVoltar, #participarVoltar {
   position: absolute !important; width: 1px !important; height: 1px !important; min-height: 0 !important; margin: 0 !important; padding: 0 !important; border: 0 !important; overflow: hidden; clip-path: inset(50%); opacity: 0; pointer-events: none;
 }
 .voltar-barra { height: 0; min-height: 0; margin: 0 !important; padding: 0 !important; border: 0 !important; overflow: hidden; }
@@ -18634,3 +18634,24 @@ body.modo-convidado { padding-bottom: 0; }
 .acesso-site-cod-campo { display: flex; flex: 1 1 0; align-items: center; justify-content: center; min-width: 0; min-height: 38px; padding: 2px 4px; box-sizing: border-box; border: 1px solid var(--line); border-radius: 8px; background: var(--card); text-align: center; user-select: all; }
 .acesso-site-cod-campo > .acesso-site-codigo-valor { font-size: clamp(.64rem, 2.9vw, .76rem); font-weight: 700; line-height: 1.25; overflow-wrap: anywhere; word-break: break-all; }
 
+/* 6.14.75: tela de um usuário (Administração de usuários): Ajustes mostra só ele, sem as molduras de fora, na largura da tela */
+.usuario-titulo { display: none; }
+body[data-screen="ajustes"] .usuario-voltar-barra:not([hidden]) { display: block; }
+body[data-screen="ajustes"].so-usuario .usuario-titulo { display: block; margin: 0 0 10px; }
+body.so-usuario #settingsCard > :not(#ajustesGrupoAdmin),
+body.so-usuario #ajustesGrupoAdmin > :not(#acessoSiteSection),
+body.so-usuario #acessoSiteSection > summary,
+body.so-usuario #acessoSiteSection > .subsection-body > :not(#acessoSiteStatus):not(#acessoSiteUsuarios),
+body.so-usuario #acessoSiteUsuarios > :not(#acessoSiteAprovados),
+body.so-usuario #acessoSiteAprovados > :not(.usuario-tela),
+body.so-usuario #appVersionTexto,
+body.so-usuario .about-link-row { display: none !important; }
+body.so-usuario #ajustesGrupoAdmin,
+body.so-usuario #ajustesGrupoAdmin #acessoSiteSection,
+body.so-usuario #acessoSiteSection #acessoSiteUsuarios { margin: 0 !important; padding: 0 !important; border: 0 !important; border-radius: 0; background: transparent !important; box-shadow: none !important; }
+body.so-usuario #acessoSiteSection > .subsection-body { margin: 0; padding: 0 !important; border: 0; }
+body.so-usuario #acessoSiteAprovados > .usuario-tela { padding: 10px 8px; }
+body.so-usuario .usuario-tela > summary.acesso-site-resumo { cursor: default; }
+body.so-usuario .usuario-tela > summary.acesso-site-resumo::before { content: none; }
+.acesso-site-usuario-fim { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; margin-top: 12px; }
+.acesso-site-usuario-fim > button { width: 100%; margin: 0; }

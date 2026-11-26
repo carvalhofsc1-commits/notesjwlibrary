@@ -1351,6 +1351,9 @@
 
     <!-- Atalho Extrato do Início (6.10.72): Ajustes mostra só o card Consumo de IA e faturamento, com este Voltar (volta ao Início). -->
     <div id="consumoVoltarBarra" class="voltar-barra consumo-voltar-barra screen-ajustes" hidden><button id="consumoVoltarBtn" type="button" class="secondary">◀ Voltar</button></div>
+    <!-- 6.14.75: a tela de um usuário (Administração de usuários): Ajustes mostra só ele, com este título; volta pela seta do alto ou pelo Fechar. -->
+    <div id="usuarioVoltarBarra" class="voltar-barra usuario-voltar-barra screen-ajustes" hidden><button id="usuarioVoltarBtn" type="button" class="secondary">◀ Voltar</button></div>
+    <h2 id="usuarioTitulo" class="ajustes-grupo-titulo usuario-titulo screen-ajustes">👤 Usuário</h2>
     <!-- Tela Ajustes: as categorias ficam direto na página (sem um cartão recolhível em volta). -->
     <div class="ajustes-lista screen-ajustes" id="settingsCard">
         <!-- Os ajustes de todos os usuários ficam num contêiner (os do administrador, em outro, mais abaixo). -->
@@ -2289,7 +2292,7 @@
               <div id="acessoSitePedidos" class="acesso-site-lista"></div>
             </details>
 
-            <details class="prompt-item prompt-tint-codigo">
+            <details class="prompt-item prompt-tint-codigo" id="acessoSiteUsuarios">
               <summary><h3>✅ Usuários identificados <span id="acessoSiteAprovadosQtd" class="acesso-site-qtd"></span></h3></summary>
               <p id="acessoSiteTotais" class="hint acesso-site-totais" hidden></p>
               <input id="acessoSiteFiltro" class="acesso-site-filtro" type="search" autocomplete="off" spellcheck="false" placeholder="🔎 Procurar por nome, cidade, congregação ou telefone" aria-label="Procurar usuário" hidden>

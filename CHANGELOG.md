@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.75
+
+- **Administração de usuários:** tocar no nome abre a tela daquela pessoa, só com os dados dela. A seta do alto e o botão **Fechar** voltam para a lista, na mesma posição; depois de creditar ou gerar algo, a tela continua aberta.
+
 ## 6.14.74
 
 - **Códigos personalizados:** cada recurso mostra uma linha só, com o botão Gerar (ou Expirar) à esquerda e, na frente dele, o campo que começa em branco e recebe o código gerado, com os ícones de copiar e WhatsApp ao lado.
