@@ -7958,7 +7958,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.14.06'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.14.07'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -27961,7 +27961,7 @@ function saveTemplatesToStorage() {
     // O servidor (api/familia-sessao.mjs) grava a sessão e devolve o código (6 caracteres) e a chave do dirigente, que fica só neste
     // aparelho (localStorage) e permite liberar as partes, sortear e revelar as respostas. As respostas dos jogos não vão aos participantes.
     const FAMILIA_SESSAO_ENDPOINT = apiUrl('/api/familia-sessao');
-    const FAMILIA_SESSOES_KEY = 'nsFamiliaSessoesV1'; // { CODIGO: { titulo, em, chave?, participanteId? } }
+    const FAMILIA_SESSOES_KEY = 'nsFamiliaSessoesV1'; // { CODIGO: { titulo, em, chave, participanteId? } }: só as administradas neste aparelho
     const FAMILIA_SESSAO_LINK = 'https://www.notestyle.com.br/#participar=';
     const FAMILIA_SESSAO_VALIDADE_MS = 48 * 60 * 60 * 1000;
 
@@ -27983,12 +27983,15 @@ function saveTemplatesToStorage() {
       }
     }
 
-    // As sessões que este aparelho criou ou em que entrou (as vencidas saem sozinhas).
+    // As sessões que este aparelho administra (criou, ou assumiu a direção). As vencidas saem sozinhas. 6.14.07: de quem só entrou com o
+    // código nada fica guardado (os registros antigos, sem a chave, são apagados na leitura).
     function familiaSessoesLer() {
       let dados = {};
       try { dados = JSON.parse(localStorage.getItem(FAMILIA_SESSOES_KEY) || '{}') || {}; } catch (e) { dados = {}; }
       const agora = Date.now();
-      Object.keys(dados).forEach(cod => { if (!dados[cod] || agora - (Number(dados[cod].em) || 0) > FAMILIA_SESSAO_VALIDADE_MS) delete dados[cod]; });
+      let tirou = false;
+      Object.keys(dados).forEach(cod => { if (!dados[cod] || !dados[cod].chave || agora - (Number(dados[cod].em) || 0) > FAMILIA_SESSAO_VALIDADE_MS) { delete dados[cod]; tirou = true; } });
+      if (tirou) { try { localStorage.setItem(FAMILIA_SESSOES_KEY, JSON.stringify(dados)); } catch (e) { /* sem espaço */ } }
       return dados;
     }
     function familiaSessaoGuardar(cod, valores) {
@@ -28468,24 +28471,19 @@ function saveTemplatesToStorage() {
         linhaCod.className = 'fam-recente-cod';
         linhaCod.textContent = 'Código ' + cod;
         b.append(linhaNome, linhaCod);
-        if (dados[cod].chave) {
-          const linhaDir = document.createElement('span');
-          linhaDir.className = 'fam-recente-dirige';
-          linhaDir.textContent = dados[cod].solo ? '🎮 partida sozinho (toque para reabrir)' : dados[cod].modo === 'jogos' ? '👑 você administra (toque para reabrir)' :'👑 você preside (toque para reabrir)';
-          b.appendChild(linhaDir);
-        }
+        const linhaDir = document.createElement('span');
+        linhaDir.className = 'fam-recente-dirige';
+        linhaDir.textContent = dados[cod].solo ? '🎮 partida sozinho (toque para reabrir)' : dados[cod].modo === 'jogos' ? '👑 você administra (toque para reabrir)' : '👑 você preside (toque para reabrir)';
+        b.appendChild(linhaDir);
         b.addEventListener('click', () => participarAbrir(cod));
-        linha.appendChild(b);
-        if (dados[cod].chave) { // quem dirige também pode apagar o compartilhamento (criar outro código depois)
-          const apagar = document.createElement('button');
-          apagar.type = 'button';
-          apagar.className = 'secondary fam-fino limpar-btn';
-          apagar.textContent = '🗑️';
-          apagar.title = 'Apagar este compartilhamento (o código deixa de valer)';
-          apagar.setAttribute('aria-label', 'Apagar este compartilhamento');
-          apagar.addEventListener('click', async () => { if (await familiaSessaoApagar(cod)) participarRecentesPintar(); });
-          linha.appendChild(apagar);
-        }
+        const apagar = document.createElement('button'); // apagar o compartilhamento (criar outro código depois)
+        apagar.type = 'button';
+        apagar.className = 'secondary fam-fino limpar-btn';
+        apagar.textContent = '🗑️';
+        apagar.title = 'Apagar este compartilhamento (o código deixa de valer)';
+        apagar.setAttribute('aria-label', 'Apagar este compartilhamento');
+        apagar.addEventListener('click', async () => { if (await familiaSessaoApagar(cod)) participarRecentesPintar(); });
+        linha.append(b, apagar);
         participarEls.recentes.appendChild(linha);
       });
     }
@@ -28536,7 +28534,8 @@ function saveTemplatesToStorage() {
         nome: d.nome || nomeUsado, participantes: d.participantes || [], extras: d.extras || null
       });
       const titulo = (d.programa.emoji ? d.programa.emoji + ' ' : '') + (d.programa.titulo || 'Adoração em Família');
-      familiaSessaoGuardar(cod, Object.assign({ titulo }, d.programa.modo === 'jogos' ? { modo: 'jogos' } : {}, d.programa.solo ? { solo: true } : {},d.participanteId ? { participanteId: d.participanteId, nome: d.nome || nomeUsado } : {}));
+      // 6.14.07: só quem administra fica com a sessão na lista; de quem entrou com o código nada é guardado
+      familiaSessaoGuardar(cod, d.dirigente ? Object.assign({ titulo }, d.programa.modo === 'jogos' ? { modo: 'jogos' } : {}, d.programa.solo ? { solo: true } : {}, d.participanteId ? { participanteId: d.participanteId, nome: d.nome || nomeUsado } : {}) : null);
       participarStatus('');
       participarTextosModo(); // 6.13.45: adoração ou jogo avulso
       participarMontar();

@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.07
+
+- Adorações e jogos recentes: aparecem **só os que você criou** (ou cuja direção assumiu neste aparelho), todos com a lixeira 🗑️. De um jogo ou adoração em que você só entrou com o código nada fica guardado; os que já estavam na lista saem dela.
+- Para voltar a um jogo de outra pessoa depois de sair, digite o código de novo e use o mesmo nome (os pontos continuam).
+
 ## 6.14.06
 
 - Jogo ao vivo: o **🎤 agora é de segurar**. Grava só enquanto o botão está apertado; ao soltar, para e mostra **"Transcrevendo…"** até o texto aparecer no campo. No teclado, vale segurar espaço ou Enter.
