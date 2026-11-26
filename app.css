@@ -18605,3 +18605,5 @@ body.modo-convidado { padding-bottom: 0; }
 .reunioes-grupo > summary .grupo-icone > img.icone-img { width: 1.2em; height: 1.2em; margin: -0.1em 0; }
 .reunioes-topo .reunioes-pagina-icone > img.icone-img { width: 1.25em; height: 1.25em; margin: -0.2em 0; }
 .reunioes-topo .reunioes-pagina-icone > img.icone-img { width: 1.1em; height: 1.1em; margin: -0.18em 0; }
+/* 6.14.68: ícone próprio da Adoração em família, também no título das telas */
+.fam-topo .fam-titulo > span > img.icone-img { width: 1.45em; height: 1.45em; margin: -0.3em 0; }

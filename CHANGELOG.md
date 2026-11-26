@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.68
+
+- **Adoração em família:** ícone próprio (família estudando à mesa) no atalho, no menu, na barra de baixo, nos títulos das telas, nas Pesquisas salvas e na apresentação do app.
+
 ## 6.14.67
 
 - **Ícones próprios** das **Anotações** (caderno com caneta) e dos **Comentários** (mão levantada): atalhos, menu, títulos das telas, botão em Reuniões, categorias das Pesquisas salvas e apresentação do app.

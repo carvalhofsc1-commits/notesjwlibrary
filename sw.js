@@ -42,7 +42,8 @@ const PRECACHE = [
   'icone-dirigentes.png?v=1',
   'icone-leitura.png?v=2',
   'icone-anotacoes.png?v=1',
-  'icone-comentarios.png?v=1'
+  'icone-comentarios.png?v=1',
+  'icone-adoracao.png?v=1'
 ];
 
 self.addEventListener('install', event => {
