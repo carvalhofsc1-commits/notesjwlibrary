@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.16
+
+- Adoração e Jogos ao vivo: **respostas enviadas ao mesmo tempo não se perdem mais**. O servidor só grava o andamento se ele não mudou desde que foi lido; se mudou, refaz a ação com a situação nova (na mesma questão, a segunda pessoa é avisada de que alguém já respondeu).
+- Bloqueio por tentativas erradas: passa a contar **por aparelho** (10 por hora); os erros de um não bloqueiam os outros no mesmo Wi-Fi. A rede inteira só é bloqueada com 60 erros em uma hora.
+- Testes: 111 do servidor (5 novos, com pedidos simultâneos em duas instâncias).
+
 ## 6.14.15
 
 - Fim do jogo: o botão passou a ser **"✨ Jogar com novas perguntas"**. A IA prepara outro jogo do mesmo tipo, tema e instrução, com outras perguntas, e ele abre no lugar do que terminou, com a pontuação zerada.

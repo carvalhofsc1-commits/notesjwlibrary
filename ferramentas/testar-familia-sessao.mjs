@@ -143,6 +143,13 @@ try {
   assert.equal((await chamar({ acao: "liberar", sessao, parte: 0 })).status, 403); passo("ações do dirigente recusam chave errada ou ausente");
   for (let i = 0; i < 6; i++) await chamar({ acao: "estado", sessao: "ZZZZZZ" });
   assert.equal((await chamar({ acao: "estado", sessao })).status, 429); passo("muitas tentativas erradas bloqueiam o IP");
+  // 6.14.16: no mesmo Wi-Fi, os erros de um aparelho não bloqueiam os outros; a rede toda só com muitos erros
+  ipAtual = "10.3.0.1";
+  for (let i = 0; i < 10; i++) await chamar({ acao: "estado", sessao: "ZZZZZZ", aparelhoId: "aparelho-que-erra-1" });
+  assert.equal((await chamar({ acao: "estado", sessao, aparelhoId: "aparelho-que-erra-1" })).status, 429);
+  assert.equal((await chamar({ acao: "estado", sessao, aparelhoId: "aparelho-do-lado-2" })).status, 200); passo("os erros de um aparelho não bloqueiam os outros na mesma rede");
+  for (let a = 3; a < 8; a++) for (let i = 0; i < 10; i++) await chamar({ acao: "estado", sessao: "ZZZZZZ", aparelhoId: `aparelho-que-erra-${a}` });
+  assert.equal((await chamar({ acao: "estado", sessao, aparelhoId: "aparelho-do-lado-2" })).status, 429); passo("com 60 erros, a rede inteira é bloqueada");
   ipAtual = "10.0.0.1";
 
   // Liberar, sortear, revelar
@@ -418,6 +425,37 @@ try {
     const certa = await chamar({ acao: "responder", sessao: ss.sessao, participanteId: idS, parte: 0, rodada: 0, texto: "abraao" });
     assert.equal(certa.dados.estado.reveladas["0"]["0"], "Abraão"); passo("novas perguntas: o jogo da sessão é trocado, sem vazar respostas, e julga as respostas novas");
     await chamar({ acao: "encerrar", sessao: ss.sessao, chave: ss.chave });
+  }
+
+  // 6.14.16: muita gente ao mesmo tempo, em duas instâncias do servidor (cada uma com a sua fila): nenhuma gravação se perde
+  {
+    const { default: outraInstancia } = await import("../api/familia-sessao.mjs?outra-instancia");
+    const chamarNa = async (h, corpo) => {
+      const req = { method: "POST", headers: { origin: "http://localhost:8091", "x-forwarded-for": ipAtual }, body: { codigoAdmin: "admin-de-teste", ...corpo } };
+      const res = { statusCode: 200, corpo: null, setHeader() {}, status(c) { this.statusCode = c; return this; }, json(d) { this.corpo = d; return this; } };
+      await h(req, res);
+      return { status: res.statusCode, dados: res.corpo };
+    };
+    const sj = (await chamar({ acao: "criar", programa: { ...programa, modo: "jogos" }, codigo: "codigo-de-teste" })).dados;
+    await chamar({ acao: "liberar", sessao: sj.sessao, chave: sj.chave, parte: 2 });
+    const pedidos = Array.from({ length: 20 }, (_, i) => chamarNa(i % 2 ? outraInstancia : handler, { acao: "foco", sessao: sj.sessao, chave: sj.chave, parte: 2, rodada: 1 }));
+    const todos = await Promise.all(pedidos);
+    assert.deepEqual(todos.map((r) => r.status), Array(20).fill(200), JSON.stringify(todos.find((r) => r.status !== 200)?.dados));
+    const fim = await chamar({ acao: "estado", sessao: sj.sessao, versao: "" });
+    assert.equal(fim.dados.estado.foco["2"].n, 20); passo("20 gravações ao mesmo tempo em duas instâncias: nenhuma se perde");
+    // três pessoas respondem questões diferentes no mesmo instante: as três respostas ficam
+    const ids = [];
+    for (const nome of ["Ana", "Bia", "Caio"]) ids.push((await chamar({ acao: "entrar", sessao: sj.sessao, nome })).dados.participanteId);
+    const juntas = await Promise.all(ids.map((participanteId, i) => chamarNa(i % 2 ? outraInstancia : handler, { acao: "responder", sessao: sj.sessao, participanteId, parte: 2, rodada: i, texto: "resposta de teste " + i })));
+    assert.deepEqual(juntas.map((r) => r.status), [200, 200, 200], JSON.stringify(juntas.map((r) => r.dados && r.dados.erro)));
+    const depois = (await chamar({ acao: "estado", sessao: sj.sessao, versao: "" })).dados.estado;
+    assert.deepEqual(Object.keys(depois.envios["2"]).sort(), ["0", "1", "2"]); passo("três respostas no mesmo instante: as três ficam guardadas");
+    // e na mesma questão, só a primeira entra: a outra pessoa é avisada
+    await chamar({ acao: "reiniciar", sessao: sj.sessao, chave: sj.chave, parte: 2, rodada: "tudo" });
+    const mesma = await Promise.all([ids[0], ids[1]].map((participanteId, i) => chamarNa(i ? outraInstancia : handler, { acao: "responder", sessao: sj.sessao, participanteId, parte: 2, rodada: 0, texto: "outra resposta " + i })));
+    assert.deepEqual(mesma.map((r) => r.status).sort(), [200, 409]);
+    assert.match(mesma.find((r) => r.status === 409).dados.erro, /já respondeu: espere o julgamento/); passo("duas respostas na mesma questão: uma entra e a outra pessoa é avisada");
+    await chamar({ acao: "encerrar", sessao: sj.sessao, chave: sj.chave });
   }
 
   // 6.14.00: a questão em foco: só quem administra escolhe; "n" muda a cada escolha; questão inválida recusada

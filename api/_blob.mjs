@@ -4,6 +4,7 @@
 //  - "gcp" (Cloud Run): um bucket do Cloud Storage (GCS_BUCKET), com a identidade do Cloud Run (sem chave);
 //  - "local": uma pasta no computador (DADOS_DIR, padrão .dados-local), só para testes.
 // Sem HOSPEDAGEM vale "gcp". O "_" no nome mantém este arquivo fora das rotas públicas (/api/<nome>).
+import { createHash } from "node:crypto";
 import { mkdir, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { dirname, join, relative, sep } from "node:path";
 
@@ -38,9 +39,43 @@ function nomeDe(alvo) {
   return s.replace(/^\/+/, "");
 }
 
+// ---------- Gravação sem perder o que outro pedido gravou (6.14.16) ----------
+// get(caminho, { comVersao: true }) devolve também "versao"; put(caminho, conteúdo, { seVersao }) só grava se o arquivo ainda está nessa
+// versão. Se outro pedido gravou no meio (ou o arquivo está sendo gravado depressa demais), lança um erro de conflito: quem chamou lê de
+// novo e refaz. No Cloud Storage a versão é a "generation" do objeto (vale entre todas as instâncias); na pasta local, o hash do conteúdo.
+export const ehConflito = (e) => Boolean(e && e.conflito);
+const conflito = () => Object.assign(new Error("O arquivo mudou enquanto era gravado."), { conflito: true });
+const inexistente = (e) => Boolean(e && (e.code === 404 || /no such object|not found/i.test(String(e.message))));
+const versaoLocal = (conteudo) => createHash("sha1").update(conteudo).digest("hex");
+const filasLocais = new Map();
+function emFilaLocal(nome, tarefa) {
+  const proxima = (filasLocais.get(nome) || Promise.resolve()).then(tarefa, tarefa);
+  filasLocais.set(nome, proxima.catch(() => {}));
+  return proxima;
+}
+
+async function lerComVersao(nome) {
+  const b = await bucket();
+  for (let i = 0; i < 4; i++) {
+    let versao = "";
+    try {
+      const [dados] = await b.file(nome).getMetadata();
+      versao = String(dados.generation);
+      const [conteudo] = await b.file(nome, { generation: versao }).download();
+      return { statusCode: 200, stream: conteudo, versao };
+    } catch (e) {
+      if (!inexistente(e)) throw e;
+      if (!versao) return null; // não existe
+      // foi gravado de novo entre as duas leituras: lê outra vez
+    }
+  }
+  throw conflito();
+}
+
 // get(caminho, opções) → { statusCode: 200, stream } ou null quando o arquivo não existe (os módulos aceitam os dois casos).
 export async function get(caminho, opcoes = {}) {
   if (modo() === "gcp") {
+    if (opcoes.comVersao) return lerComVersao(nomeDe(caminho));
     try {
       const [conteudo] = await (await bucket()).file(nomeDe(caminho)).download();
       return { statusCode: 200, stream: conteudo };
@@ -51,7 +86,8 @@ export async function get(caminho, opcoes = {}) {
   }
   if (modo() === "local") {
     try {
-      return { statusCode: 200, stream: await readFile(caminhoLocal(nomeDe(caminho))) };
+      const stream = await readFile(caminhoLocal(nomeDe(caminho)));
+      return { statusCode: 200, stream, ...(opcoes.comVersao ? { versao: versaoLocal(stream) } : {}) };
     } catch (e) {
       if (e && e.code === "ENOENT") return null;
       throw e;
@@ -59,22 +95,35 @@ export async function get(caminho, opcoes = {}) {
   }
 }
 
-// put(caminho, conteúdo, opções) — sempre sobrescreve, sem sufixo aleatório (como os módulos pedem).
+// put(caminho, conteúdo, opções) — sobrescreve, sem sufixo aleatório (como os módulos pedem). Com opcoes.seVersao, só se não mudou.
 export async function put(caminho, conteudo, opcoes = {}) {
   const nome = nomeDe(caminho);
   if (modo() === "gcp") {
     const idade = Number.isFinite(opcoes.cacheControlMaxAge) ? opcoes.cacheControlMaxAge : 0;
-    await (await bucket()).file(nome).save(conteudo, {
-      resumable: false,
-      contentType: opcoes.contentType || "application/octet-stream",
-      metadata: { cacheControl: idade > 0 ? `private, max-age=${idade}` : "no-store" },
-    });
+    try {
+      await (await bucket()).file(nome).save(conteudo, {
+        resumable: false,
+        contentType: opcoes.contentType || "application/octet-stream",
+        metadata: { cacheControl: idade > 0 ? `private, max-age=${idade}` : "no-store" },
+        ...(opcoes.seVersao ? { preconditionOpts: { ifGenerationMatch: opcoes.seVersao } } : {}),
+      });
+    } catch (e) {
+      // 412: outro pedido gravou antes; 429: gravações demais no mesmo arquivo neste instante
+      if (opcoes.seVersao && e && (e.code === 412 || e.code === 429)) throw conflito();
+      throw e;
+    }
     return { pathname: nome, url: nome };
   }
   if (modo() === "local") {
     const arquivo = caminhoLocal(nome);
-    await mkdir(dirname(arquivo), { recursive: true });
-    await writeFile(arquivo, conteudo);
+    await emFilaLocal(nome, async () => {
+      if (opcoes.seVersao) {
+        const atual = await readFile(arquivo).catch(() => null);
+        if (!atual || versaoLocal(atual) !== opcoes.seVersao) throw conflito();
+      }
+      await mkdir(dirname(arquivo), { recursive: true });
+      await writeFile(arquivo, conteudo);
+    });
     return { pathname: nome, url: nome };
   }
 }

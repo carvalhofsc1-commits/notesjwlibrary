@@ -7,13 +7,14 @@
 //  - programa.json      a programação SEM as respostas dos jogos (não muda depois de criada);
 //  - respostas.json     só o servidor lê: as respostas e as referências das rodadas dos jogos (6.12.76), o hash (SHA-256) das chaves do
 //                       dirigente e os extras dele (preparação, tarefas, dica, a ordem certa do "Ordem e data");
-//  - estado.json        só as ações do dirigente gravam: partes liberadas, sorteio, respostas (e referências) reveladas e o número da versão;
+//  - estado.json        partes liberadas, sorteio, respostas (e referências) reveladas, respostas enviadas, pontos e o número da versão
+//                       (gravado só se não mudou desde a leitura: ACOES_QUE_GRAVAM);
 //  - participantes/<id>.json  um arquivo por participante (ninguém grava no arquivo do outro).
 // A chave do dirigente nunca é guardada em texto; a sessão vence depois de 48 horas sem uso e é apagada na próxima vez que alguém
 // tenta abri-la (ou quando outra sessão é criada).
 import { createHash, randomBytes, randomInt } from "node:crypto";
 import { erro, origemPermitida, textosIguais } from "./_comum.mjs";
-import { blobConfigurado, del, get, list, put } from "./_blob.mjs";
+import { blobConfigurado, del, ehConflito, get, list, put } from "./_blob.mjs";
 import { estadoAcessoSite, mensagemSeBloqueado, prepararCodigosPessoais, recursoCodigoValido } from "./_acessoSite.mjs";
 import { lerArtigoDoWol, lerTextoDoVideo, pesquisarNoWol, playerDoVideo, videoDoEndereco } from "./_wol.mjs";
 import { lerCanticos } from "./_fontes.mjs";
@@ -32,19 +33,23 @@ const MAX_NOMES = 20; // nomes informados pelo dirigente (família e convidados)
 const MAX_CHAVES = 5; // aparelhos que podem dirigir a mesma sessão (o criador e os que assumiram)
 const LIMPEZA_POR_VEZ = 20;
 
-// Tentativas erradas (código de sessão inexistente, chave ou código do dirigente errados), por IP (em memória, por instância), como em config.mjs.
+// Tentativas erradas (código de sessão inexistente, chave ou código do dirigente errados), em memória, por instância. 6.14.16: contam por
+// aparelho (10 por hora), para os erros de um não bloquearem os outros no mesmo Wi-Fi; a rede toda (o IP) só é bloqueada com muitas (60).
 const erros = new Map();
 const MAX_ERROS_POR_HORA = 10;
-function bloqueado(ip) {
+const MAX_ERROS_DA_REDE_POR_HORA = 60;
+const chavesDeErro = ({ ip, aparelho }) => [[`${ip}|${aparelho}`, MAX_ERROS_POR_HORA], [ip, MAX_ERROS_DA_REDE_POR_HORA]];
+function bloqueado(pedinte) {
   const agora = Date.now();
-  const lista = (erros.get(ip) || []).filter((t) => agora - t < 60 * 60 * 1000);
-  erros.set(ip, lista);
-  return lista.length >= MAX_ERROS_POR_HORA;
+  return chavesDeErro(pedinte).some(([chave, maximo]) => {
+    const lista = (erros.get(chave) || []).filter((t) => agora - t < 60 * 60 * 1000);
+    if (lista.length) erros.set(chave, lista);
+    else erros.delete(chave);
+    return lista.length >= maximo;
+  });
 }
-function registrarErro(ip) {
-  const lista = erros.get(ip) || [];
-  lista.push(Date.now());
-  erros.set(ip, lista);
+function registrarErro(pedinte) {
+  for (const [chave] of chavesDeErro(pedinte)) erros.set(chave, [...(erros.get(chave) || []), Date.now()]);
   if (erros.size > 5000) erros.clear();
 }
 
@@ -93,10 +98,32 @@ async function limparVencidas() {
   return { codigos: new Set(ultimo.keys()), apagadas: vencidas.length };
 }
 
-// O estado da sessão, ou null se ela não existe ou venceu (e então é apagada).
-async function lerEstado(cod) {
-  const estado = await lerJson(caminho(cod, "estado.json"));
+// 6.14.16: várias pessoas jogando ao mesmo tempo. O estado.json é um arquivo só: quem vai mudá-lo lê a versão dele e só grava se ela não
+// mudou (gravarEstadoLido); se outro pedido gravou no meio, a ação inteira é refeita com o estado novo (e as conferências valem de novo:
+// "fulano já respondeu"). Dentro da instância, as ações que gravam de uma mesma sessão também esperam a vez.
+const versoesDoEstado = new WeakMap();
+const gravarEstadoLido = (cod, estado) => put(caminho(cod, "estado.json"), JSON.stringify(estado), { contentType: "application/json; charset=utf-8", seVersao: versoesDoEstado.get(estado) });
+const ACOES_QUE_GRAVAM = new Set(["responder", "voltar-inicio", "liberar", "bloquear", "revelar", "revelar-ordem", "espiar", "dica", "modo-dicas", "sortear-dica", "pontuar", "reiniciar", "novo-jogo", "sortear", "limpar-sorteio", "sortear-questao", "julgar", "julgamento-ia", "foco", "cronometro", "assumir", "passar-direcao"]);
+const TENTATIVAS_DE_GRAVAR = 12;
+const filasDasSessoes = new Map();
+function naVezDaSessao(cod, tarefa) {
+  const proxima = (filasDasSessoes.get(cod) || Promise.resolve()).then(tarefa, tarefa);
+  const fim = proxima.catch(() => {}).then(() => { if (filasDasSessoes.get(cod) === fim) filasDasSessoes.delete(cod); });
+  filasDasSessoes.set(cod, fim);
+  return proxima;
+}
+
+// O estado da sessão, ou null se ela não existe ou venceu (e então é apagada). comVersao: para quem vai gravar.
+async function lerEstado(cod, comVersao = false) {
+  const lido = await get(caminho(cod, "estado.json"), { comVersao });
+  let estado = null;
+  try {
+    estado = lido && lido.stream ? JSON.parse(Buffer.from(lido.stream).toString("utf8")) : null;
+  } catch {
+    estado = null;
+  }
   if (!estado) return null;
+  if (comVersao) versoesDoEstado.set(estado, lido.versao);
   if (Date.now() - (Number(estado.atualizadoEm) || 0) > VALIDADE_MS) {
     // O estado parado não basta: alguém pode ter entrado depois (os participantes gravam só o próprio arquivo).
     const { blobs } = await list({ prefix: `${PASTA}${cod}/` });
@@ -377,6 +404,23 @@ function limparPrograma(op) {
 
 // ---------- Handler ----------
 export default async function handler(req, res) {
+  const corpo = req.body && typeof req.body === "object" ? req.body : {};
+  const cod = codigoLimpo(corpo.sessao);
+  if (!cod || !ACOES_QUE_GRAVAM.has(String(corpo.acao || ""))) return atender(req, res);
+  return naVezDaSessao(cod, async () => {
+    for (let tentativa = 1; ; tentativa++) {
+      try {
+        return await atender(req, res);
+      } catch (e) {
+        if (!ehConflito(e)) throw e;
+        if (tentativa >= TENTATIVAS_DE_GRAVAR) return erro(res, 503, "Muita gente respondendo ao mesmo tempo. Tente de novo.");
+        await new Promise((ok) => setTimeout(ok, 30 * tentativa + Math.random() * 120));
+      }
+    }
+  });
+}
+
+async function atender(req, res) {
   res.setHeader("Cache-Control", "no-store");
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
@@ -388,7 +432,8 @@ export default async function handler(req, res) {
   const corpo = req.body && typeof req.body === "object" ? req.body : {};
   const acao = String(corpo.acao || "");
   const ip = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() || req.socket?.remoteAddress || "desconhecido";
-  if (bloqueado(ip)) return erro(res, 429, "Muitas tentativas erradas. Tente novamente mais tarde.");
+  const pedinte = { ip, aparelho: idLimpo(corpo.aparelhoId) };
+  if (bloqueado(pedinte)) return erro(res, 429, "Muitas tentativas erradas. Tente novamente mais tarde.");
 
   try {
     // ----- criar: exige o mesmo acesso da Adoração em Família (código de pesquisa ou senha de administrador) -----
@@ -397,7 +442,7 @@ export default async function handler(req, res) {
       const bloqueio = await mensagemSeBloqueado({ aparelhoId: corpo.aparelhoId, codigoAdmin: corpo.codigoAdmin });
       if (bloqueio) return erro(res, 403, bloqueio);
       if (!recursoCodigoValido("pesquisa", corpo.codigo, corpo.aparelhoId)) {
-        registrarErro(ip);
+        registrarErro(pedinte);
         return erro(res, 403, "Código de pesquisa inválido.");
       }
       const op = corpo.programa;
@@ -429,12 +474,12 @@ export default async function handler(req, res) {
     // ----- As outras ações começam pelo código da sessão -----
     const cod = codigoLimpo(corpo.sessao);
     if (!cod) {
-      registrarErro(ip);
+      registrarErro(pedinte);
       return erro(res, 400, "Código da adoração inválido. São 6 letras e números.");
     }
-    const estado = await lerEstado(cod);
+    const estado = await lerEstado(cod, ACOES_QUE_GRAVAM.has(acao));
     if (!estado) {
-      registrarErro(ip);
+      registrarErro(pedinte);
       return erro(res, 404, "Não encontrei uma adoração com esse código (ou ela já terminou).");
     }
 
@@ -448,7 +493,7 @@ export default async function handler(req, res) {
     };
     const exigirDirigente = async () => {
       if (await ehDirigente()) return true;
-      registrarErro(ip);
+      registrarErro(pedinte);
       erro(res, 403, "Só o presidente da reunião pode fazer isso.");
       return false;
     };
@@ -487,7 +532,7 @@ export default async function handler(req, res) {
       mudar(estado);
       estado.versao = (Number(estado.versao) || 0) + 1;
       estado.atualizadoEm = Date.now();
-      await gravarJson(caminho(cod, "estado.json"), estado);
+      await gravarEstadoLido(cod, estado);
       const lista = await lerParticipantes(cod);
       // 6.13.31: a lista com os ids só vai para o presidente da reunião; todos recebem os presentes (só os nomes)
       const saida = { versao: versaoDe(estado, lista.length), estado: estadoPublico(estado), presentes: presentes(lista), agora: Date.now() };
@@ -501,7 +546,7 @@ export default async function handler(req, res) {
       if (bloqueio) return erro(res, 403, bloqueio);
       const dirigente = await ehDirigente();
       if (typeof corpo.chave === "string" && corpo.chave && !dirigente) {
-        registrarErro(ip);
+        registrarErro(pedinte);
         return erro(res, 403, "A chave de presidente da reunião deste aparelho não vale para esta adoração.");
       }
       const programa = await lerJson(caminho(cod, "programa.json"));
@@ -610,7 +655,7 @@ export default async function handler(req, res) {
       const informado = codigoLimpo(corpo.codigoDirigente, TAM_CODIGO_DIRIGENTE);
       const d = segredo && segredo.direcao;
       if (!informado || !d || Date.now() > d.expira || !textosIguais(hash(informado), d.hash)) {
-        registrarErro(ip);
+        registrarErro(pedinte);
         return erro(res, 403, "Código do presidente da reunião inválido ou vencido. Peça um novo a quem está presidindo.");
       }
       const chave = randomBytes(32).toString("base64url");
@@ -762,7 +807,7 @@ export default async function handler(req, res) {
           estado.espiaram[parte] = { ...(estado.espiaram[parte] || {}), [rodada]: [...lista, quem.nome].slice(-20) };
           estado.versao = (Number(estado.versao) || 0) + 1;
           estado.atualizadoEm = Date.now();
-          await gravarJson(caminho(cod, "estado.json"), estado);
+          await gravarEstadoLido(cod, estado);
         }
         const todos = await lerParticipantes(cod);
         Object.assign(saida, { versao: versaoDe(estado, todos.length), estado: estadoPublico(estado), presentes: presentes(todos), participantes: todos.map(({ id, nome }) => ({ id, nome })), agora: Date.now() });
@@ -922,7 +967,7 @@ export default async function handler(req, res) {
     if (acao === "novo-jogo") {
       await prepararCodigosPessoais();
       if (!recursoCodigoValido("pesquisa", corpo.codigo, corpo.aparelhoId)) {
-        registrarErro(ip);
+        registrarErro(pedinte);
         return erro(res, 403, "Código de pesquisa inválido.");
       }
       const op = corpo.programa;
@@ -1082,6 +1127,7 @@ export default async function handler(req, res) {
 
     return erro(res, 400, "Ação desconhecida.");
   } catch (e) {
+    if (ehConflito(e) && ACOES_QUE_GRAVAM.has(acao)) throw e; // outro pedido gravou no meio: o handler refaz a ação
     console.error("familia-sessao:", acao, e && (e.stack || e.message));
     return erro(res, 500, "Não consegui acessar a adoração compartilhada agora. Tente de novo.");
   }
