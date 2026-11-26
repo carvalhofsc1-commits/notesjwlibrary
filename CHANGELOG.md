@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.66
+
+- **Leitura diária da Bíblia:** o ícone trocado por um novo desenho (mesa com a Bíblia aberta).
+
 ## 6.14.65
 
 - **Leitura diária da Bíblia:** ícone próprio (mesa de estudo) no atalho, no menu, na barra de baixo, no título da tela e nos ajustes dela.

@@ -40,7 +40,7 @@ const PRECACHE = [
   'apple-touch-icon.png?v=3',
   'icon-header.png?v=3',
   'icone-dirigentes.png?v=1',
-  'icone-leitura.png?v=1'
+  'icone-leitura.png?v=2'
 ];
 
 self.addEventListener('install', event => {
