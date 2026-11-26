@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.65
+
+- **Leitura diária da Bíblia:** ícone próprio (mesa de estudo) no atalho, no menu, na barra de baixo, no título da tela e nos ajustes dela.
+- **Apresentação do app** (antes do cadastro): todas as funções, em quatro grupos (Estudo pessoal, Reuniões, Em família e em grupo e Ferramentas).
+
 ## 6.14.64
 
 - **Início:** o atalho **Dirigentes** ganhou um ícone próprio (orador na tribuna) no lugar do emoji 🎤.

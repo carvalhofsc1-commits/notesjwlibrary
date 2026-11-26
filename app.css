@@ -18582,3 +18582,14 @@ body.sem-credito .app-topbar { background: #fee2e2; border-bottom-color: #fca5a5
 
 /* 6.14.64: atalho com imagem no lugar do emoji (Dirigentes): do tamanho dos emojis dos outros atalhos */
 .atalho-icone > img.atalho-img { display: block; width: 1.24em; height: 1.24em; margin: -0.12em auto; object-fit: contain; }
+/* 6.14.65: ícones em imagem no lugar de emojis (leitura diária da Bíblia), do tamanho do texto ao redor */
+img.icone-img { display: inline-block; width: 1.3em; height: 1.3em; object-fit: contain; vertical-align: -0.3em; margin: -0.15em 0; }
+.nav-icon > img.icone-img { display: block; margin: -0.12em auto; vertical-align: top; width: 1.28em; height: 1.28em; }
+/* 6.14.65: apresentação do app (antes do cadastro): funções em grupos, com o ícone numa coluna */
+#acessoSitePainelBoasVindas .acesso-site-grupo { margin: 0 0 10px; padding: 4px 10px; border-radius: 8px; background: color-mix(in srgb, #3b82f6 12%, var(--card)); color: var(--text); font-size: .95rem; text-align: left; }
+#acessoSitePainelBoasVindas .acesso-site-funcoes { list-style: none; padding: 0; margin: 0 0 10px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+#acessoSitePainelBoasVindas .acesso-site-funcoes > li { display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 8px; align-items: start; margin: 0; }
+#acessoSitePainelBoasVindas .acesso-site-icone { display: flex; justify-content: center; font-size: 1.25rem; line-height: 1.2; }
+#acessoSitePainelBoasVindas .acesso-site-icone > img.icone-img { width: 28px; height: 28px; margin: 0; }
+#bibliaCard .leitura-topo h2 img.icone-img { width: 1.08em; height: 1.08em; margin: -0.08em 0; }
+.nav-icon > img.icone-img { margin: -0.15em auto; }
