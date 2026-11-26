@@ -18607,3 +18607,6 @@ body.modo-convidado { padding-bottom: 0; }
 .reunioes-topo .reunioes-pagina-icone > img.icone-img { width: 1.1em; height: 1.1em; margin: -0.18em 0; }
 /* 6.14.68: ícone próprio da Adoração em família, também no título das telas */
 .fam-topo .fam-titulo > span > img.icone-img { width: 1.45em; height: 1.45em; margin: -0.3em 0; }
+/* 6.14.71: desenho próprio do Verdadeiro ou falso: no atalho dos Jogos (a altura de um emoji) e no título do jogo ao vivo */
+#jogosCard .jogos-card .fam-hub-icone > img.icone-img { display: block; width: 1.1em; height: 1.1em; margin: 0 auto; }
+#participarTitulo .fam-titulo-jogo-emoji > img.icone-img { display: block; width: 1.2em; height: 1.2em; margin: -0.1em 0; }

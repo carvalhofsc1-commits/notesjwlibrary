@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.71
+
+- **Discursos:** novo desenho do ícone (folhas de papel escritas).
+- **Jogo Verdadeiro ou falso:** ícone próprio (placas de certo e errado) no atalho dos Jogos, no título do jogo ao vivo e nos Jogos preparados.
+
 ## 6.14.70
 
 - **Preparar para dirigir:** mesmo ícone do atalho Dirigentes no card, no título da tela, no texto do código do dirigente e na categoria Dirigentes das Pesquisas salvas.

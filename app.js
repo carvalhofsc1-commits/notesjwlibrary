@@ -7963,7 +7963,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.14.70'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.14.71'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -22050,7 +22050,7 @@ function saveTemplatesToStorage() {
       { id: 'anotacoes', titulo: '🗒️ Anotações', imagem: 'icone-anotacoes.png?v=1', cor: '#6366f1', tipos: [], semSemana: true, anotacoes: true },
       { id: 'comentarios', titulo: '✋ Comentários', imagem: 'icone-comentarios.png?v=1', cor: '#a855f7', tipos: ['colado', 'sentinela', 'ebc', 'consideracao', 'nvc', 'joias'] },
       { id: 'dirigentes', titulo: '🎤 Dirigentes', imagem: 'icone-dirigentes.png?v=1', cor: '#14b8a6', tipos: ['dirigente', 'ebc-dirigente'], soDirigente: true },
-      { id: 'esbocos', titulo: '📜 Esboços', imagem: 'icone-discursos.png?v=1', cor: '#f59e0b', tipos: ['esboco'], soDirigente: true },
+      { id: 'esbocos', titulo: '📜 Esboços', imagem: 'icone-discursos.png?v=2', cor: '#f59e0b', tipos: ['esboco'], soDirigente: true },
       // Adoração em Família (6.11.12): as 3 opções de cada preparo; não dependem da semana escolhida.
       { id: 'familia', titulo: '👨‍👩‍👧 Adoração em Família', imagem: 'icone-adoracao.png?v=1', cor: '#e11d48', tipos: ['familia'], semSemana: true, familia: true }
     ];
@@ -26337,7 +26337,7 @@ function saveTemplatesToStorage() {
     const REUNIOES_VISTAS = {
       comentarios: { caixa: 'grupoComentarios', titulo: '✋ Preparar para comentar', imagem: 'icone-comentarios.png?v=1' },
       dirigir: { caixa: 'grupoDirigir', titulo: '🎤 Preparar para dirigir', imagem: 'icone-dirigentes.png?v=1' },
-      discursos: { caixa: 'grupoDiscursos', titulo: '📜 Preparação de discursos e esboços', imagem: 'icone-discursos.png?v=1' }
+      discursos: { caixa: 'grupoDiscursos', titulo: '📜 Preparação de discursos e esboços', imagem: 'icone-discursos.png?v=2' }
     };
 
     // Pesquisas e respostas salvas: tela própria (6.10.77). Abre com as categorias recolhidas; o ◀ Voltar leva à tela de onde se veio.
@@ -28748,13 +28748,22 @@ function saveTemplatesToStorage() {
     // Sem verde (padrão visual suave do app); cores mais intensas que as do resto do app.
     const JOGOS_VISUAL = Object.freeze({
       quem_sou_eu: Object.freeze({ nome: 'Quem sou eu?', emoji: '🕵️', cor: '#7c3aed' }),
-      verdadeiro_falso: Object.freeze({ nome: 'Verdadeiro ou falso', emoji: '✅', cor: '#2563eb' }),
+      verdadeiro_falso: Object.freeze({ nome: 'Verdadeiro ou falso', emoji: '✅', imagem: 'icone-verdadeiro-falso.png?v=1', cor: '#2563eb' }),
       ordem_data: Object.freeze({ nome: 'Ordem e data dos acontecimentos', emoji: '⏳', cor: '#ea580c' }),
       quem_disse: Object.freeze({ nome: 'Quem disse isso?', emoji: '💬', cor: '#db2777' }),
       complete_versiculo: Object.freeze({ nome: 'Complete o versículo', emoji: '📖', cor: '#0891b2' }),
       abreviacoes: Object.freeze({ nome: 'Abreviações bíblicas', emoji: '🔤', cor: '#dc2626' }),
       perfil_biblico: Object.freeze({ nome: 'Perfil bíblico', emoji: '🃏', cor: '#4f46e5' })
     });
+    // 6.14.71: o ícone de um jogo dentro do elemento: o desenho próprio, quando houver, ou o emoji.
+    function jogoIconePor(el, j) {
+      if (!j.imagem) { el.textContent = j.emoji; return; }
+      const img = document.createElement('img');
+      img.className = 'icone-img';
+      img.src = j.imagem;
+      img.alt = '';
+      el.replaceChildren(img);
+    }
     function participarTextosModo() {
       const jogo = participarEhJogo();
       const h = document.getElementById('participarTitulo');
@@ -28769,7 +28778,7 @@ function saveTemplatesToStorage() {
           const ic = document.createElement('span');
           ic.className = 'fam-titulo-jogo-emoji';
           ic.setAttribute('aria-hidden', 'true');
-          ic.textContent = vis.emoji;
+          jogoIconePor(ic, vis);
           h.replaceChildren(ic, document.createTextNode(' ' + vis.nome));
         } else {
           h.style.removeProperty('--cor-jogo');
@@ -31599,7 +31608,7 @@ function saveTemplatesToStorage() {
     ];
     // 6.13.62: cada jogo com a sua cor (JOGOS_VISUAL, na mesma ordem dos tipos)
     ['quem_sou_eu', 'verdadeiro_falso', 'ordem_data', 'quem_disse', 'complete_versiculo', 'abreviacoes', 'perfil_biblico'].forEach((id, i) => {
-      if (JOGOS_BIBLICOS[i]) { JOGOS_BIBLICOS[i].id = id; JOGOS_BIBLICOS[i].cor = JOGOS_VISUAL[id].cor; JOGOS_BIBLICOS[i].emoji = JOGOS_VISUAL[id].emoji; }
+      if (JOGOS_BIBLICOS[i]) { JOGOS_BIBLICOS[i].id = id; JOGOS_BIBLICOS[i].cor = JOGOS_VISUAL[id].cor; JOGOS_BIBLICOS[i].emoji = JOGOS_VISUAL[id].emoji; JOGOS_BIBLICOS[i].imagem = JOGOS_VISUAL[id].imagem; }
     });
     // 6.13.90: o Perfil bíblico é o primeiro da lista dos jogos (a ordem só vale para a tela; cada jogo continua com o seu nome e id)
     JOGOS_BIBLICOS.unshift(JOGOS_BIBLICOS.splice(JOGOS_BIBLICOS.findIndex(j => j.id === 'perfil_biblico'), 1)[0]);
@@ -31651,7 +31660,7 @@ function saveTemplatesToStorage() {
         const ic = document.createElement('span');
         ic.className = 'fam-hub-icone';
         ic.setAttribute('aria-hidden', 'true');
-        ic.textContent = j.emoji;
+        jogoIconePor(ic, j);
         const nome = document.createElement('span');
         nome.className = 'fam-hub-nome';
         nome.textContent = j.titulo;
@@ -32053,7 +32062,13 @@ function saveTemplatesToStorage() {
         art.className = 'jogos-salvo';
         const nome = document.createElement('p');
         nome.className = 'jogos-salvo-nome';
-        nome.textContent = (item.op.emoji ? item.op.emoji + ' ' : '') + item.op.titulo;
+        const jogoDoItem = jogosDoNome(item.nome);
+        if (jogoDoItem && jogoDoItem.imagem) {
+          const ic = document.createElement('span');
+          ic.setAttribute('aria-hidden', 'true');
+          jogoIconePor(ic, jogoDoItem);
+          nome.append(ic, ' ' + item.op.titulo);
+        } else nome.textContent = (item.op.emoji ? item.op.emoji + ' ' : '') + item.op.titulo;
         const meta = document.createElement('p');
         meta.className = 'jogos-salvo-meta';
         const n = jogosRodadas(item);
