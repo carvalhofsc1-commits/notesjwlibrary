@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.30
+
+- **Considerações para o serviço de campo:** o título "Fontes do esboço" passou a ser **"📚 Fontes de consulta"** (dava a entender que já havia um esboço).
+
 ## 6.14.29
 
 - **Considerações para o serviço de campo:** novo botão **"🧹 Limpar tudo"**. O card volta como ao abrir pela primeira vez (campos vazios, "Casa em casa", todas as fontes marcadas, sem sugestões) e o esboço sai do campo de texto (pede confirmação). As considerações já salvas continuam guardadas.
