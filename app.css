@@ -18547,3 +18547,4 @@ body[data-screen="familia"] main { padding: 10px; }
 #familiaCard .fam-circ-secao > summary { flex-wrap: nowrap; white-space: nowrap; overflow: hidden; font-size: clamp(.76rem, 3.9vw, .92rem); font-weight: 500; }
 #familiaCard .fam-circ-secao > summary > span { font-size: inherit; font-weight: 500; }
 body[data-screen="familia"] main { padding-bottom: 3px; } /* com a folga de 7 px do corpo acima da barra de baixo, ficam os 10 px */
+#familiaCard #familiaAssuntosBox .fam-bloco > .fam-dica { text-align: center; } /* 6.14.60 */
