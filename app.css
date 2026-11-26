@@ -18522,3 +18522,10 @@ body:not(.fam-tela-grande) #participarSessao.fam-na-secao .fam-sessao-secao.na-t
 #familiaCard #familiaResultado[hidden] { display: none; }
 #familiaCard .fam-salva-quando { margin: 0; text-align: center; font-size: .9rem; font-weight: 700; color: color-mix(in srgb, #1d4ed8 80%, var(--text)); }
 #familiaCard #familiaResultado > .fam-opcao { background: var(--card); }
+
+/* 6.14.55: Adoração em família: "Concluir e voltar" em azul claro e o título "Dados da família" centralizado */
+#familiaCard #familiaPerfilBox > .fam-perfil-corpo > .fam-bloco:first-child > .fam-bloco-titulo { text-align: center; }
+#familiaCard[data-vista] .fam-perfil-corpo > button.fam-perfil-concluir { background: #bfdbfe; background-image: none; border: 1px solid #3b82f6; color: #1e3a8a; font-weight: 700; }
+#familiaCard[data-vista] .fam-perfil-corpo > button.fam-perfil-concluir:hover:not(:disabled) { background: #93c5fd; }
+:root[data-theme="dark"] #familiaCard[data-vista] .fam-perfil-corpo > button.fam-perfil-concluir { background: #1d3a5f; border-color: #3b82f6; color: #dbeafe; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #familiaCard[data-vista] .fam-perfil-corpo > button.fam-perfil-concluir { background: #1d3a5f; border-color: #3b82f6; color: #dbeafe; } }

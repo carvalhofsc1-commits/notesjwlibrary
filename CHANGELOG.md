@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.55
+
+- **Adoração em família:** o botão **Concluir e voltar** em azul claro e o título **Dados da família** centralizado.
+
 ## 6.14.54
 
 - **Adoração em família:** a programação aberta (e a recém-preparada, em "Exibir a programação") aparece **sempre dentro do card "Programações salvas"**, acima da lista, com a data em que foi salva. Apagar a que está aberta também a tira da tela.
