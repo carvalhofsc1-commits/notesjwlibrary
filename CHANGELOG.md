@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.47
+
+- **Jogos bíblicos (lista):** no **Perfil bíblico** o emoji passou para **cima do texto**, tudo centralizado, como nos outros atalhos; o botão ficou **mais alto** e agora se chama **"Entrar em um jogo em grupo"**.
+
 ## 6.14.46
 
 - **Jogos bíblicos (lista):** os **sete atalhos com a mesma altura**, mais baixos, e tudo **numa tela só** (medido em 360×740, 375×812 e 412×915), também com "Jogos preparados". Com uma partida em andamento, o texto do alto sai para o "Continuar a partida" caber.
