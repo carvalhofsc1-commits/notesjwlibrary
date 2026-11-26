@@ -7963,7 +7963,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.14.73'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.14.74'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -13314,24 +13314,24 @@ function saveTemplatesToStorage() {
           const linhasCodigo = recursosLista.map(r => {
             const c = codigos[r.id];
             const ativo = c && c.ativo && c.codigo;
-            return '<tr data-recurso="' + acessoSiteEscapar(r.id) + '">' +
-              '<th scope="row">' + acessoSiteEscapar(r.nome) + '</th>' +
-              '<td class="acesso-site-codigo-cel">' +
+            // 6.14.74: uma linha por recurso: o botão (Gerar, ou Expirar quando há código) e, na frente dele, o campo do código (em branco sem código)
+            const alvo = ' data-aparelho="' + acessoSiteEscapar(idCompleto) + '" data-recurso="' + acessoSiteEscapar(r.id) + '"';
+            return '<div class="acesso-site-cod">' +
+              '<div class="acesso-site-cod-nome">' + acessoSiteEscapar(r.nome) + '</div>' +
+              '<div class="acesso-site-cod-linha">' +
               (ativo
-                ? '<code class="acesso-site-codigo-valor">' + acessoSiteEscapar(c.codigo) + '</code>'
-                : '<span class="hint">sem código ativo</span>') +
-              '</td>' +
-              '<td class="acesso-site-codigo-acoes">' +
+                ? '<button type="button" class="secondary acesso-site-expirar-codigo"' + alvo + '>Expirar</button>'
+                : '<button type="button" class="secondary acesso-site-gerar-codigo"' + alvo + '>Gerar</button>') +
+              '<div class="acesso-site-cod-campo">' + (ativo ? '<code class="acesso-site-codigo-valor">' + acessoSiteEscapar(c.codigo) + '</code>' : '') + '</div>' +
               (ativo
-                ? '<button type="button" class="secondary acesso-site-copiar-codigo" data-codigo="' + acessoSiteEscapar(c.codigo) + '" title="Copiar código">📋</button>' +
+                ? '<button type="button" class="secondary acesso-site-copiar-codigo" data-codigo="' + acessoSiteEscapar(c.codigo) + '" title="Copiar código" aria-label="Copiar código">📋</button>' +
                   // Enviar o código pelo WhatsApp, para o telefone do cadastro, com a instrução de onde informar.
                   (foneZap.length >= 10
                     ? '<a class="acesso-site-zap-codigo" target="_blank" rel="noopener" title="Enviar o código pelo WhatsApp" aria-label="Enviar o código pelo WhatsApp" href="https://wa.me/55' + foneZap + '?text=' +
                       encodeURIComponent('NoteStyle: seu código de ' + r.nome + ' é ' + c.codigo + '\n\nInforme em Menu → Ajustes → 🔐 Autorização de acessos. Ele vale só no seu aparelho.') + '">📲</a>'
-                    : '') +
-                  '<button type="button" class="secondary acesso-site-expirar-codigo" data-aparelho="' + acessoSiteEscapar(idCompleto) + '" data-recurso="' + acessoSiteEscapar(r.id) + '">Expirar</button>'
-                : '<button type="button" class="secondary acesso-site-gerar-codigo" data-aparelho="' + acessoSiteEscapar(idCompleto) + '" data-recurso="' + acessoSiteEscapar(r.id) + '">Gerar</button>') +
-              '</td></tr>';
+                    : '')
+                : '') +
+              '</div></div>';
           }).join('');
           const consumo = a.consumo && typeof a.consumo === 'object' ? a.consumo : { mes: '', recursos: [], total: 0 };
           const consumoRecursos = Array.isArray(consumo.recursos) ? consumo.recursos : [];
@@ -13400,11 +13400,7 @@ function saveTemplatesToStorage() {
           '<thead><tr><th scope="col">Recurso</th><th scope="col">Uso</th><th scope="col">Valor</th></tr></thead>' +
           '<tbody>' + linhasConsumo + '</tbody></table></div>') +
           masterHtml +
-          secao('codigos', '🔑 Códigos personalizados',
-          '<div class="acesso-site-tabela-wrap">' +
-          '<table class="acesso-site-tabela-codigos">' +
-          '<thead><tr><th scope="col">Recurso</th><th scope="col">Código</th><th scope="col">Ações</th></tr></thead>' +
-          '<tbody>' + linhasCodigo + '</tbody></table></div>') +
+          secao('codigos', '🔑 Códigos personalizados', linhasCodigo) +
           '<div class="button-row">' +
           '<button type="button" class="secondary acesso-site-revogar" data-aparelho="' + acessoSiteEscapar(idCompleto) + '">🗑️ Revogar</button>' +
           '</div></div></details>';

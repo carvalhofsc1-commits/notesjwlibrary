@@ -11128,31 +11128,12 @@
       width: 28%;
     }
 
-    .acesso-site-codigo-cel {
-      width: 42%;
-    }
-
-    .acesso-site-codigo-valor {
-      font-size: .82rem;
-      overflow-wrap: anywhere;
-      word-break: break-all;
-    }
-
-    .acesso-site-codigo-acoes {
-      width: 30%;
-    }
-
-    .acesso-site-creditar-linha button,
-    .acesso-site-codigo-acoes button {
+    .acesso-site-creditar-linha button {
       min-height: 34px;
       padding: 4px 10px;
       font-size: .82rem;
       margin: 0 4px 4px 0;
       max-width: 100%;
-    }
-
-    .acesso-site-codigo-acoes button:last-child {
-      margin-right: 0;
     }
 
     /* No celular: empilha recurso / código / ações para não estourar a largura. */
@@ -11196,7 +11177,6 @@
         padding: 2px 0;
       }
 
-      .acesso-site-codigo-acoes,
       .acesso-site-consumo-valor {
         margin-top: 4px;
         text-align: left;
@@ -18642,3 +18622,15 @@ body.modo-convidado { padding-bottom: 0; }
   #acessoSiteAprovados .acesso-site-tabela-wrap { border: 0; }
   #acessoSiteAprovados .acesso-site-tabela-codigos tbody tr { padding: 6px 0; }
 }
+/* 6.14.74: códigos personalizados: o nome do recurso numa faixa fina e, embaixo, uma linha só com o botão, o campo do código e os ícones */
+.acesso-site-cod { padding: 6px 0; border-top: 1px solid var(--line); }
+.acesso-site-cod:first-child { padding-top: 0; border-top: 0; }
+.acesso-site-cod:last-child { padding-bottom: 0; }
+.acesso-site-cod-nome { margin: 0 0 6px; padding: 3px 6px; border-radius: 6px; background: var(--soft); font-size: .8rem; font-weight: 600; line-height: 1.3; }
+.acesso-site-cod-linha { display: flex; flex-wrap: nowrap; gap: 6px; align-items: stretch; }
+.acesso-site-cod-linha > button, .acesso-site-cod-linha > a { flex: 0 0 auto; min-height: 38px; margin: 0; padding: 4px 8px; box-sizing: border-box; font-size: .82rem; }
+.acesso-site-cod-linha > .acesso-site-gerar-codigo, .acesso-site-cod-linha > .acesso-site-expirar-codigo { width: 66px; min-width: 66px; padding: 4px 2px; }
+.acesso-site-cod-linha > .acesso-site-copiar-codigo, .acesso-site-cod-linha > .acesso-site-zap-codigo { width: 34px; min-width: 34px; padding: 0; }
+.acesso-site-cod-campo { display: flex; flex: 1 1 0; align-items: center; justify-content: center; min-width: 0; min-height: 38px; padding: 2px 4px; box-sizing: border-box; border: 1px solid var(--line); border-radius: 8px; background: var(--card); text-align: center; user-select: all; }
+.acesso-site-cod-campo > .acesso-site-codigo-valor { font-size: clamp(.64rem, 2.9vw, .76rem); font-weight: 700; line-height: 1.25; overflow-wrap: anywhere; word-break: break-all; }
+

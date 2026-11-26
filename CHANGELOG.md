@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.74
+
+- **Códigos personalizados:** cada recurso mostra uma linha só, com o botão Gerar (ou Expirar) à esquerda e, na frente dele, o campo que começa em branco e recebe o código gerado, com os ícones de copiar e WhatsApp ao lado.
+
 ## 6.14.73
 
 - **Administração de usuários:** dentro de cada pessoa, cada seção (Dados do cadastro, Créditos, Consumo, Senha master e Códigos personalizados) é um card recolhível; as abertas continuam abertas depois de uma ação.
