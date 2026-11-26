@@ -17412,6 +17412,8 @@ input[type="date"].fam-campo::-webkit-calendar-picker-indicator { margin: 0; pad
 .campo-form #campoEsbocoBtn { margin-top: 12px; }
 .campo-form #campoRefazerBtn { margin-top: 12px; }
 .campo-form #campoRefazerBtn[hidden] { display: none; }
+.campo-form #campoLimparBtn { margin-top: 12px; width: 100%; }
+.campo-form #campoLimparBtn#campoLimparBtn#campoLimparBtn { color: var(--sv-verm-tx); border: 1px solid var(--sv-verm-bd); }
 .campo-form .fam-checks { margin-top: 2px; }
 .campo-form #campoInfo:empty { display: none; }
 .campo-assuntos { display: grid; gap: 6px; margin-top: 8px; min-width: 0; }

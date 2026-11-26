@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.29
+
+- **Considerações para o serviço de campo:** novo botão **"🧹 Limpar tudo"**. O card volta como ao abrir pela primeira vez (campos vazios, "Casa em casa", todas as fontes marcadas, sem sugestões) e o esboço sai do campo de texto (pede confirmação). As considerações já salvas continuam guardadas.
+
 ## 6.14.28
 
 - **◀ Voltar nos Jogos bíblicos:** na tela do jogo, o Voltar leva à **lista dos jogos** (e não mais à tela inicial dos Jogos). O mesmo no jogo preparado e no "✖️ Fechar" do fim da partida. Da lista, o Voltar segue para a tela das duas opções.

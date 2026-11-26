@@ -7958,7 +7958,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.14.28'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.14.29'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -18857,6 +18857,39 @@ function saveTemplatesToStorage() {
       return pedido;
     }
 
+    // 6.14.29: "🧹 Limpar tudo": os campos voltam ao padrão, as sugestões saem e o esboço sai do campo de texto. As considerações já salvas
+    // continuam guardadas. Só pede confirmação quando há texto a tirar (dá para desfazer).
+    async function campoLimparTudo() {
+      aiStatusKind = 'campo';
+      if (aiBusy) return setAiStatus('⏳ Aguarde: a IA ainda está trabalhando no pedido anterior.', false);
+      const cfg = ESBOCOS.campo;
+      const ligado = historicoLigado && historicoLer().find(i => i.id === historicoLigado.id);
+      const temTexto = Boolean(input.value.trim()) && (aiLastKind === 'campo' || cfg.slot.contains(input) || Boolean(ligado && String(ligado.titulo).startsWith(cfg.tituloHistorico)));
+      if (temTexto && !(await askConfirm('Limpar os campos e tirar o esboço do campo de texto? As considerações já salvas continuam guardadas.', 'Limpar tudo'))) return;
+      if (temTexto) {
+        document.getElementById('clearBtn').click();
+        document.body.classList.remove('texto-chegou');
+        aiResumo = null;
+        aiSentinelaRaw = [];
+        clearAnswerCopyButtons();
+      }
+      ['campoCampanha', 'campoPublico', 'campoAssunto'].forEach(id => { document.getElementById(id).value = ''; });
+      document.querySelectorAll('input[name="campoTipo"], #campoFontesBox input[type="checkbox"]').forEach(c => { c.checked = c.defaultChecked; });
+      campoFontesResumo();
+      document.getElementById('campoFontesBox').open = false;
+      const sugestoes = document.getElementById('campoAssuntos');
+      sugestoes.textContent = '';
+      sugestoes.hidden = true;
+      document.getElementById('campoSugerirBtn').textContent = '💡 Sugerir 3 assuntos';
+      document.getElementById('campoRefazerBtn').hidden = true;
+      textosLimpar(cfg);
+      cfg.info.textContent = '';
+      cfg.dadosCarregados = null;
+      esbocoSalvoAtualizar(cfg);
+      updateAiControls();
+      setAiStatus('🧹 Tudo limpo.', false);
+    }
+    document.getElementById('campoLimparBtn').addEventListener('click', campoLimparTudo);
     document.getElementById('campoSugerirBtn').addEventListener('click', campoSugerir);
     document.getElementById('campoRefazerBtn').addEventListener('click', campoRefazer);
     // Fontes do esboço (6.11.56): contêiner sempre recolhido ao abrir o card, com o resumo do que está marcado no título.
