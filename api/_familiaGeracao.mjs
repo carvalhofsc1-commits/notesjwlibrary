@@ -810,8 +810,9 @@ export function confereAbreviacao(sigla, resposta) {
     } else if (/^\p{Lu}\.?$/u.test(s)) {
       if (normalizarTexto(w).charAt(0) !== normalizarTexto(s).charAt(0)) return false;
       iniciais++;
-    } else if (normalizarTexto(s) === normalizarTexto(w) && MINUSCULAS_NA_SIGLA.has(normalizarTexto(s))) {
-      // por extenso, só o artigo, a preposição e o "e" (de, da, "Os", "Uma"…): 6.14.12, nunca uma palavra inteira ("a A Completa de D")
+    } else if (normalizarTexto(s) === normalizarTexto(w) && (MINUSCULAS_NA_SIGLA.has(normalizarTexto(s)) || PALAVRAS_PEQUENAS_NA_SIGLA.has(normalizarTexto(s)))) {
+      // por extenso, o artigo, a preposição, o "e" (de, da, "Os", "Uma"…) e as palavras bem pequenas (tem, foi…): 6.14.12, nunca uma
+      // palavra inteira ("a A Completa de D")
     } else if (/^\p{Lu}\p{Ll}{1,2}$/u.test(s) && normalizarTexto(w).startsWith(normalizarTexto(s)) && normalizarTexto(w).length > normalizarTexto(s).length) {
       // 6.13.22: o começo da palavra com 2 ou 3 letras ("C Go" = Corpo Governante, "G Mu" = Grande Multidão), para desfazer a dúvida
       iniciais++;
@@ -819,24 +820,18 @@ export function confereAbreviacao(sigla, resposta) {
   }
   return iniciais > 0;
 }
-// Palavras curtas com maiúscula que, numa sigla, costumam vir por extenso (não contam como iniciais).
-const PALAVRAS_POR_EXTENSO_NA_SIGLA = new Set(["as", "os", "um", "uma", "so", "por", "com", "em", "ao", "aos", "na", "no", "nas", "nos", "da", "do", "de", "das", "dos"]);
-
-// 6.12.81: a sigla de um jogo de Abreviações tem de ser curta e jogável: de 1 a MAX_INICIAIS_NA_SIGLA iniciais (maiúscula sozinha; "A.T." vale 2) e
-// até 7 palavras ao todo. Os testes com o Gemini mostraram siglas de frases inteiras de versículos ("T L C O N E D P" para "Tão Longe Como O Nascente É
-// Do Poente"), que não dá para adivinhar nem jogar, e que passavam na conferência palavra por palavra. "Os 12 A de C" (2 iniciais), "O P da P" (2)
-// e "O V U da P" (4) são jogáveis.
-export const MAX_INICIAIS_NA_SIGLA = 4;
-export function siglaCurta(sigla) {
-  const tokens = String(sigla || "")
-    .replace(/\s+/g, " ")
-    .trim()
-    .split(" ")
-    .filter(Boolean)
-    .flatMap((t) => (/^(?:\p{Lu}\.){2,}$/u.test(t) ? t.split(".").filter(Boolean) : [t.replace(/[,;:!?]+$/, "")]));
-  const iniciais = tokens.filter((t) => /^\p{Lu}\.?$/u.test(t) || (/^\p{Lu}\p{Ll}{1,2}$/u.test(t) && !PALAVRAS_POR_EXTENSO_NA_SIGLA.has(normalizarTexto(t)))).length;
-  return iniciais >= 1 && iniciais <= MAX_INICIAIS_NA_SIGLA && tokens.length <= 7;
+// 6.14.13: o tamanho de uma sigla jogável: até MAX_PALAVRAS_NA_SIGLA palavras, sem contar os artigos, as preposições e o "e" (números
+// contam). Antes (6.12.81) o limite era de 4 iniciais. Frases maiores (versículos quase inteiros) não dá para adivinhar nem jogar.
+export const MAX_PALAVRAS_NA_SIGLA = 6;
+export function palavrasQueContam(resposta) {
+  return String(resposta || "")
+    .replace(/\s*\([^)]*\)\s*\.?$/, "")
+    .replace(/\s+[—–-]\s+.*$/, "")
+    .split(/\s+/)
+    .filter((w) => normalizarTexto(w) && !MINUSCULAS_NA_SIGLA.has(normalizarTexto(w))).length;
 }
+// 6.14.13: palavras bem pequenas que podem ficar por extenso na sigla ("J foi T 3 V", "A B tem 66 L"), já sem acento.
+const PALAVRAS_PEQUENAS_NA_SIGLA = new Set(["tem", "foi", "so", "sao", "era", "ha", "nao", "ser", "vai", "vem", "esta", "estao", "que", "se", "ja", "seu", "sua", "eu", "ele", "ela"]);
 
 // 6.14.03: na sigla (e no começo das palavras), os artigos e as palavras de ligação por extenso ficam em minúsculas ("os 12 A de C",
 // "o P da P"); a maiúscula fica só nas palavras. Uma letra sozinha só é artigo quando a resposta traz a mesma letra ali ("A L do M" = "A Luz do
@@ -851,7 +846,7 @@ export function siglaSemPalavrasInteiras(sigla, resposta) {
   return tokens
     .map((t, i) => {
       const n = normalizarTexto(t);
-      const inteira = n.length > 1 && !/^\d+$/.test(n) && !MINUSCULAS_NA_SIGLA.has(n) && n === normalizarTexto(palavras[i]);
+      const inteira = n.length > 1 && !/^\d+$/.test(n) && !MINUSCULAS_NA_SIGLA.has(n) && !PALAVRAS_PEQUENAS_NA_SIGLA.has(n) && n === normalizarTexto(palavras[i]);
       return inteira ? t.charAt(0).toLocaleUpperCase("pt-BR") : t;
     })
     .join(" ");
@@ -966,9 +961,9 @@ export function expressaoCortada(resposta, textoDoVersiculo) {
   return cortada;
 }
 
-// A rodada de Abreviações vale se a sigla é curta e confere, palavra por palavra, com a resposta.
+// A rodada de Abreviações vale se a sigla confere, palavra por palavra, com a resposta e não passa do limite de palavras.
 export function abreviacaoJogavel(sigla, resposta) {
-  return siglaCurta(sigla) && confereAbreviacao(sigla, resposta);
+  return palavrasQueContam(resposta) <= MAX_PALAVRAS_NA_SIGLA && confereAbreviacao(sigla, resposta);
 }
 
 // Verdadeiro ou falso: a resposta tem de começar com "Verdadeiro" ou "Falso". Devolve { valor: "V" | "F", texto: "Verdadeiro. …" } ou null.

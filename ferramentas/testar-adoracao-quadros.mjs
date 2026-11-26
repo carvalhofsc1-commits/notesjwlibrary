@@ -1673,32 +1673,29 @@ teste("6.12.81 (1): a regra de acentuação está nas regras comuns e chega ao p
   assert.match(prompts.travadosDe({}).find((x) => x.id === "montagem_pedidos").texto, /6\.12\.81: a regra "ACENTUAÇÃO"/);
 });
 
-teste("6.12.81 (2): sigla curta nas Abreviações (siglaCurta, abreviacaoJogavel) e prompt com as expressões bíblicas conhecidas", () => {
-  assert.equal(ger.MAX_INICIAIS_NA_SIGLA, 4);
-  // Jogáveis: nomes, títulos e grupos conhecidos.
-  for (const s of ["Os 12 A de C", "O P da P", "O C de D", "O L da V", "As B N da P", "O V U da P", "O P V de U", "200 C e 20 B", "100 T de P", "A.T.", "N de J"]) assert.equal(ger.siglaCurta(s), true, s);
-  // Siglas de frases inteiras de versículos (as do Gemini 3.5 Flash) não valem.
-  for (const s of ["T L C O N E D P", "P L U A O", "C A S U A O", "P P A A O", "P O E E P P A A T", "P D C A S I", "S P O A E T C", "F P A P C O S I"]) assert.equal(ger.siglaCurta(s), false, s);
-  assert.equal(ger.siglaCurta("de da"), false, "sem nenhuma inicial");
-  assert.equal(ger.siglaCurta(""), false);
-  assert.equal(ger.siglaCurta("A B C D E"), false, "5 iniciais");
-  assert.equal(ger.siglaCurta("A B C D"), true, "4 iniciais");
-  // Jogável = curta e conferida palavra por palavra com a resposta.
+teste("6.12.81 (2) e 6.14.13: tamanho da sigla nas Abreviações (até 6 palavras) e prompt com as expressões bíblicas conhecidas", () => {
+  assert.equal(ger.MAX_PALAVRAS_NA_SIGLA, 6);
+  // Contam as palavras da resposta, sem artigos, preposições e o "e".
+  assert.equal(ger.palavrasQueContam("As Escrituras Gregas Cristãs têm 27 Livros"), 6);
+  assert.equal(ger.palavrasQueContam("Os 12 Apóstolos de Cristo"), 3);
+  // Jogável = até 6 palavras e conferida palavra por palavra com a resposta.
   assert.equal(ger.abreviacaoJogavel("Os 12 A de C", "Os 12 Apóstolos de Cristo"), true);
   assert.equal(ger.abreviacaoJogavel("O P da P", "O Príncipe da Paz"), true);
+  assert.equal(ger.abreviacaoJogavel("As E G C têm 27 L", "As Escrituras Gregas Cristãs têm 27 Livros"), true, "6 palavras");
   assert.equal(ger.abreviacaoJogavel("O P da P", "O Pai da Paz e da Vida"), false, "não confere com a resposta");
-  assert.equal(ger.abreviacaoJogavel("T L C O N E D P", "Tão Longe Como O Nascente É Do Poente"), false, "confere, mas é longa demais");
-  assert.equal(ger.confereAbreviacao("T L C O N E D P", "Tão Longe Como O Nascente É Do Poente"), true, "a conferência palavra por palavra continua a mesma");
+  const longa = ["T L C O N E D P F N P", "Tão Longe Como O Nascente É Do Poente Ficam Nossos Pecados"];
+  assert.equal(ger.abreviacaoJogavel(...longa), false, "confere, mas passa de 6 palavras");
+  assert.equal(ger.confereAbreviacao(...longa), true, "a conferência palavra por palavra continua a mesma");
   // O prompt do jogo e o servidor dizem o mesmo.
   const jogo = prompts.PARTES.find((x) => x.id === "adoracao_q_jogo").padrao;
   assert.match(jogo, /Abreviações bíblicas: use EXPRESSÕES BÍBLICAS CONHECIDAS/);
   assert.match(jogo, /NUNCA um pedaço de frase ou de versículo \(errado: "P L U A O"/);
-  assert.match(jogo, /a sigla tem no MÁXIMO 4 iniciais \(o servidor tira a rodada com mais\)/);
+  assert.match(jogo, /a sigla tem no MÁXIMO 6 palavras, sem contar os artigos, as preposições e o "e" \(o servidor tira a rodada com mais\)/);
   assert.doesNotMatch(jogo, /\bcultos?\b/i);
-  assert.match(montados.sistemaFamiliaQuadro.jogo, /Abreviações com a sigla curta \(no máximo 4 iniciais; a rodada com mais sai\)/);
+  assert.match(montados.sistemaFamiliaQuadro.jogo, /Abreviações com a sigla curta \(no máximo 6 palavras, sem contar artigos, preposições e o "e"; a rodada com mais sai\)/);
   assert.match(servidorJs, /!abreviacaoJogavel\(sigla, r\.resposta\)/);
   assert.ok(!servidorJs.includes("!confereAbreviacao(sigla, r.resposta)"), "o servidor não usa mais só a conferência palavra por palavra");
-  assert.match(servidorJs, /abreviacoes: "a sigla na pergunta curta \(no máximo 4 iniciais\), de uma expressão bíblica conhecida/);
+  assert.match(servidorJs, /abreviacoes: "a sigla na pergunta curta \(no máximo 6 palavras[^)]*\), de uma expressão bíblica conhecida/);
 });
 
 teste("6.14.01: Abreviações: duas pistas do significado sem a resposta, sem a dica da quantidade de palavras", async () => {
@@ -1750,7 +1747,7 @@ teste("6.14.03: Abreviações: artigos em minúsculas na sigla, maiúsculas só 
 teste("6.14.04: Abreviações: sigla de fato muito conhecido, com \"Fato conhecido\" no lugar do versículo", async () => {
   const banco = await import("../api/_jogosBanco.mjs");
   assert.ok(banco.ehFatoConhecido("Fato conhecido") && banco.ehFatoConhecido("(fato bíblico conhecido).") && !banco.ehFatoConhecido("Êxodo 20:1"));
-  assert.deepEqual(banco.SIGLAS_BANCO.filter((s) => s[2] === "fato").map((s) => s[0]), ["A B T 66 L", "As E H T 39 L", "As E G T 27 L"]);
+  assert.deepEqual(banco.SIGLAS_BANCO.filter((s) => s[2] === "fato").map((s) => s[0]), ["A B tem 66 L", "As E H têm 39 L", "As E G C têm 27 L"]);
   const ab = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "jogo", jogos: ["Abreviações bíblicas (ex.: Os 12 A de C)"] }), montados);
   const r = await ab.prep.montar({ descricao: "d", nome: "Siglas", comoJogar: "R.", rodadas: [
     { pergunta: "T do M V Dica 1: Foi uma libertação que ninguém esqueceu. Dica 2: Moisés estendeu o bastão e o povo passou em terra seca.", resposta: "Travessia do Mar Vermelho", referencia: "Fato conhecido" },
@@ -1776,7 +1773,10 @@ teste("6.14.09: Abreviações: a 1ª dica é genérica e curta", async () => {
 teste("6.14.12: Abreviações: sigla sem palavras inteiras", () => {
   assert.equal(ger.confereAbreviacao("a A Completa de D", "A Armadura Completa de Deus"), false);
   assert.equal(ger.confereAbreviacao("a A C de D", "A Armadura Completa de Deus"), true);
-  assert.equal(ger.confereAbreviacao("O F está P", "O Fim está Próximo"), false);
+  assert.equal(ger.confereAbreviacao("O F está P", "O Fim está Próximo"), true, "6.14.13: palavra bem pequena pode ficar por extenso");
+  assert.equal(ger.confereAbreviacao("J foi T 3 V", "Jesus foi Tentado 3 Vezes"), true);
+  assert.equal(ger.confereAbreviacao("O Pão da V", "O Pão da Vida"), false, "palavra do significado não fica inteira");
+  assert.equal(ger.siglaSemPalavrasInteiras("J foi T 3 V", "Jesus foi Tentado 3 Vezes"), "J foi T 3 V");
   assert.equal(ger.confereAbreviacao("C Go", "Corpo Governante"), true);
   assert.equal(ger.siglaSemPalavrasInteiras("a A Completa de D", "A Armadura Completa de Deus"), "a A C de D");
   assert.equal(ger.siglaSemPalavrasInteiras("os 12 A de C", "Os 12 Apóstolos de Cristo"), "os 12 A de C");
@@ -1787,7 +1787,7 @@ teste("6.12.81 (2): o jogo de Abreviações tira as siglas longas e o pedido de 
   const ab = await montarPedidoQuadroFamilia(corpoFamilia({ quadro: "jogo", jogos: ["Abreviações bíblicas (ex.: Os 12 A de C)"] }), montados);
   assert.ok(!ab.erro);
   const boas = [["O P da P", "O Príncipe da Paz", "Isaías 9:6"], ["O C de D", "O Cordeiro de Deus", "João 1:29"], ["O L da V", "O Livro da Vida", "Filipenses 4:3"], ["O P da V", "O Pão da Vida", "João 6:35"], ["A L do M", "A Luz do Mundo", "João 8:12"], ["Os 12 A de C", "Os 12 Apóstolos de Cristo", "Mateus 10:2"]];
-  const longas = [["T L C O N E D P", "Tão Longe Como O Nascente É Do Poente", "Salmos 103:12"], ["P L U A O", "Perdoando-se Liberalmente Uns Aos Outros", "Efésios 4:32"], ["P P A A O", "Passar Por Alto A Ofensa", "Provérbios 19:11"]];
+  const longas = [["T L C O N E D P F N P", "Tão Longe Como O Nascente É Do Poente Ficam Nossos Pecados", "Salmos 103:12"], ["P L U A O C J T P", "Perdoando Liberalmente Uns Aos Outros Como Jeová Também Perdoou", "Efésios 4:32"], ["P P A A O D H S P", "Passar Por Alto A Ofensa Demonstra Haver Sabedoria Profunda", "Provérbios 19:11"]];
   const rodadas = [...longas.slice(0, 1), ...boas, ...longas.slice(1)].map(([pergunta, resposta, referencia]) => ({ pergunta, resposta, referencia }));
   const r = await ab.prep.montar({ descricao: "d", nome: "Abreviações", comoJogar: "R.", rodadas, eventos: [] });
   // 6.13.22: as 6 boas da IA e 4 do banco
@@ -1799,7 +1799,7 @@ teste("6.12.81 (2): o jogo de Abreviações tira as siglas longas e o pedido de 
   // Sem as siglas do banco (todas na memória das últimas semanas não cabem: só 40), a IA sozinha com poucas siglas pede de novo.
   const r2 = await ab.prep.montar({ descricao: "d", nome: "Abreviações", comoJogar: "R.", rodadas: rodadas.slice(0, 3), eventos: [] });
   assert.match(r2.falta, /^vieram 6 rodadas válidas \(com 4 siglas do servidor\); mande 6 rodadas \(no mínimo 4\)/);
-  assert.match(r2.falta, /a sigla na pergunta curta \(no máximo 4 iniciais\), de uma expressão bíblica conhecida \(nome, título ou grupo, nunca um pedaço de frase de versículo\)/);
+  assert.match(r2.falta, /a sigla na pergunta curta \(no máximo 6 palavras[^)]*\), de uma expressão bíblica conhecida \(nome, título ou grupo, nunca um pedaço de frase de versículo\)/);
 });
 
 teste("6.12.85: Abertura — matéria antes do relato e local exato da fonte (capítulo, parágrafo, página)", async () => {
@@ -2095,7 +2095,7 @@ teste("6.13.22: banco de siglas e cartas do Perfil bíblico (todas jogáveis), d
   assert.ok(ger.confereAbreviacao("C Go", "Corpo Governante"));
   assert.ok(ger.confereAbreviacao("G Mu", "Grande Multidão"));
   assert.ok(!ger.confereAbreviacao("G Mu", "Grande Tribulação"));
-  assert.ok(ger.siglaCurta("Só 2 E F F"), "Só por extenso não conta como inicial");
+  assert.ok(ger.abreviacaoJogavel("Só 2 E F F", "Só 2 Espias Foram Fiéis"), "Só por extenso é aceito");
   assert.equal(ger.comecoDasPalavras("10 Espias Foram Infiéis"), "10 Es Fo In");
   assert.equal(ger.comecoDasPalavras("O Pão da Vida"), "o Pã da Vi");
   // Perfil: as cartas prontas passam na conferência das dicas (8 a 12, nenhuma com a resposta)

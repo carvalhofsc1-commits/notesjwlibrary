@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.13
+
+- Abreviações: acabou o limite de 4 iniciais. A sigla pode ter **até 6 palavras**, sem contar artigos, preposições e o “e”.
+- **Palavras bem pequenas**, como “tem”, “foi”, “é”, “só” e “está”, podem ficar por extenso. As siglas fixas voltaram à forma anterior (ex.: “a B tem 66 L”, “J foi T 3 V”). Palavras maiores continuam só com a inicial.
+
 ## 6.14.12
 
 - Abreviações: a sigla **não traz mais palavras inteiras**, só as iniciais (ex.: “a A C de D”). Por extenso ficam apenas artigos, preposições, o “e” e os números.

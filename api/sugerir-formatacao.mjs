@@ -4017,7 +4017,7 @@ const PREPARAR_QUADRO_FAMILIA = {
                 const fato = ehFatoConhecido(b.referencia);
                 const livro = fato ? "" : v ? livroDaReferencia(v.referencia) : comBiblia ? "" : livroDaReferencia(r.referencia);
                 const onde = fato ? DICA_DO_TIPO_DA_SIGLA.fato : livro ? `Está em ${livro}` : "";
-                // 6.12.81: a sigla tem de ser curta (até 4 iniciais): siglas de frases inteiras de versículos não são jogáveis (abreviacaoJogavel).
+                // 6.14.13: até 6 palavras, sem contar artigos, preposições e o "e" (frases maiores não são jogáveis: abreviacaoJogavel).
                 // 6.14.02: a expressão tem de ser a que o versículo traz, sem tirar palavras do meio ("O Rio da Vida" × "rio de água da vida").
                 if (!sigla || !onde || !abreviacaoJogavel(sigla, r.resposta) || (v && expressaoCortada(r.resposta, v.texto)) || !novaRodada(normalizarTexto(sigla))) return;
                 // 6.13.17: a sigla aparece logo na pergunta (antes ficava escondida na 1ª dica).
@@ -4065,7 +4065,7 @@ const PREPARAR_QUADRO_FAMILIA = {
             verdadeiro_falso: 'a resposta começando com "Verdadeiro." ou "Falso.", com pelo menos 3 de cada',
             quem_disse: "a referência de um versículo com a fala entre aspas, sem o nome de quem disse na fala, com o NOME de quem fala escrito no texto da referência antes da fala (e antes do nome do ouvinte), a resposta começando por quem fala, e versículos diferentes dos já usados",
             complete_versiculo: "a referência de 1 versículo e, na resposta, uma palavra exata dele (pelo menos 4 letras, uma vez só no versículo; nunca Jeová, Deus, número nem o nome do livro), e versículos diferentes dos já usados",
-            abreviacoes: "a sigla na pergunta curta (no máximo 4 iniciais), de uma expressão bíblica conhecida (nome, título ou grupo, nunca um pedaço de frase de versículo) ou de um fato bíblico muito conhecido, conferindo palavra por palavra com a resposta, só com iniciais (nunca uma palavra inteira), com a pergunta no formato \"SIGLA Dica 1: … Dica 2: …\" (a 1ª bem genérica, de 1 a 5 palavras, como \"Dias de Jesus\" ou \"Sagrado\"; a 2ª mais reveladora; sem palavras da resposta), a referência do versículo onde está (ou \"Fato conhecido\", no fato sem versículo) e a expressão com as palavras exatas do versículo, sem tirar nenhuma",
+            abreviacoes: "a sigla na pergunta curta (no máximo 6 palavras, sem contar artigos, preposições e o \"e\"), de uma expressão bíblica conhecida (nome, título ou grupo, nunca um pedaço de frase de versículo) ou de um fato bíblico muito conhecido, conferindo palavra por palavra com a resposta, com iniciais (por extenso, só palavras bem pequenas, como tem e foi), com a pergunta no formato \"SIGLA Dica 1: … Dica 2: …\" (a 1ª bem genérica, de 1 a 5 palavras, como \"Dias de Jesus\" ou \"Sagrado\"; a 2ª mais reveladora; sem palavras da resposta), a referência do versículo onde está (ou \"Fato conhecido\", no fato sem versículo) e a expressão com as palavras exatas do versículo, sem tirar nenhuma",
           }[idTipo];
           const faltas = [];
           if (abrev && jogo) cartasDoJogo = jogo.rodadas.map((r) => r.resposta);
