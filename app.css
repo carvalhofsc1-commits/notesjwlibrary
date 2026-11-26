@@ -18133,3 +18133,6 @@ details.fam-placar-card > summary { min-height: 0 !important; padding: 3px 8px !
 /* 6.14.01: "▶ Próxima questão" no pé do card da questão, na largura toda, lilás; ao tocar, a tela sobe até a barra das questões (abaixo da barra do topo) */
 #participarSessao li.fam-sessao-questao > .fam-sessao-proxima { display: flex; align-items: center; justify-content: center; width: 100%; box-sizing: border-box; min-height: 40px; margin: 10px 0 0; background: #ede9fe; border: 1px solid #7c3aed; color: #4c1d95; font-weight: 700; }
 .fam-sessao-nav { scroll-margin-top: calc(var(--topbar-h, 52px) + 8px); }
+
+/* 6.14.06: o microfone do jogo é de segurar: o toque demorado não rola a tela, não seleciona nem abre menu */
+.fam-sessao-resp-linha > .fam-sessao-mic { touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }

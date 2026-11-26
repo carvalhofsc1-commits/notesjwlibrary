@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.06
+
+- Jogo ao vivo: o **🎤 agora é de segurar**. Grava só enquanto o botão está apertado; ao soltar, para e mostra **"Transcrevendo…"** até o texto aparecer no campo. No teclado, vale segurar espaço ou Enter.
+- Um toque rápido não grava: o app explica que é para segurar. A gravação continua limitada a 25 segundos.
+
 ## 6.14.05
 
 - Jogo ao vivo: o **🎤 de responder falando voltou a transcrever**. O servidor dava erro em toda resposta falada (faltava o contador de pedidos desse tipo).

@@ -7958,7 +7958,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.14.05'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.14.06'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -29657,8 +29657,8 @@ function saveTemplatesToStorage() {
         const base = j.idTipo === 'verdadeiro_falso'
           ? 'Leia a afirmação e toque em Verdadeiro ou Falso. Acertando, você ganha o ponto; errando, a resposta aparece e a questão termina sem pontos.'
           : (dicas
-            ? 'Descubra a resposta pelas dicas. Toque em “Dar a 1ª dica” para começar: quanto menos dicas você usar, mais pontos a questão vale (a etiqueta “vale N pontos” mostra o valor de agora). Escreva a resposta (ou toque no 🎤 e fale) e envie.'
-            : 'Leia a questão e escreva a resposta (ou toque no 🎤 e fale), depois envie.');
+            ? 'Descubra a resposta pelas dicas. Toque em “Dar a 1ª dica” para começar: quanto menos dicas você usar, mais pontos a questão vale (a etiqueta “vale N pontos” mostra o valor de agora). Escreva a resposta (ou segure o 🎤 enquanto fala) e envie.'
+            : 'Leia a questão e escreva a resposta (ou segure o 🎤 enquanto fala), depois envie.');
         const fim = j.idTipo === 'verdadeiro_falso' ? '' : ' Se errar, tente de novo ou toque em “Apelar para a IA”, que confere se a essência da resposta está certa (um erro de grafia ou um conectivo não muda o sentido). “Não sei” mostra a resposta e a questão não pontua.';
         return base + fim + (j.idTipo === 'verdadeiro_falso' ? '' : ' Cada resposta errada tira 1 ponto daquela questão (que nunca fica abaixo de zero).') + ' Use as setas para trocar de questão; sua pontuação aparece no placar.';
       })();
@@ -30336,14 +30336,18 @@ function saveTemplatesToStorage() {
 
     // 6.13.60: o 🎤 do campo de resposta (só quem administra o jogo ou joga sozinho): grava até 25 s, o servidor transcreve (o mesmo modelo do
     // Áudio em texto, sem código de texto: o custo é do app) e o texto vai para o campo, que continua editável.
+    // 6.14.06: o microfone só grava enquanto o botão está apertado (dedo, mouse, espaço ou Enter); ao soltar, para e transcreve.
+    const MIC_TOQUE_CURTO_MS = 500; // menos que isso é um toque: nada é transcrito e o app explica que é para segurar
+    const MIC_SOBRA_MS = 250; // continua um instante depois de soltar, para não cortar a última sílaba
     function participarMicMontar(campo) {
       const bt = document.createElement('button');
       bt.type = 'button';
       bt.className = 'secondary fam-fino fam-sessao-mic';
       bt.textContent = '🎤';
-      bt.title = 'Responder falando';
-      bt.setAttribute('aria-label', 'Responder falando');
-      let gravador = null, fluxo = null, pedacos = [], parar = null, timer = 0;
+      bt.title = 'Segure para falar';
+      bt.setAttribute('aria-label', 'Segure para responder falando');
+      // fase: 'parado' | 'abrindo' (pedindo o microfone) | 'gravando'; segurando = o botão continua apertado
+      let fase = 'parado', segurando = false, gravador = null, fluxo = null, pedacos = [], inicio = 0, curto = false, timer = 0, sobra = 0;
       // 6.14.05: o aviso do microfone aparece logo abaixo do campo (o aviso do topo da tela ficava fora da vista)
       const avisar = (msg, tipo) => {
         const linha = bt.parentElement;
@@ -30355,16 +30359,19 @@ function saveTemplatesToStorage() {
         p.hidden = !msg;
         p.textContent = msg || '';
       };
-      const limpar = () => { clearTimeout(timer); if (fluxo) fluxo.getTracks().forEach(t => t.stop()); fluxo = null; gravador = null; };
-      const pronto = () => { bt.disabled = false; bt.textContent = '🎤'; bt.classList.remove('gravando'); bt.title = 'Responder falando'; };
+      const comoUsar = 'Segure o 🎤 enquanto fala e solte quando terminar.';
+      const limpar = () => { clearTimeout(timer); clearTimeout(sobra); if (fluxo) fluxo.getTracks().forEach(t => t.stop()); fluxo = null; gravador = null; fase = 'parado'; };
+      const pronto = () => { bt.disabled = false; bt.textContent = '🎤'; bt.classList.remove('gravando'); bt.title = 'Segure para falar'; };
+      const parar = () => { try { gravador.stop(); } catch (e) { /* já parou */ } };
       const transcrever = async blob => {
         bt.disabled = true;
         bt.textContent = '⏳';
+        avisar('⏳ Transcrevendo…');
         try {
           const amostras = await trDecodificar(blob);
           const util = amostras.subarray(0, TRANSCRICAO_TAXA * 25);
           const { base64, pico } = trParaBase64(util);
-          if (pico < 0.005) { avisar('Não ouvi nada. Toque no 🎤 e fale perto do microfone.', 'erro'); return; }
+          if (pico < 0.005) { avisar('Não ouvi nada. Segure o 🎤 e fale perto do microfone.', 'erro'); return; }
           const r = await trPost({ acao: 'trecho-jogo', sessao: participar.cod, chave: participar.chave, audio: base64 });
           if (!r.ok) { avisar(trMensagem(r, 'Não consegui transcrever a sua voz agora.'), 'erro'); return; }
           const falado = String((r.dados && r.dados.texto) || '').replace(/\s+/g, ' ').trim().replace(/[.!?…]+$/, '');
@@ -30376,28 +30383,55 @@ function saveTemplatesToStorage() {
           avisar('Não consegui processar o áudio neste aparelho. Escreva a resposta.', 'erro');
         } finally { pronto(); }
       };
-      bt.addEventListener('click', async () => {
-        if (gravador && gravador.state === 'recording') { parar(); return; }
+      const comecar = async () => {
+        if (bt.disabled || campo.disabled) return;
+        segurando = true;
+        if (fase !== 'parado') return;
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) { avisar('Este aparelho ou navegador não permite gravar áudio aqui. Escreva a resposta.', 'erro'); return; }
-        try { fluxo = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch (e) { avisar('Não consegui usar o microfone. Libere o acesso no navegador ou escreva a resposta.', 'erro'); return; }
+        fase = 'abrindo';
+        bt.classList.add('gravando');
+        avisar('Preparando o microfone… continue segurando.');
+        try { fluxo = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch (e) { limpar(); pronto(); avisar('Não consegui usar o microfone. Libere o acesso no navegador ou escreva a resposta.', 'erro'); return; }
+        // soltou antes de o microfone abrir (por exemplo, para permitir o acesso): nada é gravado
+        if (!segurando) { limpar(); pronto(); avisar(comoUsar); return; }
         const mime = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus'].find(t => MediaRecorder.isTypeSupported(t)) || '';
-        try { gravador = new MediaRecorder(fluxo, mime ? { mimeType: mime } : undefined); } catch (e) { limpar(); avisar('Não consegui gravar áudio neste aparelho. Escreva a resposta.', 'erro'); return; }
+        try { gravador = new MediaRecorder(fluxo, mime ? { mimeType: mime } : undefined); } catch (e) { limpar(); pronto(); avisar('Não consegui gravar áudio neste aparelho. Escreva a resposta.', 'erro'); return; }
         pedacos = [];
+        curto = false;
         gravador.addEventListener('dataavailable', ev => { if (ev.data && ev.data.size) pedacos.push(ev.data); });
         gravador.addEventListener('stop', () => {
           const tipo = (gravador && gravador.mimeType) || mime || 'audio/webm';
           limpar();
-          if (!pedacos.length) { pronto(); return; }
+          if (curto) { pronto(); avisar(comoUsar); return; }
+          if (!pedacos.length) { pronto(); avisar('Não ouvi nada. Segure o 🎤 e fale perto do microfone.', 'erro'); return; }
           transcrever(new Blob(pedacos, { type: tipo }));
         });
-        parar = () => { try { gravador.stop(); } catch (e) { /* já parou */ } };
         gravador.start();
-        bt.textContent = '⏹️';
-        bt.classList.add('gravando');
-        bt.title = 'Parar e transcrever';
-        avisar('🎤 Gravando… fale a resposta e toque no ⏹️.');
+        fase = 'gravando';
+        inicio = Date.now();
+        bt.textContent = '🔴';
+        bt.title = 'Solte para transcrever';
+        avisar('🔴 Gravando… fale agora e solte o botão ao terminar.');
         timer = setTimeout(parar, 25000);
+      };
+      const soltar = () => {
+        if (!segurando) return;
+        segurando = false;
+        if (fase !== 'gravando') return;
+        curto = Date.now() - inicio < MIC_TOQUE_CURTO_MS;
+        clearTimeout(sobra);
+        sobra = setTimeout(parar, MIC_SOBRA_MS);
+      };
+      bt.addEventListener('pointerdown', ev => {
+        if (ev.button > 0) return;
+        ev.preventDefault();
+        try { bt.setPointerCapture(ev.pointerId); } catch (e) { /* sem captura: o pointerup no botão ainda vale */ }
+        comecar();
       });
+      ['pointerup', 'pointercancel', 'lostpointercapture', 'blur'].forEach(tipo => bt.addEventListener(tipo, soltar));
+      bt.addEventListener('keydown', ev => { if (ev.key === ' ' || ev.key === 'Enter') { ev.preventDefault(); if (!ev.repeat) comecar(); } });
+      bt.addEventListener('keyup', ev => { if (ev.key === ' ' || ev.key === 'Enter') { ev.preventDefault(); soltar(); } });
+      bt.addEventListener('contextmenu', ev => ev.preventDefault()); // o toque demorado não abre o menu do navegador
       return bt;
     }
 
