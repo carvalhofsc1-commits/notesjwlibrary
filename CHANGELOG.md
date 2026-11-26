@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.37
+
+- **Adoração em família:** com o código de pesquisa, a seção abre **direto na tela das sugestões**, e o botão fino **"🔗 Participar de uma adoração em família"** fica **no fim dela** (como nos Jogos). O **← Voltar** dessa tela leva ao Início. Sem o código de pesquisa, continua a tela com as duas opções, para quem só vai participar.
+
 ## 6.14.36
 
 - **Jogos bíblicos:** no botão "Entrar em um jogo", a descrição passou a ser **"Entre com o código que o administrador do jogo passou."** O botão ficou **fino** (ícone e nome na mesma linha, descrição pequena embaixo).

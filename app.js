@@ -126,7 +126,9 @@
     }
 
     function showScreen(name, options) {
-      const screen = APP_SCREENS.includes(name) ? name : 'inicio';
+      let screen = APP_SCREENS.includes(name) ? name : 'inicio';
+      // 6.14.37: com o código de pesquisa, a Adoração em família abre direto nas sugestões (sem o código, fica a tela com "Participar").
+      if (screen === 'adoracao') { try { if (codigoAcessoSalvo()) screen = 'familia'; } catch (e) { /* ainda iniciando: acessosAtualizar leva depois */ } }
       const anterior = currentScreen();
       const changed = screen !== anterior;
       if (changed && anterior === 'participar') { try { participarAoSair(); } catch (e) { /* ainda iniciando */ } } // saindo da adoração ao vivo, a consulta periódica para
@@ -7959,7 +7961,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.14.36'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.14.37'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -23352,6 +23354,7 @@ function saveTemplatesToStorage() {
       if (menuPesquisa) menuPesquisa.disabled = !pesquisa;
       if (!pesquisa && currentScreen() === 'pesquisa') showScreen('inicio'); // código apagado com a tela aberta: volta ao Início
       if (!pesquisa && currentScreen() === 'familia') showScreen('adoracao');
+      if (pesquisa && currentScreen() === 'adoracao') showScreen('familia'); // 6.14.37
       travarAtalho('leitura', codigoLeituraSalvo() ? '' : 'leitura');
       travarAtalho('transcricao', codigoTextoSalvo() ? '' : 'texto');
       if (!codigoTextoSalvo() && currentScreen() === 'transcricao') showScreen('inicio'); // código apagado com a tela aberta: volta ao Início
@@ -32302,7 +32305,8 @@ function saveTemplatesToStorage() {
       }
     }
 
-    document.getElementById('familiaVoltar').addEventListener('click', () => showScreen('adoracao'));
+    document.getElementById('familiaVoltar').addEventListener('click', () => showScreen('inicio')); // 6.14.37: é a tela inicial da Adoração
+    document.getElementById('familiaParticiparBtn').addEventListener('click', () => participarAbrir(''));
     // "Família e definições gerais" (6.11.35): tocar no card abre uma vista exclusiva (só o cadastro, com Voltar); sair devolve a tela como estava.
     // 6.11.36: o mesmo para "Informar convidados". qual = 'perfil' | 'convidados' (abre essa vista) | null (volta à tela normal, com tudo recolhido).
     var familiaPerfilRolagem = 0; // var e função: showScreen chama familiaVista antes destas linhas rodarem
