@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.40
+
+- **Nível de dificuldade:** botões **mais finos** e com cor própria: **Fácil azul**, **Médio laranja**, **Difícil vermelho**; o marcado ganha **✓**, fundo mais forte e moldura grossa (também no modo escuro).
+
 ## 6.14.39
 
 - **Preparação dos jogos (todos):** **10 px** entre os campos, **cabeçalho do jogo mais baixo** e **"✨ Preparar o jogo" mais fino**.
