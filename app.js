@@ -7961,7 +7961,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.14.53'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.14.54'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -22146,7 +22146,7 @@ function saveTemplatesToStorage() {
         if (!Array.isArray(item.familiaOpcoes) || !item.familiaOpcoes.length) return false;
         const numeroSalvo = (String(item.titulo).match(/ · Opção (\d)$/) || [])[1]; // programação salva de uma opção: mantém o número original
         familiaRenderOpcoes(item.familiaOpcoes, numeroSalvo && item.familiaOpcoes.length === 1 ? [Number(numeroSalvo)] : undefined, item.id);
-        familiaStatus('Programação salva em ' + new Date(item.data).toLocaleDateString('pt-BR') + '.', 'ok');
+        familiaStatus(''); // 6.14.54: o "Programação salva em…" aparece com a programação, dentro do card das salvas
         if (!silencioso) {
           showScreen('familia');
           requestAnimationFrame(() => familiaResultadoEl.scrollIntoView({ block: 'start', behavior: 'smooth' }));
@@ -27083,6 +27083,15 @@ function saveTemplatesToStorage() {
     function familiaRenderOpcoes(opcoes, numeros, itemId) {
       familiaResultadoEl.innerHTML = '';
       familiaOpcoes = opcoes;
+      // 6.14.54: a programação fica sempre dentro do card "Programações salvas" (que abre junto), com a data em que foi salva.
+      familiaResultadoEl.dataset.item = itemId || '';
+      const salva = itemId && opcoes.length ? historicoLer().find(i => i.id === itemId) : null;
+      if (salva) {
+        const quando = document.createElement('p');
+        quando.className = 'fam-salva-quando';
+        quando.textContent = 'Programação salva em ' + new Date(salva.data).toLocaleDateString('pt-BR') + '.';
+        familiaResultadoEl.appendChild(quando);
+      }
       // 6.12.70: uma programação só aparece como "Programação"; as antigas, de duas opções, continuam com "Opção N".
       opcoes.forEach((op, idx) => {
         const n = (numeros && numeros[idx]) || idx + 1;
@@ -27092,6 +27101,7 @@ function saveTemplatesToStorage() {
         familiaResultadoEl.appendChild(familiaMontarCard(op, idx, rotulo + (op.duracaoTotal ? ' · ' + op.duracaoTotal + ' min' : ''), cfg));
       });
       familiaResultadoEl.hidden = !opcoes.length;
+      if (opcoes.length) document.getElementById('familiaSalvasBox').open = true;
     }
 
     // Uma parte da programação: nome, tempo, responsável, descrição, textos, vídeos, cânticos, publicações, perguntas, jogo e transição.
@@ -27957,12 +27967,7 @@ function saveTemplatesToStorage() {
         abrir.type = 'button';
         abrir.className = 'fam-fino fam-principal';
         abrir.textContent = '📂 Abrir esta programação';
-        abrir.addEventListener('click', async () => {
-          if (await historicoAbrir(item.id)) {
-            document.getElementById('familiaSalvasBox').open = false;
-            requestAnimationFrame(() => familiaResultadoEl.scrollIntoView({ block: 'start', behavior: 'smooth' }));
-          }
-        });
+        abrir.addEventListener('click', () => historicoAbrir(item.id)); // 6.14.54: abre aqui no card e a tela rola até ela
         const apagar = document.createElement('button');
         apagar.type = 'button';
         apagar.className = 'secondary fam-fino limpar-btn';
@@ -27972,6 +27977,11 @@ function saveTemplatesToStorage() {
         apagar.addEventListener('click', async () => {
           if (!(await askConfirm('Apagar esta programação salva deste aparelho?', 'Apagar programação'))) return;
           historicoGravar(historicoLer().filter(g => g.id !== item.id));
+          if (familiaResultadoEl.dataset.item === item.id) { // 6.14.54: a apagada estava aberta: sai da tela
+            familiaOpcoes = null;
+            familiaResultadoEl.innerHTML = '';
+            familiaResultadoEl.hidden = true;
+          }
           historicoRender();
         });
         acoes.append(abrir, familiaBotaoCompartilhar(op, art, item.id, '🔗 Selecionar esta programação'), apagar);

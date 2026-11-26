@@ -2104,7 +2104,7 @@ teste("tela da Adoração repaginada: um card para família, quadros e convidado
   assert.ok(tela.includes('<h3 class="fam-intro-titulo">Peça sugestões para a noite de adoração em família</h3>'));
   assert.ok(tela.includes("👤 Informações sobre a família, convidados e definições gerais</span>"));
   assert.ok(ordem('id="familiaPerfilBox"', 'id="familiaProgBox"', 'id="familiaConvidadosBox"', 'id="familiaPerfilConcluir"'));
-  assert.ok(ordem('id="familiaAssuntosAbrir"', 'id="familiaAssunto"', 'id="familiaGerarBtn"', 'id="familiaLimparBtn"', 'id="familiaResultado"', 'id="familiaParticiparBtn"', 'id="familiaSalvasBox"'));
+  assert.ok(ordem('id="familiaAssuntosAbrir"', 'id="familiaAssunto"', 'id="familiaGerarBtn"', 'id="familiaLimparBtn"', 'id="familiaParticiparBtn"', 'id="familiaSalvasBox"', 'id="familiaResultado"', 'id="familiaSalvasLista"')); // 6.14.54: a programação aberta dentro das salvas
   assert.ok(tela.includes("Ou informe aqui um assunto:"));
   assert.ok(appJs.includes("familiaAssuntosLimpar(); // 6.14.52: a lixeira limpa também o assunto"));
 });

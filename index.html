@@ -3303,12 +3303,13 @@
       <p id="familiaStatus" class="fam-status" role="status" aria-live="polite" hidden></p>
       <div id="familiaProgresso" class="fam-progresso" aria-live="polite" hidden></div>
 
-      <div id="familiaResultado" class="fam-resultado" hidden></div>
       <!-- 6.14.37: com o código de pesquisa, a Adoração abre direto nesta tela; participar fica no fim dela (6.14.52: abaixo dele, só as programações salvas). -->
       <button id="familiaParticiparBtn" type="button" class="secondary fam-hub-btn"><span class="fam-hub-icone" aria-hidden="true">🔗</span><span class="fam-hub-nome">Participar de uma adoração em família</span><span class="fam-hub-desc">Entre com o código que o presidente da reunião passou.</span></button>
       <!-- Programações salvas (6.11.25; 6.14.52: no fim da página): lista recolhível com o tema, o tempo e as atividades de cada programação já salva. -->
       <details id="familiaSalvasBox" class="fam-salvas">
         <summary>📂 Programações salvas <span id="familiaSalvasQtd" class="opc"></span></summary>
+        <!-- 6.14.54: a programação aberta (ou a recém-preparada) aparece sempre aqui dentro, acima da lista. -->
+        <div id="familiaResultado" class="fam-resultado" hidden></div>
         <div id="familiaSalvasLista" class="fam-salvas-lista"></div>
       </details>
     </section>

@@ -18516,3 +18516,9 @@ body:not(.fam-tela-grande) #participarSessao.fam-na-secao .fam-sessao-secao.na-t
 #participarSessao .fam-sessao-pe > details.fam-sessao-dirigente > summary { justify-content: center; min-height: 38px; font-size: .84rem; line-height: 1.15; text-align: center; }
 #participarSessao .fam-sessao-pe > details.fam-sessao-dirigente[open] { order: 2; flex-basis: 100%; padding: 0 12px 10px; }
 #participarSessao .fam-sessao-pe > .fam-sessao-grande-btn:only-child { flex-basis: 100%; }
+
+/* 6.14.54: a programação aberta fica dentro do card "Programações salvas", acima da lista, com 10 px entre os blocos */
+#familiaCard #familiaResultado { gap: 10px; margin: 0 0 10px; scroll-margin-top: calc(var(--topbar-h, 48px) + 8px); }
+#familiaCard #familiaResultado[hidden] { display: none; }
+#familiaCard .fam-salva-quando { margin: 0; text-align: center; font-size: .9rem; font-weight: 700; color: color-mix(in srgb, #1d4ed8 80%, var(--text)); }
+#familiaCard #familiaResultado > .fam-opcao { background: var(--card); }
