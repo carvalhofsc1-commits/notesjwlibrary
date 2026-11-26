@@ -2,6 +2,14 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.58
+
+- **Adoração em família:**
+  - **10 px** nas laterais, embaixo e entre os campos, também nas telas de dentro.
+  - A tela dos assuntos agora se chama **"Assuntos e situações"**, com o título centralizado.
+  - Os títulos das seções menores, sem negrito, numa linha só (os marcados aparecem como **✓ 2**).
+  - Os campos de texto vazios têm a altura do texto de sugestão, que não aparece mais cortado.
+
 ## 6.14.57
 
 - **Adoração em família:** o botão passou a se chamar **"Participar de uma adoração"**.

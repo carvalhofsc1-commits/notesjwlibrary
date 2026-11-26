@@ -7961,7 +7961,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.14.57'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.14.58'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -26466,7 +26466,7 @@ function saveTemplatesToStorage() {
         if (!sm) return;
         let marca = sm.querySelector('.fam-circ-marcadas');
         if (!marca) { marca = document.createElement('span'); marca.className = 'fam-circ-marcadas'; sm.appendChild(marca); }
-        marca.textContent = n ? ' · ✓ ' + n + (n === 1 ? ' marcado' : ' marcados') : '';
+        marca.textContent = n ? ' · ✓ ' + n : ''; // 6.14.58: curto, para o título da seção caber numa linha só
       });
     }
 
@@ -32418,8 +32418,13 @@ function saveTemplatesToStorage() {
     // e, nas caixas de texto, a altura acompanha o conteúdo (6.11.15).
     function familiaCrescer(campo) {
       if (campo.tagName !== 'TEXTAREA' || !campo.offsetParent) return;
+      // 6.14.58: vazio, a altura acompanha o texto de sugestão, para ele não aparecer cortado
+      const sugestao = !campo.value && campo.placeholder;
+      if (sugestao) campo.value = campo.placeholder;
       campo.style.height = 'auto';
-      campo.style.height = (campo.scrollHeight + 2) + 'px';
+      const altura = campo.scrollHeight + 2;
+      if (sugestao) campo.value = '';
+      campo.style.height = altura + 'px';
     }
     function familiaCampoLimpavel(campo, nome) {
       if (!campo || campo.closest('.fam-limpavel')) return;
@@ -32468,6 +32473,7 @@ function saveTemplatesToStorage() {
     document.getElementById('familiaPerfilBox').addEventListener('toggle', () => requestAnimationFrame(familiaAjustarAlturas));
     document.getElementById('familiaConvidadosBox').addEventListener('toggle', () => requestAnimationFrame(familiaAjustarAlturas));
     document.getElementById('familiaProgBox').addEventListener('toggle', () => requestAnimationFrame(familiaAjustarAlturas)); // o campo "Outras circunstâncias" está nele
+    document.getElementById('familiaAssuntosBox').addEventListener('toggle', () => requestAnimationFrame(familiaAjustarAlturas)); // 6.14.58
     window.addEventListener('resize', familiaAjustarAlturas);
     window.addEventListener('hashchange', () => setTimeout(familiaAjustarAlturas, 120));
     setTimeout(familiaAjustarAlturas, 400);

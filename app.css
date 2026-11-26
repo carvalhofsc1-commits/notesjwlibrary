@@ -18538,3 +18538,13 @@ body:not(.fam-tela-grande) #participarSessao.fam-na-secao .fam-sessao-secao.na-t
 #familiaCard:not([data-vista]) > #familiaPerfilBox { background: #f5ebe0; border: 1px solid #c4a484; }
 :root[data-theme="dark"] #familiaCard:not([data-vista]) > #familiaPerfilBox { background: #33281f; border-color: #8a6a4a; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #familiaCard:not([data-vista]) > #familiaPerfilBox { background: #33281f; border-color: #8a6a4a; } }
+
+/* 6.14.58: Adoração em família: 10 px nas laterais, embaixo e entre os campos (também nas telas de dentro); em "Assuntos e situações", o
+   título centralizado e os títulos das seções menores, sem negrito, numa linha só */
+body[data-screen="familia"] main { padding: 10px; }
+#familiaCard.card.fam-card { padding: 10px; }
+#familiaCard[data-vista] > .fam-perfil-box > .fam-perfil-corpo { padding: 0; }
+#familiaCard #familiaAssuntosBox .fam-bloco > .fam-bloco-titulo { text-align: center; }
+#familiaCard .fam-circ-secao > summary { flex-wrap: nowrap; white-space: nowrap; overflow: hidden; font-size: clamp(.76rem, 3.9vw, .92rem); font-weight: 500; }
+#familiaCard .fam-circ-secao > summary > span { font-size: inherit; font-weight: 500; }
+body[data-screen="familia"] main { padding-bottom: 3px; } /* com a folga de 7 px do corpo acima da barra de baixo, ficam os 10 px */
