@@ -7958,7 +7958,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.14.31'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.14.32'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -28432,7 +28432,7 @@ function saveTemplatesToStorage() {
       sessao: document.getElementById('participarSessao'),
       status: document.getElementById('participarStatus')
     };
-    const participarVazio = () => ({ cod: '', chave: '', programa: null, dirigente: false, participanteId: '', nome: '', versao: '', estado: null, participantes: [], extras: null, offset: 0, secoes: [], dir: null, semConexao: false, jogos: new Map(), cron: null, presentes: [], nomesVistos: [], painel: null, ultimaPresenca: 0, programaN: null });
+    const participarVazio = () => ({ cod: '', chave: '', programa: null, dirigente: false, participanteId: '', nome: '', versao: '', estado: null, participantes: [], extras: null, offset: 0, secoes: [], dir: null, semConexao: false, jogos: new Map(), cron: null, presentes: [], nomesVistos: [], painel: null, ultimaPresenca: 0, programaN: null, telaSecao: null, rolagemLista: 0 });
     const participar = Object.assign(participarVazio(), { timer: 0, cronTimer: 0, consultando: false, fila: Promise.resolve(), voltarPara: 'inicio', nomeCod: '' });
 
     const participarCodigoLimpo = v => String(v || '').toUpperCase().replace(/[^0-9A-Z]/g, '');
@@ -28462,6 +28462,7 @@ function saveTemplatesToStorage() {
       participarTelaGrande(false);
       Object.assign(participar, participarVazio());
       participarEls.sessao.textContent = '';
+      participarEls.sessao.classList.remove('fam-na-secao');
     }
 
     // Chamadas por showScreen ao entrar e ao sair da tela (ao sair, a consulta periódica para).
@@ -29084,7 +29085,8 @@ function saveTemplatesToStorage() {
       const caixa = participarEls.sessao;
       caixa.textContent = '';
       const solo = Boolean(p.solo); // 6.13.52: partida sozinho: sem código no topo, sem controles do administrador e sem liberar/bloquear
-      caixa.classList.remove('fam-sessao-solo');
+      caixa.classList.remove('fam-sessao-solo', 'fam-na-secao');
+      participar.telaSecao = null;
       const cab = document.createElement('div');
       cab.className = 'fam-sessao-cabeca';
       const h = document.createElement('h3');
@@ -29341,6 +29343,12 @@ function saveTemplatesToStorage() {
       document.body.classList.toggle('fam-tela-grande', sim);
       const btn = participarEls.sessao.querySelector('.fam-sessao-grande-btn');
       if (btn) btn.textContent = sim ? '✕ Sair da tela grande' : '📺 Tela grande';
+      // 6.14.32: na tela grande, a atividade atual aparece aberta; ao sair, a lista volta toda recolhida (menos a que está na própria tela).
+      if (sim !== tinha && participar.programa && participar.programa.modo !== 'jogos') {
+        const atual = participar.estado && participar.estado.atual;
+        if (sim && Number.isInteger(atual)) participarSecaoAbrir(atual, true);
+        else if (!sim) (participar.secoes || []).forEach((s, i) => { if (s.aberta && participar.telaSecao !== i) participarSecaoAbrir(i, false); });
+      }
       try {
         if (sim && !tinha && document.documentElement.requestFullscreen && !document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
         else if (!sim && tinha && document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
@@ -29363,9 +29371,40 @@ function saveTemplatesToStorage() {
     const participarLiberadas = () => new Set((participar.estado && participar.estado.liberadas) || []);
     function participarSecaoAlternar(i) {
       const s = participar.secoes[i];
+      if (participar.oracao.has(i)) return;
       const liberada = participarLiberadas().has(i);
       if (!liberada && !participar.dirigente) { s.aviso.hidden = !s.aviso.hidden; return; }
-      participarSecaoAbrir(i, !s.aberta); // o dirigente pode ver uma parte bloqueada antes de liberar (só no aparelho dele)
+      // o dirigente pode ver uma parte bloqueada antes de liberar (só no aparelho dele)
+      if (participar.programa.modo === 'jogos') participarSecaoAbrir(i, !s.aberta);
+      else participarSecaoTela(i);
+    }
+    // 6.14.32: na Adoração, cada atividade abre numa tela própria (só ela à vista); o ◀ Voltar retorna à lista das atividades.
+    function participarSecaoTela(i) {
+      if (!participar.secoes[i] || participar.telaSecao === i) return;
+      if (participar.telaSecao == null) participar.rolagemLista = window.scrollY;
+      else participarSecaoFecharConteudo(participar.telaSecao);
+      participarSecaoAbrir(i, true);
+      participar.telaSecao = i;
+      participarEls.sessao.classList.add('fam-na-secao');
+      participar.secoes.forEach((s, j) => s.sec.classList.toggle('na-tela', j === i));
+      window.scrollTo(0, 0);
+    }
+    function participarSecaoFecharConteudo(i) {
+      const s = participar.secoes[i];
+      if (!s) return;
+      try { participarAudioParar(); s.sec.querySelectorAll('video, audio').forEach(v => v.pause()); } catch (e) { /* nada tocando */ }
+      participarSecaoAbrir(i, false);
+    }
+    // Volta à lista das atividades, no ponto em que ela estava. false = já estava na lista.
+    function participarSecaoLista() {
+      const i = participar.telaSecao;
+      if (i == null) return false;
+      participarSecaoFecharConteudo(i);
+      participar.telaSecao = null;
+      participarEls.sessao.classList.remove('fam-na-secao');
+      participar.secoes.forEach(s => s.sec.classList.remove('na-tela'));
+      window.scrollTo(0, participar.rolagemLista || 0);
+      return true;
     }
 
     // Aplica uma resposta do servidor (entrar, estado ou uma ação do dirigente).
@@ -29422,6 +29461,8 @@ function saveTemplatesToStorage() {
       const e = participar.estado;
       const lib = participarLiberadas();
       const antesLib = new Set((antes && antes.liberadas) || []);
+      const avulso = Boolean(participar.programa && participar.programa.modo === 'jogos');
+      let abrirNaTela = null; // 6.14.32: a atividade que acabou de ser liberada (a atual, se houver mais de uma)
       participar.secoes.forEach((s, i) => {
         const l = lib.has(i);
         s.sec.classList.toggle('bloqueada', !l);
@@ -29430,18 +29471,21 @@ function saveTemplatesToStorage() {
         const atual = l && e.atual === i;
         s.sec.classList.toggle('atual', atual);
         s.agora.hidden = !atual;
-        if (l && !antesLib.has(i) && antes && !participar.oracao.has(i)) participarSecaoAbrir(i, true); // liberada agora, com a tela já aberta: abre para todos (6.12.07: ao entrar/reabrir, tudo começa recolhido)
-        else if (!l && s.aberta && (!participar.dirigente || antesLib.has(i))) participarSecaoAbrir(i, false); // bloqueada de novo
+        if (l && !antesLib.has(i) && antes && !participar.oracao.has(i)) { // liberada agora, com a tela já aberta: abre para todos (6.12.07: ao entrar/reabrir, tudo começa recolhido)
+          if (avulso) participarSecaoAbrir(i, true);
+          else if (abrirNaTela === null || e.atual === i) abrirNaTela = i;
+        } else if (!l && s.aberta && (!participar.dirigente || antesLib.has(i))) { // bloqueada de novo
+          if (participar.telaSecao === i) participarSecaoLista();
+          else participarSecaoAbrir(i, false);
+        }
         if (s.acao) {
           s.acao.dataset.acao = l ? 'bloquear' : 'liberar';
           s.acao.textContent = l ? '🔒 Voltar a bloquear' : '🔓 Liberar para todos';
         }
       });
-      // O participante acompanha: a parte que acabou de ser liberada como atual rola para a vista.
-      if (!participar.dirigente && antes && Number.isInteger(e.atual) && e.atual !== antes.atual && lib.has(e.atual) && !antesLib.has(e.atual)) {
-        const s = participar.secoes[e.atual];
-        if (s) setTimeout(() => s.sec.scrollIntoView({ block: 'start', behavior: 'smooth' }), 120);
-      }
+      // O participante acompanha: a atividade que acabou de ser liberada abre na tela dela.
+      if (abrirNaTela !== null) participarSecaoTela(abrirNaTela);
+      if (!avulso && document.body.classList.contains('fam-tela-grande') && Number.isInteger(e.atual) && lib.has(e.atual) && (!antes || antes.atual !== e.atual)) participarSecaoAbrir(e.atual, true);
       // Tela grande: só a atividade atual aparece (CSS); sem atual, só a linha da Oração inicial. Ao trocar de atividade, volta ao topo.
       // 6.12.46: "iniciada" = alguma atividade já foi liberada. As boas-vindas aparecem ao entrar (sempre) e na tela grande antes de começar; nunca na página das atividades.
       const iniciada = lib.size > 0 || Number.isInteger(e.atual);
@@ -31204,6 +31248,7 @@ function saveTemplatesToStorage() {
 
     // ---- Eventos da tela ----
     participarEls.voltar.addEventListener('click', () => {
+      if (participarSecaoLista()) return; // 6.14.32: da tela de uma atividade, volta à lista das atividades
       // 6.13.52: o Voltar nunca cai no Início do app: o jogo volta aos Jogos; a adoração, à tela da Adoração em família (ou às Sugestões, se
       // foi de lá que abriu). 6.14.28: de dentro de um jogo, à lista dos jogos; da tela do código, à tela das duas opções.
       if (participarEhJogo()) { try { jogosVista(participar.programa ? 'montar' : 'home'); } catch (e) { /* tela dos jogos ainda iniciando */ } showScreen('jogos'); return; }

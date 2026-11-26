@@ -2,6 +2,13 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.32
+
+- **Adoração em família ao vivo:** tocar no card de uma atividade abre essa atividade **numa tela própria** (só ela à vista). O **← Voltar** retorna à **lista das atividades**, no ponto em que ela estava.
+  - Quando o presidente da reunião libera uma atividade, ela abre na tela de todos (como antes abria o card). Se for bloqueada de novo, volta à lista.
+  - Ao sair da atividade, o áudio e o vídeo dela param.
+  - A tela grande e os Jogos bíblicos continuam como antes.
+
 ## 6.14.31
 
 - **Modo escuro:** o cartão de **boas-vindas** da Adoração em família ao vivo e do jogo ao vivo agora é **escuro** (azul e roxo discretos, letras claras). Vale também na tela grande. No modo claro nada mudou.

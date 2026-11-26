@@ -18307,3 +18307,9 @@ details.fam-placar-card > summary { min-height: 0 !important; padding: 3px 8px !
   :root:not([data-theme="light"]) #participarSessao .fam-boasvindas { background: linear-gradient(180deg, #1f2b45, #28244a); color: #e5e7eb; }
   :root:not([data-theme="light"]) #participarSessao .fam-bv-ola { color: #c4b5fd; }
 }
+
+/* 6.14.32: Adoracao ao vivo: cada atividade numa tela propria (na tela grande continua a atividade atual) */
+body:not(.fam-tela-grande) #participarSessao.fam-na-secao > :not(.fam-sessao-secoes),
+body:not(.fam-tela-grande) #participarSessao.fam-na-secao .fam-sessao-secao:not(.na-tela) { display: none !important; }
+body:not(.fam-tela-grande) #participarSessao.fam-na-secao .fam-sessao-secao.na-tela > .fam-sessao-secao-topo { cursor: default; pointer-events: none; }
+#participarSessao:not(.fam-sessao-jogo-avulso) .fam-sessao-corpo, #participarSessao:not(.fam-sessao-jogo-avulso) .fam-sessao-corpo-dentro { transition: none; }
