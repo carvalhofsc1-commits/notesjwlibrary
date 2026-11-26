@@ -53,7 +53,7 @@
     <nav class="app-menu-lista" aria-label="Funcionalidades">
       <p class="app-menu-secao">Menu principal</p>
       <button type="button" data-menu-ir="inicio"><span aria-hidden="true">🏠</span> Início</button>
-      <button type="button" data-menu-ir="anotacoes"><span aria-hidden="true">📝</span> Anotações</button>
+      <button type="button" data-menu-ir="anotacoes"><span aria-hidden="true"><img class="icone-img" src="icone-anotacoes.png?v=1" alt=""></span> Anotações</button>
       <button type="button" data-menu-ir="formatar"><span aria-hidden="true">✍️</span> Formatar notas JW Library</button>
       <button type="button" data-menu-ir="biblia"><span aria-hidden="true"><img class="icone-img" src="icone-leitura.png?v=2" alt=""></span> Leitura diária da Bíblia</button>
       <button type="button" data-menu-ir="leitura"><span aria-hidden="true">🔊</span> Assistente de leitura em voz</button>
@@ -152,10 +152,10 @@
       <section class="card atalhos-card" aria-label="Atalhos">
         <div class="atalhos-paginas" id="atalhosPaginas">
         <div class="atalhos-grid" id="atalhosPagina1" role="group" aria-label="Atalhos, página 1 de 2">
-          <button type="button" class="atalho" data-atalho="anotacoes"><span class="atalho-icone" aria-hidden="true">📝</span><span class="atalho-nome">Anotações</span><span class="atalho-desc">Reuniões, assembleias e congressos</span></button>
+          <button type="button" class="atalho" data-atalho="anotacoes"><span class="atalho-icone" aria-hidden="true"><img class="atalho-img" src="icone-anotacoes.png?v=1" alt="" width="192" height="192" decoding="async"></span><span class="atalho-nome">Anotações</span><span class="atalho-desc">Reuniões, assembleias e congressos</span></button>
           <button type="button" class="atalho" data-atalho="pesquisa"><span class="atalho-icone" aria-hidden="true">🔎</span><span class="atalho-nome">Assistente de pesquisas</span><span class="atalho-desc">Pesquisar um assunto, texto ou vídeo no wol.jw.org com auxílio da IA</span><span class="atalho-trava" hidden></span></button>
           <button type="button" class="atalho" data-atalho="biblia"><span class="atalho-icone" aria-hidden="true"><img class="atalho-img" src="icone-leitura.png?v=2" alt="" width="192" height="192" decoding="async"></span><span class="atalho-nome">Leitura diária da Bíblia</span><span class="atalho-desc">Programa anual e resumo dos capítulos</span><span class="atalho-barra" id="bibliaAtalhoBarra" aria-hidden="true"><span></span></span></button>
-          <button type="button" class="atalho" data-atalho="comentarios"><span class="atalho-icone" aria-hidden="true">✋</span><span class="atalho-nome">Comentários</span><span class="atalho-desc">Ajuda na preparação para comentar</span><span class="atalho-trava" hidden></span></button>
+          <button type="button" class="atalho" data-atalho="comentarios"><span class="atalho-icone" aria-hidden="true"><img class="atalho-img" src="icone-comentarios.png?v=1" alt="" width="192" height="192" decoding="async"></span><span class="atalho-nome">Comentários</span><span class="atalho-desc">Ajuda na preparação para comentar</span><span class="atalho-trava" hidden></span></button>
           <button type="button" class="atalho" data-atalho="dirigir"><span class="atalho-icone" aria-hidden="true"><img class="atalho-img" src="icone-dirigentes.png?v=1" alt="" width="192" height="192" decoding="async"></span><span class="atalho-nome">Dirigentes</span><span class="atalho-desc">Ajuda na preparação para dirigir</span><span class="atalho-trava" hidden></span></button>
           <button type="button" class="atalho" data-atalho="adoracao"><span class="atalho-icone" aria-hidden="true">👨‍👩‍👧</span><span class="atalho-nome">Adoração em família</span><span class="atalho-desc">Sugestões para a noite de adoração e participar de uma adoração</span></button>
           <button type="button" class="atalho" data-atalho="jogos"><span class="atalho-icone" aria-hidden="true">🎲</span><span class="atalho-nome">Jogos bíblicos</span><span class="atalho-desc">Para atividades em grupo e reuniões sociais</span></button>
@@ -189,7 +189,7 @@
     <section class="card tint-5 screen-anotacoes" id="anotacoesCard" aria-labelledby="anotacoesTitulo" data-modo="">
       <div class="anotacoes-topo">
         <button id="anotacoesVoltarHub" class="secondary" type="button" hidden>◀ Voltar</button>
-        <h2 id="anotacoesTitulo">📝 Anotações</h2>
+        <h2 id="anotacoesTitulo"><img class="icone-img" src="icone-anotacoes.png?v=1" alt=""> Anotações</h2>
         <button id="anotacoesProgramaTopo" class="secondary" type="button" title="Voltar ao programa do evento" hidden>📋 Programa</button>
         <button id="anotacoesTrocarTopo" class="secondary" type="button" title="Voltar à lista de eventos para escolher outro" hidden>↩ Trocar<br>de evento</button>
       </div>
@@ -817,7 +817,7 @@
           <details class="section-accordion reunioes-secao" id="secaoReunioes">
             <summary><h2 class="reunioes-title">📅 Preparação para as reuniões</h2></summary>
           <details class="section-accordion reunioes-grupo" id="grupoComentarios">
-            <summary><span class="grupo-icone" aria-hidden="true">✋</span><div><h3 class="reunioes-subtitle">Preparar para comentar</h3><span class="grupo-desc">Tesouros, Estudo Bíblico e A Sentinela</span><span class="grupo-trava" hidden></span></div></summary>
+            <summary><span class="grupo-icone" aria-hidden="true"><img class="icone-img" src="icone-comentarios.png?v=1" alt=""></span><div><h3 class="reunioes-subtitle">Preparar para comentar</h3><span class="grupo-desc">Tesouros, Estudo Bíblico e A Sentinela</span><span class="grupo-trava" hidden></span></div></summary>
             <!-- Reunião de meio de semana (Vida e Ministério) e reunião do fim de semana (A Sentinela), cada uma no seu contêiner. -->
             <div class="comentarios-bloco" id="comentariosMeioSemana">
               <h3 class="comentarios-bloco-titulo">📅 Reunião de meio de semana</h3>
@@ -3437,6 +3437,11 @@
           <button id="acessoSiteVerificarBtn" type="button" class="secondary">🔄 Verificar se o acesso foi liberado</button>
           <p id="acessoSiteVerificarStatus" class="acesso-site-verificar-status" aria-live="polite"></p>
         </div>
+        <!-- 6.14.66: só para o convidado (entrou pelo link de uma adoração ou jogo, sem cadastro) -->
+        <div class="acesso-site-convidado">
+          <p>Você entrou como <strong>convidado</strong>. Faça o cadastro para usar o NoteStyle completo.</p>
+          <button id="acessoSiteVoltarSessaoBtn" type="button" class="secondary">◀ Voltar para a adoração</button>
+        </div>
         <p class="acesso-site-intro">O NoteStyle ajuda você a preparar notas, reuniões, a adoração em família e o estudo pessoal, no celular ou no computador.</p>
         <!-- 6.14.65: todas as funções, em grupos -->
         <h3 class="acesso-site-grupo">📖 Estudo pessoal</h3>
@@ -3448,9 +3453,9 @@
         </ul>
         <h3 class="acesso-site-grupo">📅 Reuniões</h3>
         <ul class="acesso-site-funcoes">
-          <li><span class="acesso-site-icone" aria-hidden="true">💬</span><span><strong>Preparar comentários:</strong> A Sentinela, joias espirituais, Estudo Bíblico de Congregação e Nossa vida cristã.</span></li>
+          <li><span class="acesso-site-icone" aria-hidden="true"><img class="icone-img" src="icone-comentarios.png?v=1" alt=""></span><span><strong>Preparar comentários:</strong> A Sentinela, joias espirituais, Estudo Bíblico de Congregação e Nossa vida cristã.</span></li>
           <li><span class="acesso-site-icone" aria-hidden="true"><img class="icone-img" src="icone-dirigentes.png?v=1" alt=""></span><span><strong>Para dirigentes e oradores:</strong> perguntas para dirigir, considerações para o serviço de campo e esboços de discursos, também a partir do seu esboço, com gravuras e exportação para Word.</span></li>
-          <li><span class="acesso-site-icone" aria-hidden="true">📝</span><span><strong>Anotações:</strong> reuniões, assembleias e congressos, com gravação do áudio e transcrição.</span></li>
+          <li><span class="acesso-site-icone" aria-hidden="true"><img class="icone-img" src="icone-anotacoes.png?v=1" alt=""></span><span><strong>Anotações:</strong> reuniões, assembleias e congressos, com gravação do áudio e transcrição.</span></li>
         </ul>
         <h3 class="acesso-site-grupo">👨‍👩‍👧 Em família e em grupo</h3>
         <ul class="acesso-site-funcoes">

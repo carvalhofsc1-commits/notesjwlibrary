@@ -126,6 +126,8 @@
     }
 
     function showScreen(name, options) {
+      // 6.14.66: o convidado (entrou pelo link, sem cadastro) só tem a tela da adoração ou do jogo; qualquer outra leva à apresentação do app.
+      if (name !== 'participar' && document.body.classList.contains('modo-convidado')) { convidadoApresentar(); return; }
       let screen = APP_SCREENS.includes(name) ? name : 'inicio';
       // 6.14.37: com o código de pesquisa, a Adoração em família abre direto nas sugestões (sem o código, fica a tela com "Participar").
       if (screen === 'adoracao') { try { if (codigoAcessoSalvo()) screen = 'familia'; } catch (e) { /* ainda iniciando: acessosAtualizar leva depois */ } }
@@ -7961,7 +7963,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.14.66'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.14.67'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -13886,15 +13888,56 @@ function saveTemplatesToStorage() {
         if (!r.ok || !r.data) { semServidor(); return; }
         if (!r.data.configurado || r.data.ok) {
           if (r.data.configurado) acessoConfirmadoGravar(id);
+          convidadoSair(); // 6.14.66: cadastro aprovado: o app completo
           acessoSiteLiberarOverlay();
           acessoBoasVindasAvisar(id, r.data);
           creditoAtualizar(r.data); // 6.14.63: barra vermelha, aviso de sem crédito e recibo novo
           return;
         }
         acessoConfirmadoGravar('');
+        if (convidadoEntrar(r.data)) return; // 6.14.66: veio pelo link de uma adoração ou jogo: entra só nele
         acessoSiteMostrarOverlay(r.data);
       } catch (e) { semServidor(); }
     }
+    // ---------- 6.14.66: convidado pelo link (#participar=CÓDIGO), sem cadastro ----------
+    // Vê só a adoração ou o jogo daquele código. O ← Voltar (e qualquer caminho para outra tela) leva à apresentação do app, de onde dá
+    // para pedir o acesso completo ou voltar à sessão. O código fica guardado só enquanto a aba estiver aberta.
+    const CONVIDADO_KEY = 'notestyleConvidadoV1';
+    let convidadoEstado = null; // a resposta do servidor sobre o cadastro deste aparelho (pendente, recusado…)
+    function convidadoEntrar(estado) {
+      if (document.body.classList.contains('modo-convidado')) { convidadoEstado = estado; return true; } // conferência periódica: não mexe na tela
+      const guardado = () => { try { return sessionStorage.getItem(CONVIDADO_KEY) || ''; } catch (e) { return ''; } };
+      // o código do endereço; se a tela já o tirou de lá, o da adoração ou do jogo que está aberto
+      const aberto = () => (currentScreen() === 'participar' ? participar.cod || participar.nomeCod : '');
+      const cod = participarCodigoLimpo(participarDoEndereco() || participarInicial || aberto() || guardado());
+      if (!participarCodigoValido(cod)) return false;
+      convidadoEstado = estado;
+      document.body.classList.add('modo-convidado');
+      try { sessionStorage.setItem(CONVIDADO_KEY, cod); } catch (e) { /* sem armazenamento: vale até recarregar */ }
+      menuFechar();
+      acessoSiteLiberarOverlay();
+      if (currentScreen() !== 'participar') participarAbrir(cod);
+      else if (!participar.programa && participar.nomeCod !== cod) { participarEls.codigo.value = cod; participarEntrar(cod); }
+      return true;
+    }
+    function convidadoSair() {
+      document.body.classList.remove('modo-convidado');
+      try { sessionStorage.removeItem(CONVIDADO_KEY); } catch (e) { /* sem armazenamento */ }
+    }
+    // A apresentação do app por cima da sessão (que continua aberta por trás).
+    function convidadoApresentar() {
+      try { participarAudioParar(); document.querySelectorAll('#participarSessao video').forEach(v => v.pause()); } catch (e) { /* nada tocando */ }
+      acessoSiteMostrarOverlay(convidadoEstado || {});
+      acessoSiteMostrarBoasVindas();
+      document.getElementById('acessoSiteVoltarSessaoBtn').textContent = participarEhJogo() ? '◀ Voltar para o jogo' : '◀ Voltar para a adoração';
+      acessoSiteOverlay.scrollTop = 0;
+    }
+    document.getElementById('acessoSiteVoltarSessaoBtn').addEventListener('click', () => acessoSiteLiberarOverlay());
+    document.querySelector('.app-topbar .brand-title').addEventListener('click', ev => {
+      if (!document.body.classList.contains('modo-convidado')) return;
+      ev.preventDefault();
+      convidadoApresentar();
+    });
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible' && Date.now() - acessoUltimaChecagem > 5 * 60 * 1000) acessoSiteVerificarGate();
     });
@@ -13919,6 +13962,7 @@ function saveTemplatesToStorage() {
         acessoSiteLiberarOverlay();
         return;
       }
+      convidadoEstado = { pendente: true }; // 6.14.66: o convidado que enviou o cadastro vê o aviso na apresentação
       acessoSiteMostrarOverlay({ pendente: true });
       acessoSiteOverlay.scrollTop = 0;
     });
@@ -22003,14 +22047,23 @@ function saveTemplatesToStorage() {
     const HISTORICO_CATEGORIAS = [
       { id: 'textos', titulo: '📝 Textos', cor: '#0ea5e9', tipos: ['nota'], semSemana: true },
       // Anotações salvas na tela Anotações (têm "anotId"): reuniões e, por evento, assembleias e congressos.
-      { id: 'anotacoes', titulo: '🗒️ Anotações', cor: '#6366f1', tipos: [], semSemana: true, anotacoes: true },
-      { id: 'comentarios', titulo: '✋ Comentários', cor: '#a855f7', tipos: ['colado', 'sentinela', 'ebc', 'consideracao', 'nvc', 'joias'] },
+      { id: 'anotacoes', titulo: '🗒️ Anotações', imagem: 'icone-anotacoes.png?v=1', cor: '#6366f1', tipos: [], semSemana: true, anotacoes: true },
+      { id: 'comentarios', titulo: '✋ Comentários', imagem: 'icone-comentarios.png?v=1', cor: '#a855f7', tipos: ['colado', 'sentinela', 'ebc', 'consideracao', 'nvc', 'joias'] },
       { id: 'dirigentes', titulo: '🎤 Dirigentes', cor: '#14b8a6', tipos: ['dirigente', 'ebc-dirigente'], soDirigente: true },
       { id: 'esbocos', titulo: '📜 Esboços', cor: '#f59e0b', tipos: ['esboco'], soDirigente: true },
       // Adoração em Família (6.11.12): as 3 opções de cada preparo; não dependem da semana escolhida.
       { id: 'familia', titulo: '👨‍👩‍👧 Adoração em Família', cor: '#e11d48', tipos: ['familia'], semSemana: true, familia: true }
     ];
     const historicoAbertas = { textos: false, anotacoes: false, comentarios: false, dirigentes: false, esbocos: false, familia: false }; // lembra quais estão abertas ao refazer a lista
+    // 6.14.67: o título de uma categoria; as que têm desenho próprio mostram a imagem no lugar do emoji.
+    function historicoCategoriaTitulo(el, cat, sufixo) {
+      if (!cat.imagem) { el.textContent = cat.titulo + sufixo; return; }
+      const img = document.createElement('img');
+      img.className = 'icone-img';
+      img.src = cat.imagem;
+      img.alt = '';
+      el.replaceChildren(img, ' ' + cat.titulo.replace(/^\S+\s+/, '') + sufixo);
+    }
     // Ao abrir a página Pesquisas e respostas salvas (pelo botão da barra, pelo atalho ou pelo botão da tela Reuniões), todas as categorias começam recolhidas.
     function historicoRecolher() {
       Object.keys(historicoAbertas).forEach(id => { historicoAbertas[id] = false; });
@@ -22172,7 +22225,7 @@ function saveTemplatesToStorage() {
         const titulo = document.createElement('summary');
         if (bloqueada) {
           const bloco = document.createElement('div');
-          bloco.textContent = cat.titulo;
+          historicoCategoriaTitulo(bloco, cat, '');
           const trava = document.createElement('span');
           trava.className = 'grupo-trava';
           trava.textContent = '🔒 Requer o código do dirigente (Ajustes)';
@@ -22185,7 +22238,7 @@ function saveTemplatesToStorage() {
           return;
         }
         box.addEventListener('toggle', () => { historicoAbertas[cat.id] = box.open; });
-        titulo.textContent = cat.titulo + (itens.length ? ' (' + itens.length + ')' : '');
+        historicoCategoriaTitulo(titulo, cat, itens.length ? ' (' + itens.length + ')' : '');
         box.appendChild(titulo);
         if (itens.length && cat.anotacoes) {
           box.appendChild(historicoAnotacoesEl(itens));
@@ -26282,7 +26335,7 @@ function saveTemplatesToStorage() {
     // aparece é decidido pelo CSS, pelo atributo data-reunioes do body (hub ou o nome da página); aqui ficam quais caixas estão abertas.
     const GRUPOS_REUNIOES = ['grupoComentarios', 'grupoDirigir', 'grupoDiscursos'];
     const REUNIOES_VISTAS = {
-      comentarios: { caixa: 'grupoComentarios', titulo: '✋ Preparar para comentar' },
+      comentarios: { caixa: 'grupoComentarios', titulo: '✋ Preparar para comentar', imagem: 'icone-comentarios.png?v=1' },
       dirigir: { caixa: 'grupoDirigir', titulo: '🎤 Preparar para dirigir' },
       discursos: { caixa: 'grupoDiscursos', titulo: '📜 Preparação de discursos e esboços' }
     };
@@ -32768,7 +32821,8 @@ function saveTemplatesToStorage() {
         const spanIcone = document.createElement('span');
         spanIcone.className = 'reunioes-pagina-icone';
         spanIcone.setAttribute('aria-hidden', 'true');
-        spanIcone.textContent = icone;
+        if (REUNIOES_VISTAS[destino].imagem) spanIcone.innerHTML = '<img class="icone-img" src="' + REUNIOES_VISTAS[destino].imagem + '" alt="">'; // 6.14.67
+        else spanIcone.textContent = icone;
         const spanTexto = document.createElement('span');
         spanTexto.textContent = resto.join(' ');
         tituloPagina.replaceChildren(spanIcone, spanTexto);
@@ -36553,7 +36607,7 @@ function saveTemplatesToStorage() {
         workspace.hidden = true;
         hub.hidden = false;
         voltarHub.hidden = true;
-        tituloEl.textContent = '📝 Anotações';
+        tituloEl.innerHTML = '<img class="icone-img" src="icone-anotacoes.png?v=1" alt=""> Anotações';
         dizer('');
         // Tela inicial: nada do evento anterior fica aberto (os cartões do programa e das perguntas ficam fora da área de trabalho, então somem aqui).
         // O rascunho já foi guardado acima; ao escolher o modo de novo, o evento volta como estava.

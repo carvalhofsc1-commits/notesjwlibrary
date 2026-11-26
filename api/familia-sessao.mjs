@@ -577,8 +577,12 @@ async function atender(req, res) {
 
     // ----- entrar: a programação sem respostas, o estado e o id do participante (o dirigente pode entrar sem nome) -----
     if (acao === "entrar") {
-      const bloqueio = await mensagemSeBloqueado({ aparelhoId: corpo.aparelhoId, codigoAdmin: corpo.codigoAdmin });
-      if (bloqueio) return erro(res, 403, bloqueio);
+      // 6.14.66: quem entra só como participante (sem a chave) não precisa de cadastro: o convite é o código da sessão. Com a chave (o
+      // presidente da reunião ou o administrador do jogo) vale o cadastro do aparelho, como sempre.
+      if (typeof corpo.chave === "string" && corpo.chave) {
+        const bloqueio = await mensagemSeBloqueado({ aparelhoId: corpo.aparelhoId, codigoAdmin: corpo.codigoAdmin });
+        if (bloqueio) return erro(res, 403, bloqueio);
+      }
       const dirigente = await ehDirigente();
       if (typeof corpo.chave === "string" && corpo.chave && !dirigente) {
         registrarErro(pedinte);

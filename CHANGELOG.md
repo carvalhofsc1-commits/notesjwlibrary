@@ -2,6 +2,13 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.67
+
+- **Ícones próprios** das **Anotações** (caderno com caneta) e dos **Comentários** (mão levantada): atalhos, menu, títulos das telas, botão em Reuniões, categorias das Pesquisas salvas e apresentação do app.
+- **Convidado pelo link:** quem abre o link de uma adoração ou de um jogo sem ter cadastro informa o nome ou apelido e entra direto, vendo só aquela sessão (sem menu, barra de baixo nem outras telas). O **← Voltar** leva à apresentação do app, com **Solicitar acesso** e o botão para voltar à sessão.
+  - O servidor aceita sem cadastro só a **entrada como participante** (com o código); presidir, administrar e criar continuam exigindo cadastro.
+- **Termos de Uso 1.5** e **Privacidade 2.6** citam o convidado.
+
 ## 6.14.66
 
 - **Leitura diária da Bíblia:** o ícone trocado por um novo desenho (mesa com a Bíblia aberta).

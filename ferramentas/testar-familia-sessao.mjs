@@ -117,8 +117,14 @@ try {
   const semNome = await chamar({ acao: "entrar", sessao, nome: "   " });
   assert.equal(semNome.dados.precisaNome, true); assert.ok(!semNome.dados.participanteId && !semNome.dados.programa);
   assert.deepEqual(semNome.dados.nomes, nomes); passo("sem nome, só confere o código e devolve os nomes para escolher (não entra)");
-  const semCad = await chamar({ acao: "entrar", sessao, nome: "Visita", aparelhoId: "aparelho-sem-cadastro-123" }, undefined, true);
-  assert.equal(semCad.status, 403); assert.match(semCad.dados.erro, /cadastro|identificar/i); passo("aparelho sem o acesso normal ao app não entra");
+  // 6.14.66: o convidado (sem cadastro) entra só com o código; a chave de presidente e a criação continuam exigindo o cadastro
+  const idSemCadastro = "77777777-2222-4333-8444-555555555555";
+  const semCadNome = await chamar({ acao: "entrar", sessao, aparelhoId: idSemCadastro }, undefined, true);
+  assert.equal(semCadNome.status, 200); assert.equal(semCadNome.dados.precisaNome, true); passo("convidado sem cadastro: o código pede o nome");
+  const comChave = await chamar({ acao: "entrar", sessao, chave, aparelhoId: idSemCadastro }, undefined, true);
+  assert.equal(comChave.status, 403); assert.match(comChave.dados.erro, /cadastro|identificar/i); passo("sem cadastro, a chave de presidente não entra");
+  const criarSemCad = await chamar({ acao: "criar", programa, codigo: "codigo-de-teste", aparelhoId: idSemCadastro }, undefined, true);
+  assert.equal(criarSemCad.status, 403); passo("sem cadastro não cria adoração");
 
   // Estado
   const e1 = await chamar({ acao: "estado", sessao, versao: "" });

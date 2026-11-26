@@ -18593,3 +18593,15 @@ img.icone-img { display: inline-block; width: 1.3em; height: 1.3em; object-fit: 
 #acessoSitePainelBoasVindas .acesso-site-icone > img.icone-img { width: 28px; height: 28px; margin: 0; }
 #bibliaCard .leitura-topo h2 img.icone-img { width: 1.08em; height: 1.08em; margin: -0.08em 0; }
 .nav-icon > img.icone-img { margin: -0.15em auto; }
+
+/* 6.14.66: convidado pelo link (sem cadastro): só a adoração ou o jogo; sem menu, barra de baixo nem as opções de quem administra */
+.acesso-site-convidado { display: none; }
+body.modo-convidado .acesso-site-convidado { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; margin: 0 0 10px; padding: 10px; border: 1px solid #3b82f6; border-radius: 12px; background: color-mix(in srgb, #3b82f6 10%, var(--card)); text-align: center; }
+body.modo-convidado .acesso-site-convidado > * { margin: 0; width: 100%; }
+body.modo-convidado :is(#appNav, #appMenu, #participarAssumirBox, #participarRecentes, #participarNomeVoltar) { display: none !important; }
+body.modo-convidado #menuAbrirBtn { visibility: hidden; }
+body.modo-convidado { padding-bottom: 0; }
+/* 6.14.67: ícones próprios das Anotações e dos Comentários, também no botão e no título das páginas de Reuniões */
+.reunioes-grupo > summary .grupo-icone > img.icone-img { width: 1.2em; height: 1.2em; margin: -0.1em 0; }
+.reunioes-topo .reunioes-pagina-icone > img.icone-img { width: 1.25em; height: 1.25em; margin: -0.2em 0; }
+.reunioes-topo .reunioes-pagina-icone > img.icone-img { width: 1.1em; height: 1.1em; margin: -0.18em 0; }
