@@ -7958,7 +7958,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.14.07'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.14.08'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -29867,6 +29867,20 @@ function saveTemplatesToStorage() {
               perg.replaceChildren(em, palavra, em2);
             }
           }
+          // 6.14.08: nas Abreviações, só "Sigla:" e a sigla, grande e em negrito (vale também para os jogos já preparados)
+          if (j.idTipo === 'abreviacoes') {
+            const ms = String(comDicas ? intro : r.pergunta || '').match(/^O que significa a sigla\s*[“"](.+?)[”"]\s*\??$/i);
+            if (ms) {
+              perg.classList.add('fam-sigla');
+              const rotulo = document.createElement('span');
+              rotulo.className = 'fam-sigla-rotulo';
+              rotulo.textContent = 'Sigla:';
+              const sigla = document.createElement('strong');
+              sigla.className = 'fam-sigla-texto';
+              sigla.textContent = '“' + ms[1] + '”';
+              perg.replaceChildren(rotulo, document.createTextNode(' '), sigla);
+            }
+          }
           const dicasEls = dicas.map((txt, d) => {
             // 6.13.45: a dica "Escolha entre: A; B; C; D." (Quem disse isso?) vira 4 botões; tocar num nome o põe no campo da resposta.
             const escolha = txt.match(/^Escolha entre\s*:\s*(.+?)\.?$/i);
@@ -29886,6 +29900,7 @@ function saveTemplatesToStorage() {
                 b.addEventListener('click', () => {
                   if (!campoResp || campoResp.disabled) return;
                   campoResp.value = nome;
+                  campoResp.dispatchEvent(new Event('input', { bubbles: true }));
                   campoResp.focus();
                 });
                 grade.appendChild(b);
@@ -29935,7 +29950,7 @@ function saveTemplatesToStorage() {
               botao.disabled = false;
               if (!rr.ok) { participarStatus(rr.erro || 'Não consegui enviar a resposta.', 'erro'); return; }
               participarStatus('');
-              if (campoResp) campoResp.value = '';
+              if (campoResp) { campoResp.value = ''; campoResp.dispatchEvent(new Event('input', { bubbles: true })); }
               if (sincEnviar) sincEnviar();
               participarAplicar(rr.data);
             };
@@ -29952,14 +29967,15 @@ function saveTemplatesToStorage() {
               });
               area.appendChild(linha);
             } else {
-              campoResp = document.createElement('input');
-              campoResp.type = 'text';
+              campoResp = document.createElement('textarea'); // 6.14.08: a resposta longa quebra a linha e o campo cresce
+              campoResp.rows = 1;
+              campoResp.setAttribute('enterkeyhint', 'send');
               campoResp.className = 'fam-campo fam-sessao-resp-campo';
               campoResp.maxLength = 200;
               campoResp.autocomplete = 'off';
               // 6.13.93: gerenciadores de senha (extensões do navegador) não devem tratar a resposta como campo de login
               campoResp.setAttribute('data-lpignore', 'true'); campoResp.setAttribute('data-1p-ignore', 'true'); campoResp.setAttribute('data-form-type', 'other'); campoResp.setAttribute('data-bwignore', 'true');
-              campoResp.placeholder = j.idTipo === 'quem_sou_eu' ? 'Quem é? Escreva o nome' : j.idTipo === 'complete_versiculo' ? 'Qual é a palavra que falta?' : j.idTipo === 'quem_disse' ? 'Quem disse?' : j.idTipo === 'perfil_biblico' ? 'Quem ou o que é? Escreva a resposta' : 'Sua resposta';
+              campoResp.placeholder = j.idTipo === 'quem_sou_eu' ? 'Quem é? Escreva o nome' : j.idTipo === 'complete_versiculo' ? 'Qual palavra falta?' : j.idTipo === 'quem_disse' ? 'Quem disse?' : j.idTipo === 'perfil_biblico' ? 'Quem ou o que é?' : 'Sua resposta';
               campoResp.setAttribute('aria-label', 'Sua resposta para a questão ' + (k + 1));
               const b = document.createElement('button');
               b.type = 'button';
@@ -29974,7 +29990,7 @@ function saveTemplatesToStorage() {
               campoResp.addEventListener('input', () => sincEnviar());
               const linhaCampo = document.createElement('div');
               linhaCampo.className = 'fam-sessao-resp-linha';
-              linhaCampo.appendChild(campoResp);
+              linhaCampo.appendChild(participarCampoResposta(campoResp));
               if (participar.dirigente) linhaCampo.appendChild(participarMicMontar(campoResp));
               area.append(linhaCampo);
               if (solo) { // sozinho: Enviar resposta e Revelar (revelar = ninguém acertou) lado a lado
@@ -30333,6 +30349,33 @@ function saveTemplatesToStorage() {
       if (!dados) participarJogoPintar(parteIdx, false);
     }
 
+    // 6.14.08: o campo da resposta (uma caixa que cresce com o texto) com a 🗑️ que limpa, dentro dele, à direita
+    function participarCampoResposta(campo) {
+      const caixa = document.createElement('div');
+      caixa.className = 'fam-sessao-resp-caixa';
+      const limpar = document.createElement('button');
+      limpar.type = 'button';
+      limpar.className = 'secondary fam-sessao-resp-limpar vazio';
+      limpar.textContent = '🗑️';
+      limpar.title = 'Limpar a resposta';
+      limpar.setAttribute('aria-label', 'Limpar a resposta');
+      let largura = 0;
+      campo.addEventListener('input', () => {
+        if (/[\r\n]/.test(campo.value)) campo.value = campo.value.replace(/\s*[\r\n]+\s*/g, ' ');
+        limpar.classList.toggle('vazio', !campo.value);
+        familiaCrescer(campo);
+      });
+      limpar.addEventListener('click', () => {
+        campo.value = '';
+        campo.dispatchEvent(new Event('input', { bubbles: true }));
+        campo.focus();
+      });
+      // ao virar o celular (ou a questão aparecer), a altura acompanha a nova largura
+      if (window.ResizeObserver) new ResizeObserver(() => { if (campo.offsetWidth !== largura) { largura = campo.offsetWidth; requestAnimationFrame(() => familiaCrescer(campo)); } }).observe(campo);
+      caixa.append(campo, limpar);
+      return caixa;
+    }
+
     // 6.13.60: o 🎤 do campo de resposta (só quem administra o jogo ou joga sozinho): grava até 25 s, o servidor transcreve (o mesmo modelo do
     // Áudio em texto, sem código de texto: o custo é do app) e o texto vai para o campo, que continua editável.
     // 6.14.06: o microfone só grava enquanto o botão está apertado (dedo, mouse, espaço ou Enter); ao soltar, para e transcreve.
@@ -30644,7 +30687,7 @@ function saveTemplatesToStorage() {
             r.areaNota.textContent = espiou ? '🔒 Você viu a resposta desta questão (Ver só para mim) e não pode mais responder a ela.' : bloqueio ? '🔒 ' + bloqueio : '';
             // a rodada "começou" quando a 1ª dica já saiu (nos jogos sem dicas ou com a frase à vista, desde o início)
             const iniciada = r.total === 0 || ndadas > 0 || r.aguarda.dataset.semEspera === '1';
-            r.area.querySelectorAll('input, button').forEach(c => { c.disabled = espiou || !iniciada; });
+            r.area.querySelectorAll('input, textarea, button').forEach(c => { c.disabled = espiou || !iniciada; });
             if (r.sincEnviar) r.sincEnviar(); // "Enviar resposta" só com o campo preenchido
             if (r.respBox) r.respBox.classList.toggle('fam-sessao-resp-bloqueada', espiou);
           }

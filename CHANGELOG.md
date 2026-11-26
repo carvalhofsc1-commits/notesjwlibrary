@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.08
+
+- Abreviações: a questão mostra só **"Sigla:"** e a sigla, **grande e em negrito**.
+- Jogo ao vivo: o **campo da resposta cresce** conforme o texto (respostas longas quebram a linha) e ganhou a **lixeira 🗑️** dentro dele, para apagar de uma vez.
+- Ao tocar numa das opções de nomes ou palavras, o botão "Enviar resposta" já fica habilitado.
+
 ## 6.14.07
 
 - Adorações e jogos recentes: aparecem **só os que você criou** (ou cuja direção assumiu neste aparelho), todos com a lixeira 🗑️. De um jogo ou adoração em que você só entrou com o código nada fica guardado; os que já estavam na lista saem dela.

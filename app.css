@@ -18136,3 +18136,14 @@ details.fam-placar-card > summary { min-height: 0 !important; padding: 3px 8px !
 
 /* 6.14.06: o microfone do jogo é de segurar: o toque demorado não rola a tela, não seleciona nem abre menu */
 .fam-sessao-resp-linha > .fam-sessao-mic { touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+
+/* 6.14.08: jogo ao vivo: a sigla em destaque e o campo da resposta que cresce, com a lixeira dentro */
+#participarSessao .fam-sessao-pergunta.fam-sigla { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: center; column-gap: 8px; margin: 6px 0 12px; text-align: center; }
+.fam-sigla-rotulo { font-size: 1.05rem; font-weight: 700; }
+.fam-sigla-texto { min-width: 0; max-width: 100%; font-size: 1.75rem; font-weight: 900; line-height: 1.25; color: #4f46e5; overflow-wrap: anywhere; }
+.fam-sessao-resp-linha > .fam-sessao-resp-caixa { position: relative; display: flex; flex: 1 1 auto; min-width: 0; }
+#participarSessao .fam-sessao-resp-caixa > textarea.fam-sessao-resp-campo { flex: 1 1 auto; width: 100%; min-width: 0; min-height: 44px; margin: 0; padding: 10px 42px 10px 10px; line-height: 1.35; resize: none; overflow: hidden; }
+#participarSessao .fam-sessao-resp-caixa > button.fam-sessao-resp-limpar { position: absolute; top: 3px; right: 3px; width: 38px; min-width: 38px; max-width: 38px; height: 38px; min-height: 38px; margin: 0; padding: 0; display: inline-flex; align-items: center; justify-content: center; border: 0; background: transparent; box-shadow: none; font-size: 1.05rem; }
+#participarSessao .fam-sessao-resp-caixa > button.fam-sessao-resp-limpar.vazio,
+#participarSessao .fam-sessao-resp-caixa > button.fam-sessao-resp-limpar:disabled { opacity: .4; }
+#participarSessao .fam-sessao-resp-linha > .fam-sessao-mic { align-self: flex-start; height: 44px; min-height: 44px; }
