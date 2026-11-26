@@ -2,7 +2,7 @@
 // Também guarda créditos (R$) e códigos personalizados por recurso de cada usuário.
 // Dados no Vercel Blob PRIVADO: "estatisticas/acesso-site.json".
 // ACESSO_SITE_DIR (só testes locais) troca o Blob por uma pasta.
-import { randomBytes, randomUUID } from "node:crypto";
+import { randomBytes, randomInt, randomUUID } from "node:crypto";
 import { blobConfigurado, get, put } from "./_blob.mjs";
 import { codigoDoDirigente, textosIguais } from "./_comum.mjs";
 import { aparelhoIdLimpo, mapaPerfilAparelhos } from "./_estatisticas.mjs";
@@ -226,19 +226,38 @@ function gerarCodigoTexto(recurso) {
   return `NS-${pref}-${corpo}`;
 }
 
-// Cache curto dos códigos personalizados ativos: permite conferência síncrona nas APIs de IA.
-let cacheCodigos = { em: 0, mapa: new Map() }; // codigoLower -> { recurso, aparelhoId }
+// Senha master (6.14.72): uma só senha, de um usuário só, que vale no lugar de todos os códigos de recurso no aparelho dele.
+// Não é senha de administrador: não abre nada da administração do app. Nunca vai nas respostas ao aparelho, só na do administrador.
+function masterDe(registro) {
+  const m = registro && registro.master;
+  if (!m || typeof m !== "object") return null;
+  const codigo = String(m.codigo || "").trim();
+  if (!codigo) return null;
+  return { codigo, ativo: m.ativo !== false, criadoEm: m.criadoEm || "", expiradoEm: m.expiradoEm || "" };
+}
+
+function gerarMasterTexto() {
+  const letras = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"; // sem 0/O e 1/I/L, para ditar e digitar sem erro
+  const bloco = () => Array.from({ length: 4 }, () => letras[randomInt(letras.length)]).join("");
+  return `NS-MASTER-${bloco()}-${bloco()}-${bloco()}`;
+}
+
+// Cache curto dos códigos personalizados e das senhas master ativos: permite conferência síncrona nas APIs de IA.
+let cacheCodigos = { em: 0, mapa: new Map(), masters: new Map() }; // codigoLower -> { recurso, aparelhoId } · masters: codigoLower -> aparelhoId
 
 function montarCacheCodigos(dados) {
   const mapa = new Map();
+  const masters = new Map();
   for (const [aparelhoId, reg] of Object.entries((dados && dados.aprovados) || {})) {
     const codigos = codigosDe(reg);
     for (const [recurso, c] of Object.entries(codigos)) {
       if (!c.ativo || !c.codigo) continue;
       mapa.set(c.codigo.trim().toLowerCase(), { recurso, aparelhoId });
     }
+    const master = masterDe(reg);
+    if (master && master.ativo) masters.set(master.codigo.toLowerCase(), aparelhoId);
   }
-  cacheCodigos = { em: Date.now(), mapa };
+  cacheCodigos = { em: Date.now(), mapa, masters };
 }
 
 // Leitura recente do cadastro (até 5 s), para as conferências de cada pedido de IA (cadastro aprovado, saldo e códigos pessoais) não lerem
@@ -281,13 +300,21 @@ function codigoGlobalDoRecurso(recurso) {
   return "";
 }
 
-// Aceita o código global do servidor ou o personalizado deste aparelho.
+// Confere se a senha informada é a senha master ativa deste aparelho.
+export function senhaMasterValida(codigo, aparelhoId) {
+  const id = aparelhoIdLimpo(aparelhoId);
+  const chave = String(codigo || "").trim().toLowerCase();
+  return Boolean(id && chave && cacheCodigos.masters.get(chave) === id);
+}
+
+// Aceita o código global do servidor, o personalizado deste aparelho ou a senha master dele.
 export function recursoCodigoValido(recurso, codigo, aparelhoId) {
   // A senha de administrador libera todas as funções, sem depender do código de cada uma (6.10.94).
   if (process.env.CODIGO_ADMIN && textosIguais(codigo, process.env.CODIGO_ADMIN)) return true;
   const global = codigoGlobalDoRecurso(recurso);
   if (global && textosIguais(codigo, global)) return true;
-  return codigoPessoalSync(recurso, codigo, aparelhoId);
+  if (codigoPessoalSync(recurso, codigo, aparelhoId)) return true;
+  return RECURSO_IDS.has(recurso) && senhaMasterValida(codigo, aparelhoId);
 }
 
 async function lerBruto() {
@@ -479,6 +506,12 @@ function identidadeDe(a) {
   };
 }
 
+// O cadastro que volta para o aparelho: sem os códigos personalizados, que só o administrador vê (Administração de usuários).
+function cadastroPublico(a) {
+  const { codigos, ...cadastro } = identidadeDe(a);
+  return cadastro;
+}
+
 function camposDoCorpo(corpo) {
   const nome = limpar(corpo && corpo.nome, 60);
   const sobrenome = limpar(corpo && corpo.sobrenome, 60);
@@ -570,8 +603,7 @@ export async function estadoAcessoSite({ aparelhoId, recente = false } = {}) {
   const id = aparelhoIdLimpo(aparelhoId);
   if (id && dados.aprovados[id]) {
     dados = await concederSePreciso(id, dados); // quem já estava com o saldo zerado pelo consumo recebe ao abrir o app
-    // Os códigos personalizados não vão nesta resposta pública (só o administrador os vê, na Administração de usuários).
-    const { codigos, ...cadastro } = identidadeDe(dados.aprovados[id]);
+    const cadastro = cadastroPublico(dados.aprovados[id]);
     return {
       configurado: true,
       restringir: true,
@@ -628,7 +660,7 @@ export async function pedirAcessoSite(corpo) {
   const { campos } = validado;
 
   return comDados((dados) => {
-    if (dados.aprovados[id]) return { ok: true, jaAprovado: true, identificado: true, cadastro: identidadeDe(dados.aprovados[id]) };
+    if (dados.aprovados[id]) return { ok: true, jaAprovado: true, identificado: true, cadastro: cadastroPublico(dados.aprovados[id]) };
     const aberto = dados.pedidos.find((p) => p.aparelhoId === id && p.status === "pendente");
     if (aberto) return { ok: true, pendente: true, id: aberto.id };
     const pedido = gravarIdentidade(dados, id, campos, { statusPedido: "pendente" });
@@ -656,6 +688,7 @@ export async function atualizarCadastroSite(corpo) {
       creditos: creditosDe(anterior),
       ...(anterior.creditoBoasVindas ? { creditoBoasVindas: anterior.creditoBoasVindas } : {}),
       codigos: codigosDe(anterior),
+      ...(masterDe(anterior) ? { master: masterDe(anterior) } : {}), // 6.14.72: a senha master também fica
       // O extrato e os Pix creditados fazem parte do cadastro: atualizar os dados pessoais não pode apagá-los.
       ...(Array.isArray(anterior.extrato) ? { extrato: anterior.extrato, extratoInicial: anterior.extratoInicial, extratoDesde: anterior.extratoDesde } : {}),
       ...(Array.isArray(anterior.pixHistorico) ? { pixHistorico: anterior.pixHistorico } : {}),
@@ -664,7 +697,7 @@ export async function atualizarCadastroSite(corpo) {
       ...(dividaDe(anterior) > 0 ? { emergenciaDivida: dividaDe(anterior), emergenciaEm: anterior.emergenciaEm } : {}),
       ...(Array.isArray(anterior.recibos) ? { recibos: anterior.recibos } : {}),
     });
-    return { ok: true, atualizado: true, cadastro: identidadeDe(dados.aprovados[id]) };
+    return { ok: true, atualizado: true, cadastro: cadastroPublico(dados.aprovados[id]) };
   });
 }
 
@@ -699,6 +732,7 @@ export async function lerAcessoSiteAdmin() {
         s34: false,
       },
       consumo,
+      master: masterDe(a), // 6.14.72: só nesta resposta, a do administrador
     };
   });
   aprovados.sort((a, b) => String(b.aprovadoEm).localeCompare(String(a.aprovadoEm)));
@@ -894,6 +928,32 @@ export async function expirarCodigoUsuario({ aparelhoId, recurso, codigoAdmin })
       expiradoEm: agoraIso(),
     };
     return { ok: true, recurso: rec, aparelhoId: id, codigos: codigosDe(reg) };
+  });
+}
+
+// Gera (ou troca) a senha master de um usuário: a anterior deixa de valer na hora.
+export async function gerarMasterUsuario({ aparelhoId, codigoAdmin }) {
+  if (!textosIguais(codigoAdmin, process.env.CODIGO_ADMIN)) return { erro: "Código de administrador incorreto." };
+  const id = aparelhoIdLimpo(aparelhoId);
+  if (!id) return { erro: "Aparelho inválido." };
+  return comDados((dados) => {
+    const reg = dados.aprovados[id];
+    if (!reg) return { erro: "Este aparelho não está na lista de identificados." };
+    reg.master = { codigo: gerarMasterTexto(), ativo: true, criadoEm: agoraIso(), expiradoEm: "" };
+    return { ok: true, codigo: reg.master.codigo, aparelhoId: id };
+  });
+}
+
+export async function expirarMasterUsuario({ aparelhoId, codigoAdmin }) {
+  if (!textosIguais(codigoAdmin, process.env.CODIGO_ADMIN)) return { erro: "Código de administrador incorreto." };
+  const id = aparelhoIdLimpo(aparelhoId);
+  if (!id) return { erro: "Aparelho inválido." };
+  return comDados((dados) => {
+    const reg = dados.aprovados[id];
+    if (!reg) return { erro: "Este aparelho não está na lista de identificados." };
+    if (!masterDe(reg)) return { erro: "Este usuário ainda não tem senha master." };
+    reg.master = { ...masterDe(reg), ativo: false, expiradoEm: agoraIso() };
+    return { ok: true, aparelhoId: id };
   });
 }
 

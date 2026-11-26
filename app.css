@@ -18610,3 +18610,12 @@ body.modo-convidado { padding-bottom: 0; }
 /* 6.14.71: desenho próprio do Verdadeiro ou falso: no atalho dos Jogos (a altura de um emoji) e no título do jogo ao vivo */
 #jogosCard .jogos-card .fam-hub-icone > img.icone-img { display: block; width: 1.1em; height: 1.1em; margin: 0 auto; }
 #participarTitulo .fam-titulo-jogo-emoji > img.icone-img { display: block; width: 1.2em; height: 1.2em; margin: -0.1em 0; }
+/* 6.14.72: senha master: card próprio, de outra cor (laranja suave), nos Ajustes e na administração de usuários */
+.acesso-item.acesso-master, .acesso-site-master { border: 1.5px solid #f59e0b; border-radius: 12px; background: color-mix(in srgb, #f59e0b 12%, var(--card)); }
+.acesso-site-master { margin-top: 12px; padding: 10px; font-size: .88rem; }
+.acesso-site-master .hint { margin: 0 0 8px; }
+.acesso-site-master-valor { display: block; margin: 0 0 8px; padding: 8px; border: 1px dashed #f59e0b; border-radius: 8px; background: var(--card); text-align: center; font-size: clamp(.68rem, 3.4vw, .95rem); font-weight: 800; overflow-wrap: anywhere; user-select: all; }
+.acesso-site-master-botoes { display: flex; gap: 8px; align-items: stretch; }
+.acesso-site-master-botoes > * { margin: 0; min-height: 38px; }
+.acesso-site-master-botoes > button { flex: 1 1 0; width: auto; min-width: 0; }
+.acesso-site-master-botoes > .acesso-site-copiar-codigo, .acesso-site-master-botoes > .acesso-site-zap-codigo { flex: 0 0 52px; width: 52px; min-width: 52px; }

@@ -21,6 +21,9 @@ import {
   definirRestricaoSite,
   estadoAcessoSite,
   expirarCodigoUsuario,
+  expirarMasterUsuario,
+  gerarMasterUsuario,
+  senhaMasterValida,
   extratoDoUsuario,
   recibosDoUsuario,
   definirCreditoEmergencia,
@@ -354,6 +357,12 @@ export default async function handler(req, res) {
     if (acao === "dirigente-conferir") {
       return conferirRecurso("dirigente", "O código do dirigente ainda não está configurado no servidor.", "Código do dirigente incorreto.");
     }
+    // 6.14.72: a senha master do usuário (vale só no aparelho para o qual o administrador a gerou).
+    if (acao === "master-conferir") {
+      if (senhaMasterValida(corpo.codigo, corpo.aparelhoId)) return res.status(200).json({ ok: true });
+      registrarErro(ip);
+      return erro(res, 403, "Senha master incorreta.");
+    }
 
     // Daqui em diante, só o administrador.
     if (!process.env.CODIGO_ADMIN) return erro(res, 503, "O código de administrador ainda não está configurado no servidor.");
@@ -616,6 +625,15 @@ export default async function handler(req, res) {
       const r = await gerarCodigoUsuario({ aparelhoId: corpo.aparelhoId, recurso: corpo.recurso, codigoAdmin: corpo.codigo });
       if (!r || r.erro) return erro(res, 400, (r && r.erro) || "Não foi possível gerar o código agora.");
       return res.status(200).json({ ok: true, recurso: r.recurso, codigoGerado: r.codigo, acesso: await lerAcessoSiteAdmin() });
+    }
+    if (acao === "acesso-site-gerar-master" || acao === "acesso-site-expirar-master") {
+      if (!acessoSiteConfigurado()) {
+        return erro(res, 503, "O armazenamento privado (Blob) ainda não está configurado no servidor para o controle de acesso.");
+      }
+      const gerando = acao === "acesso-site-gerar-master";
+      const r = await (gerando ? gerarMasterUsuario : expirarMasterUsuario)({ aparelhoId: corpo.aparelhoId, codigoAdmin: corpo.codigo });
+      if (!r || r.erro) return erro(res, 400, (r && r.erro) || (gerando ? "Não foi possível gerar a senha master agora." : "Não foi possível expirar a senha master agora."));
+      return res.status(200).json({ ok: true, acesso: await lerAcessoSiteAdmin() });
     }
     if (acao === "acesso-site-expirar-codigo") {
       if (!acessoSiteConfigurado()) {

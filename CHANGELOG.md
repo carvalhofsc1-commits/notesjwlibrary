@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.72
+
+- **Senha master:** o administrador gera, no cadastro de cada usuário (card próprio, laranja), uma senha individual que libera, só no aparelho dessa pessoa, todas as funções que pedem código. Ela é informada em Ajustes → Autorização de acessos, não dá acesso à administração do app e pode ser expirada ou trocada. O consumo de IA continua saindo dos créditos do usuário.
+- **Correção:** os códigos personalizados não voltam mais para o aparelho nas respostas de cadastro e de atualização dos dados; só o administrador os vê.
+
 ## 6.14.71
 
 - **Discursos:** novo desenho do ícone (folhas de papel escritas).

@@ -7963,7 +7963,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.14.71'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.14.72'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -9684,7 +9684,7 @@
         });
       }
 
-      const codigos = [['jwLibraryNoteAplicarStudyCodeV1', 'código de pesquisa'], ['jwLibraryNoteAplicarDirigenteCodeV1', 'código do dirigente'], ['jwLibraryNoteAplicarAdminSenhaV1', 'senha de administrador']].filter(([chave]) => bruto(chave));
+      const codigos = [['jwLibraryNoteAplicarStudyCodeV1', 'código de pesquisa'], ['jwLibraryNoteAplicarDirigenteCodeV1', 'código do dirigente'], ['jwLibraryNoteAplicarMasterSenhaV1', 'senha master'], ['jwLibraryNoteAplicarAdminSenhaV1', 'senha de administrador']].filter(([chave]) => bruto(chave));
       adicionar('🔑', 'Códigos e senha', codigos.map(([chave]) => chave), codigos.length, ['salvo', 'salvos'], codigos.map(([, nome]) => nome).join(' · '), []);
 
       // Todo o resto (tema, opções da IA, voz, quadros marcados, concordância, texto antes de atualizar…).
@@ -13349,6 +13349,23 @@ function saveTemplatesToStorage() {
             '<td class="acesso-site-consumo-valor">' + acessoSiteEscapar(acessoSiteReais(consumoTotal)) + '</td>' +
             '</tr>'
             : '<tr><td colspan="3" class="hint">Nenhum consumo de IA em ' + acessoSiteEscapar(mesNome) + '.</td></tr>';
+          // 6.14.72: a senha master deste usuário, num card próprio e de outra cor
+          const master = a.master && a.master.ativo && a.master.codigo ? a.master.codigo : '';
+          const masterHtml = '<div class="acesso-site-master">' +
+            '<strong class="acesso-site-codigos-titulo">⭐ Senha master</strong>' +
+            '<p class="hint">Libera, só no aparelho desta pessoa, todas as funções que pedem código. Não dá acesso à administração do app.</p>' +
+            (master
+              ? '<code class="acesso-site-master-valor">' + acessoSiteEscapar(master) + '</code>' +
+                '<div class="acesso-site-master-botoes">' +
+                '<button type="button" class="secondary acesso-site-copiar-codigo" data-codigo="' + acessoSiteEscapar(master) + '" title="Copiar a senha master" aria-label="Copiar a senha master">📋</button>' +
+                (foneZap.length >= 10
+                  ? '<a class="acesso-site-zap-codigo" target="_blank" rel="noopener" title="Enviar a senha master pelo WhatsApp" aria-label="Enviar a senha master pelo WhatsApp" href="https://wa.me/55' + foneZap + '?text=' +
+                    encodeURIComponent('NoteStyle: sua senha master é ' + master + '\n\nInforme em Menu → Ajustes → 🔐 Autorização de acessos, no campo Senha master. Ela vale só no seu aparelho.') + '">📲</a>'
+                  : '') +
+                '<button type="button" class="secondary acesso-site-expirar-master" data-aparelho="' + acessoSiteEscapar(idCompleto) + '">Expirar</button>' +
+                '</div>'
+              : '<div class="acesso-site-master-botoes"><button type="button" class="acesso-site-gerar-master" data-aparelho="' + acessoSiteEscapar(idCompleto) + '">⭐ Gerar senha master</button></div>') +
+            '</div>';
           return '<details class="acesso-site-item" data-aparelho="' + acessoSiteEscapar(idCompleto) + '" data-busca="' + acessoSiteEscapar(busca) + '" data-nome="' + acessoSiteEscapar(nome) + '" data-saldo="' + creditos + '"' + aberto + '>' +
           '<summary class="acesso-site-resumo">' + resumoHtml + '</summary>' +
           '<div class="acesso-site-detalhe">' +
@@ -13379,6 +13396,7 @@ function saveTemplatesToStorage() {
           '<table class="acesso-site-tabela-codigos acesso-site-tabela-consumo">' +
           '<thead><tr><th scope="col">Recurso</th><th scope="col">Uso</th><th scope="col">Valor</th></tr></thead>' +
           '<tbody>' + linhasConsumo + '</tbody></table></div></div>' +
+          masterHtml +
           '<div class="acesso-site-codigos">' +
           '<strong class="acesso-site-codigos-titulo">Códigos personalizados</strong>' +
           '<div class="acesso-site-tabela-wrap">' +
@@ -13525,6 +13543,19 @@ function saveTemplatesToStorage() {
         acessoSiteRenderAdmin(r.data.acesso, 'Créditos atualizados: ' + acessoSiteReais(r.data.creditos) + '. ', { manterAbertos: [creditar.dataset.aparelho] });
         return;
       }
+      const master = e.target.closest('button.acesso-site-gerar-master, button.acesso-site-expirar-master');
+      if (master && master.dataset.aparelho) {
+        const gerando = master.classList.contains('acesso-site-gerar-master');
+        if (!gerando && !(await askConfirm('Expirar a senha master deste usuário? As funções liberadas por ela voltam a pedir código.', 'Expirar senha master'))) return;
+        acessoSiteStatus.textContent = gerando ? 'Gerando a senha master…' : 'Expirando…';
+        const r = await postConfig({ acao: gerando ? 'acesso-site-gerar-master' : 'acesso-site-expirar-master', codigo, aparelhoId: master.dataset.aparelho });
+        if (!r.ok) {
+          acessoSiteStatus.textContent = (r.data && r.data.erro) || configErrorMessage(r, gerando ? 'Não foi possível gerar a senha master.' : 'Não foi possível expirar a senha master.');
+          return;
+        }
+        acessoSiteRenderAdmin(r.data.acesso, gerando ? 'Senha master gerada. ' : 'Senha master expirada. ', { manterAbertos: [master.dataset.aparelho] });
+        return;
+      }
       const gerar = e.target.closest('button.acesso-site-gerar-codigo');
       if (gerar && gerar.dataset.aparelho && gerar.dataset.recurso) {
         acessoSiteStatus.textContent = 'Gerando código…';
@@ -13554,7 +13585,8 @@ function saveTemplatesToStorage() {
       const cartao = btn.closest('details.acesso-site-item');
       const saldoDoCartao = cartao ? Number(cartao.dataset.saldo) || 0 : 0;
       const temCodigo = Boolean(cartao && cartao.querySelector('.acesso-site-codigo-valor'));
-      const perdas = [saldoDoCartao > 0 ? 'o saldo de ' + acessoSiteReais(saldoDoCartao) : '', temCodigo ? 'os códigos personalizados' : ''].filter(Boolean).join(' e ');
+      const temMaster = Boolean(cartao && cartao.querySelector('.acesso-site-master-valor'));
+      const perdas = [saldoDoCartao > 0 ? 'o saldo de ' + acessoSiteReais(saldoDoCartao) : '', temCodigo ? 'os códigos personalizados' : '', temMaster ? 'a senha master' : ''].filter(Boolean).join(' e ');
       if (!(await askConfirm('Revogar a identificação de ' + ((cartao && cartao.dataset.nome) || 'este aparelho') + '? Na próxima abertura ele precisará se cadastrar de novo.' + (perdas ? '\n\nVocê também vai apagar ' + perdas + ' deste usuário.' : ''), 'Revogar identificação'))) return;
       const r = await postConfig({ acao: 'acesso-site-revogar', codigo, aparelhoId: btn.dataset.aparelho });
       if (!r.ok) {
@@ -23346,9 +23378,10 @@ function saveTemplatesToStorage() {
       try { return (localStorage.getItem(chave) || '').trim(); } catch (e) { return ''; }
     }
     function senhaAdminSalva() { return acessoGravado('jwLibraryNoteAplicarAdminSenhaV1'); }
-    // O código usado por cada função: o do campo dela ou, sem ele, a senha de administrador, que libera todas as funções (6.10.94; o servidor
-    // aceita a senha de administrador no lugar de qualquer código).
-    function acessoOuAdmin(chave) { return acessoGravado(chave) || senhaAdminSalva(); } // função (não const): é chamada antes desta linha na abertura do app
+    function senhaMasterSalva() { return acessoGravado('jwLibraryNoteAplicarMasterSenhaV1'); }
+    // O código usado por cada função: a senha master (6.14.72: vale por todos os códigos), o do campo dela ou, sem eles, a senha de
+    // administrador, que libera todas as funções (6.10.94). O servidor aceita as duas senhas no lugar de qualquer código.
+    function acessoOuAdmin(chave) { return senhaMasterSalva() || acessoGravado(chave) || senhaAdminSalva(); } // função (não const): é chamada antes desta linha na abertura do app
     function codigoAcessoSalvo() { return acessoOuAdmin('jwLibraryNoteAplicarStudyCodeV1'); }
     function codigoTextoSalvo() { return acessoOuAdmin('jwLibraryNoteAplicarTextoCodeV1'); }
     function codigoResumoSalvo() { return acessoOuAdmin('jwLibraryNoteAplicarResumoCodeV1'); }
@@ -23367,6 +23400,11 @@ function saveTemplatesToStorage() {
     }
 
     const acessos = {
+      master: {
+        campo: document.getElementById('masterSenha'), chave: 'jwLibraryNoteAplicarMasterSenhaV1', acao: 'master-conferir', salvo: senhaMasterSalva,
+        status: document.getElementById('acessoStatusMaster'), ver: document.getElementById('acessoVerMaster'), nome: 'A senha master',
+        salvar: 'acessoSalvarMaster', apagar: 'acessoApagarMaster'
+      },
       codigo: {
         campo: aiStudyCode, chave: 'jwLibraryNoteAplicarStudyCodeV1', acao: 'codigo-conferir', salvo: codigoAcessoSalvo,
         status: document.getElementById('acessoStatusCodigo'), ver: document.getElementById('acessoVerCodigo'), nome: 'O código de pesquisa',
@@ -23409,13 +23447,22 @@ function saveTemplatesToStorage() {
       acessos[tipo].status.classList.toggle('acesso-aviso', Boolean(aviso));
     }
 
-    // O campo mostra só o código digitado nele (nunca a senha de administrador); sem código, a senha de administrador salva já libera a função.
+    // O campo mostra só o código digitado nele (nunca as senhas master ou de administrador); sem código, uma delas salva já libera a função.
     function acessoSituacao(tipo) {
       const a = acessos[tipo];
       const gravado = acessoGravado(a.chave);
       a.campo.value = gravado;
-      const peloAdmin = !gravado && tipo !== 'senha' && Boolean(senhaAdminSalva());
-      acessoStatus(tipo, gravado ? '✅ Salvo neste aparelho.' : peloAdmin ? '🛡️ Liberado pela senha de administrador.' : 'Ainda não informado.', !gravado && !peloAdmin);
+      const peloMaster = !gravado && tipo !== 'senha' && tipo !== 'master' && Boolean(senhaMasterSalva());
+      const peloAdmin = !gravado && tipo !== 'senha' && tipo !== 'master' && Boolean(senhaAdminSalva());
+      acessoStatus(tipo, gravado ? '✅ Salvo neste aparelho.' : peloMaster ? '⭐ Liberado pela senha master.' : peloAdmin ? '🛡️ Liberado pela senha de administrador.' : 'Ainda não informado.', !gravado && !peloMaster && !peloAdmin);
+    }
+    // A senha master vale por todos os códigos: salva, apagada ou recusada, cada campo se atualiza e o app trata como se cada código tivesse mudado.
+    function acessoMasterMudou() {
+      Object.keys(acessos).forEach(tipo => {
+        if (tipo === 'master' || tipo === 'senha') return;
+        acessoSituacao(tipo);
+        document.dispatchEvent(new CustomEvent('acesso-salvo', { detail: tipo }));
+      });
     }
 
     async function acessoSalvar(tipo) {
@@ -23473,6 +23520,7 @@ function saveTemplatesToStorage() {
       Object.keys(acessos).forEach(tipo => { if (tipo !== 'senha') acessoSituacao(tipo); }); // "Liberado pela senha de administrador" aparece ou some
     });
     ajustesAdminAtualizar();
+    document.addEventListener('acesso-salvo', event => { if (event.detail === 'master') acessoMasterMudou(); });
 
     // Botões "🔐 Abrir Autorização de acessos" dos avisos (voz).
     document.querySelectorAll('[data-ir-acessos]').forEach(botao => botao.addEventListener('click', () => abrirAcessos(botao.dataset.irAcessos)));
@@ -23665,6 +23713,7 @@ function saveTemplatesToStorage() {
     }
 
     function dirigenteInvalido() {
+      if (senhaMasterSalva()) { masterVerificar(true); return; } // o que foi enviado era a senha master: é ela que se confere
       try { localStorage.removeItem('jwLibraryNoteAplicarDirigenteCodeV1'); } catch (e) { /* sem localStorage */ }
       acessoSituacao('dirigente');
       acessoStatus('dirigente', 'O código do dirigente que estava salvo não vale mais. Informe o novo código.', true);
@@ -23726,6 +23775,7 @@ function saveTemplatesToStorage() {
 
     // O código do S-34 salvo também pode deixar de valer (variável CODIGO_S34 trocada no servidor): mesma conferência, só apaga se o servidor recusar (403).
     function s34CodigoInvalido() {
+      if (senhaMasterSalva()) { masterVerificar(true); return; }
       if (!acessoGravado('jwLibraryNoteAplicarS34CodeV1')) return;
       try { localStorage.removeItem('jwLibraryNoteAplicarS34CodeV1'); } catch (e) { /* sem localStorage */ }
       acessoSituacao('s34');
@@ -23742,7 +23792,23 @@ function saveTemplatesToStorage() {
       if (r.status === 403 && acessoGravado('jwLibraryNoteAplicarS34CodeV1') === codigo) s34CodigoInvalido();
     }
     s34CodigoVerificar(true);
-    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { dirigenteVerificar(false); leituraCodigoVerificar(false); resumoCodigoVerificar(false); textoCodigoVerificar(false); s34CodigoVerificar(false); } });
+
+    // A senha master também pode deixar de valer (o administrador a expirou ou gerou outra): mesma conferência, só apaga se o servidor recusar (403).
+    let masterConferidaEm = 0;
+    async function masterVerificar(forcar) {
+      const senha = senhaMasterSalva();
+      if (!senha || !navigator.onLine) return;
+      if (!forcar && Date.now() - masterConferidaEm < 10 * 60 * 1000) return;
+      masterConferidaEm = Date.now();
+      const r = await postConfig({ acao: 'master-conferir', codigo: senha, aparelhoId: aparelhoId() });
+      if (r.status !== 403 || senhaMasterSalva() !== senha) return;
+      try { localStorage.removeItem('jwLibraryNoteAplicarMasterSenhaV1'); } catch (e) { /* sem localStorage */ }
+      acessoSituacao('master');
+      acessoStatus('master', 'A senha master que estava salva não vale mais. Peça uma nova ao administrador.', true);
+      document.dispatchEvent(new CustomEvent('acesso-salvo', { detail: 'master' }));
+    }
+    masterVerificar(true);
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { masterVerificar(false); dirigenteVerificar(false); leituraCodigoVerificar(false); resumoCodigoVerificar(false); textoCodigoVerificar(false); s34CodigoVerificar(false); } });
 
     // ---------- Tela Áudio em texto ----------
     // O áudio é decodificado neste aparelho (Web Audio), reamostrado para 16 kHz mono, cortado em trechos de ~50 s (o Google aceita até 1 minuto por

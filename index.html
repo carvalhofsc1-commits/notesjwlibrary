@@ -1362,6 +1362,20 @@
           <div class="subsection-body">
             <p class="hint">Informe cada código uma única vez: ele é conferido no servidor e fica salvo neste aparelho. Os outros lugares do app usam o que estiver salvo aqui.</p>
 
+            <div class="acesso-item acesso-master">
+              <label for="masterSenha">⭐ Senha master</label>
+              <p class="hint">Se o administrador gerou uma senha master para você, informe aqui: ela libera, só neste aparelho, todas as funções que pedem código. Não dá acesso à administração do app.</p>
+              <div class="acesso-linha">
+                <input autocomplete="off" id="masterSenha" type="password" maxlength="100" placeholder="Senha master">
+                <button id="acessoVerMaster" class="secondary acesso-ver" type="button" aria-label="Mostrar a senha" aria-pressed="false"><svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+              </div>
+              <div class="bk-row">
+                <button id="acessoSalvarMaster" type="button">💾 Salvar</button>
+                <button id="acessoApagarMaster" class="secondary" type="button">🗑️ Apagar</button>
+              </div>
+              <p id="acessoStatusMaster" class="hint acesso-status" role="status" aria-live="polite"></p>
+            </div>
+
             <div class="acesso-item">
               <label for="aiStudyCode">🔑 Código de pesquisa</label>
               <p class="hint">Libera os recursos de pesquisa de "Preparar para comentar": o estudo de A Sentinela lido no site, as Joias e o Estudo Bíblico, e também o texto diário da tela Início (inclusive ouvi-lo em voz alta). Sem ele, esses recursos ficam desabilitados.</p>
