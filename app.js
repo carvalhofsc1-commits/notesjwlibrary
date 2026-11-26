@@ -7958,7 +7958,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.14.24'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.14.25'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -30725,18 +30725,18 @@ function saveTemplatesToStorage() {
         const pedido = participarJogoDeAgora();
         if (!pedido) { avisar('Não achei o tipo deste jogo. Prepare outro na tela dos Jogos.', 'erro'); return; }
         const cod = participar.cod;
-        novo.disabled = true;
-        novo.textContent = '⏳ Preparando…';
+        const voltarBotao = botaoIaOcupado(novo, 'Preparando…'); // 6.14.25: ícone girando e relógio
         avisar('⏳ A IA está preparando novas perguntas. Pode levar alguns minutos; deixe esta tela aberta.');
         const g = await jogosGerar(pedido.j, pedido.tema, pedido.instrucao, codigo);
-        const voltarBotao = () => { novo.disabled = false; novo.textContent = rotuloNovo; };
         if (g.erro) { voltarBotao(); avisar(g.erro, 'erro'); return; }
-        if (cod !== participar.cod) return; // saiu do jogo enquanto preparava: o jogo novo fica em 📂 Jogos preparados
+        if (cod !== participar.cod) { voltarBotao(); return; } // saiu do jogo enquanto preparava: o jogo novo fica em 📂 Jogos preparados
         const titulo = (g.item.op.emoji ? g.item.op.emoji + ' ' : '') + g.item.op.titulo;
         if (familiaSolo && familiaSolo.cod === cod) Object.assign(familiaSolo, { titulo, posicoes: {}, jogo: { nome: g.item.nome, tema: g.item.tema, instrucao: g.item.instrucao } });
         else familiaSessaoGuardar(cod, { progId: 'jogo:' + g.item.id, titulo });
         avisar('⏳ Carregando o jogo novo…');
-        if (!(await participarAcao({ acao: 'novo-jogo', programa: familiaProgramaParaCompartilhar(g.item.op), codigo }, null))) { voltarBotao(); avisar('O jogo novo ficou em 📂 Jogos preparados, mas não consegui abri-lo aqui. Tente de novo.', 'erro'); }
+        const aberto = await participarAcao({ acao: 'novo-jogo', programa: familiaProgramaParaCompartilhar(g.item.op), codigo }, null);
+        voltarBotao();
+        if (!aberto) avisar('O jogo novo ficou em 📂 Jogos preparados, mas não consegui abri-lo aqui. Tente de novo.', 'erro');
       });
       const fechar = document.createElement('button');
       fechar.type = 'button';
@@ -31405,6 +31405,31 @@ function saveTemplatesToStorage() {
       jogosVistaAplicar();
       requestAnimationFrame(() => botao.scrollIntoView({ block: 'nearest', behavior: 'smooth' }));
     }
+    // 6.14.25: botão da IA trabalhando: o ícone girando e o relógio correndo ("Preparando… ⏱️ 0:42"). Devolve a função que desfaz.
+    function botaoIaOcupado(botao, rotulo) {
+      const antes = botao.textContent;
+      const linha = document.createElement('span');
+      const giro = document.createElement('span');
+      giro.className = 'ai-spinner';
+      giro.setAttribute('aria-hidden', 'true');
+      const texto = document.createElement('span');
+      linha.append(giro, texto);
+      const inicio = Date.now();
+      const pintar = () => { const s = Math.floor((Date.now() - inicio) / 1000); texto.textContent = rotulo + ' ⏱️ ' + Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+      botao.disabled = true;
+      botao.classList.add('is-loading');
+      botao.setAttribute('aria-busy', 'true');
+      botao.replaceChildren(linha);
+      pintar();
+      const relogio = setInterval(pintar, 1000);
+      return () => {
+        clearInterval(relogio);
+        botao.disabled = false;
+        botao.classList.remove('is-loading');
+        botao.removeAttribute('aria-busy');
+        botao.textContent = antes;
+      };
+    }
     async function jogosPreparar(j, temaBruto, instrBruta, botao, avisoEl) {
       if (jogosPreparando) return;
       const avisar = (msg, tipo) => {
@@ -31414,11 +31439,10 @@ function saveTemplatesToStorage() {
       };
       const codigo = codigoAcessoSalvo();
       if (!codigo) { avisar('Para preparar um jogo, informe o código de pesquisa em Ajustes → 🔐 Autorização de acessos. (Para entrar num jogo, só o código do jogo basta.)', 'erro'); return; }
-      botao.disabled = true;
-      botao.textContent = '⏳ Preparando…';
+      const liberar = botaoIaOcupado(botao, 'Preparando…');
       avisar('⏳ A IA está preparando o jogo ' + j.titulo + '. Pode levar alguns minutos; deixe esta tela aberta.');
       const g = await jogosGerar(j, temaBruto, instrBruta, codigo);
-      if (botao.isConnected) { botao.disabled = false; botao.textContent = '✨ Preparar o jogo'; }
+      liberar();
       if (g.erro) { avisar(g.erro, 'erro'); return; }
       jogosProntoMostrar(g.item, g.salvo ? '✅ Jogo pronto e guardado em 📂 Jogos preparados.' : '✅ Jogo pronto (não coube na memória do aparelho para guardar).', g.avisoIa ? '⚠️ ' + g.avisoIa.charAt(0).toUpperCase() + g.avisoIa.slice(1) + '.' : '');
     }

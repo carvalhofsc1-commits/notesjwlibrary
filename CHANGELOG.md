@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.25
+
+- **"✨ Preparar o jogo"** e **"✨ Jogar com novas perguntas"**: enquanto a IA trabalha, o botão mostra o **ícone girando** e o **relógio** correndo ("Preparando… ⏱️ 0:42").
+
 ## 6.14.24
 
 - **Quem disse isso?:** o rótulo acima do quadro da frase ficou alinhado à esquerda.
