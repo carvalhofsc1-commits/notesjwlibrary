@@ -92,11 +92,11 @@ function imagensDoPedido(valor) {
   return saida;
 }
 
-const contagens = { trecho: new Map(), resumo: new Map(), correcao: new Map(), lote: new Map(), nomes: new Map(), "transc-salvar": new Map() };
+const contagens = { trecho: new Map(), resumo: new Map(), correcao: new Map(), lote: new Map(), nomes: new Map(), "transc-salvar": new Map(), "trecho-jogo": new Map() };
 const LIMITE_NOMES_POR_HORA = 40;
 function excedeu(tipo, ip, limite) {
   const agora = Date.now();
-  const mapa = contagens[tipo];
+  const mapa = contagens[tipo] || (contagens[tipo] = new Map()); // 6.14.05: um tipo sem contador não pode derrubar o pedido
   const lista = (mapa.get(ip) || []).filter((t) => agora - t < 60 * 60 * 1000);
   const passou = lista.length >= limite;
   if (!passou) lista.push(agora);

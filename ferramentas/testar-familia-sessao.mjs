@@ -68,6 +68,24 @@ try {
   assert.match(sessao, /^[23456789ABCDEFGHJKMNPQRSTUVWXYZ]{6}$/); passo(`sessão criada: ${sessao} (sem 0/O/1/I/L)`);
   assert.ok(chave.length >= 40); passo("chave do dirigente longa");
 
+  // 6.14.05: a resposta falada no jogo (api/transcrever.mjs, "trecho-jogo"), com o Google de mentira
+  {
+    const { generateKeyPairSync } = await import("node:crypto");
+    const { privateKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
+    process.env.GOOGLE_TTS_CREDENCIAIS = JSON.stringify({ client_email: "teste@exemplo.test", private_key: privateKey.export({ type: "pkcs8", format: "pem" }), project_id: "projeto-de-teste" });
+    const { default: transcrever } = await import("../api/transcrever.mjs");
+    const fetchDeVerdade = globalThis.fetch;
+    globalThis.fetch = async (url) => ({ ok: true, status: 200, json: async () => (String(url).includes("recognize") ? { results: [{ alternatives: [{ transcript: "Moisés" }] }] } : { access_token: "t", expires_in: 3600 }) });
+    try {
+      const req = { method: "POST", headers: { origin: "http://localhost:8091", "x-forwarded-for": "10.9.9.9" }, body: { acao: "trecho-jogo", sessao, chave, audio: Buffer.alloc(3200).toString("base64"), codigoAdmin: "admin-de-teste" } };
+      const res = { statusCode: 200, corpo: null, setHeader() {}, status(c) { this.statusCode = c; return this; }, json(d) { this.corpo = d; return this; } };
+      await transcrever(req, res);
+      assert.equal(res.statusCode, 200, JSON.stringify(res.corpo));
+      assert.equal(res.corpo.texto, "Moisés");
+    } finally { globalThis.fetch = fetchDeVerdade; delete process.env.GOOGLE_TTS_CREDENCIAIS; }
+    passo("responder falando no jogo: o áudio é transcrito");
+  }
+
   // Arquivos gravados: a chave só como hash; respostas fora do programa.json
   const { readFile } = await import("node:fs/promises");
   const pasta = join(process.env.DADOS_DIR, "familia-sessoes", sessao);

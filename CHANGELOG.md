@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.05
+
+- Jogo ao vivo: o **🎤 de responder falando voltou a transcrever**. O servidor dava erro em toda resposta falada (faltava o contador de pedidos desse tipo).
+- Depois de transcrever, o botão **"Enviar resposta"** fica habilitado.
+- Os avisos do microfone (gravando, não ouvi nada, erro) aparecem **logo abaixo do campo da resposta**.
+
 ## 6.14.04
 
 - Jogo **Abreviações**: a sigla nem sempre precisa vir de um versículo. Pode ser de um fato bíblico muito conhecido (os 10 Mandamentos, a travessia do mar Vermelho, os 66 livros da Bíblia…); nesse caso, depois da resposta aparece **"Fato conhecido"** no lugar da referência.

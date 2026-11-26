@@ -7958,7 +7958,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.14.04'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.14.05'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -30344,6 +30344,17 @@ function saveTemplatesToStorage() {
       bt.title = 'Responder falando';
       bt.setAttribute('aria-label', 'Responder falando');
       let gravador = null, fluxo = null, pedacos = [], parar = null, timer = 0;
+      // 6.14.05: o aviso do microfone aparece logo abaixo do campo (o aviso do topo da tela ficava fora da vista)
+      const avisar = (msg, tipo) => {
+        const linha = bt.parentElement;
+        if (!linha) { participarStatus(msg, tipo); return; }
+        let p = linha.nextElementSibling;
+        if (!p || !p.classList.contains('fam-mic-aviso')) { p = document.createElement('p'); linha.after(p); }
+        p.className = 'fam-status fam-mic-aviso' + (tipo ? ' ' + tipo : '');
+        p.setAttribute('role', 'status');
+        p.hidden = !msg;
+        p.textContent = msg || '';
+      };
       const limpar = () => { clearTimeout(timer); if (fluxo) fluxo.getTracks().forEach(t => t.stop()); fluxo = null; gravador = null; };
       const pronto = () => { bt.disabled = false; bt.textContent = '🎤'; bt.classList.remove('gravando'); bt.title = 'Responder falando'; };
       const transcrever = async blob => {
@@ -30353,24 +30364,24 @@ function saveTemplatesToStorage() {
           const amostras = await trDecodificar(blob);
           const util = amostras.subarray(0, TRANSCRICAO_TAXA * 25);
           const { base64, pico } = trParaBase64(util);
-          if (pico < 0.005) { participarStatus('Não ouvi nada. Toque no 🎤 e fale perto do microfone.', 'erro'); return; }
+          if (pico < 0.005) { avisar('Não ouvi nada. Toque no 🎤 e fale perto do microfone.', 'erro'); return; }
           const r = await trPost({ acao: 'trecho-jogo', sessao: participar.cod, chave: participar.chave, audio: base64 });
-          if (!r.ok) { participarStatus(trMensagem(r, 'Não consegui transcrever a sua voz agora.'), 'erro'); return; }
+          if (!r.ok) { avisar(trMensagem(r, 'Não consegui transcrever a sua voz agora.'), 'erro'); return; }
           const falado = String((r.dados && r.dados.texto) || '').replace(/\s+/g, ' ').trim().replace(/[.!?…]+$/, '');
-          if (!falado) { participarStatus('Não entendi o que você disse. Tente de novo.', 'erro'); return; }
-          participarStatus('');
-          campo.value = falado.slice(0, 200);
+          if (!falado) { avisar('Não entendi o que você disse. Tente de novo.', 'erro'); return; }
+          avisar('');
+          campo.value = falado.slice(0, 200); campo.dispatchEvent(new Event('input', { bubbles: true }));
           campo.focus();
         } catch (e) {
-          participarStatus('Não consegui processar o áudio neste aparelho. Escreva a resposta.', 'erro');
+          avisar('Não consegui processar o áudio neste aparelho. Escreva a resposta.', 'erro');
         } finally { pronto(); }
       };
       bt.addEventListener('click', async () => {
         if (gravador && gravador.state === 'recording') { parar(); return; }
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) { participarStatus('Este aparelho ou navegador não permite gravar áudio aqui. Escreva a resposta.', 'erro'); return; }
-        try { fluxo = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch (e) { participarStatus('Não consegui usar o microfone. Libere o acesso no navegador ou escreva a resposta.', 'erro'); return; }
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) { avisar('Este aparelho ou navegador não permite gravar áudio aqui. Escreva a resposta.', 'erro'); return; }
+        try { fluxo = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch (e) { avisar('Não consegui usar o microfone. Libere o acesso no navegador ou escreva a resposta.', 'erro'); return; }
         const mime = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus'].find(t => MediaRecorder.isTypeSupported(t)) || '';
-        try { gravador = new MediaRecorder(fluxo, mime ? { mimeType: mime } : undefined); } catch (e) { limpar(); participarStatus('Não consegui gravar áudio neste aparelho. Escreva a resposta.', 'erro'); return; }
+        try { gravador = new MediaRecorder(fluxo, mime ? { mimeType: mime } : undefined); } catch (e) { limpar(); avisar('Não consegui gravar áudio neste aparelho. Escreva a resposta.', 'erro'); return; }
         pedacos = [];
         gravador.addEventListener('dataavailable', ev => { if (ev.data && ev.data.size) pedacos.push(ev.data); });
         gravador.addEventListener('stop', () => {
@@ -30384,7 +30395,7 @@ function saveTemplatesToStorage() {
         bt.textContent = '⏹️';
         bt.classList.add('gravando');
         bt.title = 'Parar e transcrever';
-        participarStatus('🎤 Gravando… fale a resposta e toque no ⏹️.');
+        avisar('🎤 Gravando… fale a resposta e toque no ⏹️.');
         timer = setTimeout(parar, 25000);
       });
       return bt;
