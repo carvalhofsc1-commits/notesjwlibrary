@@ -18168,7 +18168,6 @@ details.fam-placar-card > summary { min-height: 0 !important; padding: 3px 8px !
 #jogosCard .jogos-painel { gap: 10px; padding: 10px; }
 #jogosCard .jogos-painel > * { margin: 0; }
 #jogosCard .jogos-painel > .fam-trocar-rotulo { margin-bottom: -6px; line-height: 1.2; }
-#jogosCard .jogos-continuar { margin-bottom: 10px; }
 .jogos-niveis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; min-width: 0; }
 /* 6.14.40: os níveis mais finos, cada um com a sua cor (Fácil azul, Médio laranja, Difícil vermelho); o marcado com ✓, fundo mais forte e moldura grossa */
 #jogosCard .jogos-nivel { position: relative; display: flex; align-items: center; justify-content: center; gap: 4px; min-width: 0; min-height: 28px; box-sizing: border-box; margin: 0; padding: 1px 6px; border: 1px solid var(--nivel-moldura); border-radius: 8px; background: var(--nivel-fundo); color: var(--nivel-texto); font-size: .85rem; font-weight: 600; line-height: 1.2; cursor: pointer; }
@@ -18192,14 +18191,22 @@ details.fam-placar-card > summary { min-height: 0 !important; padding: 3px 8px !
 #jogosCard .jogos-painel .jogos-acoes > .jogos-cancelar { min-height: 36px; }
 
 /* 6.14.41: a lista dos jogos no padrão dos atalhos do Início: o primeiro (Perfil bíblico) na linha inteira e os outros em duas colunas,
-   da mesma altura, com fundo cinza claro e moldura fina na cor do jogo; o jogo aberto volta a ocupar a linha toda, como antes */
-#jogosCard #jogosGrade { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: 1fr; gap: 6px; }
+   da mesma altura, com o fundo na cor de cada jogo e moldura fina; o jogo aberto volta a ocupar a linha toda, como antes.
+   10 px entre tudo na tela (do texto do alto aos atalhos, entre os atalhos e até o "Entrar em um jogo"); o texto do alto centralizado */
+#jogosCard { row-gap: 10px; }
+#jogosCard > .fam-topo, #jogosCard > #jogosDica, #jogosCard > #jogosContinuar, #jogosCard > #jogosGrade, #jogosCard > #jogosHub, #jogosCard > #jogosSalvosBox { margin-top: 0; margin-bottom: 0; }
+#jogosCard > #jogosDica { text-align: center; }
+#jogosCard #jogosGrade { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: 1fr; gap: 10px; }
 #jogosCard #jogosGrade > .jogos-card:first-child, #jogosCard #jogosGrade > .jogos-card.aberto { grid-column: 1 / -1; }
 #jogosCard .jogos-card:not(.aberto):not([hidden]) { display: grid; border-width: 1px; border-color: color-mix(in srgb, var(--cor-jogo) 75%, #fff); box-shadow: 0 3px 10px var(--shadow); }
-#jogosCard .jogos-card:not(.aberto) > .jogos-atalho { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-height: 108px; padding: 8px; text-align: center; background: var(--inicio-cinza) !important; }
+#jogosCard .jogos-card:not(.aberto) > .jogos-atalho { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-height: 108px; padding: 8px; text-align: center; }
 #jogosCard .jogos-card:not(.aberto) .fam-hub-icone { width: auto; font-size: 2.1rem; line-height: 1.1; }
 #jogosCard .jogos-card:not(.aberto) .fam-hub-nome { font-size: .95rem; line-height: 1.15; }
 #jogosCard .jogos-card:not(.aberto) .fam-hub-desc { font-size: .75rem; line-height: 1.2; }
+/* o maior (o primeiro, Perfil bíblico): emoji e letras maiores */
+#jogosCard #jogosGrade > .jogos-card:first-child:not(.aberto) .fam-hub-icone { font-size: 3.3rem; }
+#jogosCard #jogosGrade > .jogos-card:first-child:not(.aberto) .fam-hub-nome { font-size: 1.4rem; }
+#jogosCard #jogosGrade > .jogos-card:first-child:not(.aberto) .fam-hub-desc { font-size: .92rem; }
 
 /* 6.14.14: o botao da dica com fundo cinza; no fim do jogo, "Jogar novamente" e "Fechar" na largura toda */
 #participarSessao button.fam-sessao-dar-dica { background: #e5e7eb !important; border: 1.5px solid #9ca3af !important; color: #1f2937 !important; }
@@ -18362,4 +18369,3 @@ body:not(.fam-tela-grande) #participarSessao.fam-na-secao .fam-sessao-secao.na-t
 :is(#jogosCard #jogosParticiparBtn, #familiaCard #familiaParticiparBtn) .fam-hub-icone { font-size: 1.05rem; }
 :is(#jogosCard #jogosParticiparBtn, #familiaCard #familiaParticiparBtn) .fam-hub-nome { font-size: .92rem; line-height: 1.35; }
 :is(#jogosCard #jogosParticiparBtn, #familiaCard #familiaParticiparBtn) .fam-hub-desc { flex: 0 0 100%; font-size: .7rem; line-height: 1.3; }
-#jogosCard > #jogosHub { margin-top: -2px; } /* com o espaco do card (12px), fica a mesma distancia de um jogo para o outro (10px) */
