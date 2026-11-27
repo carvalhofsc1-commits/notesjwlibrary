@@ -115,10 +115,11 @@ function naVezDaSessao(cod, tarefa) {
 
 // 6.14.18: no "Quem sou eu?", cada questão já abre com a 1ª dica (ela conta como dada: a questão começa valendo o máximo). "so" limita a
 // uma questão ({ parte, rodada }, no reiniciar) ou a uma parte ({ parte }).
+// 6.15.13: vale para todo jogo que depende das dicas (Perfil bíblico e qualquer outro cujas questões tragam "Dica 1:"), não só o "Quem sou eu?".
 function abrirComPrimeiraDica(e, programa, so = null) {
   (programa && Array.isArray(programa.partes) ? programa.partes : []).forEach((p, parte) => {
     const jogo = p && p.jogo;
-    if (!jogo || (so && so.parte !== parte) || !(jogo.idTipo === "quem_sou_eu" || /quem sou eu/i.test(String(jogo.tipo || "")))) return;
+    if (!jogo || (so && so.parte !== parte)) return;
     (jogo.rodadas || []).forEach((r, rodada) => {
       if ((so && so.rodada !== undefined && so.rodada !== rodada) || !/Dica\s*1\s*:/i.test(String((r && r.pergunta) || ""))) return;
       e.dicas = { ...(e.dicas || {}) };

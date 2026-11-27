@@ -420,20 +420,23 @@ try {
     await chamar({ acao: "liberar", sessao: sp.sessao, chave: sp.chave, parte: 2 });
     const modo = await chamar({ acao: "modo-dicas", sessao: sp.sessao, chave: sp.chave, parte: 2, sorteio: true });
     assert.equal(modo.dados.estado.sorteioDicas["2"], true); passo("modo de dicas sorteadas ligado pelo presidente");
+    // 6.15.13: a questão já abre com a Dica 1 (conta como dada); os 3 sorteios trazem as outras 3
     let est;
-    for (let i = 0; i < 4; i++) est = (await chamar({ acao: "sortear-dica", sessao: sp.sessao, chave: sp.chave, parte: 2, rodada: 0 })).dados.estado;
+    for (let i = 0; i < 3; i++) est = (await chamar({ acao: "sortear-dica", sessao: sp.sessao, chave: sp.chave, parte: 2, rodada: 0 })).dados.estado;
+    assert.equal(est.dicasOrdem["2"]["0"][0], 0, "a Dica 1 já tinha saído");
     assert.deepEqual([...est.dicasOrdem["2"]["0"]].sort(), [0, 1, 2, 3]);
-    assert.equal(est.dicas["2"]["0"], 4); passo("4 sorteios saem 4 dicas diferentes e a quantidade de dicas dadas acompanha");
+    assert.equal(est.dicas["2"]["0"], 4); passo("já abre com a Dica 1; 3 sorteios saem as outras 3 e a quantidade de dicas dadas acompanha");
     assert.equal((await chamar({ acao: "sortear-dica", sessao: sp.sessao, chave: sp.chave, parte: 2, rodada: 0 })).status, 400); passo("sem dicas restantes o sorteio é recusado");
     const pp2 = await chamar({ acao: "pontuar", sessao: sp.sessao, chave: sp.chave, parte: 2, rodada: 0, nome: "Ana" });
     assert.equal(pp2.dados.estado.acertos["2"]["0"].pts, 1); passo("pontos seguem a quantidade de dicas dadas (4 de 4 = 1 ponto)");
     await chamar({ acao: "reiniciar", sessao: sp.sessao, chave: sp.chave, parte: 2, rodada: 0 });
     const re = await chamar({ acao: "sortear-dica", sessao: sp.sessao, chave: sp.chave, parte: 2, rodada: 0 });
-    assert.equal(re.dados.estado.dicasOrdem["2"]["0"].length, 1); passo("reiniciar zera as dicas sorteadas");
+    assert.deepEqual(re.dados.estado.dicasOrdem["2"]["0"].slice(0, 1), [0]);
+    assert.equal(re.dados.estado.dicasOrdem["2"]["0"].length, 2); passo("reiniciar zera as dicas sorteadas e a questão volta a abrir com a Dica 1");
     // dica "em ordem" depois de uma sorteada: a menor que ainda não saiu
-    const sai = re.dados.estado.dicasOrdem["2"]["0"][0];
+    const sai = re.dados.estado.dicasOrdem["2"]["0"][1];
     const ord = await chamar({ acao: "dica", sessao: sp.sessao, chave: sp.chave, parte: 2, rodada: 0 });
-    assert.equal(ord.dados.estado.dicasOrdem["2"]["0"][1], sai === 0 ? 1 : 0); passo("dica em ordem depois de sorteio dá a menor que ainda não saiu");
+    assert.equal(ord.dados.estado.dicasOrdem["2"]["0"][2], sai === 1 ? 2 : 1); passo("dica em ordem depois de sorteio dá a menor que ainda não saiu");
     // fora do Perfil bíblico: recusado
     const sq = (await chamar({ acao: "criar", programa, codigo: "codigo-de-teste" })).dados;
     assert.equal((await chamar({ acao: "modo-dicas", sessao: sq.sessao, chave: sq.chave, parte: 2, sorteio: true })).status, 400); passo("sorteio de dicas só vale no Perfil bíblico");

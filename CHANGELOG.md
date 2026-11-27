@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.15.13
+
+- **Jogos com dicas já começam com a 1ª dica:** no jogo ao vivo (Jogos bíblicos e Adoração em família), toda questão que depende de dicas, como no **Perfil bíblico**, abre mostrando a Dica 1, valendo o máximo de pontos, sem esperar o administrador. Antes, isso só acontecia no "Quem sou eu?". No sorteio de dicas do Perfil, a Dica 1 já conta como saída e os sorteios trazem as outras. O jogo sem compartilhar já começava assim.
+
 ## 6.15.12
 
 - **Avisos sempre centralizados em todo o app:** as mensagens de andamento, sucesso e erro (por exemplo "⏳ A IA está preparando o jogo…") ficam no centro. Um aviso que aparece numa linha de botões passa para uma linha própria, embaixo, e os botões continuam na largura toda.
