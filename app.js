@@ -7964,7 +7964,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.14.84'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.14.85'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -22122,7 +22122,7 @@ function saveTemplatesToStorage() {
       { id: 'dirigentes', titulo: '🎤 Dirigentes', imagem: 'icone-dirigentes.png?v=1', cor: '#14b8a6', tipos: ['dirigente', 'ebc-dirigente'], soDirigente: true },
       { id: 'esbocos', titulo: '📜 Esboços', imagem: 'icone-discursos.png?v=2', cor: '#f59e0b', tipos: ['esboco'], soDirigente: true },
       // Adoração em Família (6.11.12): as 3 opções de cada preparo; não dependem da semana escolhida.
-      { id: 'familia', titulo: '👨‍👩‍👧 Adoração em Família', imagem: 'icone-adoracao.png?v=2', cor: '#e11d48', tipos: ['familia'], semSemana: true, familia: true }
+      { id: 'familia', titulo: '👨‍👩‍👧 Adoração em Família', imagem: 'icone-adoracao.png?v=3', cor: '#e11d48', tipos: ['familia'], semSemana: true, familia: true }
     ];
     const historicoAbertas = { textos: false, anotacoes: false, comentarios: false, dirigentes: false, esbocos: false, familia: false }; // lembra quais estão abertas ao refazer a lista
     // 6.14.67: o título de uma categoria; as que têm desenho próprio mostram a imagem no lugar do emoji.

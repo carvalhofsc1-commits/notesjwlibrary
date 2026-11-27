@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.85
+
+- **Adoração em família:** novo desenho do ícone (família escrevendo à mesa). Os anteriores ficam guardados em `icones-guardados/` (`icone-adoracao-v1.png` e `-v2.png`).
+
 ## 6.14.84
 
 - **Assistente de leitura em voz:** ícone próprio (megafone) no atalho, no menu, no título da tela, nas configurações do administrador e na apresentação do app.
