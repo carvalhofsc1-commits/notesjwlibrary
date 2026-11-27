@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.15.21
+
+- Anotações → Reuniões: a lista das partes não mostra mais o começo da anotação. Fica só o tema, o orador e a congregação (quando houver) e o ✍️ quando a parte tem texto. O ✍️ não fica mais por cima da seta ›.
+
 ## 6.15.20
 
 - Anotações → Reuniões especiais: no card "Tema, orador e congregação" da parte não aparecem mais as "Partes da Vida e Ministério". No lugar delas, ficam o tipo de reunião escolhido e o tema principal cadastrado. Nas reuniões de meio e fim de semana, nada muda.

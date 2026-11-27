@@ -7964,7 +7964,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.15.20'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.15.21'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -37177,10 +37177,6 @@ function saveTemplatesToStorage() {
         if (!reuniaoTipoEscolhido || ['meio', 'fim'].includes(reuniaoTipoSel.value)) { reuniaoTipoSel.value = tipoPelaData(reuniaoNovaData.value); reuniaoTipoPintar(); }
       });
       const temaDaParteReuniao = (p, i) => String(p.tema || '').trim() || 'Parte ' + (i + 1);
-      function trechoDaParte(p) {
-        const linha = String(p.texto || '').split('\n').map(s => removeUnicodeFormatting(s).trim()).find(Boolean) || '';
-        return linha ? (linha.length > 70 ? linha.slice(0, 70) + '…' : linha) : 'Sem anotações';
-      }
       // Os campos de sempre mostram a parte aberta; ao sair dela (ou a cada digitação), o que está nos campos volta para a parte.
       function guardarParteReuniao() {
         if (reuniaoVista !== 'anotando') return;
@@ -37288,9 +37284,12 @@ function saveTemplatesToStorage() {
         caixa.className = 'anotacoes-evento-texto';
         const forte = document.createElement('strong');
         forte.textContent = titulo;
-        const peq = document.createElement('small');
-        peq.textContent = info;
-        caixa.append(forte, peq);
+        caixa.appendChild(forte);
+        if (info) {
+          const peq = document.createElement('small');
+          peq.textContent = info;
+          caixa.appendChild(peq);
+        }
         const seta = document.createElement('span');
         seta.className = 'anotacoes-evento-seta';
         seta.setAttribute('aria-hidden', 'true');
@@ -37324,7 +37323,7 @@ function saveTemplatesToStorage() {
           if (document.activeElement !== reuniaoTemaEl) reuniaoTemaEl.value = r.tema || '';
           reuniaoPartesEl.replaceChildren();
           r.partes.forEach((p, i) => {
-            const btn = botaoDeItem(String(i + 1) + '.', temaDaParteReuniao(p, i), [p.orador, trechoDaParte(p)].filter(Boolean).join(' · '), String(p.texto || '').trim() ? '✍️' : '');
+            const btn = botaoDeItem(String(i + 1) + '.', temaDaParteReuniao(p, i), [p.orador, p.congregacao].filter(Boolean).join(' · '), String(p.texto || '').trim() ? '✍️' : '');
             btn.querySelector('.anotacoes-evento-icone').classList.add('anot-reuniao-num');
             btn.addEventListener('click', () => abrirParteReuniao(p.id));
             reuniaoPartesEl.appendChild(linhaComLixeira(btn, () => reuniaoApagarParte(p.id), 'Apagar a parte ' + (i + 1)));

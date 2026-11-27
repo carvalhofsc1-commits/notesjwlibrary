@@ -5232,6 +5232,13 @@
       padding: 0;
     }
 
+    .anot-reuniao-item .anotacoes-parte-marca {
+      position: static;
+      flex: 0 0 auto;
+      margin: 0;
+      transform: none;
+    }
+
     .anot-reuniao-num {
       font-size: 1.05rem;
       font-weight: 800;
