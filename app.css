@@ -14542,6 +14542,48 @@ button.processando:disabled { opacity: 1; cursor: progress; }
   margin-top: 10px;
 }
 
+/* 6.15.07: Conta de faturamento e Modelos, cada um num cartão recolhível próprio. */
+.modelos-card {
+  border: 1px solid color-mix(in srgb, #7c3aed 40%, var(--line));
+  border-radius: 14px;
+  padding: 0 10px;
+  margin: 10px 0 0;
+  background: var(--card);
+}
+.modelos-card[open] { padding-bottom: 10px; }
+.modelos-card > summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  -webkit-tap-highlight-color: transparent;
+}
+.modelos-card > summary::-webkit-details-marker { display: none; }
+.modelos-card > summary::after {
+  content: '▸';
+  color: var(--muted);
+  font-size: 1.2rem;
+  transition: transform .15s ease;
+}
+.modelos-card[open] > summary::after { transform: rotate(90deg); }
+.modelos-card > summary .modelos-ia-titulo { margin: 10px 0; text-align: center; }
+.modelos-card > .hint { margin: 8px 0 0; }
+/* As linhas de rótulo da tabela (Texto, Voz e áudio, Pesquisas) em roxo claro. */
+#modelosIaSection#modelosIaSection .modelos-editar-tabela tr.modelos-resumo-secao th {
+  background: color-mix(in srgb, #8b5cf6 16%, var(--card)); background-image: none;
+}
+/* Sites de preferência: moldura própria; o botão de voltar à lista padrão na largura toda. */
+.modelos-card .pesq-sites-bloco {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px;
+  margin: 12px 0 0;
+  background: color-mix(in srgb, var(--muted) 5%, var(--card));
+}
+#iaPesquisaSitesPadraoBtn { width: 100%; margin-top: 8px; }
+
 .modelos-editar-acoes button {
   flex: 1 1 0;
 }

@@ -1947,11 +1947,20 @@
           <summary><span class="adm-titulo">✨ Modelos e agentes de IA&nbsp;<span class="adm-icone" role="img" aria-label="Exclusivo do administrador" title="Exclusivo do administrador">🛡️</span></span></summary>
           <div class="subsection-body modelos-ia-body">
             <div class="modelos-editar">
+              <details class="modelos-card" id="modelosContaCard">
+                <summary><span class="modelos-ia-titulo">🔑 Conta de faturamento</span></summary>
+                <table class="modelos-resumo-tabela modelos-editar-tabela">
+                  <tbody>
+                    <tr><th scope="row"><label for="iaProvedor">Texto</label></th><td><select id="iaProvedor"></select></td></tr>
+                    <tr><th scope="row"><label for="googleContaSelect">Voz e áudio</label></th><td><select id="googleContaSelect"></select></td></tr>
+                  </tbody>
+                </table>
+                <p class="hint">Não há troca automática de conta: se a escolhida falhar, o app mostra o erro. Com o texto no Claude Platform, as etapas que usam um modelo Gemini seguem a conta de Voz e áudio.</p>
+              </details>
+              <details class="modelos-card" id="modelosModelosCard">
+                <summary><span class="modelos-ia-titulo">🧠 Modelos</span></summary>
               <table class="modelos-resumo-tabela modelos-editar-tabela">
                 <tbody>
-                  <tr class="modelos-resumo-secao"><th colspan="2" scope="colgroup">🔑 Contas</th></tr>
-                  <tr><th scope="row"><label for="iaProvedor">Texto</label></th><td><select id="iaProvedor"></select></td></tr>
-                  <tr><th scope="row"><label for="googleContaSelect">Voz e áudio</label></th><td><select id="googleContaSelect"></select></td></tr>
                   <tr class="modelos-resumo-secao"><th colspan="2" scope="colgroup">✍️ Texto</th></tr>
                   <tr><th scope="row"><label for="iaModelo">Uso geral</label></th><td><select id="iaModelo"></select><select id="iaEsforco" aria-label="Esforço do uso geral"></select></td></tr>
                   <tr><th scope="row"><label for="iaEsbocoModelo">Esboços, dirigir, texto diário e resumo do capítulo</label></th><td><select id="iaEsbocoModelo"></select><select id="iaEsbocoEsforco" aria-label="Esforço dos esboços e do dirigir"></select></td></tr>
@@ -1960,20 +1969,20 @@
                   <tr><th scope="row"><label for="vozModelo">Assistente de leitura em voz</label></th><td><select id="vozModelo"></select><select id="vozVoz" aria-label="Voz da leitura"></select></td></tr>
                   <tr><th scope="row"><label for="iaAudioMotor">Áudio: transcrição</label></th><td><select id="iaAudioMotor"></select><select id="iaAudioGeminiModelo" aria-label="Modelo Gemini da transcrição"></select></td></tr>
                   <tr><th scope="row"><label for="iaAudioModelo">Áudio: resumo</label></th><td><select id="iaAudioModelo"></select></td></tr>
-                  <tr class="modelos-resumo-secao"><th colspan="2" scope="colgroup">🔎 Assistente de pesquisas</th></tr>
+                  <tr class="modelos-resumo-secao"><th colspan="2" scope="colgroup">🔎 Pesquisas</th></tr>
                   <tr><th scope="row"><label for="iaPesquisaModelo">Pesquisa (buscas)</label></th><td><select id="iaPesquisaModelo"></select></td></tr>
                   <tr><th scope="row"><label for="iaPesquisaWebModelo">Busca na internet</label></th><td><select id="iaPesquisaWebModelo"></select></td></tr>
                   <tr><th scope="row"><label for="iaPesquisaRespostaModelo">Resposta final</label></th><td><select id="iaPesquisaRespostaModelo"></select><select id="iaPesquisaRespostaEsforco" aria-label="Esforço da resposta final da pesquisa"></select></td></tr>
                   <tr><th scope="row"><label for="iaPesquisaVideoModelo">Vídeo: transcrição e resumo</label></th><td><select id="iaPesquisaVideoModelo"></select></td></tr>
                 </tbody>
               </table>
-              <p class="hint">Não há troca automática de conta: se a escolhida falhar, o app mostra o erro. Com o texto no Claude Platform, as etapas que usam um modelo Gemini seguem a conta de Voz e áudio.</p>
               <div class="pesq-sites-bloco">
                 <label for="iaPesquisaSites" class="pesq-sites-rotulo">🌐 Sites de preferência na busca na internet</label>
                 <p class="hint">Um por linha. A IA dá preferência a eles; o que vier de outros sites também entra, sempre com a fonte identificada, e o usuário decide se leva em conta.</p>
                 <textarea id="iaPesquisaSites" class="pesq-sites" rows="6" spellcheck="false" autocomplete="off"></textarea>
                 <button id="iaPesquisaSitesPadraoBtn" class="secondary pesq-fino" type="button">↩️ Voltar à lista padrão</button>
               </div>
+              </details>
               <div class="button-row modelos-editar-acoes">
                 <button id="iaTestarBtn" class="secondary" type="button">🧪 Testar o texto</button>
                 <button id="vozExemploBtn" class="secondary" type="button">▶️ Ouvir a voz</button>
