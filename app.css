@@ -18724,3 +18724,7 @@ body.so-usuario .usuario-tela > summary.acesso-site-resumo::before { content: no
 /* 6.14.77: o card Autorização de acessos com o fundo vermelho claro */
 #settingsCard #acessosSection.acessos-box { border-color: #f87171 !important; background: color-mix(in srgb, #ef4444 14%, var(--card)) !important; }
 #settingsCard #acessosSection.acessos-box > summary { background: color-mix(in srgb, #ef4444 20%, var(--card)) !important; }
+/* 6.14.79: moldura mais escura no card "Assunto desta semana" (a base da matéria da adoração) */
+#familiaCard .fam-assunto-card { border: 1.5px solid #6b7280; }
+:root[data-theme="dark"] #familiaCard .fam-assunto-card { border-color: #94a3b8; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #familiaCard .fam-assunto-card { border-color: #94a3b8; } }

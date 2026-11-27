@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.79
+
+- **Adoração em família:** o card **Assunto desta semana** ganhou uma moldura mais escura.
+
 ## 6.14.78
 
 - **Ajustes e Pesquisas salvas:** os títulos com ícone próprio (Leitura da Bíblia, Anotações, Comentários, Dirigentes, Esboços e Adoração em Família) voltaram a ficar alinhados à esquerda.
