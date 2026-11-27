@@ -18917,3 +18917,12 @@ body.so-usuario .usuario-tela > summary.acesso-site-resumo::before { content: no
 :is(.fam-sessao-painel, .jogos-grupo) .fam-acoes.fam-acoes > button.fam-principal { background: #ddd6fe !important; background-image: none !important; border-color: #a78bfa !important; color: #4c1d95 !important; font-weight: 700; }
 :root[data-theme="dark"] :is(.fam-sessao-painel, .jogos-grupo) .fam-acoes.fam-acoes > button.fam-principal { background: #2e2950 !important; border-color: #8b5cf6 !important; color: #ddd6fe !important; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) :is(.fam-sessao-painel, .jogos-grupo) .fam-acoes.fam-acoes > button.fam-principal { background: #2e2950 !important; border-color: #8b5cf6 !important; color: #ddd6fe !important; } }
+
+/* 6.15.12: textos de aviso (andamento, sucesso, erro) sempre centralizados em todo o app. Vale para os avisos marcados como
+   role="status" (parágrafos e os <span> de aviso .ok/.warn/.erro, que viram bloco quando têm texto) e para os avisos da Adoração e dos Jogos.
+   Ficam de fora o tocador da voz, o resumo dos dados do aparelho e as caixas com conteúdo próprio (listas e tabelas). */
+:is(#sv#sv, p[role="status"], span[role="status"]:is(.ok, .warn, .erro), .fam-trocar-aviso, .fam-status, .fam-mic-aviso, .pesq-status) { text-align: center; }
+span[role="status"]:is(.ok, .warn, .erro):not(:empty):not(.main-copy-status) { display: block; }
+.pesq-status { justify-content: center; }
+/* Aviso dentro de uma linha de botões: vai para uma linha própria, embaixo, para os botões continuarem na largura toda. */
+.button-row > span[role="status"]:is(.ok, .warn, .erro):not(:empty) { flex: 1 1 100%; }

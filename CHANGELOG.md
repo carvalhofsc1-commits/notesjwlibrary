@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.15.12
+
+- **Avisos sempre centralizados em todo o app:** as mensagens de andamento, sucesso e erro (por exemplo "⏳ A IA está preparando o jogo…") ficam no centro. Um aviso que aparece numa linha de botões passa para uma linha própria, embaixo, e os botões continuam na largura toda.
+
 ## 6.15.11
 
 - **Listas de modelos em ordem de superioridade:** o mais capaz no topo e o mais simples no fim (Fable 5.1, Gemini 4 Carbon, Opus 5.5, Gemini 4 Argon, Gemini 4 Neon, Sonnet 5.5, Gemini 4 Hydrogen, Gemini 3.1 Pro, Gemini 3.8 Flash, Gemini 3.5 Flash, Haiku 5.5 e Gemini 3.1 Flash Lite). Nas listas de uma família só, vale a mesma ordem.
