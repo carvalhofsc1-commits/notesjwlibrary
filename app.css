@@ -4757,7 +4757,8 @@
 
     /* Campo de data no iPhone: o Safari dá ao campo uma largura própria e ele sai da tela; aqui ele segue a largura da caixa. */
     .anotacoes-data input[type="date"],
-    #anotacoesDataReuniao {
+    #anotacoesDataReuniao,
+    #anotReuniaoNovaData {
       display: block;
       -webkit-appearance: none;
       appearance: none;
@@ -4770,7 +4771,8 @@
     }
 
     .anotacoes-data input[type="date"]::-webkit-date-and-time-value,
-    #anotacoesDataReuniao::-webkit-date-and-time-value {
+    #anotacoesDataReuniao::-webkit-date-and-time-value,
+    #anotReuniaoNovaData::-webkit-date-and-time-value {
       min-height: 1.3em;
       text-align: center;
     }
@@ -5189,6 +5191,7 @@
     }
 
     .anot-reuniao-nova input,
+    .anot-reuniao-nova select,
     .anot-reuniao-nova button,
     .anot-reuniao-largo {
       width: 100%;

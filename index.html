@@ -246,6 +246,18 @@
             <div class="anot-reuniao-nova">
               <label for="anotReuniaoNovaData">Data da reunião</label>
               <input id="anotReuniaoNovaData" type="date">
+              <label for="anotReuniaoTipo">Tipo de reunião</label>
+              <select id="anotReuniaoTipo">
+                <option value="meio">Reunião do meio de semana</option>
+                <option value="fim">Reunião do fim de semana</option>
+                <option value="pioneiros-circuito">Reunião anual com pioneiros do circuito</option>
+                <option value="pioneiros-visita">Reunião com pioneiros na visita do superintendente</option>
+                <option value="servos-anciaos-visita">Reunião com servos e anciãos na visita do superintendente</option>
+                <option value="pioneiros-congregacao">Reunião anual com pioneiros regulares da congregação</option>
+                <option value="anciaos-trimestral">Reunião trimestral do corpo de anciãos</option>
+                <option value="outra">Outra reunião</option>
+              </select>
+              <input id="anotReuniaoOutro" type="text" autocomplete="off" placeholder="Nome da reunião" aria-label="Nome da outra reunião" hidden>
               <button id="anotReuniaoNovaBtn" type="button">➕ Nova reunião</button>
             </div>
             <h3 id="anotReuniaoItensTitulo" class="anotacoes-subtitulo">🗂️ Reuniões anotadas</h3>

@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.15.18
+
+- Anotações → Reuniões: no cadastro, o "Tipo de reunião". Meio e fim de semana (escolhido pela data); reunião anual com pioneiros do circuito; com pioneiros na visita do superintendente; com servos e anciãos na visita do superintendente; anual com pioneiros regulares da congregação; trimestral do corpo de anciãos; e "Outra reunião", com campo para o nome. As reuniões especiais aparecem com 🤝 na lista, e o tipo vai no título do Salvar e no Word.
+- iPhone: o campo "Data da reunião" do cadastro passava da borda do card. Agora fica na largura do card, como os outros campos de data das Anotações.
+
 ## 6.15.17
 
 - Anotações → Reuniões congregacionais em partes, no molde da assembleia: primeiro se cadastra a reunião (data; a de hoje já vem preenchida) e aparece a lista das reuniões anotadas. Cada reunião tem a sua lista de partes (tema, orador e o começo da anotação, ✍️ quando já tem texto), com ➕ Nova parte, 🗑️ por parte e 📄 Exportar anotações da reunião (Word com todas as partes).
