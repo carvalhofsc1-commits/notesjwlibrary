@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.15.11
+
+- **Listas de modelos em ordem de superioridade:** o mais capaz no topo e o mais simples no fim (Fable 5.1, Gemini 4 Carbon, Opus 5.5, Gemini 4 Argon, Gemini 4 Neon, Sonnet 5.5, Gemini 4 Hydrogen, Gemini 3.1 Pro, Gemini 3.8 Flash, Gemini 3.5 Flash, Haiku 5.5 e Gemini 3.1 Flash Lite). Nas listas de uma família só, vale a mesma ordem.
+
 ## 6.15.10
 
 - **Conta de texto do Claude só com modelos Claude:** com o Texto em Anthropic (Claude), os seletores com modelo Gemini (e o motor Gemini da transcrição) ficam com moldura vermelha e ⚠️, e o **Salvar para todos** recusa gravar até trocá-los, dizendo quais são. O servidor confere a mesma regra.

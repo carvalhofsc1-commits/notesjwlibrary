@@ -300,7 +300,8 @@ async function dolarDoDia() {
 export async function custosDeReferencia() {
   const ia = await lerConfigIa();
   const voz = await lerConfigVoz();
-  const modeloDe = (id) => MODELOS_IA.find((m) => m.id === id) || MODELOS_IA[0];
+  // Modelo desconhecido: o preço do Haiku (o mais barato; a lista está em ordem de superioridade desde a 6.15.11, então não é o 1º).
+  const modeloDe = (id) => MODELOS_IA.find((m) => m.id === id) || MODELOS_IA.find((m) => m.id === "claude-haiku-5-5");
   const texto = modeloDe(ia.modelo);
   const esbocos = modeloDe(iaDaTarefa(ia, "tesouros").modelo);
   const vozModelo = MODELOS_VOZ.find((m) => m.id === voz.modelo) || MODELOS_VOZ[0];

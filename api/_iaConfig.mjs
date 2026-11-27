@@ -9,22 +9,24 @@ const VALIDADE_MS = 20_000;
 
 // Preços da Anthropic em US$ por milhão de tokens (entrada / saída), para a tela comparar os modelos. O Haiku 5.5 vale
 // para pedidos de até 100 mil tokens (os deste app são bem menores).
+// 6.15.11: a lista está em ordem de superioridade (pedido do usuário): o mais capaz no topo e o mais simples no fim, misturando as famílias.
+// As listas da tela seguem esta ordem; ao incluir um modelo, colocá-lo na posição certa. Os preços do Gemini são de referência (tabela
+// pública do Google, variam por faixa de uso e região) e os marcados "estimado" não têm preço público confirmado (a tela avisa; o
+// faturamento aos membros usa a estimativa). O gasto real está no faturamento do Google Cloud.
 export const MODELOS_IA = [
-  { familia: "claude", id: "claude-haiku-5-5", nome: "Haiku 5.5: rápida e econômica", entrada: 0.1, saida: 0.5 },
-  { familia: "claude", id: "claude-sonnet-5-5", nome: "Sonnet 5.5: equilíbrio entre qualidade e custo", entrada: 2, saida: 10 },
-  { familia: "claude", id: "claude-opus-5-5", nome: "Opus 5.5: a mais potente para respostas", entrada: 4, saida: 20 },
   { familia: "claude", id: "claude-fable-5-1", nome: "Fable 5.1: a mais capaz, mais lenta e mais cara", entrada: 10, saida: 50 },
-  // Preços do Gemini: valores de referência da tabela pública do Google (variam por faixa de uso e região); o gasto real está no faturamento do Google Cloud.
-  { familia: "gemini", id: "gemini-3.1-flash-lite", nome: "Gemini 3.1 Flash Lite: a mais rápida e econômica", entrada: 0.25, saida: 1.5 },
-  { familia: "gemini", id: "gemini-3.5-flash", nome: "Gemini 3.5 Flash: equilíbrio entre qualidade e custo", entrada: 1.5, saida: 9 },
-  { familia: "gemini", id: "gemini-3.1-pro-preview", nome: "Gemini 3.1 Pro: capaz, mais lenta e mais cara", entrada: 2, saida: 12 },
-  // Sem preço público confirmado no app: valores estimados (a tela avisa); o faturamento aos membros usa esta estimativa.
-  { familia: "gemini", id: "gemini-3.8-flash", nome: "Gemini 3.8 Flash: a Flash mais nova", entrada: 1.5, saida: 9, estimado: true },
-  { familia: "gemini", id: "gemini-4-argon", nome: "Gemini 4 Argon: muito potente, para tarefas longas", entrada: 2, saida: 12, estimado: true },
   { familia: "gemini", id: "gemini-4-carbon", nome: "Gemini 4 Carbon: a mais potente do Google", entrada: 2, saida: 12, estimado: true },
-  // 6.12.83: aparecem no Model Garden da conta da empresa e respondem (teste simples e estruturado); preços estimados, como os outros Gemini 4.
+  { familia: "claude", id: "claude-opus-5-5", nome: "Opus 5.5: a mais potente para respostas", entrada: 4, saida: 20 },
+  { familia: "gemini", id: "gemini-4-argon", nome: "Gemini 4 Argon: muito potente, para tarefas longas", entrada: 2, saida: 12, estimado: true },
+  // 6.12.83: Neon e Hydrogen aparecem no Model Garden e respondem (teste simples e estruturado); preços estimados, como os outros Gemini 4.
   { familia: "gemini", id: "gemini-4-neon", nome: "Gemini 4 Neon: da nova linha 4 do Google", entrada: 2, saida: 12, estimado: true },
+  { familia: "claude", id: "claude-sonnet-5-5", nome: "Sonnet 5.5: equilíbrio entre qualidade e custo", entrada: 2, saida: 10 },
   { familia: "gemini", id: "gemini-4-hydrogen", nome: "Gemini 4 Hydrogen: da nova linha 4 do Google, rápida", entrada: 1.5, saida: 9, estimado: true },
+  { familia: "gemini", id: "gemini-3.1-pro-preview", nome: "Gemini 3.1 Pro: capaz, mais lenta e mais cara", entrada: 2, saida: 12 },
+  { familia: "gemini", id: "gemini-3.8-flash", nome: "Gemini 3.8 Flash: a Flash mais nova", entrada: 1.5, saida: 9, estimado: true },
+  { familia: "gemini", id: "gemini-3.5-flash", nome: "Gemini 3.5 Flash: equilíbrio entre qualidade e custo", entrada: 1.5, saida: 9 },
+  { familia: "claude", id: "claude-haiku-5-5", nome: "Haiku 5.5: rápida e econômica", entrada: 0.1, saida: 0.5 },
+  { familia: "gemini", id: "gemini-3.1-flash-lite", nome: "Gemini 3.1 Flash Lite: a mais rápida e econômica", entrada: 0.25, saida: 1.5 },
 ];
 const MODELO_PADRAO_GEMINI = "gemini-3.5-flash";
 

@@ -7964,7 +7964,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.15.10'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.15.11'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -14530,7 +14530,7 @@ function saveTemplatesToStorage() {
       iaMarcarIncompativeis();
       if (!iaModeloPreco || !iaEsbocoPreco) return; // a tela enxuta não mostra os preços
       const modelos = iaModelosDaFamilia();
-      const maisBarato = modelos[0] || { nome: '', saida: 1 };
+      const maisBarato = modelos.reduce((a, b) => (!a || b.saida < a.saida ? b : a), null) || { nome: '', saida: 1 }; // a lista vem do mais capaz ao mais simples
       const nomeBase = maisBarato.nome.split(':')[0];
       const m = modelos.find(x => x.id === iaModelo.value);
       if (!m) iaModeloPreco.textContent = '';
@@ -14593,13 +14593,14 @@ function saveTemplatesToStorage() {
       if (esforco) iaEsforco.value = esforco;
       iaEsbocoEsforco.value = esforcoEsboco || '';
     }
-    // Trocar o provedor troca a lista de modelos: volta ao salvo, se for da mesma família; senão, ao de equilíbrio (o 2º da lista).
+    // Trocar o provedor troca a lista de modelos: volta ao salvo, se for da mesma família; senão, ao de equilíbrio (o penúltimo da lista).
     iaProvedor.addEventListener('change', () => {
       iaDisponiveis = null; // a lista de outro provedor não vale: completa até o servidor conferir de novo
       iaPreencherSelects();
       const lista = iaModelosDaFamilia();
       const salvoServe = iaSalvo && lista.some(x => x.id === iaSalvo.modelo);
-      iaModelo.value = salvoServe ? iaSalvo.modelo : (lista[1] || lista[0] || {}).id || '';
+      // A lista vai do mais capaz ao mais simples (6.15.11): o de equilíbrio é o penúltimo (Sonnet 5.5 no Claude, Gemini 3.5 Flash no Gemini).
+      iaModelo.value = salvoServe ? iaSalvo.modelo : (lista[lista.length - 2] || lista[0] || {}).id || '';
       iaEsbocoModelo.value = iaSalvo && lista.some(x => x.id === iaSalvo.esbocoModelo) ? iaSalvo.esbocoModelo : '';
       iaAudioModelo.value = iaSalvo && lista.some(x => x.id === iaSalvo.audioModelo) ? iaSalvo.audioModelo : '';
       document.getElementById('iaTesteResultado').textContent = '';
