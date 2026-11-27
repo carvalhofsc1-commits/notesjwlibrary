@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.15.14
+
+- **Perfil bíblico com dicas sorteadas:** a dica com que a questão abre também é sorteada. Vale ao ligar o sorteio (nas questões que ainda estão no começo) e ao reiniciar uma questão ou o jogo; os sorteios seguintes trazem as dicas que faltam.
+
 ## 6.15.13
 
 - **Jogos com dicas já começam com a 1ª dica:** no jogo ao vivo (Jogos bíblicos e Adoração em família), toda questão que depende de dicas, como no **Perfil bíblico**, abre mostrando a Dica 1, valendo o máximo de pontos, sem esperar o administrador. Antes, isso só acontecia no "Quem sou eu?". No sorteio de dicas do Perfil, a Dica 1 já conta como saída e os sorteios trazem as outras. O jogo sem compartilhar já começava assim.

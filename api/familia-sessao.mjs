@@ -125,6 +125,23 @@ function abrirComPrimeiraDica(e, programa, so = null) {
       e.dicas = { ...(e.dicas || {}) };
       e.dicas[parte] = { ...(e.dicas[parte] || {}), [rodada]: Math.max(1, Number((e.dicas[parte] || {})[rodada]) || 0) };
     });
+    if ((e.sorteioDicas || {})[parte]) sortearPrimeiraDica(e, programa, parte, so && so.rodada !== undefined ? so.rodada : null);
+  });
+}
+
+// 6.15.14: com as dicas sorteadas (Perfil bíblico), a dica com que a questão abre também é sorteada. Só nas questões ainda no começo
+// (sem resposta, com no máximo 1 dica dada e sem sorteio feito); "soRodada" limita a uma questão.
+function sortearPrimeiraDica(e, programa, parte, soRodada = null) {
+  const jogo = programa && programa.partes && programa.partes[parte] && programa.partes[parte].jogo;
+  (jogo && jogo.rodadas || []).forEach((r, rodada) => {
+    if (soRodada !== null && soRodada !== rodada) return;
+    const total = (String((r && r.pergunta) || "").match(/Dica\s*\d+\s*:/gi) || []).length;
+    if (!total || ((e.reveladas || {})[parte] || {})[rodada]) return;
+    if ((Number(((e.dicas || {})[parte] || {})[rodada]) || 0) > 1 || Array.isArray(((e.dicasOrdem || {})[parte] || {})[rodada])) return;
+    e.dicasOrdem = { ...(e.dicasOrdem || {}) };
+    e.dicasOrdem[parte] = { ...(e.dicasOrdem[parte] || {}), [rodada]: [randomInt(total)] };
+    e.dicas = { ...(e.dicas || {}) };
+    e.dicas[parte] = { ...(e.dicas[parte] || {}), [rodada]: 1 };
   });
 }
 
@@ -944,8 +961,10 @@ async function atender(req, res) {
       const sorteio = corpo.sorteio === true;
       return gravarEstado((e) => {
         e.sorteioDicas = { ...(e.sorteioDicas || {}) };
-        if (sorteio) e.sorteioDicas[parte] = true;
-        else delete e.sorteioDicas[parte];
+        if (sorteio) {
+          e.sorteioDicas[parte] = true;
+          sortearPrimeiraDica(e, programa, parte); // 6.15.14: as questões que ainda estão no começo passam a abrir com uma dica sorteada
+        } else delete e.sorteioDicas[parte];
       });
     }
 
