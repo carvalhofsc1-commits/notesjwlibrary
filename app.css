@@ -18776,3 +18776,8 @@ body.so-usuario .usuario-tela > summary.acesso-site-resumo::before { content: no
 #familiaCard #familiaDirigindoBox > summary { justify-content: center; flex-wrap: wrap; column-gap: 6px; text-align: center; font-size: clamp(.8rem, 4vw, .98rem); line-height: 1.25; }
 #familiaCard #familiaDirigindoBox:not([open]) { padding-top: 0; padding-bottom: 0; }
 #familiaCard #familiaDirigindoBox:not([open]) > summary { min-height: 32px; }
+/* 6.14.97: os quatro cartões de abrir (compartilhadas, informações da família, participar e programações salvas) com a mesma altura */
+#familiaCard :is(#familiaDirigindoBox, #familiaSalvasBox, #familiaPerfilBox):not([open]),
+#familiaCard #familiaParticiparBtn#familiaParticiparBtn { min-height: 46px; box-sizing: border-box; }
+#familiaCard :is(#familiaDirigindoBox, #familiaSalvasBox):not([open]) > summary { min-height: 44px; }
+#familiaCard #familiaParticiparBtn#familiaParticiparBtn .fam-hub-desc { font-size: clamp(.56rem, 2.9vw, .7rem); } /* numa linha só, para não crescer em tela estreita */

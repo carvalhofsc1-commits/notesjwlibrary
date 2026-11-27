@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.97
+
+- **Adoração em família:** os quatro cartões (Adorações compartilhadas, Informações sobre a família, Participar de uma adoração e Programações salvas) têm a mesma altura quando recolhidos.
+
 ## 6.14.96
 
 - **Adoração em família:** o card **Adorações compartilhadas** tem o nome centralizado e, recolhido, ficou mais fino.
