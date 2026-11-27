@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.94
+
+- **Tela de apresentação (convidado):** a seta passou para depois do texto: **Voltar para a adoração ▶**.
+
 ## 6.14.93
 
 - **Tela de apresentação (convidado):** a seta do botão **Voltar para a adoração** (ou para o jogo) agora aponta para a direita.
