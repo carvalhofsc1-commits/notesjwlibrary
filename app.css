@@ -18765,3 +18765,10 @@ body.so-usuario .usuario-tela > summary.acesso-site-resumo::before { content: no
 /* 6.14.92: a apresentação e o cadastro rolam pela tela toda: o cartão não é uma área de rolagem própria (com o "contain" das janelas de
    aviso, o arrasto ficava preso no cartão, que não tinha o que rolar) */
 .acesso-site-overlay > .modal-card.acesso-site-card { max-height: none; overflow: visible; overscroll-behavior: auto; }
+/* 6.14.95: no card da questão do jogo ao vivo, 10 px entre todos os campos (na vertical e lado a lado) */
+#participarSessao li.fam-sessao-questao:not([hidden]) { display: flex; flex-direction: column; gap: 10px; }
+#participarSessao li.fam-sessao-questao > * { margin-top: 0 !important; margin-bottom: 0 !important; }
+#participarSessao li.fam-sessao-questao :is(.fam-sessao-ctrl-box, .fam-sessao-resp-box, .fam-sessao-responder):not([hidden]) { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+#participarSessao li.fam-sessao-questao :is(.fam-sessao-ctrl-box, .fam-sessao-resp-box, .fam-sessao-responder) > * { margin: 0 !important; }
+#participarSessao li.fam-sessao-questao :is(.fam-sessao-acerto, .fam-sessao-ver-linha, .fam-sessao-resp-linha, .fam-sessao-pe-questao, .fam-acoes-dupla) { gap: 10px; }
+#participarSessao li.fam-sessao-questao .fam-sessao-ver-linha > * { margin: 0 !important; }

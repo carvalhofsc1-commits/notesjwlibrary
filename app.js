@@ -7964,7 +7964,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.14.94'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.14.95'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -30229,6 +30229,11 @@ function saveTemplatesToStorage() {
       return { nome: nomeCurto, titulo: /^jogo b[ií]blico$/i.test(titulo) || curto(titulo) === nomeCurto ? '' : titulo, emojis };
     }
     const NINGUEM_ACERTOU = '__ninguem__'; // valor da opção "Ninguém acertou" no seletor de quem acertou
+    // 6.14.95: o presidente (ou administrador) com o 👥 ligado: dar dica, revelar e pontuar levam todos para a questão
+    function participarLevaTodos(parteIdx) {
+      const ref = participar.jogos.get(parteIdx);
+      return Boolean(participar.dirigente && !(participar.programa && participar.programa.solo) && (!ref || ref.sync !== false));
+    }
     function participarJogoMontar(j, parteIdx) {
       const caixa = document.createElement('div');
       caixa.className = 'fam-jogo fam-sessao-jogo';
@@ -30669,7 +30674,7 @@ function saveTemplatesToStorage() {
               btnDica = document.createElement('button');
               btnDica.type = 'button';
               btnDica.className = 'secondary fam-fino fam-sessao-revelar fam-sessao-dar-dica';
-              btnDica.addEventListener('click', () => participarAcao({ acao: (participar.estado && participar.estado.sorteioDicas && participar.estado.sorteioDicas[parteIdx]) ? 'sortear-dica' : 'dica', parte: parteIdx, rodada: k }, btnDica));
+              btnDica.addEventListener('click', () => participarAcao({ acao: (participar.estado && participar.estado.sorteioDicas && participar.estado.sorteioDicas[parteIdx]) ? 'sortear-dica' : 'dica', parte: parteIdx, rodada: k, levar: participarLevaTodos(parteIdx) }, btnDica));
               if (solo && respBox) respBox.insertBefore(btnDica, respBox.firstChild); // sozinho: o botão da dica no mesmo quadro da resposta (mesma largura)
               else ctrlBox.appendChild(btnDica);
               // Quem acertou: escolhe o nome e pontua (os pontos de agora); a resposta é revelada junto. (Sozinho não há "quem acertou".)
@@ -30686,8 +30691,8 @@ function saveTemplatesToStorage() {
               btnPontuar.setAttribute('aria-label', 'Salvar quem acertou');
               btnPontuar.addEventListener('click', () => {
                 if (!sel.value) { participarStatus('Escolha quem acertou (ou Ninguém acertou).', 'erro'); return; }
-                if (sel.value === NINGUEM_ACERTOU) participarAcao({ acao: 'pontuar', parte: parteIdx, rodada: k, ninguem: true }, btnPontuar);
-                else participarAcao({ acao: 'pontuar', parte: parteIdx, rodada: k, nome: sel.value }, btnPontuar);
+                if (sel.value === NINGUEM_ACERTOU) participarAcao({ acao: 'pontuar', parte: parteIdx, rodada: k, ninguem: true, levar: participarLevaTodos(parteIdx) }, btnPontuar);
+                else participarAcao({ acao: 'pontuar', parte: parteIdx, rodada: k, nome: sel.value, levar: participarLevaTodos(parteIdx) }, btnPontuar);
               });
               sel.addEventListener('change', () => { btnPontuar.title = sel.value === NINGUEM_ACERTOU ? 'Salvar: ninguém acertou (revela a resposta)' : 'Salvar: dá os pontos a quem acertou e revela a resposta'; });
               linhaAcerto.append(sel, btnPontuar);
@@ -30700,7 +30705,7 @@ function saveTemplatesToStorage() {
             btn.className = 'secondary fam-fino fam-sessao-revelar';
             btn.innerHTML = ICONE_OLHO + ' Revelar'; // olho só de linhas; 6.13.45: rótulo curto, na linha do "Só para mim"
             btn.title = 'Revelar a resposta a todos';
-            btn.addEventListener('click', () => participarAcao({ acao: 'revelar', parte: parteIdx, rodada: k }, btn));
+            btn.addEventListener('click', () => participarAcao({ acao: 'revelar', parte: parteIdx, rodada: k, levar: participarLevaTodos(parteIdx) }, btn));
             // 6.12.06: ver a resposta só no aparelho do dirigente (os participantes não veem), para saber se alguém acertou.
             btnEspiar = document.createElement('button');
             btnEspiar.type = 'button';
@@ -30929,7 +30934,7 @@ function saveTemplatesToStorage() {
       } else if (participar.dirigente) {
         o.btnRevelar = botao('secondary fam-fino fam-ordem-revelar', null, async b => {
           if (!(await askConfirm('Revelar a ordem certa desta rodada a todos? Quem ainda não enviou fica sem enviar.', 'Revelar a ordem'))) return;
-          participarAcao({ acao: 'revelar-ordem', parte: parteIdx, rodada: k }, b);
+          participarAcao({ acao: 'revelar-ordem', parte: parteIdx, rodada: k, levar: participarLevaTodos(parteIdx) }, b);
         });
         o.btnRevelar.innerHTML = ICONE_OLHO + ' Revelar a ordem a todos';
       }
@@ -31290,7 +31295,9 @@ function saveTemplatesToStorage() {
           const prim = ref.rodadas.findIndex((_, k) => !respK(k));
           // 6.14.11: na partida sozinho retomada, a mesma questão de onde saiu
           const deAntes = familiaSolo && familiaSolo.cod === participar.cod ? familiaSolo.posicoes[i] : null;
-          ref.atual = deAntes != null ? deAntes : prim >= 0 ? prim : 0;
+          // 6.14.95: quem administra e reabre o app volta para a questão em que os outros foram levados
+          const focoAtual = participar.dirigente && !soloJogo && e.foco && e.foco[i] && ref.rodadas[e.foco[i].rodada] ? e.foco[i].rodada : null;
+          ref.atual = deAntes != null ? deAntes : focoAtual != null ? focoAtual : prim >= 0 ? prim : 0;
         }
         const sq0 = e.sorteioQuestao;
         if (sq0 && sq0.parte === i && ref.rodadas[sq0.rodada] && !respK(sq0.rodada)) {

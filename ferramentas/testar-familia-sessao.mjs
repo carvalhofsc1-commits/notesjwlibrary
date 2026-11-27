@@ -210,6 +210,17 @@ try {
   const d0 = await chamar({ acao: "dica", sessao, chave, parte: 2, rodada: 0 });
   assert.equal(d0.dados.estado.dicas[2][0], 1);
   assert.equal((await chamar({ acao: "dica", sessao, chave, parte: 2, rodada: 9 })).status, 400); passo("rodada sem marcadores vale 1 dica; rodada inexistente recusada");
+  // 6.14.95: com o 👥 ligado ("levar"), a dica e o revelar levam todos para a questão; sem ele, ninguém sai do lugar
+  const semLevar = (await chamar({ acao: "dica", sessao, chave, parte: 2, rodada: 2 })).dados.estado;
+  assert.ok(!(semLevar.foco || {})[2], JSON.stringify(semLevar.foco));
+  const levou = (await chamar({ acao: "dica", sessao, chave, parte: 2, rodada: 0, levar: true })).dados.estado;
+  assert.equal(levou.foco[2].rodada, 0);
+  const levou2 = (await chamar({ acao: "revelar", sessao, chave, parte: 2, rodada: 2, levar: true })).dados.estado;
+  assert.equal(levou2.foco[2].rodada, 2);
+  assert.ok(levou2.foco[2].n > levou.foco[2].n); passo("dica e revelar com o 👥 ligado levam todos para a questão");
+  await chamar({ acao: "reiniciar", sessao, chave, parte: 2, rodada: 2 });
+  await chamar({ acao: "dica", sessao, chave, parte: 2, rodada: 2 });
+  await chamar({ acao: "dica", sessao, chave, parte: 2, rodada: 2 });
 
   // Pontuar (6.11.97): quem acertou ganha total − dicas dadas + 1 e a resposta é revelada
   assert.equal((await chamar({ acao: "pontuar", sessao, parte: 2, rodada: 2, nome: "Ana" })).status, 403); passo("pontuar sem a chave do dirigente recusado");

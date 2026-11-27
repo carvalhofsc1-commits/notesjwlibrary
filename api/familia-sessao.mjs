@@ -820,6 +820,12 @@ async function atender(req, res) {
     if (!(await exigirDirigente())) return;
     const programa = ["liberar", "bloquear", "revelar", "revelar-ordem", "dica", "pontuar", "reiniciar", "sortear", "sortear-questao", "limpar-sorteio", "cronometro", "julgar", "sortear-dica", "modo-dicas", "julgamento-ia", "foco"].includes(acao) ? await lerJson(caminho(cod, "programa.json")) : null;
     const parteValida = (i) => programa && Number.isInteger(i) && i >= 0 && i < programa.partes.length;
+    // 6.14.95: dar dica, revelar ou pontuar com o 👥 ligado ("levar") também leva todos para a questão, senão quem está em outra não vê
+    const levarParaAQuestao = (e, parte, rodada) => {
+      if (corpo.levar !== true) return;
+      const f = e.foco && typeof e.foco === "object" ? e.foco : {};
+      e.foco = { ...f, [parte]: { rodada, n: (Number((f[parte] || {}).n) || 0) + 1 } };
+    };
     // 6.12.76: a referência secreta da rodada (respostas.json; sessões antigas não a têm) e a revelação dela junto com a resposta.
     const referenciaDaRodada = (parte, rodada) => String((((segredo && segredo.referencias) || {})[parte] || [])[rodada] || "");
     const revelarReferencia = (e, parte, rodada) => {
@@ -863,6 +869,7 @@ async function atender(req, res) {
         e.reveladas[parte] = { ...(e.reveladas[parte] || {}), [rodada]: respostas[rodada] };
         revelarReferencia(e, parte, rodada);
         fecharEnvio(e, parte, rodada, "");
+        levarParaAQuestao(e, parte, rodada);
       });
     }
 
@@ -873,7 +880,7 @@ async function atender(req, res) {
       if (!parteValida(parte)) return erro(res, 400, "Parte inválida.");
       const ordem = (((((segredo.extras || {}).ordens || {})[parte]) || [])[rodada]);
       if (!Array.isArray(ordem) || !rodadaDeOrdem(parte, rodada)) return erro(res, 400, "Esta rodada não tem ordem para revelar.");
-      return gravarEstado((e) => revelarOrdemDaRodada(e, parte, rodada, ordem));
+      return gravarEstado((e) => { levarParaAQuestao(e, parte, rodada); return revelarOrdemDaRodada(e, parte, rodada, ordem); });
     }
 
     // ----- espiar (6.12.06): só o dirigente vê a resposta da rodada, sem revelá-la aos participantes (nada é gravado no estado) -----
@@ -912,6 +919,7 @@ async function atender(req, res) {
       if (!Number.isInteger(rodada) || !r) return erro(res, 400, "Rodada inválida.");
       const total = Math.max(1, (String(r.pergunta).match(/Dica\s*\d+\s*:/gi) || []).length);
       return gravarEstado((e) => {
+        levarParaAQuestao(e, parte, rodada);
         e.dicas = e.dicas || {};
         const mapa = e.dicas[parte] || {};
         const dadas = Number(mapa[rodada]) || 0;
@@ -961,6 +969,7 @@ async function atender(req, res) {
         e.dicasOrdem[parte] = { ...(e.dicasOrdem[parte] || {}), [rodada]: [...jaSairam, sorteada] };
         e.dicas = e.dicas || {};
         e.dicas[parte] = { ...(e.dicas[parte] || {}), [rodada]: jaSairam.length + 1 };
+        levarParaAQuestao(e, parte, rodada);
       });
     }
 
@@ -988,6 +997,7 @@ async function atender(req, res) {
         e.reveladas[parte] = { ...(e.reveladas[parte] || {}), [rodada]: respostas[rodada] };
         revelarReferencia(e, parte, rodada);
         fecharEnvio(e, parte, rodada, ninguem ? "" : nome);
+        levarParaAQuestao(e, parte, rodada);
       });
     }
 
