@@ -14,7 +14,7 @@ export const URL_TOKEN = process.env.GOOGLE_TOKEN_URL || "https://oauth2.googlea
 const CHAVE = "google_conta";
 const VALIDADE_MS = 20_000;
 export const CONTAS = ["principal", "alternativa"];
-export const NOMES_CONTA = { principal: "conta da empresa", alternativa: "conta pessoal" };
+export const NOMES_CONTA = { principal: "conta empresa", alternativa: "conta pessoal" };
 const BUCKET_PADRAO = "notestyle-audio-512212"; // só para a conta principal, por compatibilidade
 const VARIAVEIS = {
   principal: { credenciais: "GOOGLE_TTS_CREDENCIAIS", apiKey: "GOOGLE_TTS_API_KEY", bucket: "GOOGLE_STT_BUCKET", projeto: "GOOGLE_PROJECT_ID" },

@@ -7964,7 +7964,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.15.05'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.15.06'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -12975,7 +12975,7 @@ function saveTemplatesToStorage() {
       }
     }
     // ---------- Ajustes → Conta do Google da voz e do áudio: a da empresa ou a pessoal ----------
-    const GOOGLE_CONTA_NOMES = { principal: 'Google - conta da empresa', alternativa: 'Google - conta pessoal' };
+    const GOOGLE_CONTA_NOMES = { principal: 'Google - conta empresa', alternativa: 'Google - conta pessoal' };
     // Um seletor na tabela de Modelos e agentes de IA; a conta não configurada aparece desabilitada.
     let googleContaSalva = null;
     function googleContaRender(d) {
@@ -37886,6 +37886,19 @@ function saveTemplatesToStorage() {
         if (typeof texto === 'string') { try { await bancoGravar('transc:' + item.id, texto); } catch (e) { /* ignore */ } }
         return texto;
       }
+      // Apaga uma transcrição do aparelho e do servidor (lixeira da linha ou a de dentro da transcrição aberta).
+      async function transcApagar(item, botao) {
+        if (!confirm('Apagar a transcrição «' + item.titulo + '» deste aparelho e do servidor?')) return;
+        if (botao) botao.disabled = true;
+        if (item.nuvem) {
+          const r = await trPost({ acao: 'transcricao-apagar', codigoTexto: codigoTextoSalvo(), id: item.nuvem });
+          if (!r.ok) { if (botao) botao.disabled = false; transcStatus.textContent = trMensagem(r, 'Não consegui apagar no servidor. Tente de novo.'); return; }
+        }
+        try { await bancoApagar('transc:' + item.id); } catch (e) { /* ignore */ }
+        await transcGravarIndice((await transcIndice()).filter(x => x.id !== item.id));
+        transcStatus.textContent = '';
+        transcPintar();
+      }
       const transcData = iso => { try { return new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }); } catch (e) { return ''; } };
       async function transcPintar() {
         if (!transcLista) return;
@@ -37907,7 +37920,18 @@ function saveTemplatesToStorage() {
           nome.textContent = item.titulo;
           const info = document.createElement('small');
           info.textContent = [transcData(item.em), item.duracaoS ? mmss(item.duracaoS) : '', item.nuvem ? '☁️' : '⏳ só no aparelho'].filter(Boolean).join(' · ');
-          cab.append(nome, info);
+          const textos = document.createElement('span');
+          textos.className = 'anotacoes-transcricao-textos';
+          textos.append(nome, info);
+          // 🗑️ na própria linha (6.15.06): apaga sem precisar abrir a transcrição; o toque não abre nem fecha a linha.
+          const lixeira = document.createElement('button');
+          lixeira.type = 'button';
+          lixeira.className = 'secondary limpar-btn anotacoes-transcricao-lixeira';
+          lixeira.textContent = '🗑️';
+          lixeira.title = 'Apagar esta transcrição (do aparelho e do servidor)';
+          lixeira.setAttribute('aria-label', 'Apagar a transcrição ' + item.titulo);
+          lixeira.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); transcApagar(item, lixeira); });
+          cab.append(textos, lixeira);
           const corpo = document.createElement('div');
           corpo.className = 'anotacoes-transcricao-corpo';
           linha.append(cab, corpo);
@@ -37947,17 +37971,7 @@ function saveTemplatesToStorage() {
             apagar.textContent = '🗑️';
             apagar.title = 'Apagar esta transcrição (do aparelho e do servidor)';
             apagar.setAttribute('aria-label', 'Apagar esta transcrição');
-            apagar.addEventListener('click', async () => {
-              if (!confirm('Apagar a transcrição «' + item.titulo + '» deste aparelho e do servidor?')) return;
-              if (item.nuvem) {
-                const r = await trPost({ acao: 'transcricao-apagar', codigoTexto: codigoTextoSalvo(), id: item.nuvem });
-                if (!r.ok) { transcStatus.textContent = trMensagem(r, 'Não consegui apagar no servidor. Tente de novo.'); return; }
-              }
-              try { await bancoApagar('transc:' + item.id); } catch (e) { /* ignore */ }
-              await transcGravarIndice((await transcIndice()).filter(x => x.id !== item.id));
-              transcStatus.textContent = '';
-              transcPintar();
-            });
+            apagar.addEventListener('click', () => transcApagar(item, apagar));
             botoes.append(copiar, inserir, apagar);
             corpo.replaceChildren(area, botoes);
           });

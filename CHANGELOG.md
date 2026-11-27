@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.15.06
+
+- **Transcrições na íntegra (Anotações):** cada transcrição salva ganhou uma 🗑️ na própria linha, para apagar sem precisar abri-la (pede confirmação e apaga do aparelho e do servidor).
+- **Adicionar crédito por Pix:** a barra e o botão **⚡ Gerar Pix** em verde dinheiro.
+- **Contas da IA:** "conta da empresa" passou a se chamar **conta empresa**.
+
 ## 6.15.05
 
 - **Contas da IA (Ajustes → Modelos e agentes de IA → Contas):** o campo **Texto** passou a ter cinco opções, com a conta dita no nome: Google (Gemini) da empresa ou pessoal, Anthropic (Claude) pela Vertex da empresa ou pessoal, e Anthropic (Claude) pela conta pessoal do Claude Platform (a API direta). O campo **Voz e áudio** passou a dizer "Google - conta da empresa" ou "Google - conta pessoal".

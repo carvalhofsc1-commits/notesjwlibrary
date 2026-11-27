@@ -5514,8 +5514,25 @@
 
     .anotacoes-transcricao > summary {
       cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .anotacoes-transcricao-textos {
       display: grid;
       gap: 2px;
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    /* 6.15.06: lixeira na linha de cada transcrição (só ícone, largura fixa) */
+    .anotacoes-transcricao > summary .anotacoes-transcricao-lixeira {
+      flex: 0 0 auto;
+      width: 44px;
+      min-height: 40px;
+      padding: 0;
+      margin: 0;
     }
 
     .anotacoes-transcricao-nome {
@@ -15385,6 +15402,7 @@ body.leitura-lendo .screen-leitura .leitura-acoes .leitura-ler[data-ia-nota]::af
   white-space: nowrap;
 }
 
+
 #pixCreditoQr {
   display: block;
   width: 220px;
@@ -16465,6 +16483,12 @@ button:is(#sv#sv, #anotacoesGravarBtn, #undoTopBtn, #undoBtn, .anot-grav-aviso, 
 :is(#sv#sv, details.subsection > summary, details.section-accordion > summary, .prompt-item > summary, .prompt-cat > summary, #opcoesIaBox > summary, #dirigenteBox > summary, #ebcDirBox > summary) {
   background: var(--inicio-cinza); background-image: none;
 }
+/* 6.15.06: "Adicionar crédito por Pix" e o botão que gera o Pix em verde dinheiro (pedido do usuário; exceção ao padrão sem verde). */
+#pixCredito#pixCredito > summary, #pixCreditoGerarBtn#pixCreditoGerarBtn {
+  background: #2e8b47; background-image: none; border: 1px solid #22703a; color: #fff;
+}
+#pixCredito#pixCredito > summary h3, #pixCredito#pixCredito > summary::after { color: #fff; }
+#pixCreditoGerarBtn#pixCreditoGerarBtn:hover:not(:disabled) { background: #267a3d; }
 
 /* Barra da semana e botões de ação com fundo colorido próprio: cinza. */
 :is(#sv#sv, .ai-week-link, .ai-week-nav, .ai-week-today, .anotacoes-cab-centro, .td-atalho, .leitura-ler, #leituraArquivoBtn, #transcricaoArquivoBtn,

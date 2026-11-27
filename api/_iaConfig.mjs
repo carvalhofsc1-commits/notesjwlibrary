@@ -54,9 +54,9 @@ export const PROVEDORES_IA = [
 export const VERTEX_INATIVO = true;
 // As opções do seletor "Texto" da tela: o provedor e, nos do Google, a conta, juntos no id ("provedor:conta").
 export const CONTAS_TEXTO = [
-  { id: "gemini:principal", nome: "Google (Gemini) - conta da empresa" },
+  { id: "gemini:principal", nome: "Google (Gemini) - conta empresa" },
   { id: "gemini:alternativa", nome: "Google (Gemini) - conta pessoal" },
-  { id: "vertex:principal", nome: "Anthropic (Claude) - conta da empresa (Vertex)", inativo: VERTEX_INATIVO },
+  { id: "vertex:principal", nome: "Anthropic (Claude) - conta empresa (Vertex)", inativo: VERTEX_INATIVO },
   { id: "vertex:alternativa", nome: "Anthropic (Claude) - conta pessoal (Vertex)", inativo: VERTEX_INATIVO },
   { id: "anthropic", nome: "Anthropic (Claude) - conta pessoal (Claude Platform)" },
 ];
