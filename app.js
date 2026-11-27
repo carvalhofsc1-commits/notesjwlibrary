@@ -7964,7 +7964,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.15.01'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.15.02'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -17026,7 +17026,8 @@ function saveTemplatesToStorage() {
     // Faz a chamada ao servidor das tarefas de estudo (lista e respostas). Devolve { ok, data, unavailable }.
     // Pedidos demorados (esboços e Preparar para dirigir): vão com um id aleatório; o servidor guarda a resposta por algumas horas. Se a conexão
     // cair no meio (no iPhone, ao sair do app ou bloquear a tela), o app busca o resultado com esse id assim que volta (api/_pedidos.mjs).
-    const TAREFAS_LONGAS = new Set(['pesquisa', 'pesquisa-video', 'adoracao-familia', 'tesouros', 'discurso', 'publico', 'publico-importar', 'outros', 'campo', 'estudo-perguntas', 'ebc-dirigente', 'estudo-recap']);
+    // No iPhone a conexão é cortada por volta de 60 s: toda tarefa que passa disso precisa estar aqui (e na lista do servidor que guarda o resultado).
+    const TAREFAS_LONGAS = new Set(['pesquisa', 'pesquisa-video', 'adoracao-familia', 'tesouros', 'discurso', 'publico', 'publico-importar', 'outros', 'campo', 'estudo-perguntas', 'ebc-dirigente', 'estudo-recap', 'leitura-biblia', 'texto-diario-comentarios']);
     const novoPedidoId = () => (window.crypto && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + '-' + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2));
     const esperar = ms => new Promise(ok => setTimeout(ok, ms));
     // O resultado fica guardado no servidor por até 6 horas: com o app fora da tela (tela bloqueada, outro app) a busca ESPERA a pessoa voltar,

@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.15.02
+
+- **Resumo da leitura da Bíblia:** quando a conexão cai durante a espera (no iPhone isso acontece depois de cerca de 1 minuto), o app agora busca o resumo que o servidor terminou e mostra normalmente, em vez de dar erro. O mesmo vale para os comentários do texto diário.
+
 ## 6.15.01
 
 - **Compartilhar (adoração e jogos):** o botão **Criar o código** ganhou fundo lilás.
