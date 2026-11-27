@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.99
+
+- **Adoração e jogos ao vivo:** uma resposta do servidor que chega atrasada não desfaz mais a tela (antes a dica recém-dada podia sumir por alguns segundos, e um segundo toque dava outra dica).
+- Quando o presidente usa **◀ Retornar** (ou vai para uma atividade já liberada), todos os participantes vão para ela.
+
 ## 6.14.98
 
 - **Programações salvas:** a programação aberta não aparece mais duas vezes: enquanto está aberta, a linha dela some da lista, e o cartão aberto ganha **✖️ Fechar** e a 🗑️. Ao fechar, a linha volta.
