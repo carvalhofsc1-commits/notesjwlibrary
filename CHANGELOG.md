@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.96
+
+- **Adoração em família:** o card **Adorações compartilhadas** tem o nome centralizado e, recolhido, ficou mais fino.
+
 ## 6.14.95
 
 - **Jogos ao vivo:** com o 👥 ligado, **dar dica**, **Revelar** e salvar quem acertou levam todos os participantes para a questão (antes, quem estava em outra questão não via a dica). Reabrindo o app, quem administra volta para a questão em que os outros foram levados.

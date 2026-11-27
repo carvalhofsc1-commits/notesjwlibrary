@@ -18772,3 +18772,7 @@ body.so-usuario .usuario-tela > summary.acesso-site-resumo::before { content: no
 #participarSessao li.fam-sessao-questao :is(.fam-sessao-ctrl-box, .fam-sessao-resp-box, .fam-sessao-responder) > * { margin: 0 !important; }
 #participarSessao li.fam-sessao-questao :is(.fam-sessao-acerto, .fam-sessao-ver-linha, .fam-sessao-resp-linha, .fam-sessao-pe-questao, .fam-acoes-dupla) { gap: 10px; }
 #participarSessao li.fam-sessao-questao .fam-sessao-ver-linha > * { margin: 0 !important; }
+/* 6.14.96: "Adorações compartilhadas" com o nome centralizado; recolhido, o card fica mais fino */
+#familiaCard #familiaDirigindoBox > summary { justify-content: center; flex-wrap: wrap; column-gap: 6px; text-align: center; font-size: clamp(.8rem, 4vw, .98rem); line-height: 1.25; }
+#familiaCard #familiaDirigindoBox:not([open]) { padding-top: 0; padding-bottom: 0; }
+#familiaCard #familiaDirigindoBox:not([open]) > summary { min-height: 32px; }
