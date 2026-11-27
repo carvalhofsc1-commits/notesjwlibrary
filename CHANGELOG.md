@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.15.22
+
+- Anotações → Reuniões: ao entrar, abre sempre primeiro a tela de cadastro, com a lista das reuniões anotadas embaixo. Antes, a reunião de hoje já cadastrada abria direto nas partes, e o cadastro só aparecia depois de tocar em Voltar.
+
 ## 6.15.21
 
 - Anotações → Reuniões: a lista das partes não mostra mais o começo da anotação. Fica só o tema, o orador e a congregação (quando houver) e o ✍️ quando a parte tem texto. O ✍️ não fica mais por cima da seta ›.

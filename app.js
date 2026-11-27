@@ -7964,7 +7964,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.15.21'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.15.22'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -37197,15 +37197,14 @@ function saveTemplatesToStorage() {
         atualizarVista();
         window.scrollTo({ top: 0 });
       }
-      // Ao abrir a Reunião: a reunião de hoje (se já cadastrada) abre direto nas partes; senão, a lista com o cadastro de uma nova.
+      // Ao abrir a Reunião: primeiro o cadastro de uma nova reunião, com a lista das já anotadas embaixo.
       function reuniaoEntrar() {
         reuniaoNovaData.value = hojeIso();
         reuniaoTipoSel.value = tipoPelaData(hojeIso());
         reuniaoTipoEscolhido = false;
         reuniaoOutroEl.value = '';
         reuniaoTipoPintar();
-        const hoje = reunioes.find(r => r.data === hojeIso());
-        if (hoje) { reuniaoAtualId = hoje.id; dataReuniaoEl.value = hoje.data; reuniaoVista = 'partes'; } else reuniaoVista = 'lista';
+        reuniaoVista = 'lista'; // sempre abre no cadastro, com a lista das reuniões anotadas logo abaixo (6.15.22)
       }
       function reuniaoAbrir(id) {
         const r = reunioes.find(x => x.id === id);
