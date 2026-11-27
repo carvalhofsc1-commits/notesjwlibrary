@@ -15924,13 +15924,11 @@ button.pesq-fino {
 .pesq-acoes > #pesquisaCancelarBtn { flex: 1 1 100%; }
 /* Assistente de pesquisas: as duas IAs sob o título do botão Pesquisar (uma por linha), o contador de tempo e os campos que crescem com o texto. */
 #pesquisaBtn[data-ia-nota]::after { white-space: pre-line; }
-.pesq-status .pesq-tempo {
-  margin-left: auto;
-  flex: none;
-  font-variant-numeric: tabular-nums;
-  font-size: .85rem;
-  color: var(--muted);
-}
+/* Pesquisa em andamento: o símbolo girando e o relógio dentro do botão, que fica bem visível mesmo desabilitado. */
+#pesquisaBtn.is-loading:disabled { opacity: 1; cursor: progress; }
+#pesquisaBtn .pesq-ocupado { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; }
+#pesquisaBtn .pesq-ocupado .transcricao-giro { width: 16px; height: 16px; border-width: 3px; border-color: color-mix(in srgb, currentColor 30%, transparent); border-top-color: currentColor; }
+#pesquisaBtn .pesq-tempo { font-variant-numeric: tabular-nums; }
 .pesq-campo {
   resize: none;
   overflow: hidden;

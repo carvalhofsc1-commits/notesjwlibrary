@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.15.04
+
+- **Assistente de pesquisas:** o símbolo girando e o relógio passaram para dentro do botão **Pesquisar** (também no resumo de vídeo); sob o botão fica só a descrição do que está sendo feito.
+
 ## 6.15.03
 
 - **Botões Word:** todos abrem primeiro a prévia do documento, e é dela que se exporta ou se compartilha. Passaram a abrir a prévia o **Exportar anotações** (assembleia e congresso), o **Exportar Word** da lista de arquivos do servidor e o **Exportar esta página** das páginas Sobre, Privacidade e Termos.

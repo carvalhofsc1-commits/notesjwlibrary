@@ -7964,7 +7964,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.15.03'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.15.04'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -38958,20 +38958,17 @@ function saveTemplatesToStorage() {
         const s = Math.max(0, Math.floor((Date.now() - relogioInicio) / 1000));
         return '⏱️ ' + Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
       };
-      function andamento(texto) {
-        dizer(statusEl, texto, { girando: true });
-        const tempo = document.createElement('span');
-        tempo.className = 'pesq-tempo';
-        tempo.textContent = relogioTexto();
-        statusEl.appendChild(tempo);
+      // O que está sendo feito aparece sob o botão; o símbolo girando e o relógio ficam dentro do botão (botaoPintar).
+      const andamento = texto => dizer(statusEl, texto);
+      function relogioPintar() {
+        const tempo = botao.querySelector('.pesq-tempo');
+        if (tempo) tempo.textContent = relogioTexto();
       }
       function relogioLigar() {
         relogioInicio = Date.now();
         clearInterval(relogioTimer);
-        relogioTimer = setInterval(() => {
-          const tempo = statusEl.querySelector('.pesq-tempo');
-          if (tempo) tempo.textContent = relogioTexto();
-        }, 1000);
+        relogioPintar();
+        relogioTimer = setInterval(relogioPintar, 1000);
       }
       const relogioDesligar = () => { clearInterval(relogioTimer); relogioTimer = null; };
 
@@ -39001,8 +38998,22 @@ function saveTemplatesToStorage() {
         // No vídeo não há busca de fontes: as opções da internet e da escolha das fontes somem.
         // Só as opções de baixo (internet e escolha das fontes); a caixinha "Procurar também no que é falado" é da própria aba Vídeo.
         $('pesquisaOpcoesBox').hidden = aba === 'video';
-        botao.textContent = aba === 'video' ? '🎬 Transcrever e resumir o vídeo' : '🔎 Pesquisar';
+        if (!botao.classList.contains('is-loading')) botaoPintar(false); // com uma pesquisa em andamento, o botão mantém o giro e o relógio
         requestAnimationFrame(crescerCampos);
+      }
+      // O botão principal: o rótulo da aba ou, ocupado, o símbolo girando, o que está fazendo e o tempo decorrido.
+      function botaoPintar(sim) {
+        botao.classList.toggle('is-loading', sim);
+        botao.setAttribute('aria-busy', String(sim));
+        if (!sim) { botao.textContent = aba === 'video' ? '🎬 Transcrever e resumir o vídeo' : '🔎 Pesquisar'; return; }
+        const novo = (classe, texto) => { const el = document.createElement('span'); el.className = classe; if (texto) el.textContent = texto; return el; };
+        const linha = novo('pesq-ocupado');
+        const giro = novo('transcricao-giro');
+        giro.setAttribute('aria-hidden', 'true');
+        const tempo = novo('pesq-tempo', relogioTexto());
+        tempo.setAttribute('aria-hidden', 'true');
+        linha.append(giro, novo('', aba === 'video' ? 'Resumindo o vídeo…' : 'Pesquisando…'), tempo);
+        botao.replaceChildren(linha);
       }
       document.querySelectorAll('#pesquisaCard .pesq-aba').forEach(b => b.addEventListener('click', () => { if (!b.disabled) trocarAba(b.dataset.pesqAba); }));
 
@@ -39553,6 +39564,7 @@ function saveTemplatesToStorage() {
 
       function ocupado(sim) {
         botao.disabled = sim;
+        botaoPintar(sim);
         cancelarBtn.hidden = !sim;
         campoAssunto.readOnly = sim;
         campoContexto.readOnly = sim;
