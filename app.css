@@ -18735,3 +18735,8 @@ body.so-usuario .usuario-tela > summary.acesso-site-resumo::before { content: no
 .biblia-secao-btn.biblia-secao-btn[data-secao="exilio"] { padding-top: 2px; padding-bottom: 2px; }
 .biblia-secao-btn[data-secao="exilio"] .biblia-secao-icone > img.icone-img { width: 68px; max-width: 100%; height: 44px; }
 .biblia-prog-toggle[data-secao="exilio"] #bibliaSecaoIcone > img.icone-img { width: 2.5em; height: 1.7em; margin: -0.35em 0; }
+/* 6.14.86: com o tema escolhido no app, os controles do aparelho (caixas de marcar, listas) seguem esse tema, e não o do celular: no
+   tema claro, um celular em modo escuro desenhava as caixas pretas. Na lista de assuntos da adoração a caixa é sempre branca. */
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"] { color-scheme: dark; }
+.fam-check input[type="checkbox"] { color-scheme: light; }

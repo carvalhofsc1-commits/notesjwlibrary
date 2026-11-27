@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.86
+
+- **Caixas de marcar:** voltaram a ter fundo branco. Com o tema claro escolhido no app, um celular em modo escuro desenhava as caixas pretas; agora elas (e as listas) seguem o tema do app, e na lista de assuntos da Adoração a caixa é sempre branca.
+
 ## 6.14.85
 
 - **Adoração em família:** novo desenho do ícone (família escrevendo à mesa). Os anteriores ficam guardados em `icones-guardados/` (`icone-adoracao-v1.png` e `-v2.png`).
