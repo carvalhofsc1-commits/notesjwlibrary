@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.15.09
+
+- **Consumo do mês no Google Cloud (conta pessoal):** no cartão **🔑 Conta de faturamento**, a caixa **💳 Consumo do mês** mostra o "Custo total" do painel de faturamento do Google (custo menos economia), o valor por serviço e a hora dos dados, com o botão **↻ Atualizar o consumo**. O servidor lê a exportação do faturamento para o BigQuery (conjunto de dados `faturamento`), só para o administrador; os dados do Google chegam com algumas horas de atraso.
+
 ## 6.15.08
 
 - **Conta de faturamento:** moldura lilás fina em volta dos campos Texto e Voz e áudio.

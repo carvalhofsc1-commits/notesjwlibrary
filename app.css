@@ -14590,6 +14590,22 @@ button.processando:disabled { opacity: 1; cursor: progress; }
   background: color-mix(in srgb, var(--muted) 5%, var(--card));
 }
 #iaPesquisaSitesPadraoBtn { width: 100%; margin-top: 8px; }
+/* 6.15.08: consumo do mês no Google Cloud (exportação do faturamento para o BigQuery). */
+.gcp-custo {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px;
+  margin: 10px 0 0;
+  background: color-mix(in srgb, var(--muted) 5%, var(--card));
+}
+.gcp-custo-titulo { margin: 0 0 4px; font-weight: 700; font-size: .9rem; }
+.gcp-custo-valor { font-size: .86rem; }
+.gcp-custo-valor .gcp-custo-total { display: block; font-size: 1.5rem; font-weight: 700; margin: 2px 0; }
+.gcp-custo-servicos { margin: 6px 0 0; font-size: .84rem; }
+.gcp-custo-servicos > summary { cursor: pointer; font-weight: 600; }
+.gcp-custo-linha { display: flex; justify-content: space-between; gap: 8px; padding: 3px 0; border-top: 1px solid var(--line); }
+.gcp-custo-linha span:last-child { white-space: nowrap; font-variant-numeric: tabular-nums; }
+#gcpCustoBtn { width: 100%; margin-top: 8px; }
 
 .modelos-editar-acoes button {
   flex: 1 1 0;

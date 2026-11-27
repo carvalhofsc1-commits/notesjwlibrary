@@ -7,6 +7,7 @@ import { CATEGORIAS, LIMITES, PARTES, aplicarLimites, categoriaDaParte, limitesP
 import { esquecerCache, gravarAlteracoes, gravarLimites, lerAlteracoes, lerAnterior, lerLimites } from "./_promptsArmazenados.mjs";
 import { configPublicaVoz, gravarConfigVoz, lerConfigVoz, opcoesVoz } from "./_vozConfig.mjs";
 import { gravarConfigIa, lerConfigIa, lerCustoIa, opcoesIa, PROVEDORES_IA, VERTEX_INATIVO } from "./_iaConfig.mjs";
+import { lerCustoGcp } from "./_custoGcp.mjs";
 import { modelosDisponiveis, testarIa } from "./_clienteIa.mjs";
 import { descreverContas, gravarContaEscolhida } from "./_googleToken.mjs";
 import { acrescentarLicao, alterarLicao, analisarCorrecao, apagarLicao, apagarTudo, ligarMemoria, lerMemoria, memoriaConfigurada } from "./_memoria.mjs";
@@ -546,6 +547,20 @@ export default async function handler(req, res) {
           e.status === 401 || e.status === 403
             ? "A Anthropic recusou a chave de administrador (ANTHROPIC_ADMIN_KEY). Confira a chave no Claude Console."
             : "Não consegui consultar o gasto na Anthropic agora. Tente de novo.";
+        return erro(res, 502, mensagem);
+      }
+    }
+
+    // Consumo do mês no Google Cloud (conta pessoal), lido da exportação do faturamento para o BigQuery (6.15.08).
+    if (acao === "gcp-custo") {
+      try {
+        return res.status(200).json(await lerCustoGcp(corpo.forcar === true));
+      } catch (e) {
+        console.error("Custo do Google Cloud: falha na consulta", e.status, e.message);
+        const mensagem =
+          e.status === 401 || e.status === 403
+            ? "O Google recusou a leitura do faturamento: a conta pessoal precisa dos papéis do BigQuery (usuário de jobs e leitor de dados)."
+            : "Não consegui consultar o consumo no Google Cloud agora. Tente de novo.";
         return erro(res, 502, mensagem);
       }
     }

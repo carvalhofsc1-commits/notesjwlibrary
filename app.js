@@ -7964,7 +7964,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.15.08'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.15.09'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -14690,6 +14690,44 @@ function saveTemplatesToStorage() {
       const codigo = senhaAdminSalva();
       if (codigo && (vozAdminForm.hidden || codigo !== vozAdminCodigo)) vozAdminCarregar(codigo);
     });
+
+    // 💳 Consumo do mês no Google Cloud (6.15.08): o "Custo total" do painel de faturamento (custo menos economia), lido pelo servidor da
+    // exportação do faturamento para o BigQuery. Carrega ao abrir o cartão Conta de faturamento.
+    const gcpCustoValor = document.getElementById('gcpCustoValor');
+    const gcpReais = (v, moeda) => { try { return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: moeda || 'BRL' }); } catch (e) { return 'R$ ' + Number(v || 0).toFixed(2).replace('.', ','); } };
+    async function gcpCustoCarregar(forcar) {
+      if (!gcpCustoValor || !codigoAdminAtual()) return;
+      const servicos = document.getElementById('gcpCustoServicos');
+      gcpCustoValor.className = 'gcp-custo-valor';
+      gcpCustoValor.textContent = 'Consultando…';
+      const r = await postConfig({ acao: 'gcp-custo', codigo: codigoAdminAtual(), forcar: Boolean(forcar) });
+      if (!r.ok) { gcpCustoValor.className = 'gcp-custo-valor warn'; gcpCustoValor.textContent = configErrorMessage(r, 'Não consegui consultar o consumo agora.'); servicos.hidden = true; return; }
+      const d = r.data || {};
+      if (!d.configurado) { gcpCustoValor.textContent = d.motivo || 'A consulta do consumo ainda não está configurada no servidor.'; servicos.hidden = true; return; }
+      if (d.semDados) { gcpCustoValor.textContent = 'Ainda sem dados deste mês: depois de ligar a exportação do faturamento, o Google leva algumas horas para gravar a primeira vez.'; servicos.hidden = true; return; }
+      const nomeMes = (() => { try { return new Date(Number(d.mes.slice(0, 4)), Number(d.mes.slice(4)) - 1, 1).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }); } catch (e) { return d.mes; } })();
+      const quando = d.atualizadoEm ? new Date(d.atualizadoEm).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+      const total = document.createElement('span');
+      total.className = 'gcp-custo-total';
+      total.textContent = gcpReais(d.total, d.moeda);
+      const detalhe = document.createElement('span');
+      detalhe.textContent = 'Custo total de ' + nomeMes + ' (custo ' + gcpReais(d.custo, d.moeda) + ' − economia ' + gcpReais(d.economia, d.moeda) + ')' + (quando ? '. Dados do Google até ' + quando + '; o painel do Google também mostra com algumas horas de atraso.' : '.');
+      gcpCustoValor.replaceChildren(total, detalhe);
+      const lista = document.getElementById('gcpCustoLista');
+      lista.replaceChildren(...(d.servicos || []).map(s => {
+        const linha = document.createElement('div');
+        linha.className = 'gcp-custo-linha';
+        const nome = document.createElement('span');
+        nome.textContent = s.servico;
+        const valor = document.createElement('span');
+        valor.textContent = gcpReais(s.total, d.moeda);
+        linha.append(nome, valor);
+        return linha;
+      }));
+      servicos.hidden = !(d.servicos || []).length;
+    }
+    document.getElementById('modelosContaCard').addEventListener('toggle', e => { if (e.target.open) gcpCustoCarregar(false); });
+    document.getElementById('gcpCustoBtn').addEventListener('click', () => gcpCustoCarregar(true));
 
     // ✏️ Escolher contas e modelos: o seletor nativo corta o nome da opção numa linha; aqui o nome escolhido aparece inteiro, quebrando a
     // linha como numa tabela, e o seletor (transparente) fica por cima dele para continuar abrindo a lista ao toque.
