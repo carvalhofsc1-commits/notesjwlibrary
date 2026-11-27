@@ -258,6 +258,8 @@
                 <option value="outra">Outra reunião</option>
               </select>
               <input id="anotReuniaoOutro" type="text" autocomplete="off" placeholder="Nome da reunião" aria-label="Nome da outra reunião" hidden>
+              <label for="anotReuniaoTemaNovo">Tema principal da reunião</label>
+              <input id="anotReuniaoTemaNovo" type="text" autocomplete="off" placeholder="Opcional (cada parte tem o seu tema)">
               <button id="anotReuniaoNovaBtn" type="button">➕ Nova reunião</button>
             </div>
             <h3 id="anotReuniaoItensTitulo" class="anotacoes-subtitulo">🗂️ Reuniões anotadas</h3>
@@ -265,6 +267,10 @@
           </div>
           <div id="anotReuniaoPartesBox" hidden>
             <div class="anot-reuniao-nome"><strong id="anotReuniaoNome"></strong><small id="anotReuniaoNomeInfo"></small></div>
+            <div class="anot-reuniao-tema">
+              <label for="anotReuniaoTema">Tema principal da reunião</label>
+              <input id="anotReuniaoTema" type="text" autocomplete="off" placeholder="Opcional (cada parte tem o seu tema)">
+            </div>
             <div id="anotReuniaoPartes" class="anot-reuniao-itens"></div>
             <button id="anotReuniaoNovaParte" class="anot-reuniao-largo" type="button">➕ Nova parte</button>
             <button id="anotReuniaoExportar" class="secondary anot-reuniao-largo" type="button" title="Mostra a prévia do Word com as anotações de todas as partes desta reunião e de lá exporta">📄 Exportar anotações da reunião</button>

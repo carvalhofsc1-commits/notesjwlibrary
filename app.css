@@ -5251,6 +5251,18 @@
       background: var(--soft);
     }
 
+    .anot-reuniao-tema {
+      display: grid;
+      gap: 6px;
+      margin: 0 0 12px;
+    }
+
+    .anot-reuniao-tema input {
+      width: 100%;
+      margin: 0;
+      box-sizing: border-box;
+    }
+
     .anot-reuniao-nome strong {
       font-size: 1.02rem;
     }

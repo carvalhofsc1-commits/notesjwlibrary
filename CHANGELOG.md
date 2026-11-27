@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.15.19
+
+- Anotações → Reuniões: "Tema principal da reunião", além do tema de cada parte. É opcional e pode ser informado no cadastro ou depois, na tela das partes. Aparece entre aspas na lista das reuniões e no cabeçalho da parte anotada, e vai no Word da reunião ("Tema: …").
+
 ## 6.15.18
 
 - Anotações → Reuniões: no cadastro, o "Tipo de reunião". Meio e fim de semana (escolhido pela data); reunião anual com pioneiros do circuito; com pioneiros na visita do superintendente; com servos e anciãos na visita do superintendente; anual com pioneiros regulares da congregação; trimestral do corpo de anciãos; e "Outra reunião", com campo para o nome. As reuniões especiais aparecem com 🤝 na lista, e o tipo vai no título do Salvar e no Word.
