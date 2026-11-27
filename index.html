@@ -282,6 +282,13 @@
           <label for="anotacoesDataReuniao">Data</label>
           <input id="anotacoesDataReuniao" type="date">
           <!-- Discursos e considerações da Vida e Ministério: escolher a semana, listar os temas e tocar num deles para preencher o Tema / parte. -->
+          <!-- Reunião especial: no lugar das partes da Vida e Ministério, o tipo escolhido e o tema principal cadastrados. -->
+          <div id="anotReuniaoInfo" class="anot-reuniao-info" hidden>
+            <span class="anot-reuniao-info-rotulo">Tipo de reunião</span>
+            <strong id="anotReuniaoInfoTipo"></strong>
+            <span id="anotReuniaoInfoTemaRotulo" class="anot-reuniao-info-rotulo">Tema principal da reunião</span>
+            <strong id="anotReuniaoInfoTema"></strong>
+          </div>
           <details id="anotVmBox" class="anot-vm">
             <summary class="anot-vm-rotulo">📋 Partes da Vida e Ministério</summary>
             <div class="anot-vm-corpo">

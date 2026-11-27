@@ -16427,6 +16427,10 @@ a.pesq-videos-jw { display: flex; width: 100%; box-sizing: border-box; margin: 0
   font-weight: 700;
 }
 /* Anotações · Reunião: discursos e considerações da Vida e Ministério (semana, lista de temas). */
+.anot-vm[hidden], .anot-reuniao-info[hidden], .anot-reuniao-info [hidden] { display: none !important; }
+.anot-reuniao-info { display: grid; gap: 2px; margin: 10px 0 4px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--soft); min-width: 0; text-align: center; }
+.anot-reuniao-info-rotulo { font-size: .8rem; color: var(--muted); }
+.anot-reuniao-info-rotulo + strong { margin-bottom: 4px; overflow-wrap: anywhere; }
 .anot-vm { margin: 10px 0 4px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); min-width: 0; }
 .anot-vm-rotulo { font-weight: 700; font-size: .92rem; cursor: pointer; }
 .anot-vm-corpo { display: grid; gap: 8px; margin-top: 8px; min-width: 0; }

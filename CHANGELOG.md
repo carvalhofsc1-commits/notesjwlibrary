@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.15.20
+
+- Anotações → Reuniões especiais: no card "Tema, orador e congregação" da parte não aparecem mais as "Partes da Vida e Ministério". No lugar delas, ficam o tipo de reunião escolhido e o tema principal cadastrado. Nas reuniões de meio e fim de semana, nada muda.
+
 ## 6.15.19
 
 - Anotações → Reuniões: "Tema principal da reunião", além do tema de cada parte. É opcional e pode ser informado no cadastro ou depois, na tela das partes. Aparece entre aspas na lista das reuniões e no cabeçalho da parte anotada, e vai no Word da reunião ("Tema: …").
