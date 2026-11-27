@@ -18721,3 +18721,6 @@ body.so-usuario .usuario-tela > summary.acesso-site-resumo { cursor: default; }
 body.so-usuario .usuario-tela > summary.acesso-site-resumo::before { content: none; }
 .acesso-site-usuario-fim { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; margin-top: 12px; }
 .acesso-site-usuario-fim > button { width: 100%; margin: 0; }
+/* 6.14.77: o card Autorização de acessos com o fundo vermelho claro */
+#settingsCard #acessosSection.acessos-box { border-color: #f87171 !important; background: color-mix(in srgb, #ef4444 14%, var(--card)) !important; }
+#settingsCard #acessosSection.acessos-box > summary { background: color-mix(in srgb, #ef4444 20%, var(--card)) !important; }

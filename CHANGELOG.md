@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.77
+
+- **Autorização de acessos:** o card passou a ter fundo vermelho claro.
+
 ## 6.14.76
 
 - **Autorização de acessos:** reorganizada em três cards recolhíveis (Códigos de acesso, Senha master e Senha do administrador); dentro de Códigos de acesso, cada código é um card que mostra só o título até ser tocado. Saiu o texto de explicação do alto.
