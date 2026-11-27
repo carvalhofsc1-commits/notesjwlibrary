@@ -18793,3 +18793,7 @@ body.so-usuario .usuario-tela > summary.acesso-site-resumo::before { content: no
 :is(.fam-sessao-painel, .jogos-grupo) .fam-sessao-add.fam-sessao-add > input { min-height: 32px !important; height: 32px; padding-top: 2px; padding-bottom: 2px; font-size: 16px; line-height: 1.2; }
 :is(.fam-sessao-painel, .jogos-grupo) .fam-sessao-add.fam-sessao-add > button { min-height: 32px !important; height: 32px; padding-top: 0; padding-bottom: 0; font-size: .88rem; }
 :is(.fam-sessao-painel, .jogos-grupo) .fam-acoes.fam-acoes > button.fam-principal { min-height: 32px !important; height: 32px; padding-top: 0; padding-bottom: 0; font-size: .9rem; }
+/* 6.15.01: "Criar o código" (adoração e jogos) em lilás, como o "Preparar a programação" */
+:is(.fam-sessao-painel, .jogos-grupo) .fam-acoes.fam-acoes > button.fam-principal { background: #ddd6fe !important; background-image: none !important; border-color: #a78bfa !important; color: #4c1d95 !important; font-weight: 700; }
+:root[data-theme="dark"] :is(.fam-sessao-painel, .jogos-grupo) .fam-acoes.fam-acoes > button.fam-principal { background: #2e2950 !important; border-color: #8b5cf6 !important; color: #ddd6fe !important; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) :is(.fam-sessao-painel, .jogos-grupo) .fam-acoes.fam-acoes > button.fam-principal { background: #2e2950 !important; border-color: #8b5cf6 !important; color: #ddd6fe !important; } }

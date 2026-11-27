@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.15.01
+
+- **Compartilhar (adoração e jogos):** o botão **Criar o código** ganhou fundo lilás.
+
 ## 6.15.00
 
 - **Compartilhar (adoração e jogos):** o campo do apelido, o botão **Acrescentar** e o **Criar o código** ficaram mais finos.
