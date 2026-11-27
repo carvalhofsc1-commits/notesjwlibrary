@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.15.08
+
+- **Conta de faturamento:** moldura lilás fina em volta dos campos Texto e Voz e áudio.
+
 ## 6.15.07
 
 - **Modelos e agentes de IA:** a escolha da conta ganhou um cartão recolhível próprio, **🔑 Conta de faturamento** (antes "Contas"), e os modelos outro, **🧠 Modelos**, com Texto, Voz e áudio e **Pesquisas** (antes "Assistente de pesquisas"). As linhas de rótulo da tabela ficaram em roxo claro, os sites de preferência da busca na internet ganharam moldura própria e o botão **Voltar à lista padrão** ocupa a largura toda.

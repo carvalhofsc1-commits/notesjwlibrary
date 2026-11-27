@@ -14551,6 +14551,13 @@ button.processando:disabled { opacity: 1; cursor: progress; }
   background: var(--card);
 }
 .modelos-card[open] { padding-bottom: 10px; }
+/* 6.15.08: moldura em volta da tabela da Conta de faturamento (Texto e Voz e áudio). */
+#modelosContaCard .modelos-editar-tabela {
+  border: 1px solid color-mix(in srgb, #7c3aed 40%, var(--line));
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: 10px;
+}
 .modelos-card > summary {
   cursor: pointer;
   list-style: none;
