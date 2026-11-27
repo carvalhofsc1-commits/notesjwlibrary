@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.93
+
+- **Tela de apresentação (convidado):** a seta do botão **Voltar para a adoração** (ou para o jogo) agora aponta para a direita.
+
 ## 6.14.92
 
 - **Correção:** a tela de apresentação (e a de cadastro) voltou a rolar no celular. Desde a 6.14.62 o arrasto ficava preso no cartão e não descia a página.
