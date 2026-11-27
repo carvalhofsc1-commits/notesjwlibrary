@@ -2,6 +2,13 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.15.05
+
+- **Contas da IA (Ajustes → Modelos e agentes de IA → Contas):** o campo **Texto** passou a ter cinco opções, com a conta dita no nome: Google (Gemini) da empresa ou pessoal, Anthropic (Claude) pela Vertex da empresa ou pessoal, e Anthropic (Claude) pela conta pessoal do Claude Platform (a API direta). O campo **Voz e áudio** passou a dizer "Google - conta da empresa" ou "Google - conta pessoal".
+- A conta do texto vale para todas as etapas com IA (também as do Assistente de pesquisas e da Adoração em Família que usam um modelo Gemini). Com o texto no Claude Platform, as etapas com Gemini seguem a conta de Voz e áudio, e a transcrição do Áudio em texto também segue essa conta.
+- As duas opções do **Claude pela Vertex** aparecem em cinza, como **inativas**, até haver cota no Google Cloud (o servidor também recusa salvá-las).
+- **Sem troca automática de conta:** se a conta escolhida não estiver configurada, o app mostra o erro em vez de gastar na outra sem avisar.
+
 ## 6.15.04
 
 - **Assistente de pesquisas:** o símbolo girando e o relógio passaram para dentro do botão **Pesquisar** (também no resumo de vídeo); sob o botão fica só a descrição do que está sendo feito.

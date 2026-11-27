@@ -8,7 +8,7 @@
 import { erro, origemPermitida, textosIguais } from "./_comum.mjs";
 import { debitarCreditosUso, mensagemSeBloqueado, mensagemSeSemCredito, prepararCodigosPessoais, recursoCodigoValido } from "./_acessoSite.mjs";
 import { createHash, createSign, randomBytes } from "node:crypto";
-import { credenciais, prepararConta, tokenDeAcesso, variaveisDaConta } from "./_googleToken.mjs";
+import { contaAtual, credenciais, prepararConta, tokenDeAcesso, variaveisDaConta } from "./_googleToken.mjs";
 import { iaDaTarefa, lerConfigIa } from "./_iaConfig.mjs";
 import { criarClienteIa, erroSemIa, iaDisponivel } from "./_clienteIa.mjs";
 import { registrarUsoIa } from "./_estatisticas.mjs";
@@ -150,7 +150,7 @@ function semRepeticoes(texto) {
   return t.replace(/\s+/g, " ").trim();
 }
 async function reconhecerComGemini(audioBase64, modelo) {
-  const client = criarClienteIa({ maxRetries: 1, timeout: 60_000 }, "gemini");
+  const client = criarClienteIa({ maxRetries: 1, timeout: 60_000 }, "gemini", contaAtual()); // a transcrição segue a conta de Voz e áudio
   const resposta = await client.messages.create({
     model: modelo,
     max_tokens: 4000,
@@ -501,7 +501,7 @@ export default async function handler(req, res) {
     }
   }
   const ip = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() || "desconhecido";
-  await prepararConta(); // a conta do Google escolhida pelo administrador (a outra fica de reserva)
+  await prepararConta(); // a conta do Google de Voz e áudio, escolhida pelo administrador
 
   try {
     if (corpo.acao === "trecho" || doJogo) {
@@ -719,7 +719,7 @@ export default async function handler(req, res) {
   } catch (e) {
     console.error("Transcrever: falha", corpo && corpo.acao, e?.status, e?.message);
     if (e && (e.status === 403 || /403/.test(String(e.message))) && /spend\s*cap/i.test(String(e.message))) {
-      return erro(res, 429, "O teto de gastos da IA na conta atual (Google Cloud · Vertex AI / Gemini) foi atingido. Você pode informar o administrador sobre a situação. Também há a opção de trocar para uma conta que ainda tenha limite de gastos (opção que só o administrador pode fazer).");
+      return erro(res, 429, "O teto de gastos da IA na conta atual (Google Cloud) foi atingido. Você pode informar o administrador sobre a situação. Também há a opção de trocar para uma conta que ainda tenha limite de gastos (opção que só o administrador pode fazer).");
     }
     if (e && e.status === 400 && /usage limits/i.test(String(e.message))) {
       return erro(res, 429, "O teto de gastos da IA na conta atual (Anthropic · Claude) foi atingido. Você pode informar o administrador sobre a situação. Também há a opção de trocar para uma conta que ainda tenha limite de gastos (opção que só o administrador pode fazer).");

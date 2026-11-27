@@ -1,10 +1,11 @@
 // Autenticação no Google Cloud com a conta de serviço, usada pela leitura em voz alta (api/voz.mjs) e pela transcrição de áudio (api/transcrever.mjs).
 // O arquivo começa com "_" para a Vercel não publicá-lo como rota.
 //
-// O app aceita DUAS contas do Google Cloud ao mesmo tempo; o administrador escolhe qual usar (Ajustes → Conta do Google) e a outra fica de reserva:
-//  - principal: GOOGLE_TTS_CREDENCIAIS (JSON da conta de serviço), GOOGLE_STT_BUCKET, GOOGLE_PROJECT_ID (opcional) e GOOGLE_TTS_API_KEY (opcional);
-//  - alternativa: GOOGLE_ALT_CREDENCIAIS, GOOGLE_ALT_STT_BUCKET, GOOGLE_ALT_PROJECT_ID (opcional) e GOOGLE_ALT_TTS_API_KEY (opcional).
-// A escolha fica no Global Config (chave "google_conta"). Se a conta escolhida não estiver configurada, vale a outra.
+// O app aceita DUAS contas do Google Cloud ao mesmo tempo, e o administrador escolhe qual usar (Ajustes → Modelos e agentes de IA → Contas):
+//  - "principal" (a da empresa): GOOGLE_TTS_CREDENCIAIS (JSON da conta de serviço), GOOGLE_STT_BUCKET, GOOGLE_PROJECT_ID (opcional) e GOOGLE_TTS_API_KEY (opcional);
+//  - "alternativa" (a pessoal): GOOGLE_ALT_CREDENCIAIS, GOOGLE_ALT_STT_BUCKET, GOOGLE_ALT_PROJECT_ID (opcional) e GOOGLE_ALT_TTS_API_KEY (opcional).
+// Aqui fica a escolha de Voz e áudio (chave "google_conta"); a do texto fica na configuração da IA (api/_iaConfig.mjs).
+// Não há troca automática: se a conta escolhida não estiver configurada, o pedido falha, para o gasto nunca ir para a outra sem aviso.
 import { createSign } from "node:crypto";
 import { gravarItem, lerItem } from "./_armazem.mjs";
 
@@ -13,6 +14,7 @@ export const URL_TOKEN = process.env.GOOGLE_TOKEN_URL || "https://oauth2.googlea
 const CHAVE = "google_conta";
 const VALIDADE_MS = 20_000;
 export const CONTAS = ["principal", "alternativa"];
+export const NOMES_CONTA = { principal: "conta da empresa", alternativa: "conta pessoal" };
 const BUCKET_PADRAO = "notestyle-audio-512212"; // só para a conta principal, por compatibilidade
 const VARIAVEIS = {
   principal: { credenciais: "GOOGLE_TTS_CREDENCIAIS", apiKey: "GOOGLE_TTS_API_KEY", bucket: "GOOGLE_STT_BUCKET", projeto: "GOOGLE_PROJECT_ID" },
@@ -69,11 +71,9 @@ export async function gravarContaEscolhida(conta) {
   return conta;
 }
 
-// Define a conta em uso: a escolhida pelo administrador; se ela não estiver configurada, a outra.
+// Define a conta em uso na voz e no áudio: sempre a escolhida pelo administrador (sem troca automática).
 export async function prepararConta() {
-  const escolhida = await lerContaEscolhida();
-  const outra = escolhida === "principal" ? "alternativa" : "principal";
-  contaEmUso = credenciaisDaConta(escolhida) ? escolhida : credenciaisDaConta(outra) ? outra : escolhida;
+  contaEmUso = await lerContaEscolhida();
   return contaEmUso;
 }
 

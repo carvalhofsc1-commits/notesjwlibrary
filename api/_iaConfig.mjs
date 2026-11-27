@@ -2,6 +2,7 @@
 // administrador na tela de prompts e válido para todos os usuários. Fica no Global Config (chave "ia_config"); sem nada
 // guardado, valem CLAUDE_MODEL e CLAUDE_EFFORT da Vercel ou, sem elas, o Haiku 5.5 com esforço baixo.
 import { lerItem, gravarItem } from "./_armazem.mjs";
+import { CONTAS } from "./_googleToken.mjs";
 
 const CHAVE = "ia_config";
 const VALIDADE_MS = 20_000;
@@ -41,11 +42,23 @@ export const ESFORCOS_IA = [
   { id: "high", nome: "Alto: mais cuidadoso, demora mais" },
 ];
 
-// De onde vem o Claude: a API direta da Anthropic ou o Google Cloud (Vertex AI), cobrado na conta do Google (ver api/_clienteIa.mjs).
+// Quem atende o texto: o Claude pela API direta da Anthropic (Claude Platform), o Claude pelo Google Cloud (Vertex AI) ou o Gemini.
+// Nos dois do Google, o campo "contaTexto" diz a conta: "principal" (empresa) ou "alternativa" (pessoal). Ver api/_clienteIa.mjs.
 export const PROVEDORES_IA = [
   { id: "anthropic", nome: "Anthropic (API direta)" },
   { id: "vertex", nome: "Google Cloud · Claude (Vertex AI)" },
   { id: "gemini", nome: "Google Cloud · Gemini (conta do Google)" },
+];
+// O Claude pela Vertex fica inativo (aparece em cinza e não pode ser salvo) até haver cota no Google Cloud: a empresa proíbe o Claude e a
+// conta pessoal ainda está com a cota zerada (6.15.05). Para ativar, trocar para false.
+export const VERTEX_INATIVO = true;
+// As opções do seletor "Texto" da tela: o provedor e, nos do Google, a conta, juntos no id ("provedor:conta").
+export const CONTAS_TEXTO = [
+  { id: "gemini:principal", nome: "Google (Gemini) - conta da empresa" },
+  { id: "gemini:alternativa", nome: "Google (Gemini) - conta pessoal" },
+  { id: "vertex:principal", nome: "Anthropic (Claude) - conta da empresa (Vertex)", inativo: VERTEX_INATIVO },
+  { id: "vertex:alternativa", nome: "Anthropic (Claude) - conta pessoal (Vertex)", inativo: VERTEX_INATIVO },
+  { id: "anthropic", nome: "Anthropic (Claude) - conta pessoal (Claude Platform)" },
 ];
 // Cada modelo é de uma família: o Claude (Anthropic direta ou Vertex) ou o Gemini.
 export const familiaDoProvedor = (provedor) => (provedor === "gemini" ? "gemini" : "claude");
@@ -64,6 +77,7 @@ export function validarConfigIa(entrada) {
   const daFamilia = (id) => MODELOS_IA.some((m) => m.id === id && m.familia === familia);
   return {
     provedor,
+    contaTexto: CONTAS.includes(c.contaTexto) ? c.contaTexto : "principal",
     modelo: daFamilia(c.modelo) ? c.modelo : familia === "gemini" ? MODELO_PADRAO_GEMINI : PADRAO_IA.modelo,
     esforco: ESFORCOS_IA.some((e) => e.id === c.esforco) ? c.esforco : PADRAO_IA.esforco,
     esbocoModelo: daFamilia(c.esbocoModelo) ? c.esbocoModelo : "",
@@ -139,17 +153,23 @@ export function iaDaTarefa(config, tarefa) {
 }
 
 export function opcoesIa() {
-  return { modelos: MODELOS_IA, esforcos: ESFORCOS_IA, provedores: PROVEDORES_IA, motoresAudio: MOTORES_AUDIO, sitesPadrao: SITES_PESQUISA_PADRAO };
+  return { modelos: MODELOS_IA, esforcos: ESFORCOS_IA, provedores: PROVEDORES_IA, contasTexto: CONTAS_TEXTO, motoresAudio: MOTORES_AUDIO, sitesPadrao: SITES_PESQUISA_PADRAO };
 }
 
 let cache = null;
 // O provedor valendo agora (atualizado a cada leitura da configuração; todo pedido lê a configuração antes de chamar a IA).
 let provedorEscolhido = "anthropic";
 export const provedorAtual = () => provedorEscolhido;
+let contaTextoEscolhida = "principal";
+export const contaTextoAtual = () => contaTextoEscolhida;
+function valer(config) {
+  provedorEscolhido = config.provedor;
+  contaTextoEscolhida = config.contaTexto;
+}
 
 export async function lerConfigIa() {
   if (cache && Date.now() - cache.em < VALIDADE_MS) {
-    provedorEscolhido = cache.valor.provedor;
+    valer(cache.valor);
     return cache.valor;
   }
   let guardada = null;
@@ -160,7 +180,7 @@ export async function lerConfigIa() {
   }
   const valor = validarConfigIa(guardada);
   cache = { valor, em: Date.now() };
-  provedorEscolhido = valor.provedor;
+  valer(valor);
   return valor;
 }
 
@@ -168,7 +188,7 @@ export async function gravarConfigIa(entrada) {
   const valor = validarConfigIa(entrada);
   await gravarItem(CHAVE, valor);
   cache = { valor, em: Date.now() };
-  provedorEscolhido = valor.provedor;
+  valer(valor);
   return valor;
 }
 

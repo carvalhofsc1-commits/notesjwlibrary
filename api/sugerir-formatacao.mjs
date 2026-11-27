@@ -7,7 +7,8 @@ import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod";
 import { codigoDoDirigente, erro, origemPermitida, textosIguais } from "./_comum.mjs";
 import { acessoDoDirigente, codigoValido, dirigenteValido, exigirAcesso, recusarAcesso, resumoValido } from "./_acesso.mjs";
-import { MODELOS_IA, TAREFAS_DE_ESBOCOS, iaDaTarefa, lerConfigIa, provedorAtual, provedorDoModelo } from "./_iaConfig.mjs";
+import { MODELOS_IA, TAREFAS_DE_ESBOCOS, contaTextoAtual, iaDaTarefa, lerConfigIa, provedorAtual, provedorDoModelo } from "./_iaConfig.mjs";
+import { NOMES_CONTA } from "./_googleToken.mjs";
 import { apagarResultado, guardarResultado, idDePedidoValido, lerResultado, pedidosDisponiveis } from "./_pedidos.mjs";
 import { criarClienteIa, erroSemIa, iaDisponivel } from "./_clienteIa.mjs";
 import { blocoLicoesPara } from "./_memoria.mjs";
@@ -1001,7 +1002,9 @@ function tratarErro(e, res) {
   if (e && (e.status === 403 || /403/.test(String(e.message))) && /spend\s*cap/i.test(String(e.message))) {
     console.error("Teto de gastos do Google Cloud (Vertex AI) atingido:", e?.message);
     const prov = contextoDoPedido.getStore()?.provedorIa;
-    const conta = prov === "gemini" ? "Google Cloud · Gemini" : prov === "vertex" ? "Google Cloud · Claude / Vertex AI" : "Google Cloud (Vertex AI / Gemini)";
+    const nome = prov === "gemini" ? "Google Cloud · Gemini" : prov === "vertex" ? "Google Cloud · Claude / Vertex AI" : "Google Cloud (Vertex AI / Gemini)";
+    // Com o texto no Claude Platform, quem usa o Google é a conta de Voz e áudio: o nome da conta só entra quando é a do texto.
+    const conta = provedorAtual() === "anthropic" ? nome : `${nome} · ${NOMES_CONTA[contaTextoAtual()]}`;
     return erro(res, 429, mensagemTetoDeGastos(conta));
   }
   if (

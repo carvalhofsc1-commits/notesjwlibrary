@@ -7964,7 +7964,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.15.04'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.15.05'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -12974,8 +12974,8 @@ function saveTemplatesToStorage() {
         fim.textContent = (r.data && r.data.erro) || configErrorMessage(r, 'Não foi possível salvar agora.');
       }
     }
-    // ---------- Ajustes → Conta do Google (voz e transcrição): a principal ou a de reserva ----------
-    const GOOGLE_CONTA_NOMES = { principal: 'Conta principal', alternativa: 'Conta de reserva' };
+    // ---------- Ajustes → Conta do Google da voz e do áudio: a da empresa ou a pessoal ----------
+    const GOOGLE_CONTA_NOMES = { principal: 'Google - conta da empresa', alternativa: 'Google - conta pessoal' };
     // Um seletor na tabela de Modelos e agentes de IA; a conta não configurada aparece desabilitada.
     let googleContaSalva = null;
     function googleContaRender(d) {
@@ -12986,7 +12986,7 @@ function saveTemplatesToStorage() {
         const op = document.createElement('option');
         op.value = chave;
         op.disabled = !c.configurada;
-        op.textContent = GOOGLE_CONTA_NOMES[chave] + (c.configurada ? (c.projeto ? ' · ' + c.projeto : '') : ' (não configurada)');
+        op.textContent = GOOGLE_CONTA_NOMES[chave] + (c.configurada ? '' : ' (não configurada)');
         sel.appendChild(op);
       });
       sel.value = d.escolhida;
@@ -14422,7 +14422,11 @@ function saveTemplatesToStorage() {
     // ---------- Modelo da IA de texto e gasto com ela (tela de prompts) ----------
     // O administrador escolhe o modelo e o esforço da IA para todos (api/_iaConfig.mjs). O gasto do mês vem da Cost API
     // da Anthropic, quando há uma chave de administrador da Anthropic na Vercel (ANTHROPIC_ADMIN_KEY).
-    const iaProvedor = document.getElementById('iaProvedor'); // de onde vem o Claude: Anthropic direta ou Google Cloud (Vertex)
+    const iaProvedor = document.getElementById('iaProvedor'); // quem atende o texto: "provedor:conta" (Google) ou "anthropic" (Claude Platform)
+    const iaTextoValor = config => (config.provedor === 'anthropic' ? 'anthropic' : config.provedor + ':' + (config.contaTexto || 'principal'));
+    const iaTexto = () => { const [provedor, contaTexto] = iaProvedor.value.split(':'); return contaTexto ? { provedor, contaTexto } : { provedor }; };
+    // A conta do Google da escolha na tela: a do próprio texto; no Claude Platform (que não usa o Google), a de Voz e áudio.
+    const iaContaGoogle = () => iaTexto().contaTexto || document.getElementById('googleContaSelect').value;
     const iaModelo = document.getElementById('iaModelo');
     const iaAudioMotor = document.getElementById('iaAudioMotor'); // Áudio em texto: motor da transcrição, modelo Gemini dela e modelo do resumo
     const iaAudioGeminiModelo = document.getElementById('iaAudioGeminiModelo');
@@ -14469,7 +14473,7 @@ function saveTemplatesToStorage() {
     }
 
     // Os modelos da família do provedor escolhido: Claude (Anthropic direta ou Vertex) ou Gemini (Google Cloud).
-    const iaFamilia = () => (iaProvedor.value === 'gemini' ? 'gemini' : 'claude');
+    const iaFamilia = () => (iaTexto().provedor === 'gemini' ? 'gemini' : 'claude');
     // Só os modelos que a conta ativa consegue usar (6.11.14): o servidor testa cada um (ia-disponiveis); até a resposta chegar, ou se o
     // provedor não estiver configurado, a lista fica completa.
     let iaDisponiveis = null; // Set de ids ou null
@@ -14491,9 +14495,9 @@ function saveTemplatesToStorage() {
     async function iaCarregarDisponiveis(forcar) {
       if (!iaOpcoes) return;
       const meu = ++iaDisponiveisPedido;
-      const provedor = iaProvedor.value;
+      const provedor = iaTexto().provedor;
       iaDisponiveis = null; // enquanto confere: lista completa
-      const r = await postConfig({ acao: 'ia-disponiveis', codigo: codigoAdminAtual(), provedor, forcar: Boolean(forcar) });
+      const r = await postConfig({ acao: 'ia-disponiveis', codigo: codigoAdminAtual(), provedor, conta: iaContaGoogle(), forcar: Boolean(forcar) });
       if (meu !== iaDisponiveisPedido || !r.ok || !r.data || !Array.isArray(r.data.disponiveis)) return;
       // Nada disponível (provedor sem configuração): não esconde tudo; mostra a lista completa e avisa.
       if (!r.data.disponiveis.length) { iaMensagem('Nenhum modelo respondeu com este provedor/conta. Confira a configuração no servidor.', true); return; }
@@ -14537,7 +14541,8 @@ function saveTemplatesToStorage() {
       itens.forEach(item => {
         const op = document.createElement('option');
         op.value = item.id;
-        op.textContent = item.nome;
+        op.textContent = item.nome + (item.inativo ? ' (inativo)' : '');
+        op.disabled = Boolean(item.inativo); // em cinza, sem poder escolher (ex.: Claude pela Vertex sem cota)
         select.appendChild(op);
       });
     }
@@ -14587,10 +14592,10 @@ function saveTemplatesToStorage() {
       const r = await postConfig({ acao: 'ia-ler', codigo: codigoAdminAtual() });
       if (!r.ok) return iaMensagem(configErrorMessage(r, 'Não foi possível carregar o modelo da IA.'), true);
       iaOpcoes = r.data.opcoes;
-      iaPreencher(iaProvedor, iaOpcoes.provedores, '');
-      iaProvedor.value = r.data.config.provedor;
+      iaPreencher(iaProvedor, iaOpcoes.contasTexto || iaOpcoes.provedores, '');
+      iaProvedor.value = iaTextoValor(r.data.config);
       iaPreencherSelects();
-      iaProvedor.value = r.data.config.provedor;
+      iaProvedor.value = iaTextoValor(r.data.config);
       iaModelo.value = r.data.config.modelo;
       iaEsforco.value = r.data.config.esforco;
       iaEsbocoModelo.value = r.data.config.esbocoModelo || '';
@@ -14602,7 +14607,7 @@ function saveTemplatesToStorage() {
       iaAudioModelo.value = r.data.config.audioModelo || '';
       iaAudioMostrar();
       iaPesquisaMostrar(r.data.config);
-      iaSalvo = { provedor: r.data.config.provedor, modelo: r.data.config.modelo, esforco: r.data.config.esforco, esbocoModelo: r.data.config.esbocoModelo || '', esbocoEsforco: r.data.config.esbocoEsforco || '', familiaModelo: r.data.config.familiaModelo || '', familiaEsforco: r.data.config.familiaEsforco || '', audioMotor: r.data.config.audioMotor || 'chirp', audioGeminiModelo: r.data.config.audioGeminiModelo || '', audioModelo: r.data.config.audioModelo || '', pesquisa: iaPesquisaSalvoDe(r.data.config) };
+      iaSalvo = { provedor: iaTextoValor(r.data.config), modelo: r.data.config.modelo, esforco: r.data.config.esforco, esbocoModelo: r.data.config.esbocoModelo || '', esbocoEsforco: r.data.config.esbocoEsforco || '', familiaModelo: r.data.config.familiaModelo || '', familiaEsforco: r.data.config.familiaEsforco || '', audioMotor: r.data.config.audioMotor || 'chirp', audioGeminiModelo: r.data.config.audioGeminiModelo || '', audioModelo: r.data.config.audioModelo || '', pesquisa: iaPesquisaSalvoDe(r.data.config) };
       iaMostrarPreco();
       iaMensagem(r.data.armazenamento && !r.data.armazenamento.escrita ? 'O armazenamento do servidor ainda não permite salvar.' : '', true);
       iaCarregarDisponiveis(false); // em seguida: tira da lista o que a conta ativa não oferece
@@ -14620,10 +14625,10 @@ function saveTemplatesToStorage() {
 
     // Envia o modelo e o esforço escolhidos; quem chama (salvarParaTodos) mostra a mensagem.
     async function iaSalvarModelo() {
-      const r = await postConfig({ acao: 'ia-salvar', codigo: codigoAdminAtual(), config: Object.assign({ provedor: iaProvedor.value, modelo: iaModelo.value, esforco: iaEsforco.value, esbocoModelo: iaEsbocoModelo.value, esbocoEsforco: iaEsbocoEsforco.value, familiaModelo: iaFamiliaModelo.value, familiaEsforco: iaFamiliaEsforco.value, audioMotor: iaAudioMotor.value, audioGeminiModelo: iaAudioGeminiModelo.value, audioModelo: iaAudioModelo.value }, iaPesquisaDaTela()) });
+      const r = await postConfig({ acao: 'ia-salvar', codigo: codigoAdminAtual(), config: Object.assign(iaTexto(), { modelo: iaModelo.value, esforco: iaEsforco.value, esbocoModelo: iaEsbocoModelo.value, esbocoEsforco: iaEsbocoEsforco.value, familiaModelo: iaFamiliaModelo.value, familiaEsforco: iaFamiliaEsforco.value, audioMotor: iaAudioMotor.value, audioGeminiModelo: iaAudioGeminiModelo.value, audioModelo: iaAudioModelo.value }, iaPesquisaDaTela()) });
       if (!r.ok) return { ok: false, erro: configErrorMessage(r, 'Não foi possível salvar agora.') };
       iaPesquisaMostrar(r.data.config);
-      iaProvedor.value = r.data.config.provedor;
+      iaProvedor.value = iaTextoValor(r.data.config);
       iaModelo.value = r.data.config.modelo;
       iaEsforco.value = r.data.config.esforco;
       iaEsbocoModelo.value = r.data.config.esbocoModelo || '';
@@ -14634,7 +14639,7 @@ function saveTemplatesToStorage() {
       iaAudioGeminiModelo.value = r.data.config.audioGeminiModelo || '';
       iaAudioModelo.value = r.data.config.audioModelo || '';
       iaAudioMostrar();
-      iaSalvo = { provedor: r.data.config.provedor, modelo: r.data.config.modelo, esforco: r.data.config.esforco, esbocoModelo: r.data.config.esbocoModelo || '', esbocoEsforco: r.data.config.esbocoEsforco || '', familiaModelo: r.data.config.familiaModelo || '', familiaEsforco: r.data.config.familiaEsforco || '', audioMotor: r.data.config.audioMotor || 'chirp', audioGeminiModelo: r.data.config.audioGeminiModelo || '', audioModelo: r.data.config.audioModelo || '', pesquisa: iaPesquisaSalvoDe(r.data.config) };
+      iaSalvo = { provedor: iaTextoValor(r.data.config), modelo: r.data.config.modelo, esforco: r.data.config.esforco, esbocoModelo: r.data.config.esbocoModelo || '', esbocoEsforco: r.data.config.esbocoEsforco || '', familiaModelo: r.data.config.familiaModelo || '', familiaEsforco: r.data.config.familiaEsforco || '', audioMotor: r.data.config.audioMotor || 'chirp', audioGeminiModelo: r.data.config.audioGeminiModelo || '', audioModelo: r.data.config.audioModelo || '', pesquisa: iaPesquisaSalvoDe(r.data.config) };
       iaMostrarPreco();
       iaNotaCarregar();
       document.dispatchEvent(new Event('modelos-ia-mudou'));
@@ -14648,6 +14653,8 @@ function saveTemplatesToStorage() {
     // O modelo Gemini da transcrição só aparece quando o motor for o Gemini.
     const iaAudioMostrar = () => { iaAudioGeminiModelo.hidden = iaAudioMotor.value !== 'gemini'; };
     iaAudioMotor.addEventListener('change', iaAudioMostrar);
+    // No Claude Platform, a conta de Voz e áudio é a das etapas com Gemini: trocá-la muda os modelos disponíveis.
+    document.getElementById('googleContaSelect').addEventListener('change', () => { if (iaOpcoes && iaTexto().provedor === 'anthropic') iaCarregarDisponiveis(false); });
     // 💾 Salvar para todos (tabela de Modelos e agentes de IA): grava só o que mudou (IA de texto e áudio, conta do Google, voz).
     document.getElementById('modelosSalvarBtn').addEventListener('click', async () => {
       const contaSel = document.getElementById('googleContaSelect');
@@ -14722,14 +14729,14 @@ function saveTemplatesToStorage() {
       botao.disabled = true;
       saida.className = 'hint';
       saida.textContent = 'Testando… (pode levar alguns segundos)';
-      const r = await postConfig({ acao: 'ia-testar', codigo: codigoAdminAtual(), provedor: iaProvedor.value, modelo: iaModelo.value, esforco: iaEsforco.value });
+      const r = await postConfig({ acao: 'ia-testar', codigo: codigoAdminAtual(), provedor: iaTexto().provedor, conta: iaContaGoogle(), modelo: iaModelo.value, esforco: iaEsforco.value });
       botao.disabled = false;
       if (!r.ok) { saida.className = 'warn'; saida.textContent = configErrorMessage(r, 'Não foi possível testar agora.'); return; }
       const linha = (nome, t) => !t ? '' : nome + ': ' + (t.ok ? 'funcionou (' + (t.ms / 1000).toFixed(1).replace('.', ',') + ' s)' : 'FALHOU' + (t.status ? ' (' + t.status + ')' : '') + ' — ' + (t.erro || 'erro desconhecido'));
       const d = r.data;
       const tudoOk = d.simples && d.simples.ok && d.estruturada && d.estruturada.ok;
       saida.className = tudoOk ? 'ok' : 'warn';
-      saida.textContent = [(tudoOk ? '✓ ' : '✗ ') + 'Modelo ' + d.modelo + (d.regiao ? ' · região ' + d.regiao : ''), linha('Pedido simples', d.simples), linha('Resposta estruturada', d.estruturada)].filter(Boolean).join('\n');
+      saida.textContent = [(tudoOk ? '✓ ' : '✗ ') + 'Modelo ' + d.modelo + (d.conta ? ' · ' + d.conta : '') + (d.regiao ? ' · região ' + d.regiao : ''), linha('Pedido simples', d.simples), linha('Resposta estruturada', d.estruturada)].filter(Boolean).join('\n');
       saida.style.whiteSpace = 'pre-line';
     });
 

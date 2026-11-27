@@ -1,38 +1,45 @@
 // Cliente da IA de texto. O app fala com a IA por três caminhos, à escolha do administrador (tela de prompts):
-//  - "gemini": o Gemini do Google Cloud (Vertex AI), na conta do Google da empresa; um adaptador (abaixo) converte o pedido no formato da
+//  - "gemini": o Gemini do Google Cloud (Vertex AI), na conta do Google escolhida (empresa ou pessoal); um adaptador (abaixo) converte o pedido no formato da
 //    Anthropic, que o resto do código usa, para o do Gemini e a resposta de volta;
 //  - "anthropic": a API direta da Anthropic (ANTHROPIC_API_KEY);
-//  - "vertex": o Claude do Google Cloud (Vertex AI / Plataforma do agente), cobrado na conta do Google da empresa. Usa a mesma conta de
-//    serviço da voz e da transcrição (GOOGLE_TTS_CREDENCIAIS; se faltar, a de reserva) e não precisa de chave nova.
+//  - "vertex": o Claude do Google Cloud (Vertex AI / Plataforma do agente), cobrado na conta do Google escolhida. Usa as mesmas contas de
+//    serviço da voz e da transcrição (api/_googleToken.mjs) e não precisa de chave nova. Não há troca automática de conta.
 // O SDK da Anthropic é o mesmo nos dois: no Vertex ele só troca o endereço, o token e o corpo do pedido (função fetchVertex), então todo o
 // resto do código (messages.parse, esforço, respostas estruturadas) continua igual.
 // Variáveis opcionais na Vercel: GOOGLE_VERTEX_REGIAO (Claude) e GOOGLE_GEMINI_REGIAO (Gemini), padrão "global" (ex.: "us-east5", "europe-west1").
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
-import { credenciaisDaConta, tokenDeAcesso, variaveisDaConta } from "./_googleToken.mjs";
-import { lerConfigIa, provedorAtual } from "./_iaConfig.mjs";
+import { CONTAS, NOMES_CONTA, credenciaisDaConta, lerContaEscolhida, tokenDeAcesso, variaveisDaConta } from "./_googleToken.mjs";
+import { contaTextoAtual, lerConfigIa, provedorAtual } from "./_iaConfig.mjs";
 
 const VERSAO_VERTEX = "vertex-2023-10-16";
 
 const regiaoVertex = () => String(process.env.GOOGLE_VERTEX_REGIAO || "global").trim() || "global";
-// A conta do Google do Claude: a principal (a da empresa) e, se ela não existir, a de reserva.
-const contaVertex = () => (credenciaisDaConta("principal") ? "principal" : credenciaisDaConta("alternativa") ? "alternativa" : null);
+// A conta do Google que atende um pedido: a dita por quem chama; senão, a do texto. Com o texto no Claude Platform (que não usa o
+// Google), as etapas que usam um modelo Gemini seguem a conta de Voz e áudio.
+export async function contaDoGoogle(conta) {
+  if (CONTAS.includes(conta)) return conta;
+  return provedorAtual() === "anthropic" ? lerContaEscolhida() : contaTextoAtual();
+}
 
-export function urlDoModeloVertex(modelo, stream = false) {
-  const conta = contaVertex();
-  const projeto = conta ? variaveisDaConta(conta).projeto : "";
+async function acessoGoogle(contaPedida) {
+  const conta = await contaDoGoogle(contaPedida);
+  if (!credenciaisDaConta(conta)) throw Object.assign(new Error(`A ${NOMES_CONTA[conta]} do Google não está configurada no servidor.`), { status: 503 });
+  const token = await tokenDeAcesso(conta);
+  if (!token) throw Object.assign(new Error(`Não consegui autenticar na ${NOMES_CONTA[conta]} do Google.`), { status: 503 });
+  return { conta, token, projeto: variaveisDaConta(conta).projeto };
+}
+
+export function urlDoModeloVertex(modelo, projeto, stream = false) {
   const regiao = regiaoVertex();
   const host = regiao === "global" ? "aiplatform.googleapis.com" : `${regiao}-aiplatform.googleapis.com`;
   return `https://${host}/v1/projects/${projeto}/locations/${regiao}/publishers/anthropic/models/${modelo}:${stream ? "streamRawPredict" : "rawPredict"}`;
 }
 
 // Troca o pedido do SDK ("/v1/messages", chave x-api-key, modelo no corpo) pelo formato da Vertex (modelo na URL, token do Google).
-async function fetchVertex(url, init = {}) {
-  const conta = contaVertex();
-  if (!conta) throw Object.assign(new Error("A conta do Google (GOOGLE_TTS_CREDENCIAIS) não está configurada no servidor."), { status: 503 });
-  const token = await tokenDeAcesso(conta);
-  if (!token) throw Object.assign(new Error("Não consegui autenticar na conta do Google."), { status: 503 });
+const fetchVertex = (contaPedida) => async (url, init = {}) => {
+  const { token, projeto } = await acessoGoogle(contaPedida);
   const corpo = JSON.parse(typeof init.body === "string" ? init.body : "{}");
   const modelo = corpo.model;
   delete corpo.model;
@@ -42,8 +49,8 @@ async function fetchVertex(url, init = {}) {
   headers.delete("anthropic-version");
   headers.set("Authorization", `Bearer ${token}`);
   headers.set("Content-Type", "application/json");
-  return fetch(urlDoModeloVertex(modelo, Boolean(corpo.stream)), { ...init, headers, body: JSON.stringify(corpo) });
-}
+  return fetch(urlDoModeloVertex(modelo, projeto, Boolean(corpo.stream)), { ...init, headers, body: JSON.stringify(corpo) });
+};
 
 // ---------- Gemini (Vertex AI) ----------
 // O resto do app conversa com um "cliente" no formato do SDK da Anthropic (messages.create / messages.parse, content, usage, stop_reason,
@@ -114,12 +121,8 @@ function respostaDaAnthropic(d, formato) {
   return r;
 }
 
-async function chamarGemini(p, { maxRetries = 0, timeout = 90_000 } = {}, comEsquema) {
-  const conta = contaVertex();
-  if (!conta) throw Object.assign(new Error("A conta do Google (GOOGLE_TTS_CREDENCIAIS) não está configurada no servidor."), { status: 503 });
-  const token = await tokenDeAcesso(conta);
-  if (!token) throw Object.assign(new Error("Não consegui autenticar na conta do Google."), { status: 503 });
-  const projeto = variaveisDaConta(conta).projeto;
+async function chamarGemini(p, { maxRetries = 0, timeout = 90_000 } = {}, comEsquema, contaPedida) {
+  const { token, projeto } = await acessoGoogle(contaPedida);
   const regiao = regiaoGemini();
   const host = regiao === "global" ? "aiplatform.googleapis.com" : `${regiao}-aiplatform.googleapis.com`;
   const url = `https://${host}/v1/projects/${projeto}/locations/${regiao}/publishers/google/models/${p.model}:generateContent`;
@@ -160,50 +163,52 @@ async function chamarGemini(p, { maxRetries = 0, timeout = 90_000 } = {}, comEsq
   throw ultimo;
 }
 
-function clienteGemini(opcoes) {
+function clienteGemini(opcoes, conta) {
   const formatoDe = (p) => (p.output_config && p.output_config.format) || null;
   const mensagens = {
-    create: (p) => chamarGemini(p, opcoes, null),
-    parse: (p) => chamarGemini(p, opcoes, formatoDe(p)),
+    create: (p) => chamarGemini(p, opcoes, null, conta),
+    parse: (p) => chamarGemini(p, opcoes, formatoDe(p), conta),
   };
   return { messages: mensagens, beta: { messages: mensagens } };
 }
 
-export function criarClienteIa(opcoes = {}, provedor = provedorAtual()) {
-  if (provedor === "gemini") return clienteGemini(opcoes);
-  if (provedor === "vertex") return new Anthropic({ ...opcoes, apiKey: "vertex", baseURL: "https://aiplatform.googleapis.com", fetch: fetchVertex });
+// "conta" (opcional) fixa a conta do Google; sem ela, vale a regra de contaDoGoogle.
+export function criarClienteIa(opcoes = {}, provedor = provedorAtual(), conta) {
+  if (provedor === "gemini") return clienteGemini(opcoes, conta);
+  if (provedor === "vertex") return new Anthropic({ ...opcoes, apiKey: "vertex", baseURL: "https://aiplatform.googleapis.com", fetch: fetchVertex(conta) });
   return new Anthropic(opcoes);
 }
 
 // A IA do provedor escolhido está configurada no servidor? (lê a escolha do administrador antes)
 export async function iaDisponivel() {
   await lerConfigIa();
-  return provedorAtual() === "anthropic" ? Boolean(process.env.ANTHROPIC_API_KEY) : Boolean(contaVertex());
+  return provedorAtual() === "anthropic" ? Boolean(process.env.ANTHROPIC_API_KEY) : Boolean(credenciaisDaConta(contaTextoAtual()));
 }
 
 export const erroSemIa = () =>
   provedorAtual() === "anthropic"
     ? "O recurso de IA ainda não está configurado no servidor."
-    : "A IA pelo Google Cloud ainda não está configurada no servidor (conta de serviço do Google).";
+    : `A IA pelo Google Cloud ainda não está configurada no servidor (${NOMES_CONTA[contaTextoAtual()]} do Google).`;
 
 // Quais modelos a conta ativa realmente consegue usar (6.11.14). Cada modelo recebe um pedido mínimo, pelo provedor que o atenderia:
 // o Gemini pela conta do Google; o Claude pela API da Anthropic ou, com o provedor "vertex", pelo Google Cloud. Só conta como indisponível
 // quando o provedor diz que o modelo não existe ou que a conta não tem acesso (404, 403 ou 400 com essa mensagem); falha de rede, limite
 // de uso ou erro do servidor não tiram o modelo da lista. O resultado fica guardado por 30 minutos (por provedor e conta do Google).
+// "contaTela" é a conta do Google da escolha que está na tela (ainda que não salva).
 const guardadosDisponiveis = new Map();
 const MOTIVO_INDISPONIVEL = /not.?found|not.?available|unavailable|not enabled|no access|does not have access|permission|unsupported model|invalid model|publisher model/i;
-export async function modelosDisponiveis(provedorTela, modelos, forcar = false) {
+export async function modelosDisponiveis(provedorTela, modelos, forcar = false, contaTela) {
   const claudePor = provedorTela === "vertex" ? "vertex" : "anthropic";
-  const configurado = (p) => (p === "anthropic" ? Boolean(process.env.ANTHROPIC_API_KEY) : Boolean(contaVertex()));
-  const chave = `${claudePor}|${contaVertex() || "-"}`;
+  const conta = await contaDoGoogle(contaTela);
+  const configurado = (p) => (p === "anthropic" ? Boolean(process.env.ANTHROPIC_API_KEY) : Boolean(credenciaisDaConta(conta)));
+  const chave = `${claudePor}|${conta}`;
   const guardado = guardadosDisponiveis.get(chave);
   if (!forcar && guardado && Date.now() - guardado.em < 30 * 60 * 1000) return guardado.valor;
   const verificar = async (m) => {
     const prov = m.familia === "gemini" ? "gemini" : claudePor;
-    if (prov !== "gemini" && !configurado(prov)) return { id: m.id, ok: false, motivo: "provedor não configurado" };
-    if (prov === "gemini" && !contaVertex()) return { id: m.id, ok: false, motivo: "conta do Google não configurada" };
+    if (!configurado(prov)) return { id: m.id, ok: false, motivo: prov === "gemini" ? "conta do Google não configurada" : "provedor não configurado" };
     try {
-      const client = criarClienteIa({ maxRetries: 0, timeout: 25_000 }, prov);
+      const client = criarClienteIa({ maxRetries: 0, timeout: 25_000 }, prov, conta);
       await client.messages.create({ model: m.id, max_tokens: 16, messages: [{ role: "user", content: "Responda apenas: ok" }] });
       return { id: m.id, ok: true };
     } catch (e) {
@@ -225,9 +230,10 @@ export async function modelosDisponiveis(provedorTela, modelos, forcar = false) 
 }
 
 // Teste do administrador: um pedido simples e um com resposta estruturada (como o app usa), no provedor e modelo dados.
-export async function testarIa(provedor, modelo, esforco) {
+export async function testarIa(provedor, modelo, esforco, contaTela) {
   const semEsforco = /haiku-4|sonnet-4-5|-3-/.test(modelo);
-  const resultado = { provedor, modelo, regiao: provedor === "vertex" ? regiaoVertex() : provedor === "gemini" ? regiaoGemini() : undefined };
+  const conta = await contaDoGoogle(contaTela);
+  const resultado = { provedor, modelo, regiao: provedor === "vertex" ? regiaoVertex() : provedor === "gemini" ? regiaoGemini() : undefined, conta: provedor === "anthropic" ? undefined : NOMES_CONTA[conta] };
   const rodar = async (fn) => {
     const inicio = Date.now();
     try {
@@ -237,10 +243,10 @@ export async function testarIa(provedor, modelo, esforco) {
       return { ok: false, ms: Date.now() - inicio, erro: String((e && e.message) || e).slice(0, 400), status: e && e.status };
     }
   };
-  if (provedor === "anthropic" ? !process.env.ANTHROPIC_API_KEY : !contaVertex()) {
+  if (provedor === "anthropic" ? !process.env.ANTHROPIC_API_KEY : !credenciaisDaConta(conta)) {
     return { ...resultado, simples: { ok: false, erro: "Este provedor não está configurado no servidor." } };
   }
-  const client = criarClienteIa({ maxRetries: 0, timeout: 60_000 }, provedor);
+  const client = criarClienteIa({ maxRetries: 0, timeout: 60_000 }, provedor, conta);
   resultado.simples = await rodar(async () => {
     await client.messages.create({ model: modelo, max_tokens: 60, messages: [{ role: "user", content: "Responda apenas: ok" }] });
   });

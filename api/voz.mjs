@@ -88,7 +88,7 @@ export default async function handler(req, res) {
     return erro(res, 405, "Método não permitido.");
   }
   if (!origemPermitida(req.headers.origin)) return erro(res, 403, "Origem não permitida.");
-  await prepararConta(); // a conta do Google escolhida pelo administrador (a outra fica de reserva)
+  await prepararConta(); // a conta do Google de Voz e áudio, escolhida pelo administrador
   const chaveApi = variaveisDaConta().apiKey;
   const temChave = Boolean(chaveApi);
   if (!temChave && !credenciais()) return erro(res, 503, "A leitura em voz alta ainda não está configurada no servidor.");

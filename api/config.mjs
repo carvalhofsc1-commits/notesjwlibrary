@@ -6,7 +6,7 @@ import { inventarioDasFontes } from "./_fontes.mjs";
 import { CATEGORIAS, LIMITES, PARTES, aplicarLimites, categoriaDaParte, limitesPublicos, travadosDe, validarAlteracoes, validarLimites } from "./_prompts.mjs";
 import { esquecerCache, gravarAlteracoes, gravarLimites, lerAlteracoes, lerAnterior, lerLimites } from "./_promptsArmazenados.mjs";
 import { configPublicaVoz, gravarConfigVoz, lerConfigVoz, opcoesVoz } from "./_vozConfig.mjs";
-import { gravarConfigIa, lerConfigIa, lerCustoIa, opcoesIa, PROVEDORES_IA } from "./_iaConfig.mjs";
+import { gravarConfigIa, lerConfigIa, lerCustoIa, opcoesIa, PROVEDORES_IA, VERTEX_INATIVO } from "./_iaConfig.mjs";
 import { modelosDisponiveis, testarIa } from "./_clienteIa.mjs";
 import { descreverContas, gravarContaEscolhida } from "./_googleToken.mjs";
 import { acrescentarLicao, alterarLicao, analisarCorrecao, apagarLicao, apagarTudo, ligarMemoria, lerMemoria, memoriaConfigurada } from "./_memoria.mjs";
@@ -518,6 +518,7 @@ export default async function handler(req, res) {
       if (!exigirEscrita(res)) return;
       // Por cima da configuração atual: um campo que a tela não mandou (ex.: app antigo, sem os modelos da pesquisa) não volta ao padrão.
       const novo = corpo.config && typeof corpo.config === "object" && !Array.isArray(corpo.config) ? corpo.config : {};
+      if (VERTEX_INATIVO && novo.provedor === "vertex") return erro(res, 400, "O Claude pela Vertex está inativo por enquanto (sem cota no Google Cloud). Escolha outra opção em Texto.");
       return res.status(200).json({ config: await gravarConfigIa({ ...(await lerConfigIa()), ...novo }) });
     }
 
@@ -526,13 +527,13 @@ export default async function handler(req, res) {
       const cfg = await lerConfigIa();
       const provedor = PROVEDORES_IA.some((p) => p.id === corpo.provedor) ? corpo.provedor : cfg.provedor;
       const modelo = typeof corpo.modelo === "string" && corpo.modelo ? corpo.modelo : cfg.modelo;
-      return res.status(200).json(await testarIa(provedor, modelo, typeof corpo.esforco === "string" ? corpo.esforco : cfg.esforco));
+      return res.status(200).json(await testarIa(provedor, modelo, typeof corpo.esforco === "string" ? corpo.esforco : cfg.esforco, corpo.conta));
     }
 
     // Quais modelos a conta ativa consegue usar com o provedor escolhido na tela (a tela só lista esses).
     if (acao === "ia-disponiveis") {
       const provedor = PROVEDORES_IA.some((p) => p.id === corpo.provedor) ? corpo.provedor : (await lerConfigIa()).provedor;
-      return res.status(200).json(await modelosDisponiveis(provedor, opcoesIa().modelos, corpo.forcar === true));
+      return res.status(200).json(await modelosDisponiveis(provedor, opcoesIa().modelos, corpo.forcar === true, corpo.conta));
     }
 
     // Gasto do mês com a IA de texto, pela Cost API da Anthropic (precisa de ANTHROPIC_ADMIN_KEY).
