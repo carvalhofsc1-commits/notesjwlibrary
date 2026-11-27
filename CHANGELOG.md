@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.15.00
+
+- **Compartilhar (adoração e jogos):** o campo do apelido, o botão **Acrescentar** e o **Criar o código** ficaram mais finos.
+
 ## 6.14.99
 
 - **Adoração e jogos ao vivo:** uma resposta do servidor que chega atrasada não desfaz mais a tela (antes a dica recém-dada podia sumir por alguns segundos, e um segundo toque dava outra dica).

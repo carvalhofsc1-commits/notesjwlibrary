@@ -18788,3 +18788,8 @@ body.so-usuario .usuario-tela > summary.acesso-site-resumo::before { content: no
 .fam-aberta-fim > button:not(.limpar-btn) { flex: 1 1 0; width: auto; min-width: 0; }
 .fam-aberta-fim > .limpar-btn { flex: 0 0 52px; width: 52px; min-width: 52px; padding: 0; }
 #familiaCard #familiaSalvasLista > .fam-salva[hidden] { display: none; }
+/* 6.15.00: no compartilhamento (adoração e jogos), o campo do apelido, o "Acrescentar" e o "Criar o código" mais finos (o campo segue com
+   letra de 16 px para o iPhone não aproximar a tela ao digitar) */
+:is(.fam-sessao-painel, .jogos-grupo) .fam-sessao-add.fam-sessao-add > input { min-height: 32px !important; height: 32px; padding-top: 2px; padding-bottom: 2px; font-size: 16px; line-height: 1.2; }
+:is(.fam-sessao-painel, .jogos-grupo) .fam-sessao-add.fam-sessao-add > button { min-height: 32px !important; height: 32px; padding-top: 0; padding-bottom: 0; font-size: .88rem; }
+:is(.fam-sessao-painel, .jogos-grupo) .fam-acoes.fam-acoes > button.fam-principal { min-height: 32px !important; height: 32px; padding-top: 0; padding-bottom: 0; font-size: .9rem; }
