@@ -100,6 +100,16 @@ export function validarConfigIa(entrada) {
   };
 }
 
+// 6.15.10: com a conta de texto do Claude (Claude Platform ou Vertex), nenhum modelo Gemini é aceito. Devolve os campos que ferem a regra.
+const CAMPOS_DE_MODELO = ["modelo", "esbocoModelo", "familiaModelo", "audioModelo", "pesquisaModelo", "pesquisaWebModelo", "pesquisaRespostaModelo", "pesquisaVideoModelo"];
+export function camposIncompativeis(config) {
+  if (!config || config.provedor === "gemini") return [];
+  const ehGemini = (id) => MODELOS_IA.some((m) => m.id === id && m.familia === "gemini");
+  const campos = CAMPOS_DE_MODELO.filter((c) => ehGemini(config[c]));
+  if (config.audioMotor === "gemini") campos.push("audioMotor");
+  return campos;
+}
+
 // ---------- Assistente de pesquisas ----------
 const modeloConhecido = (id) => MODELOS_IA.some((m) => m.id === id);
 export const PADRAO_PESQUISA = {

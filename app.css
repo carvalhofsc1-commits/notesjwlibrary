@@ -14511,6 +14511,15 @@ button.processando:disabled { opacity: 1; cursor: progress; }
   display: none;
 }
 
+/* 6.15.10: modelo Gemini com a conta de texto do Claude: moldura vermelha e ⚠️ antes do nome. */
+.modelos-editar-tabela .sel-quebra.incompativel {
+  border: 2px solid #dc2626;
+  background: color-mix(in srgb, #dc2626 6%, var(--card));
+}
+.modelos-editar-tabela .sel-quebra.incompativel .sel-quebra-texto::before {
+  content: '⚠️ ';
+}
+
 .modelos-editar-tabela .sel-quebra.desabilitado {
   opacity: .6;
 }
@@ -14615,6 +14624,15 @@ button.modelos-salvar {
   width: 100%;
   margin-top: 8px;
 }
+
+/* 6.15.10: Salvar para todos e Fechar sem salvar dividem a linha, meio a meio. */
+.modelos-salvar-linha {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 8px;
+}
+.modelos-salvar-linha > button { width: 100%; margin: 0; }
 
 /* 📋 Copiar as definições: abaixo da tabela das Definições em vigor, na largura dela. */
 button.modelos-copiar {

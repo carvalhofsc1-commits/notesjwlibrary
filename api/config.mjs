@@ -6,7 +6,7 @@ import { inventarioDasFontes } from "./_fontes.mjs";
 import { CATEGORIAS, LIMITES, PARTES, aplicarLimites, categoriaDaParte, limitesPublicos, travadosDe, validarAlteracoes, validarLimites } from "./_prompts.mjs";
 import { esquecerCache, gravarAlteracoes, gravarLimites, lerAlteracoes, lerAnterior, lerLimites } from "./_promptsArmazenados.mjs";
 import { configPublicaVoz, gravarConfigVoz, lerConfigVoz, opcoesVoz } from "./_vozConfig.mjs";
-import { gravarConfigIa, lerConfigIa, lerCustoIa, opcoesIa, PROVEDORES_IA, VERTEX_INATIVO } from "./_iaConfig.mjs";
+import { camposIncompativeis, gravarConfigIa, lerConfigIa, lerCustoIa, opcoesIa, PROVEDORES_IA, validarConfigIa, VERTEX_INATIVO } from "./_iaConfig.mjs";
 import { lerCustoGcp } from "./_custoGcp.mjs";
 import { modelosDisponiveis, testarIa } from "./_clienteIa.mjs";
 import { descreverContas, gravarContaEscolhida } from "./_googleToken.mjs";
@@ -520,7 +520,10 @@ export default async function handler(req, res) {
       // Por cima da configuração atual: um campo que a tela não mandou (ex.: app antigo, sem os modelos da pesquisa) não volta ao padrão.
       const novo = corpo.config && typeof corpo.config === "object" && !Array.isArray(corpo.config) ? corpo.config : {};
       if (VERTEX_INATIVO && novo.provedor === "vertex") return erro(res, 400, "O Claude pela Vertex está inativo por enquanto (sem cota no Google Cloud). Escolha outra opção em Texto.");
-      return res.status(200).json({ config: await gravarConfigIa({ ...(await lerConfigIa()), ...novo }) });
+      const final = validarConfigIa({ ...(await lerConfigIa()), ...novo });
+      const ruins = camposIncompativeis(final);
+      if (ruins.length) return res.status(400).json({ erro: "Não salvo: a conta de texto é do Claude e não aceita modelos Gemini. Troque os modelos Gemini escolhidos.", campos: ruins });
+      return res.status(200).json({ config: await gravarConfigIa(final) });
     }
 
     // Teste de um provedor da IA (Anthropic ou Vertex) com o modelo e o esforço dados, sem salvar nada.

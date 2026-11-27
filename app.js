@@ -7964,7 +7964,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.15.09'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.15.10'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -14507,7 +14507,27 @@ function saveTemplatesToStorage() {
       iaSelectsDeModelo().forEach((s, i) => iaDefinir(s, valores[i]));
       iaMostrarPreco();
     }
+    // 6.15.10: com a conta de texto do Claude (Claude Platform ou Vertex), nenhum modelo Gemini é aceito. Os seletores com Gemini (e o motor
+    // Gemini da transcrição) ganham moldura vermelha e ⚠️; o Salvar recusa até trocar. O servidor confere a mesma regra (ia-salvar).
+    function iaIncompativeis() {
+      if (!iaOpcoes || iaTexto().provedor === 'gemini') return [];
+      const ehGemini = id => iaOpcoes.modelos.some(m => m.id === id && m.familia === 'gemini');
+      const lista = iaSelectsDeModelo().filter(s => s !== iaAudioGeminiModelo && ehGemini(s.value));
+      if (iaAudioMotor.value === 'gemini') lista.push(iaAudioMotor);
+      return lista;
+    }
+    function iaMarcarIncompativeis() {
+      const ruins = new Set(iaIncompativeis());
+      [...iaSelectsDeModelo(), iaAudioMotor].forEach(s => {
+        const caixa = s.closest('.sel-quebra') || s;
+        caixa.classList.toggle('incompativel', ruins.has(s));
+        if (ruins.has(s)) s.setAttribute('aria-invalid', 'true'); else s.removeAttribute('aria-invalid');
+      });
+      return [...ruins];
+    }
+    document.querySelector('.modelos-editar').addEventListener('change', () => iaMarcarIncompativeis());
     function iaMostrarPreco() {
+      iaMarcarIncompativeis();
       if (!iaModeloPreco || !iaEsbocoPreco) return; // a tela enxuta não mostra os preços
       const modelos = iaModelosDaFamilia();
       const maisBarato = modelos[0] || { nome: '', saida: 1 };
@@ -14655,12 +14675,29 @@ function saveTemplatesToStorage() {
     iaAudioMotor.addEventListener('change', iaAudioMostrar);
     // No Claude Platform, a conta de Voz e áudio é a das etapas com Gemini: trocá-la muda os modelos disponíveis.
     document.getElementById('googleContaSelect').addEventListener('change', () => { if (iaOpcoes && iaTexto().provedor === 'anthropic') iaCarregarDisponiveis(false); });
+    // ✕ Fechar sem salvar (6.15.10): desfaz o que foi mudado na tela (volta ao que está salvo no servidor) e fecha a seção.
+    document.getElementById('modelosFecharBtn').addEventListener('click', () => {
+      document.getElementById('iaTesteResultado').textContent = '';
+      iaMensagem('', false);
+      modelosIaSection.open = false; // ao abrir de novo, a seção recarrega o que está salvo (IA e conta do Google)
+      const codigo = senhaAdminSalva();
+      if (codigo) vozAdminCarregar(codigo); // a voz não recarrega sozinha ao abrir: volta já ao valor salvo
+      modelosIaSection.scrollIntoView({ block: 'nearest' });
+    });
     // 💾 Salvar para todos (tabela de Modelos e agentes de IA): grava só o que mudou (IA de texto e áudio, conta do Google, voz).
     document.getElementById('modelosSalvarBtn').addEventListener('click', async () => {
       const contaSel = document.getElementById('googleContaSelect');
       const mudouIa = iaPendente();
       const mudouConta = googleContaSalva !== null && Boolean(contaSel.value) && contaSel.value !== googleContaSalva;
       const mudouVoz = Boolean(vozEscolhaSalva) && (vozCampos.modelo.value !== vozEscolhaSalva.modelo || vozCampos.voz.value !== vozEscolhaSalva.voz);
+      // Conta de texto do Claude com algum modelo Gemini escolhido: não grava nada.
+      const ruins = iaMarcarIncompativeis();
+      if (ruins.length) {
+        document.getElementById('modelosModelosCard').open = true;
+        const nomes = [...new Set(ruins.map(s => { const th = s.closest('tr') && s.closest('tr').querySelector('th'); return th ? th.textContent.trim() : ''; }).filter(Boolean))];
+        ruins[0].closest('tr').scrollIntoView({ block: 'center', behavior: 'smooth' });
+        return iaMensagem('⚠️ Não salvo: a conta de texto é do Claude e não aceita modelos Gemini. Troque os marcados com ⚠️ (' + nomes.join(', ') + ').', true);
+      }
       if (!mudouIa && !mudouConta && !mudouVoz) return iaMensagem('Nada foi alterado.', false);
       const botao = document.getElementById('modelosSalvarBtn');
       botao.disabled = true;

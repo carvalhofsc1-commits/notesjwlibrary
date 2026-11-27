@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.15.10
+
+- **Conta de texto do Claude só com modelos Claude:** com o Texto em Anthropic (Claude), os seletores com modelo Gemini (e o motor Gemini da transcrição) ficam com moldura vermelha e ⚠️, e o **Salvar para todos** recusa gravar até trocá-los, dizendo quais são. O servidor confere a mesma regra.
+- **✕ Fechar sem salvar:** novo botão à direita do Salvar para todos (a linha ficou dividida meio a meio). Desfaz o que foi mudado na tela e fecha a seção.
+
 ## 6.15.09
 
 - **Consumo do mês no Google Cloud (conta pessoal):** no cartão **🔑 Conta de faturamento**, a caixa **💳 Consumo do mês** mostra o "Custo total" do painel de faturamento do Google (custo menos economia), o valor por serviço e a hora dos dados, com o botão **↻ Atualizar o consumo**. O servidor lê a exportação do faturamento para o BigQuery (conjunto de dados `faturamento`), só para o administrador; os dados do Google chegam com algumas horas de atraso.
