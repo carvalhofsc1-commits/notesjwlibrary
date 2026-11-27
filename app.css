@@ -18179,12 +18179,15 @@ details.fam-placar-card > summary { min-height: 0 !important; padding: 3px 8px !
 .fam-acoes.fam-acoes-codigo-jogo > .fam-principal { flex: 1 1 calc(100% - 56px); }
 .fam-acoes.fam-acoes-codigo-jogo > .limpar-btn { align-self: stretch; }
 
-/* 6.14.00: botão 👥 da barra das questões (só quem administra o jogo em grupo): ligado = todos acompanham a questão escolhida */
-.fam-sessao-nav > .fam-sessao-nav-sync { flex: 0 0 32px; width: 32px; min-width: 32px; min-height: 28px !important; height: 28px; margin: 0; padding: 0; border-radius: 8px; font-size: .95rem; background: #fff !important; border: 1px solid #9ca3af !important; opacity: .65; display: inline-flex; align-items: center; justify-content: center; }
-.fam-sessao-nav > .fam-sessao-nav-sync.ligado { background: #ede9fe !important; border-color: #7c3aed !important; opacity: 1; }
+/* 6.14.00: botão 👥 (só quem administra o jogo em grupo): ligado = todos acompanham a questão escolhida.
+   6.14.89: na frente do "Próxima questão", na mesma linha; sozinho (última questão) ocupa a linha toda */
+.fam-sessao-pe-questao { display: flex; align-items: stretch; gap: 8px; width: 100%; margin: 10px 0 0; }
+.fam-sessao-pe-questao > .fam-sessao-nav-sync { flex: 0 0 52px; width: 52px; min-width: 52px; min-height: 40px !important; height: auto; margin: 0; padding: 0; border-radius: 10px; font-size: 1.1rem; background: #fff !important; border: 1px solid #9ca3af !important; opacity: .65; display: inline-flex; align-items: center; justify-content: center; }
+.fam-sessao-pe-questao > .fam-sessao-nav-sync.ligado { background: #ede9fe !important; border-color: #7c3aed !important; opacity: 1; }
+.fam-sessao-pe-questao > .fam-sessao-nav-sync:only-child { flex: 1 1 0; width: 100%; min-width: 0; padding: 0 8px; font-size: .95rem; font-weight: 700; color: #4c1d95; }
 
 /* 6.14.01: "▶ Próxima questão" no pé do card da questão, na largura toda, lilás; ao tocar, a tela sobe até a barra das questões (abaixo da barra do topo) */
-#participarSessao li.fam-sessao-questao > .fam-sessao-proxima { display: flex; align-items: center; justify-content: center; width: 100%; box-sizing: border-box; min-height: 40px; margin: 10px 0 0; background: #ede9fe; border: 1px solid #7c3aed; color: #4c1d95; font-weight: 700; }
+#participarSessao li.fam-sessao-questao .fam-sessao-proxima { display: flex; flex: 1 1 0; align-items: center; justify-content: center; width: auto; min-width: 0; box-sizing: border-box; min-height: 40px; margin: 0; background: #ede9fe; border: 1px solid #7c3aed; color: #4c1d95; font-weight: 700; }
 .fam-sessao-nav { scroll-margin-top: calc(var(--topbar-h, 52px) + 8px); }
 
 /* 6.14.06: o microfone do jogo é de segurar: o toque demorado não rola a tela, não seleciona nem abre menu */
@@ -18326,8 +18329,9 @@ body[data-screen="jogos"] main { padding-top: 10px; padding-bottom: 6px; }
 :root[data-theme="dark"] .fam-sessao-nav { background: #33270f; border-color: #b45309; }
 :root[data-theme="dark"] .fam-sessao-nav > .fam-sessao-nav-seta { background: #6d28d9 !important; border-color: #7c3aed !important; color: #f5f3ff !important; }
 :root[data-theme="dark"] .fam-sessao-nav > .fam-sessao-nav-seta:disabled { background: #46326f !important; border-color: #46326f !important; }
-:root[data-theme="dark"] .fam-sessao-nav > .fam-sessao-nav-sync { background: #1e293b !important; border-color: #64748b !important; }
-:root[data-theme="dark"] .fam-sessao-nav > .fam-sessao-nav-sync.ligado { background: #2e2950 !important; border-color: #8b5cf6 !important; }
+:root[data-theme="dark"] .fam-sessao-pe-questao > .fam-sessao-nav-sync { background: #1e293b !important; border-color: #64748b !important; }
+:root[data-theme="dark"] .fam-sessao-pe-questao > .fam-sessao-nav-sync.ligado { background: #2e2950 !important; border-color: #8b5cf6 !important; }
+:root[data-theme="dark"] .fam-sessao-pe-questao > .fam-sessao-nav-sync:only-child { color: #ddd6fe; }
 :root[data-theme="dark"] .fam-sessao-nav-bolinha { color: #cbd5e1; border-color: #64748b; }
 :root[data-theme="dark"] .fam-sessao-nav-bolinha.certa { background: #2e2950; border-color: #8b5cf6; color: #ddd6fe; }
 :root[data-theme="dark"] .fam-sessao-nav-bolinha.errada { background: #3d2029; border-color: #f87171; color: #fecaca; }
@@ -18343,7 +18347,7 @@ body[data-screen="jogos"] main { padding-top: 10px; padding-bottom: 6px; }
 :root[data-theme="dark"] #participarSessao button.fam-sessao-dar-dica { background: #3b475c !important; border-color: #64748b !important; color: #f1f5f9 !important; }
 :root[data-theme="dark"] #participarSessao .fam-sessao-resp-box .fam-sessao-responder button.fam-principal:disabled { background: #27406e !important; border-color: #27406e !important; color: #b4c4e0 !important; }
 :root[data-theme="dark"] #participarSessao .fam-sessao-resp-box .fam-sessao-responder button.fam-nao-sei:disabled { background: #642d37 !important; border-color: #642d37 !important; color: #e5bfc3 !important; }
-:root[data-theme="dark"] #participarSessao li.fam-sessao-questao > .fam-sessao-proxima { background: #2e2950; border-color: #8b5cf6; color: #ddd6fe; }
+:root[data-theme="dark"] #participarSessao li.fam-sessao-questao .fam-sessao-proxima { background: #2e2950; border-color: #8b5cf6; color: #ddd6fe; }
 :root[data-theme="dark"] .fam-sessao-rodape > .fam-jogo-enunciado, :root[data-theme="dark"] .fam-sessao-rodape > .fam-sessao-grande-btn { background: #243047 !important; border-color: #475569 !important; color: #cbd5e1; }
 :root[data-theme="dark"] .fam-sessao-rodape > .fam-jogo-enunciado > summary { color: #cbd5e1; }
 :root[data-theme="dark"] #participarSessao .fam-acoes-dupla > .fam-vf-verdadeiro { background: #1d3a5f; border-color: #3b82f6; color: #bfdbfe; }
@@ -18359,8 +18363,9 @@ body[data-screen="jogos"] main { padding-top: 10px; padding-bottom: 6px; }
   :root:not([data-theme="light"]) .fam-sessao-nav { background: #33270f; border-color: #b45309; }
   :root:not([data-theme="light"]) .fam-sessao-nav > .fam-sessao-nav-seta { background: #6d28d9 !important; border-color: #7c3aed !important; color: #f5f3ff !important; }
   :root:not([data-theme="light"]) .fam-sessao-nav > .fam-sessao-nav-seta:disabled { background: #46326f !important; border-color: #46326f !important; }
-  :root:not([data-theme="light"]) .fam-sessao-nav > .fam-sessao-nav-sync { background: #1e293b !important; border-color: #64748b !important; }
-  :root:not([data-theme="light"]) .fam-sessao-nav > .fam-sessao-nav-sync.ligado { background: #2e2950 !important; border-color: #8b5cf6 !important; }
+  :root:not([data-theme="light"]) .fam-sessao-pe-questao > .fam-sessao-nav-sync { background: #1e293b !important; border-color: #64748b !important; }
+  :root:not([data-theme="light"]) .fam-sessao-pe-questao > .fam-sessao-nav-sync.ligado { background: #2e2950 !important; border-color: #8b5cf6 !important; }
+  :root:not([data-theme="light"]) .fam-sessao-pe-questao > .fam-sessao-nav-sync:only-child { color: #ddd6fe; }
   :root:not([data-theme="light"]) .fam-sessao-nav-bolinha { color: #cbd5e1; border-color: #64748b; }
   :root:not([data-theme="light"]) .fam-sessao-nav-bolinha.certa { background: #2e2950; border-color: #8b5cf6; color: #ddd6fe; }
   :root:not([data-theme="light"]) .fam-sessao-nav-bolinha.errada { background: #3d2029; border-color: #f87171; color: #fecaca; }
@@ -18376,7 +18381,7 @@ body[data-screen="jogos"] main { padding-top: 10px; padding-bottom: 6px; }
   :root:not([data-theme="light"]) #participarSessao button.fam-sessao-dar-dica { background: #3b475c !important; border-color: #64748b !important; color: #f1f5f9 !important; }
   :root:not([data-theme="light"]) #participarSessao .fam-sessao-resp-box .fam-sessao-responder button.fam-principal:disabled { background: #27406e !important; border-color: #27406e !important; color: #b4c4e0 !important; }
   :root:not([data-theme="light"]) #participarSessao .fam-sessao-resp-box .fam-sessao-responder button.fam-nao-sei:disabled { background: #642d37 !important; border-color: #642d37 !important; color: #e5bfc3 !important; }
-  :root:not([data-theme="light"]) #participarSessao li.fam-sessao-questao > .fam-sessao-proxima { background: #2e2950; border-color: #8b5cf6; color: #ddd6fe; }
+  :root:not([data-theme="light"]) #participarSessao li.fam-sessao-questao .fam-sessao-proxima { background: #2e2950; border-color: #8b5cf6; color: #ddd6fe; }
   :root:not([data-theme="light"]) .fam-sessao-rodape > .fam-jogo-enunciado, :root:not([data-theme="light"]) .fam-sessao-rodape > .fam-sessao-grande-btn { background: #243047 !important; border-color: #475569 !important; color: #cbd5e1; }
   :root:not([data-theme="light"]) .fam-sessao-rodape > .fam-jogo-enunciado > summary { color: #cbd5e1; }
   :root:not([data-theme="light"]) #participarSessao .fam-acoes-dupla > .fam-vf-verdadeiro { background: #1d3a5f; border-color: #3b82f6; color: #bfdbfe; }

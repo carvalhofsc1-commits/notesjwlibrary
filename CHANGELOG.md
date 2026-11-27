@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.89
+
+- **Jogos ao vivo:** o botão 👥 (levar todos para a mesma questão) saiu da barra das questões e fica na frente do botão **Próxima questão**, na mesma linha; na última questão ele ocupa a linha, com o texto.
+
 ## 6.14.88
 
 - **Adoração ao vivo:** no título do jogo fica só o nome (ex.: **Perfil bíblico**), sem a explicação entre parênteses e sem a linha "Jogo bíblico". Vale para todos os jogos.
