@@ -18762,3 +18762,6 @@ body.so-usuario .usuario-tela > summary.acesso-site-resumo::before { content: no
 #participarNomeTitulo > .fam-nome-codigo { font-size: .88rem; font-weight: 600; color: var(--muted); }
 :root[data-theme="dark"] #participarNomeTitulo > .fam-nome-tema { color: #c4b5fd; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #participarNomeTitulo > .fam-nome-tema { color: #c4b5fd; } }
+/* 6.14.92: a apresentação e o cadastro rolam pela tela toda: o cartão não é uma área de rolagem própria (com o "contain" das janelas de
+   aviso, o arrasto ficava preso no cartão, que não tinha o que rolar) */
+.acesso-site-overlay > .modal-card.acesso-site-card { max-height: none; overflow: visible; overscroll-behavior: auto; }

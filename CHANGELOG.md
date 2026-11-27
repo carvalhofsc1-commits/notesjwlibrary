@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.92
+
+- **Correção:** a tela de apresentação (e a de cadastro) voltou a rolar no celular. Desde a 6.14.62 o arrasto ficava preso no cartão e não descia a página.
+
 ## 6.14.91
 
 - **Entrada na adoração ou no jogo:** o tema aparece em destaque (grande, negrito, roxo e centralizado), com o código menor embaixo.
