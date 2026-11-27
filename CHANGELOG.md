@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.80
+
+- **Leitura diária da Bíblia:** novo desenho do ícone (a Bíblia com a fita vermelha) no atalho, no menu, na barra de baixo, nos títulos e na apresentação do app.
+
 ## 6.14.79
 
 - **Adoração em família:** o card **Assunto desta semana** ganhou uma moldura mais escura.
