@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.82
+
+- **Leitura diária da Bíblia:** a seção **Os judeus retornam do exílio** ganhou ícone próprio (o povo caminhando com as bagagens), no lugar das correntes.
+
 ## 6.14.81
 
 - **Adoração em família:** novo desenho do ícone (pai, mãe e filho à mesa). O anterior ficou guardado em `icones-guardados/icone-adoracao-v1.png`.

@@ -18728,3 +18728,6 @@ body.so-usuario .usuario-tela > summary.acesso-site-resumo::before { content: no
 #familiaCard .fam-assunto-card { border: 1.5px solid #6b7280; }
 :root[data-theme="dark"] #familiaCard .fam-assunto-card { border-color: #94a3b8; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #familiaCard .fam-assunto-card { border-color: #94a3b8; } }
+/* 6.14.82: desenho próprio da seção "Os judeus retornam do exílio" (é largo: ocupa um pouco mais que um emoji na largura) */
+.biblia-secao-icone > img.icone-img { display: block; width: 1.5em; height: 1.1em; margin: 0 auto; }
+#bibliaSecaoIcone > img.icone-img { display: block; width: 1.7em; height: 1.2em; margin: -0.1em 0; }

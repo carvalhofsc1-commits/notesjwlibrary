@@ -7964,7 +7964,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.14.81'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.14.82'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -33107,11 +33107,20 @@ function saveTemplatesToStorage() {
     const BIBLIA_PROG = window.PROGRAMA_LEITURA_BIBLIA || { secoes: [], total: 0, instrucoes: '' };
     const BIBLIA_KEY = 'jwLibraryNoteAplicarLeituraBibliaV1';
     const BIBLIA_ICONES = { moises: '📜', terra: '🏞️', reis: '👑', exilio: '⛓️', canticos: '🎶', profetas: '📣', jesus: '🧔🏽', atos: '🌍', paulo: '✉️', outros: '🔥' };
-    function bibliaIcone(id) { // nó com o emoji da seção
+    const BIBLIA_IMAGENS = { exilio: 'icone-exilio.png?v=1' }; // 6.14.82: seções com desenho próprio no lugar do emoji
+    function bibliaIconePor(el, id) {
+      if (!BIBLIA_IMAGENS[id]) { el.textContent = BIBLIA_ICONES[id] || '📖'; return; }
+      const img = document.createElement('img');
+      img.className = 'icone-img';
+      img.src = BIBLIA_IMAGENS[id];
+      img.alt = '';
+      el.replaceChildren(img);
+    }
+    function bibliaIcone(id) { // nó com o ícone da seção
       const el = document.createElement('span');
       el.className = 'biblia-icone';
       el.setAttribute('aria-hidden', 'true');
-      el.textContent = BIBLIA_ICONES[id] || '📖';
+      bibliaIconePor(el, id);
       return el;
     }
     // Versículos de cada capítulo (biblia-versiculos.js): "Cap. 1 (31)". Os trechos de capítulo ("119:1-63") contam só os versículos do trecho.
@@ -35147,7 +35156,7 @@ function saveTemplatesToStorage() {
       });
       if (!secao) return;
       bibliaEstado.secao = secao.id;
-      bibliaSecaoIcone.textContent = BIBLIA_ICONES[secao.id] || '📖'; // o ícone fica à esquerda, separado do nome
+      bibliaIconePor(bibliaSecaoIcone, secao.id); // o ícone fica à esquerda, separado do nome
       bibliaSecaoTitulo.textContent = secao.nome;
       bibliaProgToggle.dataset.secao = secao.id; // o card de baixo usa a cor do botão da seção
       bibliaProgToggle.classList.toggle('completa', (c => c.total > 0 && c.lidos === c.total)(bibliaContar(secao.itens || [])));
