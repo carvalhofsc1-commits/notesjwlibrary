@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.15.16
+
+- Anotações no iPhone: com o teclado aberto, a barra "Inserir texto bíblico" às vezes descia até o meio do campo, em cima do texto. Agora usa o topo real da área visível (menor entre offsetTop e pageTop − rolagem, a mesma conta da barra de baixo) e fica no alto da tela.
+
 ## 6.15.15
 
 - **Código de demonstração (revisores das lojas):** em Ajustes → 👥 Adm. de usuários e custos de IA → 🧪 Código de demonstração, o administrador cria um código com validade (1 a 90 dias), limite de aparelhos (1 a 10) e crédito de teste. Quem o informa na tela de cadastro ("🧪 Tenho um código de demonstração") é aprovado na hora e recebe uma senha master com prazo, que libera todos os recursos naquele aparelho. Ao cancelar o código, trocá-lo ou vencer a validade, a senha deixa de valer sozinha (o cadastro continua).
