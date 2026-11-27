@@ -18756,3 +18756,9 @@ body.so-usuario .usuario-tela > summary.acesso-site-resumo::before { content: no
 .fam-sessao-nav > .fam-sessao-nav-bolinhas > .fam-sessao-nav-bolinha { flex: 1 1 0; width: auto; min-width: 0; max-width: 24px; height: auto; min-height: 0 !important; aspect-ratio: 1; font-size: clamp(.55rem, 2.7vw, .75rem); line-height: 1; }
 .fam-sessao-nav > .fam-sessao-nav-bolinhas:has(> :nth-child(13)) { flex-wrap: wrap; }
 .fam-sessao-nav > .fam-sessao-nav-bolinhas:has(> :nth-child(13)) > .fam-sessao-nav-bolinha { flex: 0 0 22px; }
+/* 6.14.91: na entrada de uma adoração ou jogo, o tema em destaque: grande, negrito, roxo e centralizado; o código embaixo, menor */
+#participarNomeTitulo { display: grid; gap: 6px; text-align: center; }
+#participarNomeTitulo > .fam-nome-tema { font-size: clamp(1.25rem, 6.2vw, 1.65rem); font-weight: 900; line-height: 1.2; color: #6d28d9; overflow-wrap: anywhere; }
+#participarNomeTitulo > .fam-nome-codigo { font-size: .88rem; font-weight: 600; color: var(--muted); }
+:root[data-theme="dark"] #participarNomeTitulo > .fam-nome-tema { color: #c4b5fd; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #participarNomeTitulo > .fam-nome-tema { color: #c4b5fd; } }

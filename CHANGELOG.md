@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.91
+
+- **Entrada na adoração ou no jogo:** o tema aparece em destaque (grande, negrito, roxo e centralizado), com o código menor embaixo.
+
 ## 6.14.90
 
 - **Jogos ao vivo:** os números das questões ficam todos numa linha só (até 12), encolhendo conforme a largura da tela.
