@@ -2,6 +2,14 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.15.17
+
+- Anotações → Reuniões congregacionais em partes, no molde da assembleia: primeiro se cadastra a reunião (data; a de hoje já vem preenchida) e aparece a lista das reuniões anotadas. Cada reunião tem a sua lista de partes (tema, orador e o começo da anotação, ✍️ quando já tem texto), com ➕ Nova parte, 🗑️ por parte e 📄 Exportar anotações da reunião (Word com todas as partes).
+- Na anotação de uma parte, o cabeçalho mostra "Parte N de M" com ◀ ▶ para ir à parte anterior ou à próxima; na última, ➕ começa uma parte nova sem perder a anterior. O botão 📋 Partes (no alto) volta à lista. A reunião de hoje, se já cadastrada, abre direto nas partes.
+- Limpar apaga só a anotação da parte aberta. Salvar guarda cada parte separada em Pesquisas salvas ("Reunião dd/mm/aaaa · tema").
+- Gravações e resumos vão para a parte de onde saíram, mesmo que outra parte esteja aberta.
+- A anotação antiga (um texto só) vira, sozinha, uma reunião com uma parte, sem perder nada.
+
 ## 6.15.16
 
 - Anotações no iPhone: com o teclado aberto, a barra "Inserir texto bíblico" às vezes descia até o meio do campo, em cima do texto. Agora usa o topo real da área visível (menor entre offsetTop e pageTop − rolagem, a mesma conta da barra de baixo) e fica no alto da tela.

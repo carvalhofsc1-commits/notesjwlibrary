@@ -7964,7 +7964,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.15.16'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.15.17'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -35707,6 +35707,16 @@ function saveTemplatesToStorage() {
 
       let modo = '';
       let partes = [];
+      // Reunião (6.15.17): várias reuniões, cada uma com as suas partes, e cada parte com a sua anotação. reuniaoVista: 'lista' (reuniões),
+      // 'partes' (as partes da reunião escolhida) ou 'anotando' (a anotação de uma parte, nos campos de sempre).
+      let reunioes = [];
+      let reuniaoAtualId = '';
+      let reuniaoParteId = '';
+      let reuniaoVista = 'lista';
+      const reuniaoBox = document.getElementById('anotReuniaoBox');
+      const reuniaoListaBox = document.getElementById('anotReuniaoListaBox');
+      const reuniaoPartesBox = document.getElementById('anotReuniaoPartesBox');
+      const reuniaoCab = document.getElementById('anotReuniaoCab');
 
       // ----- Gravações guardadas no app: cada anotação (a reunião ou a parte do programa) guarda os ids das suas gravações -----
       let gravacoesReuniao = [];
@@ -35715,7 +35725,7 @@ function saveTemplatesToStorage() {
       let filaUltimo = '';
       let filaUltimoEm = 0;
       const filaEl = document.getElementById('anotacoesFila');
-      const anotIdAtual = () => (comPrograma() ? 'anot:' + modo + ':' + chaveAtual + ':' + parteAtual : 'anot:reuniao');
+      const anotIdAtual = () => (comPrograma() ? 'anot:' + modo + ':' + chaveAtual + ':' + parteAtual : 'anot:reuniao:' + reuniaoAtualId + ':' + reuniaoParteId);
       function gravacoesAtuais() {
         if (comPrograma()) {
           const p = partes[parteAtual];
@@ -35731,7 +35741,7 @@ function saveTemplatesToStorage() {
       const gravacoesTitulo = document.getElementById('anotacoesGravacoesTitulo');
       const gravResumirTodasBtn = document.getElementById('anotacoesGravResumirTodasBtn');
       function pintarGravacoes() {
-        const visivel = Boolean(modo) && (!comPrograma() || ativa);
+        const visivel = Boolean(modo) && (comPrograma() ? ativa : reuniaoVista === 'anotando');
         const ids = visivel ? gravacoesAtuais() : [];
         const anot = visivel ? anotIdAtual() : '';
         const chave = anot + '|' + ids.join(',');
@@ -36439,13 +36449,23 @@ function saveTemplatesToStorage() {
         progTitulo.hidden = !programa || vista === 'escolha' || !programaMeta;
         if (verNotasBtn) verNotasBtn.hidden = !temNotas();
         document.getElementById('anotacoesExportarNotas').hidden = !temNotas();
-        escritaEl.hidden = programa && !ativa;
+        const naReuniao = modo === 'reuniao';
+        const reuniaoEscrevendo = naReuniao && reuniaoVista === 'anotando';
+        reuniaoBox.hidden = !naReuniao || reuniaoEscrevendo;
+        reuniaoListaBox.hidden = reuniaoVista !== 'lista';
+        reuniaoPartesBox.hidden = reuniaoVista !== 'partes';
+        reuniaoCab.hidden = !reuniaoEscrevendo;
+        detalhesEl.hidden = programa || !reuniaoEscrevendo; // tema/orador/congregação: só na anotação de uma parte da reunião
+        escritaEl.hidden = (programa && !ativa) || (naReuniao && !reuniaoEscrevendo);
         cabParteEl.hidden = !ativa;
         voltarHub.hidden = !modo;
         const botaoPrograma = document.getElementById('anotacoesProgramaTopo');
-        botaoPrograma.hidden = !ativa;
+        botaoPrograma.hidden = !ativa && !reuniaoEscrevendo;
+        botaoPrograma.textContent = reuniaoEscrevendo ? '📋 Partes' : '📋 Programa';
+        botaoPrograma.title = reuniaoEscrevendo ? 'Voltar à lista das partes desta reunião' : 'Voltar ao programa do evento';
         const topoEl = botaoPrograma.closest('.anotacoes-topo');
-        topoEl.toggleAttribute('data-prog', ativa);
+        topoEl.toggleAttribute('data-prog', ativa || reuniaoEscrevendo);
+        if (naReuniao) reuniaoPintar();
         const naTelaDoPrograma = programa && vista === 'programa';
         document.getElementById('anotacoesTrocarTopo').hidden = !naTelaDoPrograma; // Trocar de evento: no topo da tela do programa
         topoEl.toggleAttribute('data-troca', naTelaDoPrograma);
@@ -36499,6 +36519,7 @@ function saveTemplatesToStorage() {
 
       function guardarNota() {
         if (comPrograma() && ativa && partes[parteAtual]) partes[parteAtual].nota = texto.value;
+        else if (modo === 'reuniao') guardarParteReuniao();
       }
 
       // Congresso: o dia de cada parte ("Sexta-feira"). A programação abre com todos os dias recolhidos; tocar num dia o abre (e fecha o que estava aberto) e tocar no dia aberto o recolhe.
@@ -36762,6 +36783,13 @@ function saveTemplatesToStorage() {
 
       // Voltar vai sempre para a tela anterior: anotação → programa → lista de eventos → menu.
       function voltar() {
+        if (modo === 'reuniao' && reuniaoVista !== 'lista') {
+          if (gravacao) return dizer('Pare a gravação antes de voltar.', true);
+          guardarNota();
+          salvarRascunho();
+          reuniaoIr(reuniaoVista === 'anotando' ? 'partes' : 'lista');
+          return;
+        }
         if (!comPrograma()) return voltarAoHub();
         if (gravacao) return dizer('Pare a gravação antes de voltar.', true);
         guardarNota();
@@ -36942,6 +36970,10 @@ function saveTemplatesToStorage() {
 
       function limparCampos() {
         gravacoesReuniao = [];
+        reunioes = [];
+        reuniaoAtualId = '';
+        reuniaoParteId = '';
+        reuniaoVista = 'lista';
         texto.value = '';
         temaEl.value = '';
         oradorEl.value = '';
@@ -36972,7 +37004,6 @@ function saveTemplatesToStorage() {
         hub.hidden = true;
         workspace.hidden = false;
         tituloEl.textContent = info.titulo;
-        detalhesEl.hidden = info.programa; // tema/orador/congregação ficam nos campos só na reunião; nas outras vão em cada parte
         detalhesEl.open = false; // o card Tema, orador e congregação sempre abre recolhido
         if (info.programa) programaRotuloEl.textContent = '📋 Selecione ' + (nome === 'congresso' ? 'o congresso' : 'a assembleia') + ' que você está assistindo';
         limparCampos(); // os campos de outro modo não passam para este
@@ -36989,6 +37020,7 @@ function saveTemplatesToStorage() {
           }
         } else {
           carregarRascunho();
+          reuniaoEntrar();
           vmLimpar(); // a semana das partes da Vida e Ministério segue a Data guardada
         }
         atualizarVista();
@@ -37056,7 +37088,7 @@ function saveTemplatesToStorage() {
             if (chaveAtual && partes.length) eventosSalvos[chaveAtual] = { programaMeta: { ...programaMeta, partes: [] }, partes, parteAtual, data: dataAtual, em: new Date().toISOString() };
             dados[modo] = { eventos: eventosSalvos };
           } else {
-            dados[modo] = { texto: texto.value, tema: temaEl.value, orador: oradorEl.value, congregacao: congEl.value, data: dataReuniaoEl.value, gravacoes: gravacoesReuniao.slice(), em: new Date().toISOString() };
+            dados[modo] = { reunioes, atual: reuniaoAtualId, em: new Date().toISOString() };
           }
           localStorage.setItem(ANOT_KEY, JSON.stringify(dados));
           avisarEspacoAnotacoesSeGrande();
@@ -37067,14 +37099,277 @@ function saveTemplatesToStorage() {
 
       function carregarRascunho() {
         const d = lerRascunhos()[modo];
-        if (!d) return;
-        texto.value = consertarKeycaps(d.texto || '');
-        temaEl.value = d.tema || '';
-        oradorEl.value = d.orador || '';
-        congEl.value = d.congregacao || '';
-        dataReuniaoEl.value = d.data || '';
-        gravacoesReuniao = Array.isArray(d.gravacoes) ? d.gravacoes.slice() : [];
+        reunioes = d && typeof d === 'object' ? reunioesDoRascunho(d) : [];
+        reuniaoAtualId = (d && d.atual) || '';
       }
+
+      // ----- Reuniões: cada reunião (pela data) tem a sua lista de partes; cada parte, a sua anotação (tema, orador, congregação, texto, gravações) -----
+      const reuniaoItensEl = document.getElementById('anotReuniaoItens');
+      const reuniaoPartesEl = document.getElementById('anotReuniaoPartes');
+      const reuniaoNovaData = document.getElementById('anotReuniaoNovaData');
+      const novoIdReuniao = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      const hojeIso = () => { const h = new Date(); return h.getFullYear() + '-' + String(h.getMonth() + 1).padStart(2, '0') + '-' + String(h.getDate()).padStart(2, '0'); };
+      const novaParteReuniao = () => ({ id: novoIdReuniao(), tema: '', orador: '', congregacao: '', texto: '', gravacoes: [], em: new Date().toISOString() });
+      // Rascunho da reunião: o formato antigo (um texto só) vira uma reunião com uma parte, sem perder nada.
+      function reunioesDoRascunho(d) {
+        if (Array.isArray(d.reunioes)) {
+          d.reunioes.forEach(r => { if (!Array.isArray(r.partes)) r.partes = []; r.partes.forEach(p => { if (!Array.isArray(p.gravacoes)) p.gravacoes = []; }); });
+          return d.reunioes;
+        }
+        const tinha = String(d.texto || '').trim() || d.tema || d.orador || d.congregacao || (Array.isArray(d.gravacoes) && d.gravacoes.length);
+        const lista = tinha ? [{
+          id: novoIdReuniao(), data: d.data || String(d.em || '').slice(0, 10) || hojeIso(), em: d.em || new Date().toISOString(),
+          partes: [{ id: novoIdReuniao(), tema: d.tema || '', orador: d.orador || '', congregacao: d.congregacao || '', texto: d.texto || '', gravacoes: Array.isArray(d.gravacoes) ? d.gravacoes.slice() : [], em: d.em || '' }]
+        }] : [];
+        ['texto', 'tema', 'orador', 'congregacao', 'data', 'gravacoes'].forEach(k => delete d[k]);
+        d.reunioes = lista;
+        return lista;
+      }
+      // A parte de uma gravação ou de um resumo (alvo): a reunião e a parte de onde saiu; sem essas marcas (alvo antigo), a parte mexida por último.
+      // Se a reunião ou a parte já foi apagada, nada se perde: entra numa parte nova na reunião de hoje.
+      function acharParteReuniao(lista, alvo) {
+        let achada = null;
+        if (alvo && alvo.rId) {
+          const r = lista.find(x => x.id === alvo.rId);
+          achada = r ? r.partes.find(p => p.id === alvo.rp) || null : null;
+        } else {
+          lista.forEach(r => r.partes.forEach(p => { if (!achada || String(p.em || '') > String(achada.em || '')) achada = p; }));
+        }
+        if (achada) return achada;
+        let r = lista.find(x => x.data === hojeIso());
+        if (!r) { r = { id: novoIdReuniao(), data: hojeIso(), em: new Date().toISOString(), partes: [] }; lista.push(r); }
+        const p = novaParteReuniao();
+        p.tema = (alvo && alvo.titulo && alvo.titulo !== 'Anotações') ? alvo.titulo : '';
+        r.partes.push(p);
+        return p;
+      }
+      const reuniaoAtual = () => reunioes.find(r => r.id === reuniaoAtualId) || null;
+      const parteReuniaoAtual = () => { const r = reuniaoAtual(); return r ? r.partes.find(p => p.id === reuniaoParteId) || null : null; };
+      function nomeReuniao(r) {
+        const dt = lerData(r && r.data);
+        if (!dt) return 'Reunião';
+        const dia = dt.toLocaleDateString('pt-BR', { weekday: 'long' });
+        return dia.charAt(0).toUpperCase() + dia.slice(1) + ', ' + dt.toLocaleDateString('pt-BR');
+      }
+      const tipoReuniao = r => { const dt = lerData(r && r.data); return dt ? (dt.getDay() === 0 || dt.getDay() === 6 ? 'Reunião do fim de semana' : 'Reunião do meio de semana') : ''; };
+      const temaDaParteReuniao = (p, i) => String(p.tema || '').trim() || 'Parte ' + (i + 1);
+      function trechoDaParte(p) {
+        const linha = String(p.texto || '').split('\n').map(s => removeUnicodeFormatting(s).trim()).find(Boolean) || '';
+        return linha ? (linha.length > 70 ? linha.slice(0, 70) + '…' : linha) : 'Sem anotações';
+      }
+      // Os campos de sempre mostram a parte aberta; ao sair dela (ou a cada digitação), o que está nos campos volta para a parte.
+      function guardarParteReuniao() {
+        if (reuniaoVista !== 'anotando') return;
+        const p = parteReuniaoAtual();
+        const r = reuniaoAtual();
+        if (!p || !r) return;
+        const mudou = p.texto !== texto.value || p.tema !== temaEl.value || p.orador !== oradorEl.value || p.congregacao !== congEl.value;
+        p.texto = texto.value;
+        p.tema = temaEl.value;
+        p.orador = oradorEl.value;
+        p.congregacao = congEl.value;
+        p.gravacoes = gravacoesReuniao;
+        if (dataReuniaoEl.value) r.data = dataReuniaoEl.value;
+        if (mudou) { p.em = new Date().toISOString(); r.em = p.em; }
+      }
+      function reuniaoIr(v) {
+        reuniaoVista = v;
+        atualizarVista();
+        window.scrollTo({ top: 0 });
+      }
+      // Ao abrir a Reunião: a reunião de hoje (se já cadastrada) abre direto nas partes; senão, a lista com o cadastro de uma nova.
+      function reuniaoEntrar() {
+        reuniaoNovaData.value = hojeIso();
+        const hoje = reunioes.find(r => r.data === hojeIso());
+        if (hoje) { reuniaoAtualId = hoje.id; dataReuniaoEl.value = hoje.data; reuniaoVista = 'partes'; } else reuniaoVista = 'lista';
+      }
+      function reuniaoAbrir(id) {
+        const r = reunioes.find(x => x.id === id);
+        if (!r) return;
+        reuniaoAtualId = id;
+        dataReuniaoEl.value = r.data || '';
+        salvarRascunho();
+        reuniaoIr('partes');
+      }
+      function abrirParteReuniao(id, nova) {
+        if (gravacao) return dizer('Pare a gravação antes de trocar de parte.', true);
+        guardarNota();
+        const r = reuniaoAtual();
+        const p = r && r.partes.find(x => x.id === id);
+        if (!p) return;
+        reuniaoParteId = id;
+        texto.value = consertarKeycaps(p.texto || '');
+        temaEl.value = p.tema || '';
+        oradorEl.value = p.orador || '';
+        congEl.value = p.congregacao || '';
+        if (!Array.isArray(p.gravacoes)) p.gravacoes = [];
+        gravacoesReuniao = p.gravacoes;
+        dataReuniaoEl.value = r.data || '';
+        detalhesEl.open = Boolean(nova); // parte nova: o card do tema já vem aberto para informar o tema
+        dizer('');
+        reuniaoIr('anotando');
+        salvarRascunho();
+      }
+      function reuniaoNovaParte() {
+        const r = reuniaoAtual();
+        if (!r) return;
+        if (gravacao) return dizer('Pare a gravação antes de começar outra parte.', true);
+        guardarNota();
+        const p = novaParteReuniao();
+        r.partes.push(p);
+        abrirParteReuniao(p.id, true);
+      }
+      document.getElementById('anotReuniaoNovaBtn').addEventListener('click', () => {
+        const data = reuniaoNovaData.value || hojeIso();
+        const ja = reunioes.find(r => r.data === data);
+        if (ja) { reuniaoAtualId = ja.id; reuniaoNovaParte(); return; } // já cadastrada: começa mais uma parte nela
+        const r = { id: novoIdReuniao(), data, em: new Date().toISOString(), partes: [] };
+        reunioes.push(r);
+        reuniaoAtualId = r.id;
+        reuniaoNovaParte();
+      });
+      document.getElementById('anotReuniaoNovaParte').addEventListener('click', reuniaoNovaParte);
+      function linhaComLixeira(botao, aoApagar, rotuloLixeira) {
+        const linha = document.createElement('div');
+        linha.className = 'anot-reuniao-linha';
+        const lixo = document.createElement('button');
+        lixo.type = 'button';
+        lixo.className = 'secondary anotacoes-lixeira anot-reuniao-lixeira';
+        lixo.textContent = '🗑️';
+        lixo.title = rotuloLixeira;
+        lixo.setAttribute('aria-label', rotuloLixeira);
+        lixo.addEventListener('click', aoApagar);
+        linha.append(botao, lixo);
+        return linha;
+      }
+      function botaoDeItem(icone, titulo, info, marca) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'anotacoes-evento anot-reuniao-item';
+        const ic = document.createElement('span');
+        ic.className = 'anotacoes-evento-icone';
+        ic.setAttribute('aria-hidden', 'true');
+        ic.textContent = icone;
+        const caixa = document.createElement('span');
+        caixa.className = 'anotacoes-evento-texto';
+        const forte = document.createElement('strong');
+        forte.textContent = titulo;
+        const peq = document.createElement('small');
+        peq.textContent = info;
+        caixa.append(forte, peq);
+        const seta = document.createElement('span');
+        seta.className = 'anotacoes-evento-seta';
+        seta.setAttribute('aria-hidden', 'true');
+        seta.textContent = '›';
+        btn.append(ic, caixa);
+        if (marca) {
+          const m = document.createElement('span');
+          m.className = 'anotacoes-parte-marca';
+          m.textContent = marca;
+          btn.appendChild(m);
+        }
+        btn.appendChild(seta);
+        return btn;
+      }
+      function reuniaoPintar() {
+        if (reuniaoVista === 'lista') {
+          reuniaoItensEl.replaceChildren();
+          const lista = reunioes.slice().sort((a, b) => String(b.data).localeCompare(String(a.data)) || String(b.em).localeCompare(String(a.em)));
+          document.getElementById('anotReuniaoItensTitulo').hidden = !lista.length;
+          lista.forEach(r => {
+            const n = r.partes.length;
+            const btn = botaoDeItem('📅', nomeReuniao(r), [tipoReuniao(r), n + (n === 1 ? ' parte' : ' partes')].filter(Boolean).join(' · '));
+            btn.addEventListener('click', () => reuniaoAbrir(r.id));
+            reuniaoItensEl.appendChild(linhaComLixeira(btn, () => reuniaoApagar(r.id), 'Apagar a reunião de ' + nomeReuniao(r)));
+          });
+        } else if (reuniaoVista === 'partes') {
+          const r = reuniaoAtual();
+          if (!r) { reuniaoVista = 'lista'; return reuniaoPintar(); }
+          document.getElementById('anotReuniaoNome').textContent = '📅 ' + nomeReuniao(r);
+          document.getElementById('anotReuniaoNomeInfo').textContent = tipoReuniao(r);
+          reuniaoPartesEl.replaceChildren();
+          r.partes.forEach((p, i) => {
+            const btn = botaoDeItem(String(i + 1) + '.', temaDaParteReuniao(p, i), [p.orador, trechoDaParte(p)].filter(Boolean).join(' · '), String(p.texto || '').trim() ? '✍️' : '');
+            btn.querySelector('.anotacoes-evento-icone').classList.add('anot-reuniao-num');
+            btn.addEventListener('click', () => abrirParteReuniao(p.id));
+            reuniaoPartesEl.appendChild(linhaComLixeira(btn, () => reuniaoApagarParte(p.id), 'Apagar a parte ' + (i + 1)));
+          });
+          document.getElementById('anotReuniaoNovaParte').textContent = r.partes.length ? '➕ Nova parte' : '➕ Começar a primeira parte';
+          document.getElementById('anotReuniaoExportar').hidden = !r.partes.some(p => String(p.texto || '').trim());
+        } else {
+          const r = reuniaoAtual();
+          const lista = r ? r.partes : [];
+          const i = lista.findIndex(p => p.id === reuniaoParteId);
+          document.getElementById('anotReuniaoCabTema').textContent = i >= 0 ? temaDaParteReuniao(lista[i], i) : '';
+          document.getElementById('anotReuniaoCabPos').textContent = ['Parte ' + (i + 1) + ' de ' + lista.length, r ? nomeReuniao(r) : ''].filter(Boolean).join(' · ');
+          document.getElementById('anotReuniaoAnt').disabled = i <= 0;
+          const prox = document.getElementById('anotReuniaoProx');
+          const ultima = i >= lista.length - 1;
+          prox.textContent = ultima ? '➕' : '▶';
+          prox.title = ultima ? 'Começar uma parte nova' : 'Próxima parte';
+          prox.setAttribute('aria-label', prox.title);
+        }
+      }
+      async function reuniaoApagar(id) {
+        const r = reunioes.find(x => x.id === id);
+        if (!r) return;
+        const temGrav = r.partes.some(p => (p.gravacoes || []).length);
+        const ok = await askConfirm('Apagar a reunião de ' + nomeReuniao(r) + ' com as ' + r.partes.length + ' parte(s) e as anotações? O que já foi salvo em Pesquisas salvas continua lá.' + (temGrav ? ' As gravações continuam guardadas em Ajustes → Privacidade e dados deste aparelho → Gravações guardadas no app.' : ''), 'Apagar reunião', { ok: 'Apagar', cancel: 'Cancelar' });
+        if (!ok) return;
+        reunioes = reunioes.filter(x => x.id !== id);
+        if (reuniaoAtualId === id) reuniaoAtualId = '';
+        salvarRascunho();
+        reuniaoPintar();
+      }
+      async function reuniaoApagarParte(id) {
+        const r = reuniaoAtual();
+        const i = r ? r.partes.findIndex(p => p.id === id) : -1;
+        if (i < 0) return;
+        const p = r.partes[i];
+        if (String(p.texto || '').trim() || (p.gravacoes || []).length) {
+          const ok = await askConfirm('Apagar a parte ' + (i + 1) + ' (' + temaDaParteReuniao(p, i) + ') e a anotação dela? As outras partes ficam como estão.' + ((p.gravacoes || []).length ? ' As gravações continuam guardadas em Ajustes → Privacidade e dados deste aparelho → Gravações guardadas no app.' : ''), 'Apagar parte', { ok: 'Apagar', cancel: 'Cancelar' });
+          if (!ok) return;
+        }
+        r.partes.splice(i, 1);
+        if (reuniaoParteId === id) reuniaoParteId = '';
+        salvarRascunho();
+        reuniaoPintar();
+      }
+      function reuniaoPassar(delta) {
+        const r = reuniaoAtual();
+        if (!r) return;
+        const i = r.partes.findIndex(p => p.id === reuniaoParteId);
+        const alvo = r.partes[i + delta];
+        if (alvo) abrirParteReuniao(alvo.id);
+        else if (delta > 0) reuniaoNovaParte();
+      }
+      document.getElementById('anotReuniaoAnt').addEventListener('click', () => reuniaoPassar(-1));
+      document.getElementById('anotReuniaoProx').addEventListener('click', () => reuniaoPassar(1));
+      const reuniaoCabCentro = document.getElementById('anotReuniaoCabCentro');
+      const abrirTemaDaParte = () => {
+        detalhesEl.open = !detalhesEl.open;
+        if (detalhesEl.open) temaEl.focus({ preventScroll: true });
+      };
+      reuniaoCabCentro.addEventListener('click', abrirTemaDaParte);
+      reuniaoCabCentro.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrirTemaDaParte(); } });
+      // O tema digitado já aparece no cabeçalho da parte.
+      temaEl.addEventListener('input', () => { if (modo === 'reuniao' && reuniaoVista === 'anotando') { guardarNota(); reuniaoPintar(); } });
+      // Word com todas as partes da reunião (tema, orador e congregação de cada uma, depois a anotação).
+      const reuniaoExportarBtn = document.getElementById('anotReuniaoExportar');
+      reuniaoExportarBtn.addEventListener('click', async () => {
+        const r = reuniaoAtual();
+        if (!r) return;
+        const linhas = [estiloComAcentos(nomeReuniao(r), 'bold'), tipoReuniao(r), ''];
+        r.partes.forEach((p, i) => {
+          if (!String(p.texto || '').trim()) return;
+          linhas.push(estiloComAcentos(temaDaParteReuniao(p, i), 'bold'));
+          if (p.orador) linhas.push('Orador: ' + p.orador);
+          if (p.congregacao) linhas.push('Congregação: ' + p.congregacao);
+          linhas.push('', p.texto.trim(), '', '');
+        });
+        const nome = ('Anotações - Reunião ' + (r.data || '')).replace(/[\\/:*?"<>|]/g, '').trim();
+        await docxPreviaAbrir(reuniaoExportarBtn, linhas.join('\n').trim(), nome);
+      });
 
       // Anotações já feitas neste evento (se houver), para não perder ao escolher o mesmo evento de novo.
       function eventoSalvo(chave) {
@@ -37886,7 +38181,9 @@ function saveTemplatesToStorage() {
           const evento = ev ? ev.titulo : ((programaMeta && programaMeta.titulo) || (MODOS[modo].tipo === 'congresso' ? 'Congresso' : 'Assembleia'));
           titulo = (evento + ' · ' + (dadosDaParte().tema || 'Parte ' + (parteAtual + 1))).slice(0, 100);
         } else {
-          titulo = ('Reunião · ' + (temaEl.value.trim() || formatarData(dataReuniaoEl.value) || new Date().toLocaleDateString('pt-BR'))).slice(0, 100);
+          const r = reuniaoAtual();
+          const ip = r ? r.partes.findIndex(p => p.id === reuniaoParteId) : -1;
+          titulo = ('Reunião ' + (formatarData(dataReuniaoEl.value) || new Date().toLocaleDateString('pt-BR')) + ' · ' + (temaEl.value.trim() || 'Parte ' + (ip + 1))).slice(0, 100);
         }
         const jaExistia = historicoLer().some(g => g.anotId === anotId);
         let anotEvento = '';
@@ -37905,10 +38202,10 @@ function saveTemplatesToStorage() {
         docxPreviaAbrir(event.currentTarget, bruto, limpo || 'Anotacoes');
       });
       document.getElementById('anotacoesLimparBtn').addEventListener('click', async () => {
-        if (comPrograma()) {
-          // Só a anotação desta parte; o programa e as outras partes ficam.
+        if (comPrograma() || modo === 'reuniao') {
+          // Só a anotação desta parte; o programa (ou a reunião) e as outras partes ficam.
           if (!texto.value.trim()) return dizer('Esta parte ainda não tem anotações.', true);
-          const ok = await askConfirm('Apagar as anotações desta parte? O programa e as outras partes ficam como estão.', 'Limpar anotações', { ok: 'Limpar', cancel: 'Cancelar' });
+          const ok = await askConfirm(comPrograma() ? 'Apagar as anotações desta parte? O programa e as outras partes ficam como estão.' : 'Apagar as anotações desta parte? A reunião e as outras partes ficam como estão.', 'Limpar anotações', { ok: 'Limpar', cancel: 'Cancelar' });
           if (!ok) return;
           texto.value = '';
           guardarNota();
@@ -38202,11 +38499,12 @@ function saveTemplatesToStorage() {
         return {
           modo, programa: comPrograma(), chave: chaveAtual, parte: parteAtual, parteId: comPrograma() ? idDaParte(partes[parteAtual]) : '',
           dona, donaId: dona >= 0 ? idDaParte(partes[dona]) : '', q,
+          rId: modo === 'reuniao' ? reuniaoAtualId : '', rp: modo === 'reuniao' ? reuniaoParteId : '',
           contexto: [dp.tema, dp.orador, dp.congregacao].filter(Boolean).join(' · '),
           titulo: tituloDaAnotacao(60)
         };
       }
-      const alvoAberto = a => Boolean(modo) && modo === a.modo && (a.programa ? (comPrograma() && chaveAtual === a.chave && ativa && indiceDoAlvo(partes, a.parteId, a.parte) === parteAtual) : !comPrograma());
+      const alvoAberto = a => Boolean(modo) && modo === a.modo && (a.programa ? (comPrograma() && chaveAtual === a.chave && ativa && indiceDoAlvo(partes, a.parteId, a.parte) === parteAtual) : (!comPrograma() && reuniaoVista === 'anotando' && (!a.rId || (a.rId === reuniaoAtualId && a.rp === reuniaoParteId))));
       const juntarTexto = (velho, novo) => (String(velho || '').trim() ? String(velho).replace(/\s+$/, '') + '\n\n' : '') + novo;
       // Grava o resumo (e a resposta da recapitulação) na anotação do alvo: aberta na tela, em outra parte do evento aberto ou só no rascunho.
       function entregarNaAnotacao(alvo, bloco, resp) {
@@ -38232,6 +38530,16 @@ function saveTemplatesToStorage() {
           try { pintarPartes(); atualizarVista(); } catch (e) { /* ignore */ }
           return true;
         }
+        // Reunião aberta, mas em outra parte (ou na lista): a anotação vai para a parte de onde saiu, na memória (o rascunho é gravado em seguida).
+        if (!alvo.programa && modo === 'reuniao') {
+          const p = acharParteReuniao(reunioes, alvo);
+          if (!p) return false;
+          p.texto = juntarTexto(p.texto, bloco);
+          p.em = new Date().toISOString();
+          salvarRascunho();
+          try { atualizarVista(); } catch (e) { /* ignore */ }
+          return true;
+        }
         try {
           const dados = lerRascunhos();
           if (alvo.programa) {
@@ -38244,7 +38552,10 @@ function saveTemplatesToStorage() {
             if (resp && ev.partes[idr]) ev.partes[idr].resposta = juntarTexto(ev.partes[idr].resposta, resp);
           } else {
             if (!dados.reuniao || typeof dados.reuniao !== 'object') dados.reuniao = {};
-            dados.reuniao.texto = juntarTexto(dados.reuniao.texto, bloco);
+            const p = acharParteReuniao(reunioesDoRascunho(dados.reuniao), alvo);
+            if (!p) return false;
+            p.texto = juntarTexto(p.texto, bloco);
+            p.em = new Date().toISOString();
           }
           localStorage.setItem(ANOT_KEY, JSON.stringify(dados));
           return true;
@@ -38670,6 +38981,14 @@ function saveTemplatesToStorage() {
           salvarRascunho();
           return true;
         }
+        if (!alvo.programa && modo === 'reuniao') {
+          const p = acharParteReuniao(reunioes, alvo);
+          if (!p) return false;
+          if (!Array.isArray(p.gravacoes)) p.gravacoes = [];
+          p.gravacoes.push(id);
+          salvarRascunho();
+          return true;
+        }
         try {
           const dados = lerRascunhos();
           if (alvo.programa) {
@@ -38679,7 +38998,9 @@ function saveTemplatesToStorage() {
             ev.partes[ipr].gravacoes = [...(ev.partes[ipr].gravacoes || []), id];
           } else {
             if (!dados.reuniao || typeof dados.reuniao !== 'object') dados.reuniao = {};
-            dados.reuniao.gravacoes = [...(dados.reuniao.gravacoes || []), id];
+            const p = acharParteReuniao(reunioesDoRascunho(dados.reuniao), alvo);
+            if (!p) return false;
+            p.gravacoes = [...(p.gravacoes || []), id];
           }
           localStorage.setItem(ANOT_KEY, JSON.stringify(dados));
           return true;

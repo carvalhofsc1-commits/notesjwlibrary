@@ -239,6 +239,26 @@
           </div>
         </div>
 
+        <!-- Reuniões congregacionais: 1) lista das reuniões (cadastrar uma nova pela data); 2) as partes da reunião escolhida; 3) a anotação de uma parte. -->
+        <div id="anotReuniaoBox" class="anot-reuniao" hidden>
+          <div id="anotReuniaoListaBox">
+            <h3 class="anotacoes-subtitulo">📅 Cadastre a reunião</h3>
+            <div class="anot-reuniao-nova">
+              <label for="anotReuniaoNovaData">Data da reunião</label>
+              <input id="anotReuniaoNovaData" type="date">
+              <button id="anotReuniaoNovaBtn" type="button">➕ Nova reunião</button>
+            </div>
+            <h3 id="anotReuniaoItensTitulo" class="anotacoes-subtitulo">🗂️ Reuniões anotadas</h3>
+            <div id="anotReuniaoItens" class="anot-reuniao-itens"></div>
+          </div>
+          <div id="anotReuniaoPartesBox" hidden>
+            <div class="anot-reuniao-nome"><strong id="anotReuniaoNome"></strong><small id="anotReuniaoNomeInfo"></small></div>
+            <div id="anotReuniaoPartes" class="anot-reuniao-itens"></div>
+            <button id="anotReuniaoNovaParte" class="anot-reuniao-largo" type="button">➕ Nova parte</button>
+            <button id="anotReuniaoExportar" class="secondary anot-reuniao-largo" type="button" title="Mostra a prévia do Word com as anotações de todas as partes desta reunião e de lá exporta">📄 Exportar anotações da reunião</button>
+          </div>
+        </div>
+
         <details id="anotacoesDetalhes" class="anotacoes-bloco anotacoes-detalhes">
           <summary>👤 Tema, orador e congregação</summary>
           <label for="anotacoesDataReuniao">Data</label>
@@ -267,6 +287,15 @@
 
         <div id="anotacoesEscrita" class="anotacoes-escrita">
           <!-- Assembleia e congresso: o tema da parte fica fixo no alto do campo, com o orador logo abaixo; as setas trocam de parte (e de anotação). -->
+          <!-- Reunião: a parte que está sendo anotada; as setas passam para a parte anterior ou a próxima (na última, ➕ começa uma parte nova). -->
+          <div id="anotReuniaoCab" class="ai-week anotacoes-cab anot-reuniao-cab" hidden>
+            <button id="anotReuniaoAnt" class="secondary ai-week-nav" type="button" aria-label="Parte anterior" title="Parte anterior">◀</button>
+            <div id="anotReuniaoCabCentro" class="ai-week-link anotacoes-cab-centro" role="button" tabindex="0" title="Tocar para informar o tema, o orador e a congregação desta parte">
+              <span id="anotReuniaoCabTema" class="anotacoes-cab-tema"></span>
+              <small id="anotReuniaoCabPos" class="anotacoes-cab-pos"></small>
+            </div>
+            <button id="anotReuniaoProx" class="secondary ai-week-nav" type="button" aria-label="Próxima parte" title="Próxima parte">▶</button>
+          </div>
           <div id="anotacoesCabParte" class="anotacoes-cab-parte" hidden>
             <div class="ai-week anotacoes-cab sent-option-site">
               <button id="anotacoesParteAnt" class="secondary ai-week-nav" type="button" aria-label="Parte anterior" title="Parte anterior">◀</button>

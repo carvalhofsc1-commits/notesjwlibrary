@@ -5176,6 +5176,99 @@
       display: none;
     }
 
+    /* Reunião (6.15.17): cadastro pela data, lista das reuniões, lista das partes e o cabeçalho da parte anotada. */
+    .anot-reuniao[hidden],
+    .anot-reuniao [hidden] {
+      display: none !important;
+    }
+
+    .anot-reuniao-nova {
+      display: grid;
+      gap: 6px;
+      margin: 0 0 16px;
+    }
+
+    .anot-reuniao-nova input,
+    .anot-reuniao-nova button,
+    .anot-reuniao-largo {
+      width: 100%;
+      margin: 0;
+    }
+
+    .anot-reuniao-largo + .anot-reuniao-largo {
+      margin-top: 8px;
+    }
+
+    .anot-reuniao-itens {
+      display: grid;
+      gap: 8px;
+      margin: 0 0 12px;
+    }
+
+    .anot-reuniao-itens:empty {
+      display: none;
+    }
+
+    .anot-reuniao-linha {
+      display: flex;
+      gap: 8px;
+      align-items: stretch;
+    }
+
+    .anot-reuniao-linha .anot-reuniao-item {
+      flex: 1 1 auto;
+      min-width: 0;
+      margin: 0;
+    }
+
+    .anot-reuniao-linha .anot-reuniao-lixeira {
+      flex: 0 0 48px;
+      width: 48px;
+      min-width: 48px;
+      margin: 0;
+      padding: 0;
+    }
+
+    .anot-reuniao-num {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: var(--brand);
+      min-width: 1.6em;
+      text-align: center;
+    }
+
+    .anot-reuniao-nome {
+      display: grid;
+      gap: 2px;
+      text-align: center;
+      margin: 0 0 12px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--soft);
+    }
+
+    .anot-reuniao-nome strong {
+      font-size: 1.02rem;
+    }
+
+    .anot-reuniao-nome small {
+      color: var(--muted);
+      font-size: .84rem;
+    }
+
+    .anot-reuniao-cab {
+      margin: 0 0 14px;
+    }
+
+    .anot-reuniao-cab[hidden] {
+      display: none !important;
+    }
+
+    .anot-reuniao-cab .ai-week-nav {
+      min-height: 64px;
+    }
+
     .anotacoes-ver-programa {
       width: 100%;
       min-height: 38px;
