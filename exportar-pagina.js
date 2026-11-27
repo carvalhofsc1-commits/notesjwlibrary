@@ -1,4 +1,4 @@
-// Exporta o conteúdo completo de uma página fixa (Sobre, Privacidade, Termos de Uso) para um arquivo Word (.docx).
+// Exporta o conteúdo completo de uma página fixa (Sobre, Privacidade, Termos de Uso) para um arquivo Word (.docx), sempre passando pela prévia.
 // O botão só aparece para o administrador: quando a senha de administrador está salva neste aparelho (Ajustes → Autorização de acessos).
 (function () {
   var SENHA_KEY = 'jwLibraryNoteAplicarAdminSenhaV1';
@@ -130,6 +130,127 @@
     return base.slice(0, 80) + '.docx';
   }
 
+  var ESTILO_PREVIA = [
+    '#previaWord{position:fixed;inset:0;z-index:10000;display:flex;flex-direction:column;background:#e5e7eb}',
+    '#previaWord .pw-topo{padding:calc(env(safe-area-inset-top,0px) + 10px) 12px 8px;background:#fff;border-bottom:1px solid #cbd5e1}',
+    '#previaWord .pw-botoes{display:flex;flex-wrap:wrap;gap:8px;max-width:780px;margin:0 auto}',
+    '#previaWord .pw-botoes button{flex:1 1 130px;margin:0;padding:10px 12px;border:1px solid #94a3b8;border-radius:10px;background:#f1f5f9;color:#0f172a;font:inherit;font-weight:700;cursor:pointer}',
+    '#previaWord .pw-botoes button[hidden]{display:none}',
+    '#previaWord .pw-aviso{max-width:780px;margin:6px auto 0;text-align:center;font-size:.85rem;color:#334155}',
+    '#previaWord .pw-corpo{flex:1 1 auto;overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:14px 14px calc(env(safe-area-inset-bottom,0px) + 28px)}',
+    '#previaWord .pw-folha{max-width:780px;margin:0 auto;padding:18px 16px;border:1px solid #cbd5e1;border-radius:12px;background:#fff;font-family:Calibri,Carlito,"Segoe UI",system-ui,sans-serif;font-size:11pt;line-height:1.35;overflow-wrap:anywhere}',
+    '#previaWord .pw-folha *{color:#111827!important;background:transparent!important;box-shadow:none!important;text-shadow:none!important}',
+    '#previaWord .pw-folha h1{font-size:18pt;margin:6pt 0 8pt}',
+    '#previaWord .pw-folha h2{font-size:14pt;margin:12pt 0 5pt}',
+    '#previaWord .pw-folha h3,#previaWord .pw-folha h4,#previaWord .pw-folha summary{font-size:12pt;margin:8pt 0 4pt}',
+    '#previaWord .pw-folha p{margin:0 0 6pt}',
+    '#previaWord .pw-folha table{width:100%;border-collapse:collapse;font-size:10pt}',
+    '#previaWord .pw-folha th,#previaWord .pw-folha td{border:1px solid #9ca3af;padding:3px 5px;text-align:left;vertical-align:top}'
+  ].join('');
+
+  function podeCompartilharWord() {
+    try {
+      var teste = new File(['x'], 'x.docx', { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+      return Boolean(navigator.canShare && navigator.canShare({ files: [teste] }) && /android|iphone|ipad|ipod/i.test(navigator.userAgent));
+    } catch (e) { return false; }
+  }
+
+  function baixar(blob, nome) {
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement('a');
+    link.href = url;
+    link.download = nome;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+    return '✅ ' + nome + ' (vai para a pasta de downloads do aparelho).';
+  }
+
+  // Gera o arquivo e entrega: compartilha (celulares) ou baixa. Devolve a mensagem, ou '' se a pessoa desistiu de compartilhar.
+  async function entregar(compartilhar) {
+    var blob = await gerar();
+    var nome = nomeDoArquivo();
+    if (compartilhar) {
+      try {
+        await navigator.share({ files: [new File([blob], nome, { type: blob.type })] });
+        return '✅ Arquivo enviado para o compartilhamento do aparelho.';
+      } catch (e) {
+        if (e && e.name === 'AbortError') return '';
+      }
+    }
+    return baixar(blob, nome);
+  }
+
+  // A prévia em tela cheia: o mesmo conteúdo que vai para o Word. Só dela se exporta ou se compartilha o arquivo.
+  function abrirPrevia(origem) {
+    if (document.getElementById('previaWord')) return;
+    var novo = function (tag, classe, texto) {
+      var el = document.createElement(tag);
+      if (classe) el.className = classe;
+      if (texto) el.textContent = texto;
+      return el;
+    };
+    if (!document.getElementById('previaWordEstilo')) {
+      var estilo = novo('style', '', ESTILO_PREVIA);
+      estilo.id = 'previaWordEstilo';
+      document.head.appendChild(estilo);
+    }
+    var principal = document.querySelector('main') || document.body;
+    var folha = novo('article', 'pw-folha');
+    Array.prototype.forEach.call(principal.children, function (c) { folha.appendChild(c.cloneNode(true)); });
+    folha.querySelectorAll('script, style, img, button, nav, [hidden], [data-nao-exportar]').forEach(function (el) { el.remove(); });
+    folha.querySelectorAll('[id]').forEach(function (el) { el.removeAttribute('id'); });
+    folha.querySelectorAll('details').forEach(function (el) { el.open = true; });
+
+    var tela = novo('div');
+    tela.id = 'previaWord';
+    tela.setAttribute('role', 'dialog');
+    tela.setAttribute('aria-modal', 'true');
+    tela.setAttribute('aria-label', 'Prévia do documento Word');
+    tela.setAttribute('data-nao-exportar', '');
+    var topo = novo('div', 'pw-topo');
+    var botoes = novo('div', 'pw-botoes');
+    var fechar = novo('button', '', '✕ Fechar');
+    var exportar = novo('button', '', '📄 Exportar para Word');
+    var compartilhar = novo('button', '', '📤 Compartilhar');
+    [fechar, exportar, compartilhar].forEach(function (b) { b.type = 'button'; botoes.appendChild(b); });
+    compartilhar.hidden = !podeCompartilharWord();
+    var aviso = novo('div', 'pw-aviso', 'Prévia aproximada do documento Word.');
+    aviso.setAttribute('role', 'status');
+    topo.append(botoes, aviso);
+    var corpo = novo('div', 'pw-corpo');
+    corpo.appendChild(folha);
+    tela.append(topo, corpo);
+
+    var rolagem = document.body.style.overflow;
+    function sair() {
+      tela.remove();
+      document.removeEventListener('keydown', tecla);
+      document.body.style.overflow = rolagem;
+      origem.focus({ preventScroll: true });
+    }
+    function tecla(e) { if (e.key === 'Escape') sair(); }
+    async function finalizar(botao, comCompartilhar) {
+      botao.disabled = true;
+      aviso.textContent = 'Gerando o arquivo Word…';
+      try {
+        aviso.textContent = await entregar(comCompartilhar);
+      } catch (e) {
+        aviso.textContent = 'Não consegui gerar o arquivo: ' + (e && e.message ? e.message : 'erro desconhecido.');
+      } finally {
+        botao.disabled = false;
+      }
+    }
+    fechar.addEventListener('click', sair);
+    exportar.addEventListener('click', function () { finalizar(exportar, false); });
+    compartilhar.addEventListener('click', function () { finalizar(compartilhar, true); });
+    document.addEventListener('keydown', tecla);
+    document.body.style.overflow = 'hidden';
+    document.body.appendChild(tela);
+    fechar.focus({ preventScroll: true });
+  }
+
   function iniciar() {
     if (!admin()) return;
     var principal = document.querySelector('main') || document.body;
@@ -141,30 +262,8 @@
     botao.textContent = '📄 Exportar esta página (.docx)';
     botao.title = 'Só o administrador vê este botão';
     botao.style.cssText = 'padding:10px 16px;border:1px solid #94a3b8;border-radius:10px;background:#f1f5f9;color:#0f172a;font:inherit;font-weight:700;cursor:pointer';
-    var aviso = document.createElement('div');
-    aviso.setAttribute('role', 'status');
-    aviso.style.cssText = 'margin-top:8px;font-size:.85rem;opacity:.8';
-    botao.addEventListener('click', async function () {
-      botao.disabled = true;
-      aviso.textContent = 'Gerando o arquivo Word…';
-      try {
-        var blob = await gerar();
-        var url = URL.createObjectURL(blob);
-        var link = document.createElement('a');
-        link.href = url;
-        link.download = nomeDoArquivo();
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
-        aviso.textContent = '✅ ' + link.download + ' (vai para a pasta de downloads do aparelho).';
-      } catch (e) {
-        aviso.textContent = 'Não consegui gerar o arquivo: ' + (e && e.message ? e.message : 'erro desconhecido.');
-      } finally {
-        botao.disabled = false;
-      }
-    });
-    caixa.append(botao, aviso);
+    botao.addEventListener('click', function () { abrirPrevia(botao); });
+    caixa.append(botao);
     principal.appendChild(caixa);
   }
 

@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.15.03
+
+- **Botões Word:** todos abrem primeiro a prévia do documento, e é dela que se exporta ou se compartilha. Passaram a abrir a prévia o **Exportar anotações** (assembleia e congresso), o **Exportar Word** da lista de arquivos do servidor e o **Exportar esta página** das páginas Sobre, Privacidade e Termos.
+- **Falha de conexão nas consultas:** quando uma consulta que só lê informações (texto bíblico, programas, listas) falha na conexão, o app tenta mais uma vez antes de mostrar o erro.
+
 ## 6.15.02
 
 - **Resumo da leitura da Bíblia:** quando a conexão cai durante a espera (no iPhone isso acontece depois de cerca de 1 minuto), o app agora busca o resumo que o servidor terminou e mostra normalmente, em vez de dar erro. O mesmo vale para os comentários do texto diário.

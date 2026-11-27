@@ -7964,7 +7964,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.15.02'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.15.03'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -12258,8 +12258,54 @@ function saveTemplatesToStorage() {
     document.getElementById('fontesAtualizarBtn').addEventListener('click', fontesCarregar);
 
     // 6.12.60: exporta a lista (como está na tela, com as edições que você acabou de anotar) numa tabela do Word: Publicação (com o arquivo embaixo),
-    // Edição, No conteúdo, Tamanho e Enviado em. Em celular que aceita compartilhar arquivos, vai para o compartilhamento; senão, baixa.
-    async function fontesExportarWord() {
+    // Edição, No conteúdo, Tamanho e Enviado em. O botão abre a prévia do documento; de lá se exporta ou se compartilha o .docx.
+    const FONTES_COLUNAS = ['Publicação', 'Edição', 'No conteúdo', 'Tamanho', 'Enviado em'];
+    const FONTES_LARGURAS = [3400, 2500, 2300, 1000, 1572]; // soma 10772 (a largura útil da página A4 com margens de 1 cm)
+
+    function fontesDocxCorpo(linhas, subtitulo, escala = 1) {
+      const tam = sz => Math.round(sz * escala);
+      const borda = lado => '<w:' + lado + ' w:val="single" w:sz="4" w:space="0" w:color="9CA3AF"/>';
+      const par = (runs, jc) => '<w:p><w:pPr><w:spacing w:before="20" w:after="20"/>' + (jc ? '<w:jc w:val="' + jc + '"/>' : '') + '</w:pPr>' + runs + '</w:p>';
+      const celula = (i, conteudo, fundo) => '<w:tc><w:tcPr><w:tcW w:w="' + FONTES_LARGURAS[i] + '" w:type="dxa"/>' + (fundo ? '<w:shd w:val="clear" w:color="auto" w:fill="' + fundo + '"/>' : '') + '</w:tcPr>' + conteudo + '</w:tc>';
+      const texto = (t, f = '', sz = 18, cor = '') => docxRuns(String(t || '—'), f, tam(sz), cor);
+      const cab = FONTES_COLUNAS.map((t, i) => celula(i, par(texto(t, 'b', 18)), 'E5E7EB')).join('');
+      const corpoTabela = linhas.map(l =>
+        '<w:tr><w:trPr><w:cantSplit/></w:trPr>' +
+        celula(0, par(texto(l.nome, 'b', 18)) + par(texto(l.arquivo, '', 14, '6B7280'))) +
+        celula(1, par(texto(l.edicao))) +
+        celula(2, par(texto(l.conteudo))) +
+        celula(3, par(texto(l.tamanho), 'right')) +
+        celula(4, par(texto(l.enviado))) +
+        '</w:tr>').join('');
+      const tabela = '<w:tbl><w:tblPr><w:tblW w:w="10772" w:type="dxa"/><w:tblBorders>' + ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map(borda).join('') +
+        '</w:tblBorders><w:tblLayout w:type="fixed"/><w:tblCellMar><w:top w:w="40" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="40" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tblCellMar></w:tblPr>' +
+        '<w:tblGrid>' + FONTES_LARGURAS.map(w => '<w:gridCol w:w="' + w + '"/>').join('') + '</w:tblGrid>' +
+        '<w:tr><w:trPr><w:cantSplit/><w:tblHeader/></w:trPr>' + cab + '</w:tr>' + corpoTabela + '</w:tbl>';
+      return '<w:p><w:pPr><w:keepNext/><w:spacing w:after="60"/></w:pPr>' + docxRuns('Arquivos do servidor e edições', 'b', tam(32)) + '</w:p>' +
+        '<w:p><w:pPr><w:spacing w:after="160"/></w:pPr>' + docxRuns(subtitulo, '', tam(18), '6B7280') + '</w:p>' +
+        tabela + '<w:p/>';
+    }
+
+    function fontesPreviaWord(linhas, subtitulo) {
+      const raiz = document.createDocumentFragment();
+      const novo = (tag, classe, texto) => { const el = document.createElement(tag); if (classe) el.className = classe; if (texto !== undefined) el.textContent = texto; return el; };
+      const folha = novo('article', 'visor-folha doc');
+      const tabela = novo('table', 'doc-tabela');
+      const cab = tabela.createTHead().insertRow();
+      FONTES_COLUNAS.forEach(t => cab.append(novo('th', '', t)));
+      const corpo = tabela.createTBody();
+      linhas.forEach(l => {
+        const tr = corpo.insertRow();
+        const primeira = tr.insertCell();
+        primeira.append(novo('strong', '', l.nome || '—'), novo('small', '', l.arquivo || '—'));
+        [l.edicao, l.conteudo, l.tamanho, l.enviado].forEach(t => { tr.insertCell().textContent = t || '—'; });
+      });
+      folha.append(novo('p', 'doc-tabela-titulo', 'Arquivos do servidor e edições'), novo('p', 'doc-tabela-sub', subtitulo), tabela);
+      raiz.append(novo('p', 'visor-dica', 'Prévia aproximada: no Word a página é A4, com margens de 1 cm, e as linhas podem quebrar em outros pontos. Use A− e A+ para o tamanho da letra e finalize em Exportar para Word.'), folha);
+      return raiz;
+    }
+
+    function fontesExportarWord() {
       const linhas = [...fontesCorpo.rows].map(tr => ({
         nome: (tr.cells[0].querySelector('strong') || {}).textContent || '',
         arquivo: (tr.cells[0].querySelector('.fontes-arquivo') || {}).textContent || '',
@@ -12269,43 +12315,17 @@ function saveTemplatesToStorage() {
         enviado: tr.cells[4].textContent || ''
       }));
       if (!linhas.length) { fontesStatus.textContent = 'A lista ainda está vazia: abra o card ou toque em Atualizar a lista antes de exportar.'; return; }
-      const botao = document.getElementById('fontesWordBtn');
-      botao.disabled = true;
-      fontesStatus.textContent = 'Gerando o Word…';
-      try {
-        const larguras = [3400, 2500, 2300, 1000, 1572]; // soma 10772 (a largura útil da página A4 com margens de 1 cm)
-        const borda = lado => '<w:' + lado + ' w:val="single" w:sz="4" w:space="0" w:color="9CA3AF"/>';
-        const par = (runs, jc) => '<w:p><w:pPr><w:spacing w:before="20" w:after="20"/>' + (jc ? '<w:jc w:val="' + jc + '"/>' : '') + '</w:pPr>' + runs + '</w:p>';
-        const celula = (i, conteudo, fundo) => '<w:tc><w:tcPr><w:tcW w:w="' + larguras[i] + '" w:type="dxa"/>' + (fundo ? '<w:shd w:val="clear" w:color="auto" w:fill="' + fundo + '"/>' : '') + '</w:tcPr>' + conteudo + '</w:tc>';
-        const texto = (t, f = '', sz = 18, cor = '') => docxRuns(String(t || '—'), f, sz, cor);
-        const cab = ['Publicação', 'Edição', 'No conteúdo', 'Tamanho', 'Enviado em']
-          .map((t, i) => celula(i, par(texto(t, 'b', 18)), 'E5E7EB')).join('');
-        const corpoTabela = linhas.map(l =>
-          '<w:tr><w:trPr><w:cantSplit/></w:trPr>' +
-          celula(0, par(texto(l.nome, 'b', 18)) + par(texto(l.arquivo, '', 14, '6B7280'))) +
-          celula(1, par(texto(l.edicao))) +
-          celula(2, par(texto(l.conteudo))) +
-          celula(3, par(texto(l.tamanho), 'right')) +
-          celula(4, par(texto(l.enviado))) +
-          '</w:tr>').join('');
-        const tabela = '<w:tbl><w:tblPr><w:tblW w:w="10772" w:type="dxa"/><w:tblBorders>' + ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map(borda).join('') +
-          '</w:tblBorders><w:tblLayout w:type="fixed"/><w:tblCellMar><w:top w:w="40" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="40" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tblCellMar></w:tblPr>' +
-          '<w:tblGrid>' + larguras.map(w => '<w:gridCol w:w="' + w + '"/>').join('') + '</w:tblGrid>' +
-          '<w:tr><w:trPr><w:cantSplit/><w:tblHeader/></w:trPr>' + cab + '</w:tr>' + corpoTabela + '</w:tbl>';
-        const hoje = new Date();
-        const dataTxt = hoje.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
-        const corpo = '<w:p><w:pPr><w:keepNext/><w:spacing w:after="60"/></w:pPr>' + docxRuns('Arquivos do servidor e edições', 'b', 32) + '</w:p>' +
-          '<w:p><w:pPr><w:spacing w:after="160"/></w:pPr>' + docxRuns(linhas.length + (linhas.length === 1 ? ' arquivo' : ' arquivos') + ' · lista de ' + dataTxt, '', 18, '6B7280') + '</w:p>' +
-          tabela + '<w:p/>';
-        const blob = await docxPacote(corpo, 'Arquivos do servidor e edições');
-        const compartilhar = !document.getElementById('exportarCompartilharBtn').hidden;
-        const msg = await docxEntregar(blob, 'Arquivos do servidor - ' + hoje.toISOString().slice(0, 10) + '.docx', compartilhar);
-        fontesStatus.textContent = msg || 'Exportação cancelada.';
-      } catch (e) {
-        fontesStatus.textContent = 'Não consegui gerar o Word: ' + (e && e.message ? e.message : 'erro desconhecido.');
-      } finally {
-        botao.disabled = false;
-      }
+      if (!visor.hidden) return;
+      const hoje = new Date();
+      const dataTxt = hoje.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+      const subtitulo = linhas.length + (linhas.length === 1 ? ' arquivo' : ' arquivos') + ' · lista de ' + dataTxt;
+      fontesStatus.textContent = '';
+      visorAbrir('Prévia do documento Word', document.getElementById('fontesWordBtn'), 'texto');
+      visorDoc = { nome: 'Arquivos do servidor - ' + hoje.toISOString().slice(0, 10) + '.docx', externo: true, corpo: escala => fontesDocxCorpo(linhas, subtitulo, escala) };
+      visorBotoesDeExportar();
+      visorTitulo.textContent = visorTituloDoc();
+      visorCorpo.replaceChildren(fontesPreviaWord(linhas, subtitulo));
+      visorCorpo.scrollTop = 0;
     }
     document.getElementById('fontesWordBtn').addEventListener('click', fontesExportarWord);
 
@@ -17059,7 +17079,9 @@ function saveTemplatesToStorage() {
       return null;
     }
 
-    async function postStudy(payload, timeoutMs) {
+    // As consultas que só leem (sem IA e sem custo, as mesmas do servidor): se a conexão falhar, podem ser repetidas sem risco.
+    const TAREFAS_DE_LEITURA = new Set(['ebc-ler', 'consideracao-ler', 'nvc-ler', 'tesouros-ler', 'publico-lista', 'publico-ler', 'publico-esboco', 'versiculos', 'anotacoes-versiculos', 'pesquisa-versiculos', 'pesquisa-videos-secoes', 'pesquisa-videos-da-secao', 'programa-pub', 'programas-lista', 'anotacoes-partes-semana', 'estudo-paragrafos', 'outros-pesquisar', 'outros-ler', 'discurso-ler', 'joias-ler', 'apostila-imagens', 'biblia-texto']);
+    async function postStudy(payload, timeoutMs, repetida) {
       // As tarefas que usam a IA pedem, uma vez, a concordância com o envio do texto (as que só leem o wol.jw.org passam direto).
       if (payload && IA_TAREFAS.has(payload.tarefa) && !(await garantirConsentimentoIa())) {
         return { ok: false, data: { erro: MSG_SEM_CONSENTIMENTO }, unavailable: false };
@@ -17084,7 +17106,12 @@ function saveTemplatesToStorage() {
         // "erro" na resposta o servidor respondeu de verdade (por exemplo, "esta semana não tem discurso"): a mensagem dele vale.
         return { ok: response.ok && !!data, data, unavailable: (response.status === 404 || response.status === 501) && !(data && data.erro) };
       } catch (e) {
-        if (!longa) throw e;
+        if (!longa) {
+          // Consulta sem IA e sem custo: no iPhone a primeira conexão às vezes falha (volta de outro app, troca de rede); tenta mais uma vez.
+          if (repetida || !payload || !TAREFAS_DE_LEITURA.has(payload.tarefa) || !navigator.onLine) throw e;
+          await esperar(800);
+          return postStudy(payload, timeoutMs, true);
+        }
         // A conexão caiu (ou a espera acabou): o servidor pode ter terminado; procura o resultado guardado até um pouco depois do limite dele.
         clearTimeout(timer);
         const recuperado = await buscarResultadoGuardado(payload.pedidoId, Math.max(inicio + timeoutMs + 30000, Date.now() + 20000));
@@ -20166,6 +20193,7 @@ function saveTemplatesToStorage() {
         const titulo = nome.replace(/\.docx$/, '');
         // doc.pesquisa: a resposta do Assistente de pesquisas (o corpo do arquivo vem de lá, com o tamanho de letra escolhido aqui).
         const blob = !doc ? await docxGerarEsboco(visorEsboco, visorZoom, titulo)
+          : doc.corpo ? await docxPacote(doc.corpo(visorZoom), titulo) // documento próprio (ex.: a tabela dos arquivos do servidor)
           : doc.pesquisa ? await docxPacote(window.pesquisaDocxCorpo(doc.pesquisa, visorZoom), titulo)
           : doc.familia ? await docxPacote(window.familiaDocxCorpo(doc.familia, visorZoom), titulo)
           : doc.modelo ? await docxGerarLeitura(doc.modelo, titulo, visorZoom) : await docxGerar(doc.texto, titulo, doc.acentos, visorZoom);
@@ -37610,7 +37638,7 @@ function saveTemplatesToStorage() {
       // Digitar depois de formatar encerra o "desfazer" (para não apagar o que foi escrito depois).
       texto.addEventListener('input', () => { iaDesfazer.hidden = true; textoAntesDaIa = null; });
 
-      // Exportar anotações: um Word com todas as anotações do evento. No começo, o tema do evento; depois, para cada discurso com anotação,
+      // Exportar anotações: a prévia de um Word com todas as anotações do evento. No começo, o tema do evento; depois, para cada discurso com anotação,
       // o tema, o horário, o orador e as anotações (no congresso, antes de cada dia vêm o dia, a data e o tema do dia).
       const exportarNotasBtn = document.getElementById('anotacoesExportarNotas');
       exportarNotasBtn.addEventListener('click', async () => {
@@ -37619,7 +37647,7 @@ function saveTemplatesToStorage() {
         if (!comNota.length) return dizer('Ainda não há anotações neste evento.', true);
         exportarNotasBtn.disabled = true;
         const rotulo = exportarNotasBtn.textContent;
-        exportarNotasBtn.textContent = 'Gerando…';
+        exportarNotasBtn.textContent = 'Preparando…';
         try {
           // Congresso: o tema de cada dia vem do programa; eventos guardados antes não o têm, então ele é buscado de novo.
           if (ehCongresso() && comNota.some(i => !partes[i].diaTema) && /^https?:/.test(chaveAtual) && navigator.onLine) {
@@ -37650,16 +37678,14 @@ function saveTemplatesToStorage() {
             if (revisao) linhas.push('', revisao);
             linhas.push('', '');
           });
-          const titulo = (nomeEvento + (temaEvento ? ' — ' + temaEvento : '')).slice(0, 80);
-          const blob = await docxGerar(linhas.join('\n').trim(), titulo, null, 1);
+          // Primeiro a prévia do documento (como nos outros botões Word); de lá se exporta ou se compartilha o .docx.
           const limpo = removeUnicodeFormatting('Anotações - ' + nomeEvento).replace(DOCX_EMOJI, ' ').replace(/[\\/:*?"<>|\u201C\u201D\u2018\u2019]/g, '').replace(/\s+/g, ' ').trim().slice(0, 80);
-          const msg = await docxEntregar(blob, limpo + ' - ' + new Date().toISOString().slice(0, 10) + '.docx', false);
-          if (msg) piscarBotao(exportarNotasBtn, '✓ Exportado');
+          await docxPreviaAbrir(exportarNotasBtn, linhas.join('\n').trim(), limpo + ' - ' + new Date().toISOString().slice(0, 10));
         } catch (e) {
-          dizer('Não consegui gerar o Word. Confira a conexão e tente de novo.', true);
+          dizer('Não consegui preparar o Word. Confira a conexão e tente de novo.', true);
         } finally {
           exportarNotasBtn.disabled = false;
-          if (exportarNotasBtn.textContent === 'Gerando…') exportarNotasBtn.textContent = rotulo;
+          exportarNotasBtn.textContent = rotulo;
         }
       });
 

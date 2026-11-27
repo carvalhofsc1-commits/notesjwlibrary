@@ -1324,6 +1324,21 @@
       font-weight: 700;
     }
 
+    /* Prévia da tabela dos arquivos do servidor: as mesmas colunas do Word, cabendo na largura da tela. */
+    .doc-tabela-titulo { margin: 0 0 3pt; font-size: 1.45em; font-weight: 700; }
+    .doc-tabela-sub { margin: 0 0 8pt; font-size: .82em; color: #6b7280; }
+    .visor-folha.doc .doc-tabela { width: 100%; min-width: 0; table-layout: fixed; border-collapse: collapse; font-size: .82em; }
+    .visor-folha.doc .doc-tabela th,
+    .visor-folha.doc .doc-tabela td { padding: 2px 4px; border: 1px solid #9ca3af; text-align: left; vertical-align: top; color: #111827; overflow-wrap: anywhere; }
+    .visor-folha.doc .doc-tabela th { background: #e5e7eb; font-weight: 700; }
+    .visor-folha.doc .doc-tabela th:nth-child(1) { width: 29%; }
+    .visor-folha.doc .doc-tabela th:nth-child(2) { width: 22%; }
+    .visor-folha.doc .doc-tabela th:nth-child(3) { width: 20%; }
+    .visor-folha.doc .doc-tabela th:nth-child(4) { width: 13%; }
+    .visor-folha.doc .doc-tabela th:nth-child(5) { width: 16%; }
+    .visor-folha.doc .doc-tabela td:nth-child(4) { text-align: right; }
+    .visor-folha.doc .doc-tabela small { display: block; font-size: .8em; color: #6b7280; }
+
     .doc-p.leit {
       margin-bottom: calc(6pt * var(--visor-zoom, 1));
     }
