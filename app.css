@@ -18749,3 +18749,10 @@ body.so-usuario .usuario-tela > summary.acesso-site-resumo::before { content: no
 #familiaCard #familiaProgresso { border: 1.5px solid #6b7280; }
 :root[data-theme="dark"] #familiaCard #familiaProgresso { border-color: #94a3b8; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #familiaCard #familiaProgresso { border-color: #94a3b8; } }
+/* 6.14.90: os números das questões numa linha só (até 12): encolhem juntos conforme a largura; as setas e as margens ficam mais estreitas */
+.fam-sessao-nav.fam-sessao-nav { gap: 4px; padding-left: 4px; padding-right: 4px; }
+.fam-sessao-nav > .fam-sessao-nav-seta.fam-sessao-nav-seta { flex: 0 0 32px; width: 32px; min-width: 32px; }
+.fam-sessao-nav > .fam-sessao-nav-bolinhas { flex: 1 1 0; flex-wrap: nowrap; align-items: center; gap: 3px; }
+.fam-sessao-nav > .fam-sessao-nav-bolinhas > .fam-sessao-nav-bolinha { flex: 1 1 0; width: auto; min-width: 0; max-width: 24px; height: auto; min-height: 0 !important; aspect-ratio: 1; font-size: clamp(.55rem, 2.7vw, .75rem); line-height: 1; }
+.fam-sessao-nav > .fam-sessao-nav-bolinhas:has(> :nth-child(13)) { flex-wrap: wrap; }
+.fam-sessao-nav > .fam-sessao-nav-bolinhas:has(> :nth-child(13)) > .fam-sessao-nav-bolinha { flex: 0 0 22px; }

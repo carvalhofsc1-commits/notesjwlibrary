@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.90
+
+- **Jogos ao vivo:** os números das questões ficam todos numa linha só (até 12), encolhendo conforme a largura da tela.
+
 ## 6.14.89
 
 - **Jogos ao vivo:** o botão 👥 (levar todos para a mesma questão) saiu da barra das questões e fica na frente do botão **Próxima questão**, na mesma linha; na última questão ele ocupa a linha, com o texto.
