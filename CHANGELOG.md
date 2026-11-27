@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.83
+
+- **Leitura diária da Bíblia:** o ícone de **Os judeus retornam do exílio** ficou bem maior, e **Relatos da vida e do ministério de Jesus** (e o grupo Evangelhos) ganhou desenho próprio.
+
 ## 6.14.82
 
 - **Leitura diária da Bíblia:** a seção **Os judeus retornam do exílio** ganhou ícone próprio (o povo caminhando com as bagagens), no lugar das correntes.
