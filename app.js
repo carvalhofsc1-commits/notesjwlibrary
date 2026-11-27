@@ -7964,7 +7964,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.14.97'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.14.98'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -27500,6 +27500,48 @@ function saveTemplatesToStorage() {
       });
       familiaResultadoEl.hidden = !opcoes.length;
       if (opcoes.length) document.getElementById('familiaSalvasBox').open = true;
+      // 6.14.98: aberta, a programação salva leva o ✖️ Fechar e a 🗑️ no fim do cartão, e a linha dela some da lista (não aparece duas vezes)
+      const cartao = salva && familiaResultadoEl.querySelector(':scope > .fam-opcao:last-of-type');
+      if (cartao) cartao.appendChild(familiaAbertaFimMontar(salva.id));
+      familiaSalvasEsconderAberta();
+    }
+    function familiaSalvasEsconderAberta() {
+      const aberta = familiaResultadoEl.hidden ? '' : familiaResultadoEl.dataset.item;
+      document.querySelectorAll('#familiaSalvasLista > .fam-salva').forEach(a => { a.hidden = Boolean(aberta) && a.dataset.item === aberta; });
+    }
+    function familiaResultadoFechar() {
+      familiaOpcoes = null;
+      familiaResultadoEl.innerHTML = '';
+      familiaResultadoEl.hidden = true;
+      familiaSalvasEsconderAberta();
+    }
+    // Apaga uma programação salva (com a pergunta); se for a que está aberta, ela sai da tela.
+    async function familiaSalvaApagar(id) {
+      if (!(await askConfirm('Apagar esta programação salva deste aparelho?', 'Apagar programação'))) return;
+      historicoGravar(historicoLer().filter(g => g.id !== id));
+      if (familiaResultadoEl.dataset.item === id) familiaResultadoFechar(); // 6.14.54: a apagada estava aberta: sai da tela
+      historicoRender();
+    }
+    function familiaAbertaFimMontar(id) {
+      const fim = document.createElement('div');
+      fim.className = 'fam-aberta-fim';
+      const fechar = document.createElement('button');
+      fechar.type = 'button';
+      fechar.className = 'secondary fam-fino';
+      fechar.textContent = '✖️ Fechar';
+      fechar.addEventListener('click', () => {
+        familiaResultadoFechar();
+        document.getElementById('familiaSalvasBox').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      });
+      const apagar = document.createElement('button');
+      apagar.type = 'button';
+      apagar.className = 'secondary fam-fino limpar-btn';
+      apagar.textContent = '🗑️';
+      apagar.title = 'Apagar esta programação salva';
+      apagar.setAttribute('aria-label', 'Apagar esta programação salva');
+      apagar.addEventListener('click', () => familiaSalvaApagar(id));
+      fim.append(fechar, apagar);
+      return fim;
     }
 
     // Uma parte da programação: nome, tempo, responsável, descrição, textos, vídeos, cânticos, publicações, perguntas, jogo e transição.
@@ -28248,7 +28290,8 @@ function saveTemplatesToStorage() {
         word.title = 'Ver a prévia no formato do Word e exportar o arquivo';
         word.addEventListener('click', () => familiaAbrirWord(op, word));
         acoes.appendChild(word);
-        acoes.appendChild(familiaBotaoCompartilhar(op, card, undefined, '🔗 Selecionar esta programação'));
+        // 6.14.98: aberta de uma salva, o compartilhamento é o mesmo da linha dela na lista (pelo id)
+        acoes.appendChild(familiaBotaoCompartilhar(op, card, familiaResultadoEl.dataset.item || undefined, '🔗 Selecionar esta programação'));
         card.appendChild(acoes);
         return card;
     }
@@ -28372,20 +28415,13 @@ function saveTemplatesToStorage() {
         apagar.textContent = '🗑️';
         apagar.title = 'Apagar esta programação salva';
         apagar.setAttribute('aria-label', 'Apagar esta programação salva');
-        apagar.addEventListener('click', async () => {
-          if (!(await askConfirm('Apagar esta programação salva deste aparelho?', 'Apagar programação'))) return;
-          historicoGravar(historicoLer().filter(g => g.id !== item.id));
-          if (familiaResultadoEl.dataset.item === item.id) { // 6.14.54: a apagada estava aberta: sai da tela
-            familiaOpcoes = null;
-            familiaResultadoEl.innerHTML = '';
-            familiaResultadoEl.hidden = true;
-          }
-          historicoRender();
-        });
+        apagar.addEventListener('click', () => familiaSalvaApagar(item.id));
         acoes.append(abrir, familiaBotaoCompartilhar(op, art, item.id, '🔗 Selecionar esta programação'), apagar);
         art.appendChild(acoes);
+        art.dataset.item = item.id;
         lista.appendChild(art);
       });
+      familiaSalvasEsconderAberta();
     }
 
     // ---- Adoração compartilhada (6.11.48): compartilhar a programação por código; os participantes acompanham ao vivo ----
@@ -32679,6 +32715,7 @@ function saveTemplatesToStorage() {
       // 6.13.08: a programação anterior sai da tela; a nova aparece no "📄 Exibir a programação", quando ficar pronta.
       familiaResultadoEl.innerHTML = '';
       familiaResultadoEl.hidden = true;
+      familiaSalvasEsconderAberta();
       familiaLimparBtn.disabled = true;
       const payload = familiaPayloadDe(perfil);
       const ger = {
@@ -32817,6 +32854,7 @@ function saveTemplatesToStorage() {
       familiaOpcoes = null;
       familiaResultadoEl.innerHTML = '';
       familiaResultadoEl.hidden = true;
+      familiaSalvasEsconderAberta();
       familiaProgressoLimpar();
       familiaStatus('');
       familiaAssuntosLimpar(); // 6.14.52: a lixeira limpa também o assunto e as escolhas da lista

@@ -17137,7 +17137,7 @@ button.secondary.fam-atalho-ativo { background: color-mix(in srgb, #3b82f6 18%, 
 .fam-opcao.fam-opcao-recolhivel > .fam-opcao-topo { cursor: pointer; user-select: none; }
 .fam-opcao.fam-opcao-recolhivel > .fam-opcao-topo .fam-opcao-titulo::before { content: "▾ "; color: color-mix(in srgb, #3b82f6 70%, var(--text)); }
 .fam-opcao.fam-opcao-recolhivel.fam-opcao-recolhida > .fam-opcao-topo .fam-opcao-titulo::before { content: "▸ "; }
-.fam-opcao.fam-opcao-recolhida > :not(.fam-opcao-topo) { display: none !important; }
+.fam-opcao.fam-opcao-recolhida > :not(.fam-opcao-topo):not(.fam-aberta-fim) { display: none !important; }
 .fam-parte.fam-parte-recolhivel > .fam-parte-topo .fam-parte-nome::before { content: "▾ "; color: color-mix(in srgb, #3b82f6 70%, var(--text)); }
 .fam-parte.fam-parte-recolhivel.fam-recolhida > .fam-parte-topo .fam-parte-nome::before { content: "▸ "; }
 .fam-parte.fam-recolhida > :not(.fam-parte-topo) { display: none !important; }
@@ -18781,3 +18781,10 @@ body.so-usuario .usuario-tela > summary.acesso-site-resumo::before { content: no
 #familiaCard #familiaParticiparBtn#familiaParticiparBtn { min-height: 46px; box-sizing: border-box; }
 #familiaCard :is(#familiaDirigindoBox, #familiaSalvasBox):not([open]) > summary { min-height: 44px; }
 #familiaCard #familiaParticiparBtn#familiaParticiparBtn .fam-hub-desc { font-size: clamp(.56rem, 2.9vw, .7rem); } /* numa linha só, para não crescer em tela estreita */
+/* 6.14.98: programação salva aberta: "✖️ Fechar" (cresce) e a lixeira (largura fixa) no fim do cartão, à vista mesmo com ele recolhido;
+   a linha dela some da lista enquanto está aberta */
+.fam-aberta-fim { display: flex; gap: 10px; align-items: stretch; width: 100%; }
+.fam-aberta-fim > button { margin: 0; }
+.fam-aberta-fim > button:not(.limpar-btn) { flex: 1 1 0; width: auto; min-width: 0; }
+.fam-aberta-fim > .limpar-btn { flex: 0 0 52px; width: 52px; min-width: 52px; padding: 0; }
+#familiaCard #familiaSalvasLista > .fam-salva[hidden] { display: none; }

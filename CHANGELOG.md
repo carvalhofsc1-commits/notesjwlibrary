@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.98
+
+- **Programações salvas:** a programação aberta não aparece mais duas vezes: enquanto está aberta, a linha dela some da lista, e o cartão aberto ganha **✖️ Fechar** e a 🗑️. Ao fechar, a linha volta.
+
 ## 6.14.97
 
 - **Adoração em família:** os quatro cartões (Adorações compartilhadas, Informações sobre a família, Participar de uma adoração e Programações salvas) têm a mesma altura quando recolhidos.
