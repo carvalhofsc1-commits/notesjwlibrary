@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.14.88
+
+- **Adoração ao vivo:** no título do jogo fica só o nome (ex.: **Perfil bíblico**), sem a explicação entre parênteses e sem a linha "Jogo bíblico". Vale para todos os jogos.
+
 ## 6.14.87
 
 - **Adoração em família:** o card **Atividades montadas** ganhou uma moldura mais forte.
