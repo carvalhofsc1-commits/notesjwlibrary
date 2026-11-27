@@ -1,1 +1,12 @@
-[]
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "br.com.carvalhoapps.notestyle",
+      "sha256_cert_fingerprints": [
+        "AE:1E:A8:84:51:59:7F:5F:E9:E9:5D:F6:E0:C5:00:71:4C:30:EE:D8:16:71:98:3C:DE:1D:15:C8:7E:8A:0E:76"
+      ]
+    }
+  }
+]
