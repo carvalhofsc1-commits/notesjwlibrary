@@ -228,13 +228,15 @@ function gerarCodigoTexto(recurso) {
 
 // Senha master (6.14.72): uma só senha, de um usuário só, que vale no lugar de todos os códigos de recurso no aparelho dele.
 // Não é senha de administrador: não abre nada da administração do app. Nunca vai nas respostas ao aparelho, só na do administrador.
+// 6.15.15: "validoAte" (ISO) = a senha deixa de valer sozinha nessa data (a do código de demonstração); vazio = sem prazo.
 function masterDe(registro) {
   const m = registro && registro.master;
   if (!m || typeof m !== "object") return null;
   const codigo = String(m.codigo || "").trim();
   if (!codigo) return null;
-  return { codigo, ativo: m.ativo !== false, criadoEm: m.criadoEm || "", expiradoEm: m.expiradoEm || "" };
+  return { codigo, ativo: m.ativo !== false, criadoEm: m.criadoEm || "", expiradoEm: m.expiradoEm || "", ...(m.validoAte ? { validoAte: String(m.validoAte) } : {}) };
 }
+const masterVigente = (m) => Boolean(m && m.ativo && (!m.validoAte || Date.now() < Date.parse(m.validoAte)));
 
 function gerarMasterTexto() {
   const letras = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"; // sem 0/O e 1/I/L, para ditar e digitar sem erro
@@ -243,7 +245,7 @@ function gerarMasterTexto() {
 }
 
 // Cache curto dos códigos personalizados e das senhas master ativos: permite conferência síncrona nas APIs de IA.
-let cacheCodigos = { em: 0, mapa: new Map(), masters: new Map() }; // codigoLower -> { recurso, aparelhoId } · masters: codigoLower -> aparelhoId
+let cacheCodigos = { em: 0, mapa: new Map(), masters: new Map() }; // codigoLower -> { recurso, aparelhoId } · masters: codigoLower -> { aparelhoId, ate }
 
 function montarCacheCodigos(dados) {
   const mapa = new Map();
@@ -255,7 +257,7 @@ function montarCacheCodigos(dados) {
       mapa.set(c.codigo.trim().toLowerCase(), { recurso, aparelhoId });
     }
     const master = masterDe(reg);
-    if (master && master.ativo) masters.set(master.codigo.toLowerCase(), aparelhoId);
+    if (masterVigente(master)) masters.set(master.codigo.toLowerCase(), { aparelhoId, ate: master.validoAte ? Date.parse(master.validoAte) : 0 });
   }
   cacheCodigos = { em: Date.now(), mapa, masters };
 }
@@ -304,7 +306,8 @@ function codigoGlobalDoRecurso(recurso) {
 export function senhaMasterValida(codigo, aparelhoId) {
   const id = aparelhoIdLimpo(aparelhoId);
   const chave = String(codigo || "").trim().toLowerCase();
-  return Boolean(id && chave && cacheCodigos.masters.get(chave) === id);
+  const m = id && chave ? cacheCodigos.masters.get(chave) : null;
+  return Boolean(m && m.aparelhoId === id && (!m.ate || Date.now() < m.ate));
 }
 
 // Aceita o código global do servidor, o personalizado deste aparelho ou a senha master dele.
@@ -652,14 +655,117 @@ export async function mensagemSeSemCredito({ aparelhoId, codigoAdmin } = {}) {
     : "Seus créditos de IA acabaram. Faça uma recarga em Ajustes → Consumo de IA e faturamento ou peça ao administrador.";
 }
 
+// ---------- Código de demonstração (6.15.15) ----------
+// Para os revisores das lojas (Google Play, App Store), que testam num aparelho desconhecido e sem avisar: quem informa o código na tela
+// de cadastro é aprovado na hora, ganha um crédito só para teste e uma senha master com prazo (vale por todos os códigos de recurso).
+// Um código por vez: o administrador cria (validade em dias, limite de aparelhos, crédito) e pode cancelar; ao cancelar ou vencer, as
+// senhas master dos aparelhos de demonstração deixam de valer.
+function gerarDemoTexto() {
+  const letras = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+  const bloco = () => Array.from({ length: 4 }, () => letras[randomInt(letras.length)]).join("");
+  return `NS-DEMO-${bloco()}-${bloco()}`;
+}
+function demoDe(dados) {
+  const d = dados && dados.demo;
+  if (!d || typeof d !== "object" || !d.codigo) return null;
+  return {
+    codigo: String(d.codigo),
+    ativo: d.ativo !== false,
+    criadoEm: d.criadoEm || "",
+    validoAte: d.validoAte || "",
+    maxAparelhos: Math.max(1, Number(d.maxAparelhos) || 1),
+    credito: Math.max(0, Number(d.credito) || 0),
+    aparelhos: Array.isArray(d.aparelhos) ? d.aparelhos.map(String) : [],
+    canceladoEm: d.canceladoEm || "",
+  };
+}
+const demoVigente = (d) => Boolean(d && d.ativo && d.validoAte && Date.now() < Date.parse(d.validoAte));
+// O que o painel do administrador mostra do código atual (o código aparece só para ele).
+function demoPublico(dados) {
+  const d = demoDe(dados);
+  if (!d) return null;
+  return { ...d, vigente: demoVigente(d), usados: d.aparelhos.length };
+}
+
+export async function criarCodigoDemo({ dias, aparelhos, credito, codigoAdmin }) {
+  if (!textosIguais(codigoAdmin, process.env.CODIGO_ADMIN)) return { erro: "Código de administrador incorreto." };
+  const nDias = Math.round(Number(dias));
+  const nAparelhos = Math.round(Number(aparelhos));
+  const nCredito = valorEmReais(credito);
+  if (!Number.isFinite(nDias) || nDias < 1 || nDias > 90) return { erro: "A validade precisa ser de 1 a 90 dias." };
+  if (!Number.isFinite(nAparelhos) || nAparelhos < 1 || nAparelhos > 10) return { erro: "O limite precisa ser de 1 a 10 aparelhos." };
+  if (!Number.isFinite(nCredito) || nCredito < 0 || nCredito > 200) return { erro: "O crédito de teste precisa ser de R$ 0 a R$ 200." };
+  return comDados((dados) => {
+    const anterior = demoDe(dados);
+    if (anterior) encerrarMastersDemo(dados, anterior); // o código anterior deixa de valer
+    dados.demo = {
+      codigo: gerarDemoTexto(),
+      ativo: true,
+      criadoEm: agoraIso(),
+      validoAte: new Date(Date.now() + nDias * 86400000).toISOString(),
+      maxAparelhos: nAparelhos,
+      credito: arredondarSaldo(nCredito),
+      aparelhos: [],
+    };
+    return { ok: true, demo: demoPublico(dados) };
+  });
+}
+
+function encerrarMastersDemo(dados, demo) {
+  for (const id of demo.aparelhos) {
+    const reg = dados.aprovados[id];
+    const m = reg && masterDe(reg);
+    if (reg && m && m.ativo && reg.demo) reg.master = { ...m, ativo: false, expiradoEm: agoraIso() };
+  }
+}
+
+export async function cancelarCodigoDemo({ codigoAdmin }) {
+  if (!textosIguais(codigoAdmin, process.env.CODIGO_ADMIN)) return { erro: "Código de administrador incorreto." };
+  return comDados((dados) => {
+    const d = demoDe(dados);
+    if (!d || !d.ativo) return { erro: "Não há código de demonstração ativo." };
+    encerrarMastersDemo(dados, d);
+    dados.demo = { ...dados.demo, ativo: false, canceladoEm: agoraIso() };
+    return { ok: true, demo: demoPublico(dados) };
+  });
+}
+
+// Aprova na hora o aparelho que informou o código de demonstração válido. Devolve a senha master (com prazo) para o aparelho guardar.
+function aprovarPorDemo(dados, id, campos, codigo) {
+  const d = demoDe(dados);
+  if (!demoVigente(d) || !textosIguais(String(codigo || "").trim().toUpperCase(), d.codigo)) return { erro: "Código de demonstração inválido ou vencido." };
+  const jaUsou = d.aparelhos.includes(id);
+  if (!jaUsou && d.aparelhos.length >= d.maxAparelhos) return { erro: "Este código de demonstração já foi usado no número máximo de aparelhos." };
+  let reg = dados.aprovados[id];
+  if (!reg) {
+    const pedido = gravarIdentidade(dados, id, campos, { statusPedido: "aprovado" });
+    reg = dados.aprovados[id];
+    reg.creditos = 0;
+    reg.codigos = {};
+    reg.extrato = [];
+    reg.extratoInicial = 0;
+    reg.extratoDesde = pedido.decididoEm;
+    lancarExtrato(reg, { tipo: "credito", rotulo: "Crédito de demonstração", delta: d.credito });
+  }
+  reg.demo = { ate: d.validoAte, codigo: d.codigo, desde: reg.demo && reg.demo.desde ? reg.demo.desde : agoraIso() };
+  const atual = masterDe(reg);
+  if (!masterVigente(atual) || atual.validoAte !== d.validoAte) {
+    reg.master = { codigo: gerarMasterTexto(), ativo: true, criadoEm: agoraIso(), expiradoEm: "", validoAte: d.validoAte };
+  }
+  if (!jaUsou) dados.demo.aparelhos = [...d.aparelhos, id];
+  return { ok: true, jaAprovado: true, identificado: true, demo: true, demoAte: d.validoAte, master: reg.master.codigo, cadastro: cadastroPublico(reg) };
+}
+
 export async function pedirAcessoSite(corpo) {
   const id = aparelhoIdLimpo(corpo && corpo.aparelhoId);
   if (!id) return { erro: "Não foi possível identificar este aparelho. Atualize o app e tente de novo." };
   const validado = camposDoCorpo(corpo);
   if (validado.erro) return { erro: validado.erro };
   const { campos } = validado;
+  const codigoDemo = String((corpo && corpo.codigoDemo) || "").trim();
 
   return comDados((dados) => {
+    if (codigoDemo) return aprovarPorDemo(dados, id, campos, codigoDemo);
     if (dados.aprovados[id]) return { ok: true, jaAprovado: true, identificado: true, cadastro: cadastroPublico(dados.aprovados[id]) };
     const aberto = dados.pedidos.find((p) => p.aparelhoId === id && p.status === "pendente");
     if (aberto) return { ok: true, pendente: true, id: aberto.id };
@@ -689,6 +795,7 @@ export async function atualizarCadastroSite(corpo) {
       ...(anterior.creditoBoasVindas ? { creditoBoasVindas: anterior.creditoBoasVindas } : {}),
       codigos: codigosDe(anterior),
       ...(masterDe(anterior) ? { master: masterDe(anterior) } : {}), // 6.14.72: a senha master também fica
+      ...(anterior.demo ? { demo: anterior.demo } : {}), // 6.15.15: cadastro de demonstração
       // O extrato e os Pix creditados fazem parte do cadastro: atualizar os dados pessoais não pode apagá-los.
       ...(Array.isArray(anterior.extrato) ? { extrato: anterior.extrato, extratoInicial: anterior.extratoInicial, extratoDesde: anterior.extratoDesde } : {}),
       ...(Array.isArray(anterior.pixHistorico) ? { pixHistorico: anterior.pixHistorico } : {}),
@@ -733,6 +840,7 @@ export async function lerAcessoSiteAdmin() {
       },
       consumo,
       master: masterDe(a), // 6.14.72: só nesta resposta, a do administrador
+      demo: a.demo || null, // 6.15.15: entrou pelo código de demonstração
     };
   });
   aprovados.sort((a, b) => String(b.aprovadoEm).localeCompare(String(a.aprovadoEm)));
@@ -747,7 +855,33 @@ export async function lerAcessoSiteAdmin() {
     recursosCodigo: RECURSOS_CODIGO,
     creditoBoasVindas: boasVindasDe(dados),
     creditoEmergencia: emergenciaDe(dados),
+    demo: demoPublico(dados), // 6.15.15: o código de demonstração atual
   };
+}
+
+// 6.15.15: o próprio aparelho exclui o cadastro (exigência das lojas para quem tem conta). Apaga o cadastro, os pedidos, os códigos, a senha
+// master, o saldo e o extrato. Os recibos dos pagamentos (a lei pede guardar os registros de pagamento) ficam numa lista à parte, só com
+// número, datas, valor, forma e o número do pagamento: sem nome, telefone, cidade nem o identificador do aparelho.
+export async function excluirCadastroProprio({ aparelhoId }) {
+  const id = aparelhoIdLimpo(aparelhoId);
+  if (!id) return { erro: "Não foi possível identificar este aparelho." };
+  return comDados((dados) => {
+    const reg = dados.aprovados[id];
+    const tinhaPedido = dados.pedidos.some((p) => p.aparelhoId === id);
+    if (!reg && !tinhaPedido) return { ok: true, nadaParaApagar: true };
+    if (reg && Array.isArray(reg.recibos) && reg.recibos.length) {
+      if (!Array.isArray(dados.recibosGuardados)) dados.recibosGuardados = [];
+      for (const r of reg.recibos) {
+        dados.recibosGuardados.push({ numero: r.numero, emitidoEm: r.emitidoEm, pagoEm: r.pagoEm || "", valor: r.valor, forma: r.forma || "", pagamentoId: r.pagamentoId || "", cadastroExcluidoEm: agoraIso() });
+      }
+    }
+    delete dados.aprovados[id];
+    dados.pedidos = dados.pedidos.filter((p) => p.aparelhoId !== id);
+    if (dados.pixPagamentos && typeof dados.pixPagamentos === "object") {
+      for (const [k, v] of Object.entries(dados.pixPagamentos)) if (v && v.aparelhoId === id) dados.pixPagamentos[k] = { ...v, aparelhoId: "" };
+    }
+    return { ok: true, apagado: true };
+  });
 }
 
 // Mantida por compatibilidade: a aprovação de cadastros novos é sempre o padrão.

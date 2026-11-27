@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Excluir meus dados — NoteStyle</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=3">
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=3">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=3">
+  <meta name="description" content="Como excluir o cadastro e os dados do NoteStyle: pelo aplicativo, na hora, ou pelo contato, sem o aplicativo.">
+  <meta name="theme-color" content="#e7ecf6">
+  <script>
+    // Aplica o tema salvo antes do corpo renderizar, para não piscar o tema errado.
+    try {
+      var temaSalvo = localStorage.getItem('jwLibraryNoteAplicarThemeV1');
+      if (temaSalvo === 'dark' || temaSalvo === 'light') {
+        document.documentElement.setAttribute('data-theme', temaSalvo);
+      }
+    } catch (e) {}
+  </script>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #e7ecf6; --card: #ffffff; --text: #1f2937; --muted: #6b7280; --line: #d1d5db;
+      --accent: #2563eb; --brand: #5b3fb5; --accent-dark: #1d4ed8; --soft: #eef2ff; --ok: #15803d; --shadow: rgba(0, 0, 0, .05);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #0f172a; --card: #1e293b; --text: #e2e8f0; --muted: #94a3b8; --line: #334155;
+        --accent: #3b82f6; --brand: #b7a8f0; --accent-dark: #2563eb; --soft: #1e3a5f; --ok: #4ade80; --shadow: rgba(0, 0, 0, .4);
+      }
+    }
+    :root[data-theme="dark"] {
+      --bg: #0f172a; --card: #1e293b; --text: #e2e8f0; --muted: #94a3b8; --line: #334155;
+      --accent: #3b82f6; --brand: #b7a8f0; --accent-dark: #2563eb; --soft: #1e3a5f; --ok: #4ade80; --shadow: rgba(0, 0, 0, .4);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; overflow-wrap: break-word; }
+    main { width: min(760px, 100%); margin: 0 auto; padding: 24px clamp(16px, 4vw, 32px) 48px; }
+    .topo { text-align: center; }
+    .topo img { width: 84px; height: auto; }
+    h1 { margin: 8px 0 4px; font-size: clamp(1.5rem, 6vw, 2rem); }
+    .atualizacao { margin: 0; color: var(--muted); font-size: .9rem; }
+    h2 { margin: 30px 0 8px; font-size: 1.15rem; color: var(--brand); }
+    h3 { margin: 18px 0 6px; font-size: 1rem; }
+    p, li { font-size: .98rem; }
+    ul { padding-left: 1.3em; }
+    li + li { margin-top: 6px; }
+    a { color: var(--accent); text-underline-offset: 2px; }
+    a:hover { color: var(--accent-dark); }
+    .resumo { background: var(--card); border: 2px solid var(--ok); border-radius: 16px; padding: 14px 16px; margin: 22px 0 0; box-shadow: 0 8px 22px var(--shadow); }
+    .resumo h2 { margin: 0 0 8px; color: var(--text); font-size: 1.05rem; }
+    .resumo ul { list-style: none; padding-left: 0; margin: 0; }
+    .resumo li { position: relative; padding-left: 1.6em; }
+    .resumo li::before { content: "✔"; position: absolute; left: 0; color: var(--ok); font-weight: 800; }
+    .tabela { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: .9rem; }
+    .tabela th, .tabela td { border: 1px solid var(--line); padding: 8px; text-align: left; vertical-align: top; }
+    .tabela th { background: var(--soft); }
+    .rolagem { overflow-x: auto; }
+    /* Telas estreitas: cada linha da tabela vira um quadro, com o nome de cada coluna acima do texto. */
+    @media (max-width: 600px) {
+      .tabela thead { display: none; }
+      .tabela, .tabela tbody { display: block; }
+      .tabela tr { display: block; margin-bottom: 12px; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--card); }
+      .tabela td { display: block; border: 0; border-bottom: 1px solid var(--line); padding: 8px 12px; }
+      .tabela td:last-child { border-bottom: 0; }
+      .tabela td::before { content: attr(data-rotulo); display: block; margin-bottom: 2px; color: var(--muted); font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; }
+    }
+    .rodape { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--line); text-align: center; font-size: .92rem; }
+    .rodape a { margin: 0 8px; }
+    /* Botão Voltar: pequeno e discreto, centralizado na última linha da página. */
+    .voltar { margin: 18px 0 0; text-align: center; }
+    .botao-voltar { display: inline-block; padding: 6px 14px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); color: var(--muted); font-size: .78rem; font-weight: 650; line-height: 1.2; text-decoration: none; }
+    .botao-voltar:hover { color: var(--text); }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="topo">
+      <img src="icon-header.png?v=3" alt="" width="512" height="512" decoding="async">
+      <h1>Excluir meus dados</h1>
+      <p class="atualizacao">NoteStyle · Carvalho Apps · Última atualização: 27 de novembro de 2026</p>
+    </div>
+
+    <section class="resumo">
+      <h2>Como pedir a exclusão</h2>
+      <ul>
+        <li><strong>Pelo aplicativo (na hora):</strong> abra o NoteStyle e vá em <strong>Ajustes → Meus dados → Excluir meu cadastro</strong>. Confirme, e os dados do aparelho são apagados do servidor imediatamente.</li>
+        <li><strong>Sem o aplicativo:</strong> escreva para <a href="mailto:carvalhofsc1@gmail.com?subject=NoteStyle%20-%20Excluir%20meus%20dados">carvalhofsc1@gmail.com</a> ou chame no WhatsApp <a href="https://wa.me/5564981808090">(64) 98180-8090</a> com o assunto “Excluir meus dados”, informando o nome e o telefone usados no cadastro. Atendemos em até 15 dias e confirmamos pelo mesmo meio.</li>
+      </ul>
+    </section>
+
+    <h2>O que é apagado</h2>
+    <ul>
+      <li>o <strong>cadastro</strong> do aparelho (nome, sobrenome, telefone, mês e ano de nascimento, cidade, estado, congregação e como conheceu o app);</li>
+      <li>os <strong>códigos</strong> e a <strong>senha</strong> liberados para o aparelho;</li>
+      <li>o <strong>saldo de créditos</strong> e o <strong>extrato</strong> (o saldo que restar é perdido);</li>
+      <li>as <strong>estatísticas de uso</strong> ligadas ao aparelho;</li>
+      <li>as <strong>transcrições</strong> das gravações das Anotações guardadas no servidor.</li>
+    </ul>
+
+    <h2>O que fica guardado</h2>
+    <ul>
+      <li><strong>Recibos de pagamento</strong> (número, datas, valor, forma de pagamento e número do pagamento), <strong>sem</strong> nome, telefone, cidade nem identificação do aparelho, pelo prazo que a lei exige para registros de pagamento.</li>
+      <li>Totais de uso por dia, que não identificam ninguém.</li>
+      <li>As adorações e os jogos em grupo somem sozinhos em até 48 horas sem uso (ou na hora, se quem criou apagar).</li>
+    </ul>
+
+    <h2>Dados que ficam só no seu aparelho</h2>
+    <p>Notas, pesquisas salvas, gravações, backups e preferências ficam no próprio aparelho e não são enviados ao servidor. Para apagá-los, use <strong>Ajustes → Privacidade e dados deste aparelho → Apagar os dados deste aparelho</strong>, limpe os dados do aplicativo nas configurações do celular ou desinstale o app.</p>
+
+    <p>Mais detalhes na <a href="privacidade.html">Política de Privacidade</a>.</p>
+
+    <p class="rodape">
+      <a href="sobre.html">Sobre</a> · <a href="privacidade.html">Privacidade</a> · <a href="termos.html">Termos de Uso</a>
+    </p>
+    <p class="voltar"><a class="botao-voltar" href="index.html#ajustes" title="Voltar à tela anterior">← Voltar</a></p>
+  </main>
+  <script>
+    // "Voltar" leva à tela anterior (Ajustes, outra página de informações...). Só quando esta página foi aberta sem passar pelo app
+    // (endereço direto, outro site), o link leva a Ajustes.
+    (function () {
+      var botao = document.querySelector('.botao-voltar');
+      if (!botao) return;
+      botao.addEventListener('click', function (e) {
+        var origem = '';
+        try { origem = new URL(document.referrer).origin; } catch (erro) {}
+        if (origem && origem === location.origin && history.length > 1) {
+          e.preventDefault();
+          history.back();
+        }
+      });
+    })();
+  </script>
+  <script src="barra-topo.js"></script>
+  <script src="exportar-pagina.js"></script>
+</body>
+</html>

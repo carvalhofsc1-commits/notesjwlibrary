@@ -172,6 +172,19 @@ async function comDados(mutar) {
   });
 }
 
+// 6.15.15: exclusão do cadastro pelo próprio aparelho: some o registro dele (visitas, uso de IA, perfil). Os totais por dia, sem identificar
+// ninguém, continuam.
+export async function apagarAparelhoEstatisticas(aparelhoId) {
+  const id = aparelhoIdLimpo(aparelhoId);
+  if (!id) return false;
+  const r = await comDados((dados) => {
+    if (!dados.aparelhos[id]) return { apagado: false };
+    delete dados.aparelhos[id];
+    return { apagado: true };
+  });
+  return Boolean(r && r.apagado);
+}
+
 // Visita do dia: a 1ª vez que o aparelho aparece conta como novo; se já existia, como recorrente (uma vez por dia).
 // Opcional: nivel ("admin"|"normal") e recursos (quais códigos estão salvos no aparelho — só flags, sem as senhas).
 export async function registrarPing(aparelhoId, perfil = {}) {

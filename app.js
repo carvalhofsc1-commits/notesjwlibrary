@@ -7964,7 +7964,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.15.14'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.15.15'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -13280,6 +13280,7 @@ function saveTemplatesToStorage() {
       const emergencia = Number(acesso.creditoEmergencia); // 6.14.63
       const emergenciaCampo = document.getElementById('acessoSiteEmergencia');
       if (Number.isFinite(emergencia) && document.activeElement !== emergenciaCampo) emergenciaCampo.value = emergencia.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      acessoSiteDemoPintar(acesso.demo); // 6.15.15
       const pendentes = Array.isArray(acesso.pendentes) ? acesso.pendentes : [];
       acessoSitePedidos.innerHTML = pendentes.length
         ? pendentes.map(p =>
@@ -13507,6 +13508,52 @@ function saveTemplatesToStorage() {
     }
 
     acessoSiteSection.addEventListener('toggle', () => { if (acessoSiteSection.open) acessoSiteCarregarAdmin(); });
+
+    // 🧪 Código de demonstração (6.15.15): o código atual (com validade e aparelhos usados), criar um novo e cancelar.
+    let acessoSiteDemoCodigo = '';
+    function acessoSiteDemoPintar(d) {
+      const caixa = document.getElementById('acessoSiteDemoAtual');
+      if (!caixa) return;
+      const vigente = Boolean(d && d.vigente);
+      acessoSiteDemoCodigo = vigente ? d.codigo : '';
+      document.getElementById('acessoSiteDemoCopiarBtn').hidden = !vigente;
+      document.getElementById('acessoSiteDemoCancelarBtn').hidden = !vigente;
+      document.getElementById('acessoSiteDemoCriarBtn').textContent = vigente ? '🔄 Trocar o código' : '🧪 Criar código';
+      if (!d) { caixa.textContent = 'Nenhum código criado.'; return; }
+      const ate = d.validoAte ? new Date(d.validoAte).toLocaleDateString('pt-BR') : '';
+      if (!vigente) { caixa.textContent = (d.ativo ? 'O último código venceu em ' + ate : 'O último código foi cancelado') + '. Crie um novo quando precisar.'; return; }
+      const forte = document.createElement('strong');
+      forte.className = 'acesso-site-demo-codigo';
+      forte.textContent = d.codigo;
+      const info = document.createElement('span');
+      info.textContent = 'Vale até ' + ate + ' · ' + d.usados + ' de ' + d.maxAparelhos + ' aparelho' + (d.maxAparelhos === 1 ? '' : 's') + ' usado' + (d.usados === 1 ? '' : 's') + ' · crédito de teste ' + acessoSiteReais(d.credito);
+      caixa.replaceChildren(forte, info);
+    }
+    document.getElementById('acessoSiteDemoCriarBtn').addEventListener('click', async () => {
+      const codigo = codigoAdminAtual();
+      if (!codigo) return;
+      if (acessoSiteDemoCodigo && !(await askConfirm('Trocar o código de demonstração? O código atual deixa de valer e os aparelhos que entraram com ele perdem o acesso de demonstração.', 'Trocar o código'))) return;
+      acessoSiteStatus.textContent = 'Criando…';
+      const r = await postConfig({ acao: 'acesso-site-demo-criar', codigo, dias: document.getElementById('acessoSiteDemoDias').value, aparelhos: document.getElementById('acessoSiteDemoAparelhos').value, credito: document.getElementById('acessoSiteDemoCredito').value });
+      if (!r.ok) { acessoSiteStatus.textContent = configErrorMessage(r, 'Não foi possível criar o código agora.'); return; }
+      acessoSiteRenderAdmin(r.data.acesso, '🧪 Código de demonstração criado. ');
+    });
+    document.getElementById('acessoSiteDemoCancelarBtn').addEventListener('click', async () => {
+      const codigo = codigoAdminAtual();
+      if (!codigo) return;
+      if (!(await askConfirm('Cancelar o código de demonstração? Ele deixa de valer e os aparelhos que entraram com ele perdem o acesso de demonstração (o cadastro continua).', 'Cancelar código'))) return;
+      const r = await postConfig({ acao: 'acesso-site-demo-cancelar', codigo });
+      if (!r.ok) { acessoSiteStatus.textContent = configErrorMessage(r, 'Não foi possível cancelar agora.'); return; }
+      acessoSiteRenderAdmin(r.data.acesso, 'Código de demonstração cancelado. ');
+    });
+    document.getElementById('acessoSiteDemoCopiarBtn').addEventListener('click', async () => {
+      const b = document.getElementById('acessoSiteDemoCopiarBtn');
+      try {
+        await navigator.clipboard.writeText(acessoSiteDemoCodigo);
+        b.textContent = '✅ Copiado';
+        setTimeout(() => { b.textContent = '📋 Copiar'; }, 1800);
+      } catch (e) { acessoSiteStatus.textContent = acessoSiteDemoCodigo; }
+    });
 
     // Salvar o crédito de boas-vindas (também com Enter no campo).
     async function acessoSiteSalvarBoasVindas() {
@@ -14041,11 +14088,16 @@ function saveTemplatesToStorage() {
       }
       acessoSiteEnviarBtn.disabled = true;
       acessoSiteFormStatus.textContent = 'Salvando…';
-      const r = await postConfig(Object.assign({ acao: 'acesso-site-pedir', aparelhoId: id }, cadastroLerCampos('acessoSite')));
+      // 6.15.15: com o código de demonstração (revisores das lojas), o servidor aprova na hora e devolve uma senha master com prazo.
+      const codigoDemo = (document.getElementById('acessoSiteCodigoDemo').value || '').trim();
+      const r = await postConfig(Object.assign({ acao: 'acesso-site-pedir', aparelhoId: id }, cadastroLerCampos('acessoSite'), codigoDemo ? { codigoDemo } : {}));
       acessoSiteEnviarBtn.disabled = false;
       if (!r.ok) {
         acessoSiteFormStatus.textContent = (r.data && r.data.erro) || 'Não foi possível salvar o cadastro agora.';
         return;
+      }
+      if (r.data && r.data.demo && r.data.master) {
+        try { localStorage.setItem('jwLibraryNoteAplicarMasterSenhaV1', r.data.master); } catch (e) { /* sem armazenamento: só o cadastro */ }
       }
       if (r.data && (r.data.identificado || r.data.jaAprovado)) {
         acessoConfirmadoGravar(id);
@@ -14118,6 +14170,29 @@ function saveTemplatesToStorage() {
       }
       if (r.data && r.data.cadastro) await cadastroPreencherCampos('meusDados', r.data.cadastro);
       meusDadosStatus.textContent = '✅ Dados atualizados.';
+    });
+
+    // 🗑️ Excluir meu cadastro (6.15.15, exigência das lojas): apaga no servidor o cadastro e os dados deste aparelho; os dados guardados só no
+    // aparelho continuam (para apagá-los há "Apagar os dados deste aparelho", em Privacidade). Depois o app volta à tela de cadastro.
+    document.getElementById('meusDadosExcluirBtn').addEventListener('click', async () => {
+      const id = aparelhoId();
+      const saida = document.getElementById('meusDadosExcluirStatus');
+      if (!id) { saida.className = 'warn'; saida.textContent = 'Não foi possível identificar este aparelho.'; return; }
+      const ok = await askConfirm('Excluir o seu cadastro do servidor? Serão apagados o cadastro, os códigos e a senha deste aparelho, o saldo de créditos e o extrato, as estatísticas e as transcrições guardadas. O saldo que restar é perdido e isso não pode ser desfeito.', 'Excluir meu cadastro');
+      if (!ok) return;
+      const botao = document.getElementById('meusDadosExcluirBtn');
+      botao.disabled = true;
+      saida.className = 'ok';
+      saida.textContent = 'Excluindo…';
+      const r = await postConfig({ acao: 'cadastro-excluir', aparelhoId: id, confirmar: true });
+      botao.disabled = false;
+      if (!r.ok) { saida.className = 'warn'; saida.textContent = configErrorMessage(r, 'Não foi possível excluir agora. Tente de novo.'); return; }
+      try {
+        localStorage.removeItem('jwLibraryNoteAplicarMasterSenhaV1'); // a senha master deste aparelho deixou de existir
+      } catch (e) { /* ignore */ }
+      acessoConfirmadoGravar(null); // o aparelho deixa de constar como aprovado: ao abrir, volta a tela de cadastro
+      saida.textContent = '✅ Cadastro excluído do servidor. O app vai voltar à tela de cadastro.';
+      setTimeout(() => location.reload(), 2500);
     });
 
     async function restoreAllPrompts() {

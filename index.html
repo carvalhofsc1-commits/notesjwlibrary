@@ -1537,6 +1537,12 @@
                 <button id="meusDadosSalvarBtn" type="submit">💾 Salvar alterações</button>
               </div>
             </form>
+            <div class="acesso-item meus-dados-excluir">
+              <label>🗑️ Excluir meu cadastro</label>
+              <p class="hint">Apaga do servidor o cadastro deste aparelho, os códigos e a senha liberados para ele, o saldo de créditos e o extrato, as estatísticas de uso e as transcrições guardadas. Os recibos de pagamento ficam guardados sem os seus dados pessoais, como a lei exige. O saldo que restar é perdido. Depois, para usar o app de novo, será preciso fazer um novo cadastro. Também dá para pedir pela página <a href="excluir-dados.html" target="_blank" rel="noopener">Excluir dados</a>.</p>
+              <button id="meusDadosExcluirBtn" class="danger" type="button">🗑️ Excluir meu cadastro</button>
+              <p id="meusDadosExcluirStatus" class="ok" role="status" aria-live="polite"></p>
+            </div>
           </div>
         </details>
         <details class="subsection sub-tint-5" id="consumoSection">
@@ -2325,6 +2331,23 @@
               </div>
               <p class="hint">Liberado quando o saldo acaba pelo uso e abatido na próxima recarga. Vale para as próximas liberações. 0 = sem emergência.</p>
             </div>
+
+            <!-- 6.15.15: código de demonstração para os revisores das lojas (aprovação na hora, todos os recursos, prazo e crédito de teste) -->
+            <details class="prompt-item prompt-tint-codigo" id="acessoSiteDemo">
+              <summary><h3>🧪 Código de demonstração (revisores das lojas)</h3></summary>
+              <p class="hint">Quem informa este código na tela de cadastro é aprovado na hora e usa todos os recursos até a data de validade, com o crédito de teste abaixo. Serve para o revisor da Google Play ou da App Store testar o app sem esperar aprovação. Ao criar um código novo, o anterior deixa de valer.</p>
+              <div id="acessoSiteDemoAtual" class="acesso-site-demo-atual" role="status" aria-live="polite"></div>
+              <div class="acesso-site-demo-campos">
+                <div><label for="acessoSiteDemoDias">Validade (dias)</label><input id="acessoSiteDemoDias" type="number" min="1" max="90" value="30" inputmode="numeric"></div>
+                <div><label for="acessoSiteDemoAparelhos">Aparelhos</label><input id="acessoSiteDemoAparelhos" type="number" min="1" max="10" value="3" inputmode="numeric"></div>
+                <div><label for="acessoSiteDemoCredito">Crédito de teste (R$)</label><input id="acessoSiteDemoCredito" type="text" inputmode="decimal" value="10,00"></div>
+              </div>
+              <div class="acesso-site-demo-botoes">
+                <button id="acessoSiteDemoCriarBtn" type="button">🧪 Criar código</button>
+                <button id="acessoSiteDemoCopiarBtn" class="secondary" type="button" hidden>📋 Copiar</button>
+                <button id="acessoSiteDemoCancelarBtn" class="secondary limpar-btn" type="button" hidden>✖️ Cancelar código</button>
+              </div>
+            </details>
 
             <details class="prompt-item prompt-tint-codigo" open>
               <summary><h3>📝 Cadastros pendentes <span id="acessoSitePedidosQtd" class="acesso-site-qtd"></span></h3></summary>
@@ -3476,6 +3499,12 @@
           <label for="acessoSiteComo">Como conheceu o app? <span class="opc">(opcional)</span></label>
           <select id="acessoSiteComo" name="comoConheceuOpcao"></select>
           <input id="acessoSiteComoOutro" name="comoConheceuOutro" type="text" maxlength="160" placeholder="Descreva como conheceu o app" hidden>
+          <details class="acesso-site-demo" id="acessoSiteDemoBox">
+            <summary>🧪 Tenho um código de demonstração</summary>
+            <p class="hint">Para revisores das lojas de aplicativos e testes autorizados: com o código, o cadastro é liberado na hora, com todos os recursos por tempo limitado. Demonstration code for app store reviewers.</p>
+            <label for="acessoSiteCodigoDemo">Código de demonstração</label>
+            <input id="acessoSiteCodigoDemo" name="codigoDemo" type="text" maxlength="40" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="NS-DEMO-XXXX-XXXX">
+          </details>
           <div class="modal-actions acesso-site-acoes">
             <button id="acessoSiteEnviarBtn" type="submit">💾 Salvar e continuar</button>
             <button id="acessoSiteCancelarBtn" type="button" class="secondary">✖️ Cancelar</button>

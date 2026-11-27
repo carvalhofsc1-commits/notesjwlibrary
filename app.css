@@ -18926,3 +18926,18 @@ span[role="status"]:is(.ok, .warn, .erro):not(:empty):not(.main-copy-status) { d
 .pesq-status { justify-content: center; }
 /* Aviso dentro de uma linha de botões: vai para uma linha própria, embaixo, para os botões continuarem na largura toda. */
 .button-row > span[role="status"]:is(.ok, .warn, .erro):not(:empty) { flex: 1 1 100%; }
+
+/* 6.15.15: código de demonstração (tela de cadastro e painel do administrador) e exclusão do cadastro. */
+.acesso-site-demo { margin: 12px 0 4px; border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; }
+.acesso-site-demo > summary { cursor: pointer; font-weight: 600; font-size: .9rem; }
+.acesso-site-demo input { width: 100%; box-sizing: border-box; text-transform: uppercase; }
+.acesso-site-demo-atual { display: grid; gap: 4px; margin: 6px 0; font-size: .88rem; text-align: center; }
+.acesso-site-demo-codigo { font-size: 1.15rem; letter-spacing: .04em; overflow-wrap: anywhere; }
+.acesso-site-demo-campos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.acesso-site-demo-campos input { width: 100%; box-sizing: border-box; }
+.acesso-site-demo-campos label { font-size: .8rem; }
+.acesso-site-demo-botoes { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.acesso-site-demo-botoes > button { flex: 1 1 140px; }
+.acesso-site-demo-botoes > button:first-child { flex-basis: 100%; }
+.meus-dados-excluir { margin-top: 14px; }
+.meus-dados-excluir > button { width: 100%; }

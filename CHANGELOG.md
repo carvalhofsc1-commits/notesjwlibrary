@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.15.15
+
+- **Código de demonstração (revisores das lojas):** em Ajustes → 👥 Adm. de usuários e custos de IA → 🧪 Código de demonstração, o administrador cria um código com validade (1 a 90 dias), limite de aparelhos (1 a 10) e crédito de teste. Quem o informa na tela de cadastro ("🧪 Tenho um código de demonstração") é aprovado na hora e recebe uma senha master com prazo, que libera todos os recursos naquele aparelho. Ao cancelar o código, trocá-lo ou vencer a validade, a senha deixa de valer sozinha (o cadastro continua).
+- **Excluir meu cadastro:** em Ajustes → Meus dados, o próprio usuário apaga do servidor o cadastro, os códigos e a senha do aparelho, o saldo e o extrato, as estatísticas de uso e as transcrições guardadas. Os recibos de pagamento ficam guardados sem dados pessoais, como a lei exige. Depois o app volta à tela de cadastro.
+- **Página pública "Excluir meus dados"** (`excluir-dados.html`), para pedir a exclusão sem o aplicativo, e **Política de Privacidade 2.7** com a exclusão pelo app.
+
 ## 6.15.14
 
 - **Perfil bíblico com dicas sorteadas:** a dica com que a questão abre também é sorteada. Vale ao ligar o sorteio (nas questões que ainda estão no começo) e ao reiniciar uma questão ou o jogo; os sorteios seguintes trazem as dicas que faltam.

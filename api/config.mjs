@@ -34,7 +34,12 @@ import {
   prepararCodigosPessoais,
   recursoCodigoValido,
   revogarAcessoSite,
+  criarCodigoDemo,
+  cancelarCodigoDemo,
+  excluirCadastroProprio,
 } from "./_acessoSite.mjs";
+import { apagarAparelhoEstatisticas } from "./_estatisticas.mjs";
+import { apagarTodasTranscricoes, transcricoesConfiguradas } from "./_transcricoes.mjs";
 import { apagarEsboco, gravarEsbocos, gravarTemas, lerIndice, lerTemas, s34Configurado, temasDoTexto } from "./_s34.mjs";
 
 const CHAVE_PADRAO = "padrao_modelos";
@@ -318,6 +323,23 @@ export default async function handler(req, res) {
       const r = await atualizarCadastroSite(corpo);
       if (r && r.erro) return erro(res, 400, r.erro);
       return res.status(200).json(r);
+    }
+
+    // Pública (6.15.15): o próprio aparelho exclui o cadastro e os dados dele no servidor (Ajustes → Meus dados → Excluir meu cadastro).
+    // Apaga o cadastro, os códigos, o saldo e o extrato (os recibos ficam sem dados pessoais), as estatísticas e as transcrições do aparelho.
+    if (acao === "cadastro-excluir") {
+      if (!acessoSiteConfigurado()) return erro(res, 503, "O armazenamento privado ainda não está configurado no servidor.");
+      if (corpo.confirmar !== true) return erro(res, 400, "Confirme a exclusão.");
+      const r = await excluirCadastroProprio({ aparelhoId: corpo.aparelhoId });
+      if (r && r.erro) return erro(res, 400, r.erro);
+      let transcricoes = 0;
+      try {
+        await apagarAparelhoEstatisticas(corpo.aparelhoId);
+        if (transcricoesConfiguradas()) transcricoes = await apagarTodasTranscricoes({ aparelhoId: corpo.aparelhoId });
+      } catch (e) {
+        console.error("Excluir cadastro: falha ao apagar estatísticas ou transcrições", e && e.message);
+      }
+      return res.status(200).json({ ok: true, transcricoes });
     }
 
     const ip = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim() || "desconhecido";
@@ -652,6 +674,17 @@ export default async function handler(req, res) {
       const gerando = acao === "acesso-site-gerar-master";
       const r = await (gerando ? gerarMasterUsuario : expirarMasterUsuario)({ aparelhoId: corpo.aparelhoId, codigoAdmin: corpo.codigo });
       if (!r || r.erro) return erro(res, 400, (r && r.erro) || (gerando ? "Não foi possível gerar a senha master agora." : "Não foi possível expirar a senha master agora."));
+      return res.status(200).json({ ok: true, acesso: await lerAcessoSiteAdmin() });
+    }
+    // Código de demonstração para os revisores das lojas (6.15.15): criar (validade, aparelhos, crédito) ou cancelar.
+    if (acao === "acesso-site-demo-criar" || acao === "acesso-site-demo-cancelar") {
+      if (!acessoSiteConfigurado()) {
+        return erro(res, 503, "O armazenamento privado (Blob) ainda não está configurado no servidor para o controle de acesso.");
+      }
+      const r = acao === "acesso-site-demo-criar"
+        ? await criarCodigoDemo({ dias: corpo.dias, aparelhos: corpo.aparelhos, credito: corpo.credito, codigoAdmin: corpo.codigo })
+        : await cancelarCodigoDemo({ codigoAdmin: corpo.codigo });
+      if (!r || r.erro) return erro(res, 400, (r && r.erro) || "Não foi possível agora.");
       return res.status(200).json({ ok: true, acesso: await lerAcessoSiteAdmin() });
     }
     if (acao === "acesso-site-expirar-codigo") {

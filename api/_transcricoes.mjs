@@ -124,6 +124,15 @@ export async function lerTranscricao({ aparelhoId, id }) {
   return texto === null ? null : { ...item, texto };
 }
 
+// 6.15.15: exclusão do cadastro: apaga todas as transcrições do aparelho no servidor (os textos e o índice).
+export async function apagarTodasTranscricoes({ aparelhoId }) {
+  const base = pasta(aparelhoId);
+  const itens = await lerIndice(base);
+  for (const i of itens) if (i && ID_VALIDO.test(String(i.id || ""))) await apagar(`${base}/${i.id}.txt`);
+  await apagar(base + "/indice.json");
+  return itens.length;
+}
+
 export async function apagarTranscricao({ aparelhoId, id }) {
   if (!ID_VALIDO.test(String(id || ""))) return false;
   const base = pasta(aparelhoId);
