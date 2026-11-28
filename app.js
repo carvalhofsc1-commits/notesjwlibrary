@@ -7964,7 +7964,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.15.36'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.15.37'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -8574,6 +8574,9 @@
       if (!reverseUnicodeMap) reverseUnicodeMap = buildReverseUnicodeMap();
       return [...text].map(ch => reverseUnicodeMap.get(ch) || ch).join('');
     }
+
+    // Texto sem as letras "decoradas" (negrito/itálico feitos com outros caracteres), com os acentos recompostos.
+    const semLetrasDecoradas = text => removeUnicodeFormatting(String(text || '')).normalize('NFC');
 
     let reverseUnicodeStyleMap = null;
 
@@ -37229,10 +37232,16 @@ function saveTemplatesToStorage() {
       const novaParteReuniao = () => ({ id: novoIdReuniao(), tema: '', orador: '', congregacao: '', texto: '', gravacoes: [], em: new Date().toISOString() });
       // Rascunho da reunião: o formato antigo (um texto só) vira uma reunião com uma parte, sem perder nada.
       function reunioesDoRascunho(d) {
+        const limpar = (o, campos) => campos.forEach(k => { if (o[k]) o[k] = semLetrasDecoradas(o[k]); }); // 6.15.37: o que já estava gravado com letras decoradas
         if (Array.isArray(d.reunioes)) {
-          d.reunioes.forEach(r => { if (!Array.isArray(r.partes)) r.partes = []; r.partes.forEach(p => { if (!Array.isArray(p.gravacoes)) p.gravacoes = []; }); });
+          d.reunioes.forEach(r => {
+            if (!Array.isArray(r.partes)) r.partes = [];
+            limpar(r, ['tema', 'tipoNome']);
+            r.partes.forEach(p => { if (!Array.isArray(p.gravacoes)) p.gravacoes = []; limpar(p, ['tema', 'orador', 'congregacao']); });
+          });
           return d.reunioes;
         }
+        limpar(d, ['tema', 'orador', 'congregacao']);
         const tinha = String(d.texto || '').trim() || d.tema || d.orador || d.congregacao || (Array.isArray(d.gravacoes) && d.gravacoes.length);
         const lista = tinha ? [{
           id: novoIdReuniao(), data: d.data || String(d.em || '').slice(0, 10) || hojeIso(), em: d.em || new Date().toISOString(),
@@ -37256,7 +37265,7 @@ function saveTemplatesToStorage() {
         let r = lista.find(x => x.data === hojeIso());
         if (!r) { r = { id: novoIdReuniao(), data: hojeIso(), em: new Date().toISOString(), partes: [] }; lista.push(r); }
         const p = novaParteReuniao();
-        p.tema = (alvo && alvo.titulo && alvo.titulo !== 'Anotações') ? alvo.titulo : '';
+        p.tema = (alvo && alvo.titulo && alvo.titulo !== 'Anotações') ? semLetrasDecoradas(alvo.titulo) : '';
         r.partes.push(p);
         return p;
       }
@@ -37302,6 +37311,15 @@ function saveTemplatesToStorage() {
         reuniaoTipoPintar();
         if (reuniaoTipoSel.value === 'outra') reuniaoOutroEl.focus();
       });
+      // 6.15.37: tema, orador, congregação e nome da reunião ficam sempre na fonte padrão do app: letras "decoradas" coladas ali (o negrito
+      // das anotações, que aparece com serifa, tipo Times) viram letras comuns ao digitar ou colar.
+      [temaEl, oradorEl, congEl, reuniaoTemaEl, reuniaoTemaNovo, reuniaoOutroEl].forEach(el => el.addEventListener('input', () => {
+        const limpo = semLetrasDecoradas(el.value);
+        if (limpo === el.value) return;
+        const pos = semLetrasDecoradas(el.value.slice(0, el.selectionStart ?? el.value.length)).length;
+        el.value = limpo;
+        try { el.setSelectionRange(pos, pos); } catch (e) { /* campo sem cursor */ }
+      }, true));
       const temaDaParteReuniao = (p, i) => String(p.tema || '').trim() || 'Parte ' + (i + 1);
       // Os campos de sempre mostram a parte aberta; ao sair dela (ou a cada digitação), o que está nos campos volta para a parte.
       function guardarParteReuniao() {

@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.15.37
+
+- Reunião: tema da reunião, tema da parte, orador, congregação e nome da reunião ficam sempre na fonte padrão do app. Letras "decoradas" (o negrito das anotações, que aparece com serifa, tipo Times New Roman) viram letras comuns ao digitar ou colar, e o que já estava gravado é convertido ao abrir. O texto das anotações continua com a formatação.
+
 ## 6.15.36
 
 - Reunião: o cadastro completo ficou num card e, logo abaixo, o botão "⚡ Anotação rápida (reunião avulsa)", que abre a tela de anotação na hora, sem pedir data, tipo nem tema. Cada toque cria uma parte nova na "Reunião avulsa" de hoje (aparece na lista com ⚡); tema, orador etc. podem ser postos depois no card do tema.
