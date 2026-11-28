@@ -7964,7 +7964,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.15.33'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.15.34'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -19243,8 +19243,10 @@ function saveTemplatesToStorage() {
     let campoCapaAtual = null;
     function campoCapaPintar() {
       const box = document.getElementById('campoCapa');
-      box.hidden = !campoCapaAtual;
-      document.getElementById('campoCapaPedir').hidden = Boolean(campoCapaAtual);
+      // 6.15.34: só com a caixa "📖 Usar uma matéria da Biblioteca On-line" marcada aparecem o campo do link e a matéria escolhida.
+      const ligada = document.getElementById('campoMateriaWolChk').checked;
+      box.hidden = !campoCapaAtual || !ligada;
+      document.getElementById('campoCapaPedir').hidden = !ligada || Boolean(campoCapaAtual);
       if (!campoCapaAtual) return;
       document.getElementById('campoCapaTitulo').textContent = campoCapaAtual.titulo;
       const resumo = document.getElementById('campoCapaResumo');
@@ -19451,6 +19453,7 @@ function saveTemplatesToStorage() {
       ['campoCampanha', 'campoPublico', 'campoAssunto'].forEach(id => { document.getElementById(id).value = ''; });
       document.querySelectorAll('input[name="campoTipo"], #campoFontesBox input[type="checkbox"]').forEach(c => { c.checked = c.defaultChecked; });
       campoFontesResumo();
+      campoCapaPintar(); // a caixa da matéria da Biblioteca On-line volta desmarcada: some o campo do link
       document.getElementById('campoFontesBox').open = false;
       const sugestoes = document.getElementById('campoAssuntos');
       sugestoes.textContent = '';
@@ -19468,7 +19471,14 @@ function saveTemplatesToStorage() {
     document.getElementById('campoSugerirBtn').addEventListener('click', campoSugerir);
     document.getElementById('campoRefazerBtn').addEventListener('click', campoRefazer);
     // Fontes de consulta (6.11.56): contêiner sempre recolhido ao abrir o card, com o resumo do que está marcado no título.
-    const campoFontesCaixas = () => [...document.querySelectorAll('#campoFontesBox input[type="checkbox"]')];
+    // A caixa da matéria da Biblioteca On-line (6.15.34) não é uma fonte da lista: fica fora da conta e do Marcar/Desmarcar todas.
+    const campoFontesCaixas = () => [...document.querySelectorAll('#campoFontesBox input[type="checkbox"]:not(#campoMateriaWolChk)')];
+    document.getElementById('campoMateriaWolChk').addEventListener('change', e => {
+      if (e.target.checked) {
+        campoCapaPintar();
+        setTimeout(() => { if (!campoCapaAtual) document.getElementById('campoCapaLinkIn').focus(); }, 0);
+      } else campoCapaTirar(true);
+    });
     function campoFontesResumo() {
       const caixas = campoFontesCaixas();
       const n = caixas.filter(c => c.checked).length;

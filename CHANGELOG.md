@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.15.34
+
+- Fontes de consulta do serviço de campo: "📖 Usar uma matéria da Biblioteca On-line" passou para o fim da lista (depois de "Pesquisar além da lista") e ganhou uma caixa de marcar/desmarcar. Marcada, aparece o campo do link; desmarcada, o campo some e a matéria escolhida sai. A caixa começa desmarcada, não entra na conta das fontes nem no Marcar/Desmarcar todas, e o Limpar tudo a desmarca.
+
 ## 6.15.33
 
 - Serviço de campo: a opção da matéria de capa virou "📖 Usar uma matéria da Biblioteca On-line": aceita o link de qualquer matéria do wol.jw.org (https://wol.jw.org/pt/wol/d/…, com ou sem trecho marcado) e continua aceitando os links do jw.org. Textos do card, avisos, título salvo e instruções da IA falam em "matéria escolhida da Biblioteca On-line".
