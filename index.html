@@ -330,6 +330,19 @@
           <input id="anotacoesOrador" type="text" autocomplete="name" placeholder="Nome do orador">
           <label for="anotacoesCongregacao">Congregação</label>
           <input id="anotacoesCongregacao" type="text" autocomplete="organization" placeholder="Congregação do orador">
+          <!-- 6.15.52: a sessão da parte (só na reunião), usada no Programa da primeira folha do Word. -->
+          <div id="anotSessaoBox">
+            <label for="anotacoesSessao">Sessão (opcional)</label>
+            <select id="anotacoesSessao">
+              <option value="">Sem sessão</option>
+              <option>Sessão da manhã</option>
+              <option>Sessão da tarde</option>
+              <option>Sessão da noite</option>
+              <option>Primeira sessão</option>
+              <option>Segunda sessão</option>
+              <option>Terceira sessão</option>
+            </select>
+          </div>
         </details>
 
         <div id="anotacoesEscrita" class="anotacoes-escrita">

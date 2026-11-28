@@ -7965,7 +7965,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.15.51'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.15.52'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -20818,6 +20818,24 @@ function saveTemplatesToStorage() {
           return;
         }
         if (linha.trim() === DOCX_LINHA_TITULO) { p.className = 'doc-p doc-linha-titulo'; folha.append(p); return; }
+        if (/^[-]/.test(linha)) {
+          const [, a, b, c] = linha.split('\t');
+          if (linha[0] === DOCX_QUEBRA) { p.className = 'doc-p doc-quebra'; p.textContent = 'nova página'; }
+          else if (linha[0] === DOCX_PROG_TITULO) { p.className = 'doc-p doc-prog-titulo'; p.textContent = ricoPlano(linha.slice(1)); }
+          else if (linha[0] === DOCX_PROG_SESSAO) { p.className = 'doc-p doc-prog-sessao'; p.textContent = a; }
+          else {
+            p.className = 'doc-p doc-prog-item';
+            const num = document.createElement('b'); num.textContent = a + '.';
+            const corpo = document.createElement('span');
+            const tema = document.createElement('strong'); tema.textContent = b;
+            corpo.append(tema);
+            if (c) { const quem = document.createElement('small'); quem.textContent = c; corpo.append(quem); }
+            p.append(num, corpo);
+          }
+          primeira = false;
+          folha.append(p);
+          return;
+        }
         const modelo = docxLinhaModelo(linha, doc.acentos);
         if (!modelo) {
           p.classList.add('vazio');
@@ -22381,6 +22399,34 @@ function saveTemplatesToStorage() {
     // 6.15.50: o cabeçalho do documento das anotações da reunião: título grande e colorido, a linha de baixo e uma linha colorida.
     const DOCX_TITULO = '', DOCX_SUBTITULO = '', DOCX_LINHA_TITULO = '';
     const DOCX_COR_TITULO = '5B3FB5';
+    // 6.15.52: a folha "Programa" no começo do Word das anotações: o título dela, a faixa de cada sessão, uma linha por parte
+    // (DOCX_PROG_ITEM + tamanho + tab + número + tab + tema + tab + orador/congregação) e a quebra de página antes das anotações.
+    const DOCX_PROG_TITULO = '', DOCX_PROG_SESSAO = '', DOCX_PROG_ITEM = '', DOCX_QUEBRA = '';
+    // As linhas do programa, com a letra menor quando há muitas partes (para caber numa folha). itens: [{ sessao, hora, tema, quem }].
+    function docxLinhasDoPrograma(titulo, itens) {
+      const tam = itens.length <= 12 ? 22 : itens.length <= 20 ? 19 : 17;
+      const linhas = [DOCX_PROG_TITULO + titulo];
+      let sessao = '';
+      itens.forEach((item, i) => {
+        if (item.sessao && item.sessao !== sessao) { sessao = item.sessao; linhas.push(DOCX_PROG_SESSAO + tam + '\t' + sessao); }
+        const limpo = t => ricoPlano(String(t || '')).replace(/[\t\n]+/g, ' ').trim();
+        linhas.push([DOCX_PROG_ITEM + tam, i + 1, (item.hora ? item.hora + ' · ' : '') + limpo(item.tema), limpo(item.quem)].join('\t'));
+      });
+      linhas.push(DOCX_QUEBRA);
+      return linhas;
+    }
+    function docxParagrafoDoPrograma(linha, escala) {
+      const tipo = linha[0];
+      const n = v => Math.round(v * escala);
+      if (tipo === DOCX_QUEBRA) return '<w:p><w:r><w:br w:type="page"/></w:r></w:p>';
+      if (tipo === DOCX_PROG_TITULO) return '<w:p><w:pPr><w:keepNext/><w:spacing w:before="0" w:after="160"/><w:jc w:val="center"/></w:pPr>' + docxRuns(ricoPlano(linha.slice(1)), 'b', n(30), '111827') + '</w:p>';
+      const [cabeca, a, b, c] = linha.split('\t');
+      const tam = n(Number(cabeca.slice(1)) || 22);
+      if (tipo === DOCX_PROG_SESSAO) return '<w:p><w:pPr><w:keepNext/><w:shd w:val="clear" w:color="auto" w:fill="EDE9FE"/><w:spacing w:before="120" w:after="80"/></w:pPr>' + docxRuns(ricoPlano(a), 'b', tam + 2, DOCX_COR_TITULO) + '</w:p>';
+      const recuo = '<w:ind w:left="454" w:hanging="454"/><w:tabs><w:tab w:val="left" w:pos="454"/></w:tabs>';
+      return '<w:p><w:pPr><w:keepLines/>' + (c ? '<w:keepNext/>' : '') + '<w:spacing w:before="0" w:after="' + (c ? 0 : 80) + '" w:line="240" w:lineRule="auto"/>' + recuo + '</w:pPr>' + docxRuns(a + '.', 'b', tam, DOCX_COR_TITULO) + '<w:r><w:tab/></w:r>' + docxRuns(b, 'b', tam) + '</w:p>' +
+        (c ? '<w:p><w:pPr><w:keepLines/><w:spacing w:before="0" w:after="80" w:line="240" w:lineRule="auto"/><w:ind w:left="454"/></w:pPr>' + docxRuns(c, '', tam - 2, '4B5563') + '</w:p>' : '');
+    }
 
     // Um trecho de texto com o mesmo estilo vira uma ou mais "runs" (os emojis ficam em runs próprias, com a fonte de emojis).
     function docxRuns(texto, f, tamanho, cor, fundo) {
@@ -22432,6 +22478,7 @@ function saveTemplatesToStorage() {
         return '<w:p><w:pPr><w:keepNext/><w:spacing w:before="0" w:after="' + (grande ? 80 : 60) + '"/><w:jc w:val="center"/></w:pPr>' + docxRuns(t, grande ? 'b' : '', Math.round((grande ? 40 : 26) * escala), grande ? DOCX_COR_TITULO : '4B5563') + '</w:p>';
       }
       if (linha.trim() === DOCX_LINHA_TITULO) return '<w:p><w:pPr><w:pBdr><w:bottom w:val="single" w:sz="24" w:space="1" w:color="' + DOCX_COR_TITULO + '"/></w:pBdr><w:spacing w:before="0" w:after="240"/></w:pPr></w:p>';
+      if (/^[-]/.test(linha)) return docxParagrafoDoPrograma(linha, escala);
       const modelo = docxLinhaModelo(linha, acentos);
       if (!modelo) return escala === 1 ? '<w:p/>' : '<w:p><w:pPr><w:rPr><w:sz w:val="' + corpo + '"/><w:szCs w:val="' + corpo + '"/></w:rPr></w:pPr></w:p>';
       const esquerda = Math.round(modelo.esquerda * escala);
@@ -36177,6 +36224,7 @@ function saveTemplatesToStorage() {
       const temaEl = document.getElementById('anotacoesTema');
       const oradorEl = document.getElementById('anotacoesOrador');
       const congEl = document.getElementById('anotacoesCongregacao');
+      const sessaoEl = document.getElementById('anotacoesSessao');
       const bibRef = document.getElementById('anotacoesBibliaRef');
       const bibPick = document.getElementById('anotacoesBibliaPick');
       const gravarStatus = document.getElementById('anotacoesGravarStatus');
@@ -37585,7 +37633,8 @@ function saveTemplatesToStorage() {
       const reuniaoNovaData = document.getElementById('anotReuniaoNovaData');
       const novoIdReuniao = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
       const hojeIso = () => { const h = new Date(); return h.getFullYear() + '-' + String(h.getMonth() + 1).padStart(2, '0') + '-' + String(h.getDate()).padStart(2, '0'); };
-      const novaParteReuniao = () => ({ id: novoIdReuniao(), tema: '', orador: '', congregacao: '', texto: '', gravacoes: [], em: new Date().toISOString() });
+      const novaParteReuniao = () => ({ id: novoIdReuniao(), tema: '', orador: '', congregacao: '', sessao: '', texto: '', gravacoes: [], em: new Date().toISOString() });
+      const sessaoDaUltima = r => ((r && r.partes[r.partes.length - 1]) || {}).sessao || ''; // a parte nova começa na mesma sessão da anterior
       // Rascunho da reunião: o formato antigo (um texto só) vira uma reunião com uma parte, sem perder nada.
       function reunioesDoRascunho(d) {
         const limpar = (o, campos) => campos.forEach(k => { if (o[k]) o[k] = semLetrasDecoradas(o[k]); }); // 6.15.37: o que já estava gravado com letras decoradas
@@ -37622,6 +37671,7 @@ function saveTemplatesToStorage() {
         if (!r) { r = { id: novoIdReuniao(), data: hojeIso(), em: new Date().toISOString(), partes: [] }; lista.push(r); }
         const p = novaParteReuniao();
         p.tema = (alvo && alvo.titulo && alvo.titulo !== 'Anotações') ? semLetrasDecoradas(alvo.titulo) : '';
+        p.sessao = sessaoDaUltima(r);
         r.partes.push(p);
         return p;
       }
@@ -37687,11 +37737,12 @@ function saveTemplatesToStorage() {
         const p = parteReuniaoAtual();
         const r = reuniaoAtual();
         if (!p || !r) return;
-        const mudou = p.texto !== texto.value || p.tema !== temaEl.value || p.orador !== oradorEl.value || p.congregacao !== congEl.value;
+        const mudou = p.texto !== texto.value || p.tema !== temaEl.value || p.orador !== oradorEl.value || p.congregacao !== congEl.value || (p.sessao || '') !== sessaoEl.value;
         p.texto = texto.value;
         p.tema = temaEl.value;
         p.orador = oradorEl.value;
         p.congregacao = congEl.value;
+        p.sessao = sessaoEl.value;
         p.gravacoes = gravacoesReuniao;
         if (dataReuniaoEl.value) r.data = dataReuniaoEl.value;
         if (mudou) { p.em = new Date().toISOString(); r.em = p.em; }
@@ -37731,6 +37782,7 @@ function saveTemplatesToStorage() {
         temaEl.value = p.tema || '';
         oradorEl.value = p.orador || '';
         congEl.value = p.congregacao || '';
+        sessaoEl.value = p.sessao || '';
         if (!Array.isArray(p.gravacoes)) p.gravacoes = [];
         gravacoesReuniao = p.gravacoes;
         dataReuniaoEl.value = r.data || '';
@@ -37745,6 +37797,7 @@ function saveTemplatesToStorage() {
         if (gravacao) return dizer('Pare a gravação antes de começar outra parte.', true);
         guardarNota();
         const p = novaParteReuniao();
+        p.sessao = sessaoDaUltima(r);
         r.partes.push(p);
         abrirParteReuniao(p.id, true);
       }
@@ -37780,6 +37833,7 @@ function saveTemplatesToStorage() {
         reuniaoAtualId = r.id;
         guardarNota();
         const p = novaParteReuniao();
+        p.sessao = sessaoDaUltima(r);
         r.partes.push(p);
         abrirParteReuniao(p.id, false);
       });
@@ -37827,6 +37881,7 @@ function saveTemplatesToStorage() {
           // 6.15.41: a parte só é criada (e o áudio enviado) depois de confirmar.
           cartaoDeAudio(document.getElementById('anotReuniaoImportCard'), arquivo, duracaoS, async detalhe => {
             const p = novaParteReuniao();
+            p.sessao = sessaoDaUltima(r);
             r.partes.push(p);
             const alvo = {
               modo: 'reuniao', programa: false, chave: '', parte: 0, parteId: '', dona: -1, donaId: '', q: null,
@@ -38089,6 +38144,7 @@ function saveTemplatesToStorage() {
       reuniaoCabCentro.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrirTemaDaParte(); } });
       // O tema digitado já aparece no cabeçalho da parte.
       temaEl.addEventListener('input', () => { if (modo === 'reuniao' && reuniaoVista === 'anotando') { guardarNota(); reuniaoPintar(); } });
+      sessaoEl.addEventListener('change', () => { if (modo === 'reuniao' && reuniaoVista === 'anotando') { guardarNota(); salvarRascunho(); } });
       // Word com todas as partes da reunião (tema, orador e congregação de cada uma, depois a anotação).
       const reuniaoExportarBtn = document.getElementById('anotReuniaoExportar');
       reuniaoExportarBtn.addEventListener('click', async () => {
@@ -38098,6 +38154,13 @@ function saveTemplatesToStorage() {
         // cabeçalho de todas as páginas.
         const temaR = String(r.tema || '').trim();
         const linhas = [DOCX_TITULO + (temaR || tipoReuniao(r)), DOCX_SUBTITULO + [temaR ? tipoReuniao(r) : '', nomeReuniao(r)].filter(Boolean).join(' · '), DOCX_LINHA_TITULO];
+        // 6.15.52: a primeira folha é o programa, com todas as partes (tema, orador, congregação e a sessão, quando informada).
+        const especial = r.tipo && !['meio', 'fim'].includes(r.tipo);
+        const noPrograma = r.partes.filter(p => [p.tema, p.orador, p.texto].some(x => String(x || '').trim())); // parte vazia não entra
+        linhas.push(...docxLinhasDoPrograma(especial ? 'Programa da reunião especial' : 'Programa da reunião', noPrograma.map(p => ({
+          sessao: p.sessao || '', hora: '', tema: temaDaParteReuniao(p, r.partes.indexOf(p)),
+          quem: [p.orador ? 'Orador: ' + p.orador : '', p.congregacao ? 'Congregação: ' + p.congregacao : ''].filter(Boolean).join(' · ')
+        }))));
         let partesPostas = 0;
         r.partes.forEach((p, i) => {
           if (!String(p.texto || '').trim()) return;
@@ -38852,12 +38915,26 @@ function saveTemplatesToStorage() {
           const ev = (eventos || []).find(e => e.url === chaveAtual);
           const nomeEvento = ev ? ev.titulo : ((programaMeta && programaMeta.titulo) || (ehCongresso() ? 'Congresso' : 'Assembleia'));
           const temaEvento = (programaMeta && programaMeta.tema) || '';
-          const linhas = [estiloComAcentos(nomeEvento + (temaEvento ? ' — ' + temaEvento : ''), 'bold')];
-          if (dataAtual) linhas.push(textoDaData());
-          linhas.push('');
+          // 6.15.52: título em destaque e, na primeira folha, o programa com todas as partes (por dia e sessão, com orador e congregação).
+          const linhas = [DOCX_TITULO + (temaEvento || nomeEvento)];
+          const embaixo = [temaEvento ? nomeEvento : '', dataAtual ? textoDaData() : '', (programaMeta && programaMeta.cidade) || '', (programaMeta && programaMeta.local) || ''].filter(Boolean).join(' · ');
+          if (embaixo) linhas.push(DOCX_SUBTITULO + embaixo);
+          linhas.push(DOCX_LINHA_TITULO);
+          linhas.push(...docxLinhasDoPrograma(ehCongresso() ? 'Programa do congresso' : 'Programa da assembleia', iniciaveis().map(i => {
+            const p = partes[i];
+            const periodo = String(p.secao || '').split(' · ').pop();
+            const sessao = /^(manh[ãa]|tarde|noite)$/i.test(periodo) ? 'Sessão da ' + periodo.toLowerCase() : periodo;
+            return {
+              sessao: [ehCongresso() ? diaDaParteCongresso(p) : '', sessao].filter((x, k, l) => x && l.indexOf(x) === k).join(' · '),
+              hora: p.horario || '', tema: [tituloDaSerie(i), semMarcador(p.tema)].filter(Boolean).join(' — '),
+              quem: [p.orador ? 'Orador: ' + p.orador : '', p.congregacao ? 'Congregação: ' + p.congregacao : ''].filter(Boolean).join(' · ')
+            };
+          })));
           let diaAnterior = null;
+          let postas = 0;
           comNota.forEach(i => {
             const p = partes[i];
+            if (postas++) linhas.push(DOCX_SEPARADOR);
             if (ehCongresso() && p.dia && p.dia !== diaAnterior) {
               diaAnterior = p.dia;
               const dataDoDia = dataDaParte(p);
@@ -38871,7 +38948,7 @@ function saveTemplatesToStorage() {
           });
           // Primeiro a prévia do documento (como nos outros botões Word); de lá se exporta ou se compartilha o .docx.
           const limpo = removeUnicodeFormatting('Anotações - ' + nomeEvento).replace(DOCX_EMOJI, ' ').replace(/[\\/:*?"<>|\u201C\u201D\u2018\u2019]/g, '').replace(/\s+/g, ' ').trim().slice(0, 80);
-          await docxPreviaAbrir(exportarNotasBtn, linhas.join('\n').trim(), limpo + ' - ' + new Date().toISOString().slice(0, 10));
+          await docxPreviaAbrir(exportarNotasBtn, linhas.join('\n').trim(), limpo + ' - ' + new Date().toISOString().slice(0, 10), [temaEvento || nomeEvento, dataAtual ? textoDaData() : ''].filter(Boolean).join(' · '));
         } catch (e) {
           dizer('Não consegui preparar o Word. Confira a conexão e tente de novo.', true);
         } finally {

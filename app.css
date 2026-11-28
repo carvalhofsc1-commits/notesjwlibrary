@@ -19447,3 +19447,14 @@ div.rico mark, .anotacoes-biblia-previa-texto mark { background: #fde68a; color:
 .visor-folha.doc p.doc-titulo-reuniao { margin: 0 0 4px; text-align: center; color: #5b3fb5; font-weight: 800; font-size: 1.7em; line-height: 1.25; text-indent: 0; }
 .visor-folha.doc p.doc-subtitulo-reuniao { margin: 0 0 4px; text-align: center; color: #4b5563; font-size: 1.1em; text-indent: 0; }
 .visor-folha.doc p.doc-linha-titulo { margin: 0 0 14px; padding: 0; height: 0; min-height: 0; border-bottom: 3px solid #5b3fb5; text-indent: 0; }
+
+/* 6.15.52: campo Sessão da parte e a folha "Programa" na prévia do Word */
+#anotSessaoBox { display: grid; gap: 4px; }
+#anotSessaoBox select { width: 100%; margin: 0; }
+.visor-folha.doc p.doc-prog-titulo { margin: 0 0 10px; text-align: center; font-weight: 800; font-size: 1.25em; text-indent: 0; }
+.visor-folha.doc p.doc-prog-sessao { margin: 8px 0 6px; padding: 2px 6px; background: #ede9fe; color: #5b3fb5; font-weight: 800; text-indent: 0; }
+.visor-folha.doc p.doc-prog-item { display: flex; gap: 8px; margin: 0 0 6px; padding: 0; text-indent: 0; }
+.visor-folha.doc p.doc-prog-item > b { flex: 0 0 1.8em; color: #5b3fb5; }
+.visor-folha.doc p.doc-prog-item > span { display: grid; min-width: 0; }
+.visor-folha.doc p.doc-prog-item small { color: #4b5563; }
+.visor-folha.doc p.doc-quebra { margin: 14px 0; padding: 0; text-align: center; color: #9ca3af; font-size: .75em; border-top: 2px dashed #9ca3af; text-indent: 0; }

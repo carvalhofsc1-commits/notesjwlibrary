@@ -2,6 +2,12 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.15.52
+
+- Word das anotações (reunião, assembleia e congresso): a primeira folha é o "Programa" (Programa da reunião especial, da reunião, da assembleia ou do congresso), com todas as partes numeradas, tema, orador e congregação, separadas por sessão (e por dia no congresso, com o horário do programa); a letra diminui quando há muitas partes. As anotações começam na folha seguinte. Parte vazia não entra no programa.
+- Reunião: campo opcional "Sessão" na parte (manhã, tarde, noite, primeira, segunda, terceira); a parte nova começa na mesma sessão da anterior.
+- Word da assembleia e do congresso: título em destaque no começo e no cabeçalho das páginas, e linha separando cada parte.
+
 ## 6.15.51
 
 - Anotações: o atalho "Reuniões congregacionais" passou a se chamar "Reuniões congregacionais e especiais".
