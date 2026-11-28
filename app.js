@@ -7965,7 +7965,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.15.55'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.15.56'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -22427,7 +22427,8 @@ function saveTemplatesToStorage() {
         const limpo = t => ricoPlano(String(t || '')).replace(/[\t\n]+/g, ' ').trim();
         linhas.push([DOCX_PROG_ITEM + tam, i + 1, (item.hora ? item.hora + ' · ' : '') + limpo(item.tema), limpo(item.quem)].join('\t'));
       });
-      linhas.push(DOCX_QUEBRA, DOCX_PROG_TITULO + 'Anotações'); // o título marca o começo das anotações também onde não há páginas
+      // uma linha fecha o programa; o título "Anotações" marca o começo delas também onde não há páginas (visualizador do iPhone)
+      linhas.push(DOCX_SEPARADOR, DOCX_QUEBRA, DOCX_PROG_TITULO + 'Anotações');
       return linhas;
     }
     function docxParagrafoDoPrograma(linha, escala) {
@@ -22480,18 +22481,28 @@ function saveTemplatesToStorage() {
       return { esquerda, marcador, trechos };
     }
 
+    // 6.15.56: a linha de margem a margem é uma tabela de uma célula, em 100% da largura, só com a borda de baixo (o visualizador do iPhone
+    // não mostrava a borda de um parágrafo vazio); o parágrafo depois dela dá o respiro.
+    function docxLinhaHorizontal(cor, grossura, depois) {
+      const nil = lado => '<w:' + lado + ' w:val="nil"/>';
+      return '<w:tbl><w:tblPr><w:tblW w:w="5000" w:type="pct"/><w:tblBorders>' + nil('top') + nil('left') + '<w:bottom w:val="single" w:sz="' + grossura + '" w:space="0" w:color="' + cor + '"/>' + nil('right') + nil('insideH') + nil('insideV') +
+        '</w:tblBorders><w:tblCellMar><w:left w:w="0" w:type="dxa"/><w:right w:w="0" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid><w:gridCol w:w="10772"/></w:tblGrid><w:tr><w:tc><w:tcPr><w:tcW w:w="5000" w:type="pct"/></w:tcPr>' +
+        '<w:p><w:pPr><w:spacing w:before="0" w:after="0" w:line="120" w:lineRule="exact"/></w:pPr><w:r><w:rPr><w:sz w:val="4"/></w:rPr><w:t xml:space="preserve"> </w:t></w:r></w:p></w:tc></w:tr></w:tbl>' +
+        '<w:p><w:pPr><w:spacing w:before="0" w:after="0" w:line="' + depois + '" w:lineRule="exact"/></w:pPr></w:p>';
+    }
+
     // Uma linha do campo -> um parágrafo. escala: o tamanho das letras escolhido na prévia (1 = 11 pt, e 14 pt na primeira linha); os
     // recuos acompanham a escala.
     function docxParagrafo(linha, primeira, acentos, escala = 1) {
       const corpo = Math.round(22 * escala);
       // 6.15.48: linha de separação de margem a margem (entre as partes da reunião no Word).
-      if (linha.trim() === DOCX_SEPARADOR) return '<w:p><w:pPr><w:pBdr><w:bottom w:val="single" w:sz="12" w:space="1" w:color="6B7280"/></w:pBdr><w:spacing w:before="0" w:after="200"/></w:pPr></w:p>';
+      if (linha.trim() === DOCX_SEPARADOR) return docxLinhaHorizontal('6B7280', 12, 200);
       if (linha.startsWith(DOCX_TITULO) || linha.startsWith(DOCX_SUBTITULO)) {
         const grande = linha.startsWith(DOCX_TITULO);
         const t = docxAcentosDoTitulo(ricoPlano(linha.slice(1)).normalize('NFC'), acentos);
         return '<w:p><w:pPr><w:keepNext/><w:spacing w:before="0" w:after="' + (grande ? 80 : 60) + '"/><w:jc w:val="center"/></w:pPr>' + docxRuns(t, grande ? 'b' : '', Math.round((grande ? 40 : 26) * escala), grande ? DOCX_COR_TITULO : '4B5563') + '</w:p>';
       }
-      if (linha.trim() === DOCX_LINHA_TITULO) return '<w:p><w:pPr><w:pBdr><w:bottom w:val="single" w:sz="24" w:space="1" w:color="' + DOCX_COR_TITULO + '"/></w:pBdr><w:spacing w:before="0" w:after="240"/></w:pPr></w:p>';
+      if (linha.trim() === DOCX_LINHA_TITULO) return docxLinhaHorizontal(DOCX_COR_TITULO, 24, 240);
       if (/^[-]/.test(linha)) return docxParagrafoDoPrograma(linha, escala);
       const modelo = docxLinhaModelo(linha, acentos);
       if (!modelo) return escala === 1 ? '<w:p/>' : '<w:p><w:pPr><w:rPr><w:sz w:val="' + corpo + '"/><w:szCs w:val="' + corpo + '"/></w:rPr></w:pPr></w:p>';
@@ -22563,7 +22574,8 @@ function saveTemplatesToStorage() {
     function docxCabecalhoXml(tituloPagina = '', comLogo = true) {
       const paragrafo = (conteudo, alinhar = '') => '<w:p><w:pPr><w:spacing w:before="0" w:after="0" w:line="240" w:lineRule="auto"/>' + (alinhar ? '<w:jc w:val="' + alinhar + '"/>' : '') + '</w:pPr>' + conteudo + '</w:p>';
       const letra = (t, cor, tam) => '<w:r><w:rPr><w:b/><w:bCs/><w:color w:val="' + cor + '"/><w:sz w:val="' + tam + '"/><w:szCs w:val="' + tam + '"/></w:rPr><w:t xml:space="preserve">' + t + '</w:t></w:r>';
-      const celula = (largura, conteudo) => '<w:tc><w:tcPr><w:tcW w:w="' + largura + '" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr>' + conteudo + '</w:tc>';
+      // 6.15.56: larguras em porcentagem (5000 = 100%): com medidas fixas o visualizador do iPhone encolhia o cabeçalho antes da margem direita.
+      const celula = (largura, conteudo) => '<w:tc><w:tcPr><w:tcW w:w="' + Math.round(largura / 10772 * 5000) + '" w:type="pct"/><w:vAlign w:val="center"/></w:tcPr>' + conteudo + '</w:tc>';
       const colLogo = comLogo ? 794 : 0, colMarca = 2400, colTitulo = 10772 - colLogo - colMarca;
       const marca = paragrafo(letra('Note', '1F2937', 28) + letra('Style', DOCX_COR_TITULO, 28)) +
         paragrafo('<w:hyperlink r:id="rIdSite"><w:r><w:rPr><w:color w:val="' + DOCX_COR_TITULO + '"/><w:sz w:val="17"/><w:szCs w:val="17"/></w:rPr><w:t>' + DOCX_SITE + '</w:t></w:r></w:hyperlink>');
@@ -22573,7 +22585,7 @@ function saveTemplatesToStorage() {
         ? paragrafo(docxRuns(partes.join(' · '), 'b', 22, DOCX_COR_TITULO), 'right') + (data ? paragrafo(docxRuns(data, '', 17, '4B5563'), 'right') : '')
         : paragrafo('');
       const nil = lado => '<w:' + lado + ' w:val="nil"/>';
-      const tabela = '<w:tbl><w:tblPr><w:tblW w:w="10772" w:type="dxa"/><w:tblBorders>' + nil('top') + nil('left') +
+      const tabela = '<w:tbl><w:tblPr><w:tblW w:w="5000" w:type="pct"/><w:tblBorders>' + nil('top') + nil('left') +
         '<w:bottom w:val="single" w:sz="8" w:space="0" w:color="' + DOCX_COR_TITULO + '"/>' + nil('right') + nil('insideH') + nil('insideV') +
         '</w:tblBorders><w:tblLayout w:type="fixed"/><w:tblCellMar><w:left w:w="0" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="0" w:type="dxa"/></w:tblCellMar></w:tblPr>' +
         '<w:tblGrid>' + (comLogo ? '<w:gridCol w:w="' + colLogo + '"/>' : '') + '<w:gridCol w:w="' + colMarca + '"/><w:gridCol w:w="' + colTitulo + '"/></w:tblGrid>' +

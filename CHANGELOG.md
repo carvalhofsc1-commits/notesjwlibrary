@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.15.56
+
+- Word: o cabeçalho vai de margem a margem (larguras em porcentagem, porque o visualizador do iPhone o encolhia).
+- Word das anotações: uma linha separa o Programa (sumário) dos discursos; as linhas entre os discursos e a do título passaram a ser feitas de um jeito que o visualizador do iPhone também mostra.
+
 ## 6.15.55
 
 - Word das anotações: saiu o quadrado estranho que o visualizador do iPhone mostrava entre o Programa e a primeira parte (a quebra de página agora vai junto do parágrafo seguinte, com o título "Anotações" marcando o começo delas) e o vão grande entre o número e o tema no Programa.
