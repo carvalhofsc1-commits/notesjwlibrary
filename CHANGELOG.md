@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.15.55
+
+- Word das anotações: saiu o quadrado estranho que o visualizador do iPhone mostrava entre o Programa e a primeira parte (a quebra de página agora vai junto do parágrafo seguinte, com o título "Anotações" marcando o começo delas) e o vão grande entre o número e o tema no Programa.
+
 ## 6.15.54
 
 - Cabeçalho do Word arrumado: à esquerda o logo com "NoteStyle" e o endereço embaixo; à direita o título do documento, em quantas linhas precisar, com a data embaixo; uma linha roxa fecha o cabeçalho. Vale para todos os documentos do app.

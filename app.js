@@ -7965,7 +7965,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.15.54'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.15.55'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -22427,20 +22427,19 @@ function saveTemplatesToStorage() {
         const limpo = t => ricoPlano(String(t || '')).replace(/[\t\n]+/g, ' ').trim();
         linhas.push([DOCX_PROG_ITEM + tam, i + 1, (item.hora ? item.hora + ' · ' : '') + limpo(item.tema), limpo(item.quem)].join('\t'));
       });
-      linhas.push(DOCX_QUEBRA);
+      linhas.push(DOCX_QUEBRA, DOCX_PROG_TITULO + 'Anotações'); // o título marca o começo das anotações também onde não há páginas
       return linhas;
     }
     function docxParagrafoDoPrograma(linha, escala) {
       const tipo = linha[0];
       const n = v => Math.round(v * escala);
-      if (tipo === DOCX_QUEBRA) return '<w:p><w:r><w:br w:type="page"/></w:r></w:p>';
       if (tipo === DOCX_PROG_TITULO) return '<w:p><w:pPr><w:keepNext/><w:spacing w:before="0" w:after="160"/><w:jc w:val="center"/></w:pPr>' + docxRuns(ricoPlano(linha.slice(1)), 'b', n(30), '111827') + '</w:p>';
       const [cabeca, a, b, c] = linha.split('\t');
       const tam = n(Number(cabeca.slice(1)) || 22);
       if (tipo === DOCX_PROG_SESSAO) return '<w:p><w:pPr><w:keepNext/><w:shd w:val="clear" w:color="auto" w:fill="EDE9FE"/><w:spacing w:before="120" w:after="80"/></w:pPr>' + docxRuns(ricoPlano(a), 'b', tam + 2, DOCX_COR_TITULO) + '</w:p>';
-      const recuo = '<w:ind w:left="454" w:hanging="454"/><w:tabs><w:tab w:val="left" w:pos="454"/></w:tabs>';
-      return '<w:p><w:pPr><w:keepLines/>' + (c ? '<w:keepNext/>' : '') + '<w:spacing w:before="0" w:after="' + (c ? 0 : 80) + '" w:line="240" w:lineRule="auto"/>' + recuo + '</w:pPr>' + docxRuns(a + '.', 'b', tam, DOCX_COR_TITULO) + '<w:r><w:tab/></w:r>' + docxRuns(b, 'b', tam) + '</w:p>' +
-        (c ? '<w:p><w:pPr><w:keepLines/><w:spacing w:before="0" w:after="80" w:line="240" w:lineRule="auto"/><w:ind w:left="454"/></w:pPr>' + docxRuns(c, '', tam - 2, '4B5563') + '</w:p>' : '');
+      // 6.15.55: sem tabulação (o visualizador do iPhone abria um vão grande entre o número e o tema).
+      return '<w:p><w:pPr>' + (c ? '<w:keepNext/>' : '') + '<w:keepLines/><w:spacing w:before="0" w:after="' + (c ? 0 : 80) + '" w:line="240" w:lineRule="auto"/></w:pPr>' + docxRuns(a + '. ', 'b', tam, DOCX_COR_TITULO) + docxRuns(b, 'b', tam) + '</w:p>' +
+        (c ? '<w:p><w:pPr><w:keepLines/><w:spacing w:before="0" w:after="80" w:line="240" w:lineRule="auto"/><w:ind w:left="284"/></w:pPr>' + docxRuns(c, '', tam - 2, '4B5563') + '</w:p>' : '');
     }
 
     // Um trecho de texto com o mesmo estilo vira uma ou mais "runs" (os emojis ficam em runs próprias, com a fonte de emojis).
@@ -22510,9 +22509,19 @@ function saveTemplatesToStorage() {
     // O corpo do documento: uma linha do campo por parágrafo.
     function docxCorpo(texto, acentos, escala = 1) {
       let primeira = true;
+      let novaPagina = false;
       return docxLinhas(texto).map(linha => {
-        const xml = docxParagrafo(linha, primeira && linha.trim() !== '', acentos, escala);
+        // 6.15.55: a quebra de página vira propriedade do parágrafo seguinte (o visualizador do iPhone mostrava um quadrado no lugar da quebra).
+        if (linha.trim() === DOCX_QUEBRA) { novaPagina = true; return ''; }
+        let xml = docxParagrafo(linha, primeira && linha.trim() !== '', acentos, escala);
         if (linha.trim() !== '') primeira = false;
+        if (novaPagina) {
+          novaPagina = false;
+          const marca = '<w:pageBreakBefore/>';
+          if (xml === '<w:p/>') xml = '<w:p><w:pPr>' + marca + '</w:pPr></w:p>';
+          else if (xml.startsWith('<w:p><w:pPr>')) xml = xml.replace(/^<w:p><w:pPr>((?:<w:keepNext\/>)?(?:<w:keepLines\/>)?)/, '<w:p><w:pPr>$1' + marca);
+          else xml = xml.replace(/^<w:p>/, '<w:p><w:pPr>' + marca + '</w:pPr>');
+        }
         return xml;
       }).join('');
     }
