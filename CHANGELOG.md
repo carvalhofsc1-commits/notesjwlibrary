@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.15.45
+
+- Reunião, tabela do "Tipo de reunião": o texto fica centralizado na altura de cada linha (no iPhone ficava no alto da célula).
+
 ## 6.15.44
 
 - Reunião, lista das partes: card "📜 Transcrições na íntegra" (acima do Exportar) com as transcrições de todas as partes da reunião, na ordem delas. As sem parte (feitas antes desta versão ou trazidas do servidor) aparecem à parte e podem ser ligadas a uma parte.

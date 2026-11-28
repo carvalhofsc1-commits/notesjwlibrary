@@ -5387,7 +5387,7 @@
 
     .anot-tipo-tabela .bk-seletor-lista > button.bk-seletor-item {
       display: flex;
-      align-items: stretch;
+      align-items: center; /* 6.15.45: o texto no meio da altura da linha (a coluna do ícone estica sozinha) */
       gap: 12px;
       width: 100%;
       min-height: 52px;
@@ -5407,6 +5407,7 @@
     .anot-tipo-tabela .bk-seletor-item::before {
       content: '🤝';
       flex: 0 0 52px;
+      align-self: stretch;
       display: flex;
       align-items: center;
       justify-content: center;
