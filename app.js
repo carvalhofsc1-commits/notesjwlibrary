@@ -7964,7 +7964,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.15.35'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.15.36'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -33522,6 +33522,23 @@ function saveTemplatesToStorage() {
       // O link vai exatamente ao versículo citado. (No celular o JW Library mostra a primeira linha dele um pouco acima; o app não controla isso. Apontar para o versículo anterior foi testado e descartado.)
       return n && capitulo && verso ? 'jwlibrary:///finder?bible=' + String(n).padStart(2, '0') + String(capitulo).padStart(3, '0') + String(verso).padStart(3, '0') + '&wtlocale=T' : '';
     }
+    // 6.15.36: a referência ("João 3:16-18") no endereço do jw.org que abre o versículo (ou o trecho) na Bíblia de estudo — no celular com o
+    // JW Library instalado, o próprio sistema costuma abrir no app. Vai na linha "🔗 Ler no JW" das anotações; '' se não achar.
+    function bibliaLinkJwOrgRef(texto) {
+      const refs = vozReferencias();
+      refs.regex.lastIndex = 0;
+      const m = refs.regex.exec(String(texto || ''));
+      refs.regex.lastIndex = 0;
+      if (!m) return '';
+      const livro = refs.comAcento.get(vozChave(m[1])) || refs.semAcento.get(vozChaveSemAcento(m[1]));
+      const n = BIBLIA_LIVROS.indexOf(livro) + 1;
+      const capitulo = parseInt(m[2], 10);
+      const nums = (String(m[3] || '').match(/\d+/g) || []).map(Number); // "16-18" ou "3, 4": do primeiro ao último versículo citado
+      if (!n || !capitulo || !nums.length) return '';
+      const cod = v => String(n).padStart(2, '0') + String(capitulo).padStart(3, '0') + String(v).padStart(3, '0');
+      const ult = Math.max(...nums);
+      return 'https://www.jw.org/finder?wtlocale=T&pub=nwtsty&bible=' + cod(nums[0]) + (ult > nums[0] ? '-' + cod(ult) : '');
+    }
     // Um documento do wol (".../wol/d/r5/lp-t/2026560") no app JW Library, com o endereço que o próprio app gera ao compartilhar (docid e, se houver, o parágrafo).
     function jwlLinkPorId(docid, par) {
       return docid ? 'jwlibrary:///finder?srcid=jwlshare&wtlocale=T&prefer=lang&docid=' + docid + (par ? '&par=' + par : '') : '';
@@ -37371,6 +37388,23 @@ function saveTemplatesToStorage() {
         reuniaoNovaParte();
       });
       document.getElementById('anotReuniaoNovaParte').addEventListener('click', reuniaoNovaParte);
+      // 6.15.36: ⚡ Anotação rápida (reunião avulsa): sem data, tipo nem tema — abre a anotação na hora, numa parte nova da "Reunião avulsa" de hoje
+      // (criada se ainda não existir). Depois dá para pôr tema, orador etc. no card do tema, como em qualquer parte.
+      document.getElementById('anotReuniaoRapidaBtn').addEventListener('click', () => {
+        if (gravacao) return dizer('Pare a gravação antes de começar outra anotação.', true);
+        dizer('');
+        const data = hojeIso();
+        let r = reunioes.find(x => x.data === data && x.tipo === 'avulsa');
+        if (!r) {
+          r = { id: novoIdReuniao(), data, tipo: 'avulsa', tipoNome: 'Reunião avulsa', tema: '', em: new Date().toISOString(), partes: [] };
+          reunioes.push(r);
+        }
+        reuniaoAtualId = r.id;
+        guardarNota();
+        const p = novaParteReuniao();
+        r.partes.push(p);
+        abrirParteReuniao(p.id, false);
+      });
       // 6.15.26: mudar a ordem das partes (ex.: áudio de uma parte subido fora da ordem). No modo de ordenar, as setas ▲▼ ficam no lugar da lixeira.
       document.getElementById('anotReuniaoOrdenar').addEventListener('click', () => {
         reuniaoOrdenando = !reuniaoOrdenando;
@@ -37462,7 +37496,7 @@ function saveTemplatesToStorage() {
           lista.forEach(r => {
             const n = r.partes.length;
             const temaR = String(r.tema || '').trim();
-            const btn = botaoDeItem(r.tipo && !['meio', 'fim'].includes(r.tipo) ? '🤝' : '📅', nomeReuniao(r), [tipoReuniao(r), n + (n === 1 ? ' parte' : ' partes')].join(' · '));
+            const btn = botaoDeItem(r.tipo === 'avulsa' ? '⚡' : r.tipo && !['meio', 'fim'].includes(r.tipo) ? '🤝' : '📅', nomeReuniao(r), [tipoReuniao(r), n + (n === 1 ? ' parte' : ' partes')].join(' · '));
             if (temaR) {
               // 6.15.27: o tema principal da reunião em destaque, numa linha própria logo abaixo da data.
               const t = document.createElement('span');
@@ -37915,7 +37949,11 @@ function saveTemplatesToStorage() {
           .join('');
         const bloco = lista
           .filter(v => (v.texto || '').trim())
-          .map(v => estiloComAcentos(v.referencia || referencia, 'bold') + ': “' + comNumeros(v) + '”')
+          .map(v => {
+            // 6.15.36: logo abaixo do versículo, o link para ler no jw.org / JW Library.
+            const link = bibliaLinkJwOrgRef(v.referencia || referencia);
+            return estiloComAcentos(v.referencia || referencia, 'bold') + ': “' + comNumeros(v) + '”' + (link ? '\n🔗 Ler no JW: ' + link : '');
+          })
           .join('\n');
         if (!bloco) { dizerBiblia('Não encontrei o texto de “' + referencia + '”.', true); return null; }
         dizerBiblia('');

@@ -242,8 +242,9 @@
         <!-- Reuniões congregacionais: 1) lista das reuniões (cadastrar uma nova pela data); 2) as partes da reunião escolhida; 3) a anotação de uma parte. -->
         <div id="anotReuniaoBox" class="anot-reuniao" hidden>
           <div id="anotReuniaoListaBox">
-            <h3 class="anotacoes-subtitulo">📅 Cadastre a reunião</h3>
-            <div class="anot-reuniao-nova">
+            <!-- 6.15.36: o cadastro completo num card; embaixo, a anotação rápida (reunião avulsa), que abre a anotação na hora, sem pedir nada. -->
+            <div class="anot-reuniao-nova anot-reuniao-card">
+              <h3 class="anotacoes-subtitulo">📅 Cadastre a reunião</h3>
               <label for="anotReuniaoNovaData">Data da reunião</label>
               <input id="anotReuniaoNovaData" type="date">
               <label for="anotReuniaoTipo">Tipo de reunião</label>
@@ -263,6 +264,7 @@
               <textarea id="anotReuniaoTemaNovo" class="anot-reuniao-tema-campo" rows="1" autocomplete="off" enterkeyhint="done" placeholder="Opcional (cada parte tem o seu tema)"></textarea>
               <button id="anotReuniaoNovaBtn" type="button">➕ Nova reunião</button>
             </div>
+            <button id="anotReuniaoRapidaBtn" class="anot-reuniao-rapida" type="button" title="Abre a anotação na hora, sem data, tipo nem tema (fica como Reunião avulsa de hoje)">⚡ Anotação rápida (reunião avulsa)</button>
             <h3 id="anotReuniaoItensTitulo" class="anotacoes-subtitulo">🗂️ Reuniões anotadas</h3>
             <div id="anotReuniaoItens" class="anot-reuniao-itens"></div>
           </div>

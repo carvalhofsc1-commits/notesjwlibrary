@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.15.36
+
+- Reunião: o cadastro completo ficou num card e, logo abaixo, o botão "⚡ Anotação rápida (reunião avulsa)", que abre a tela de anotação na hora, sem pedir data, tipo nem tema. Cada toque cria uma parte nova na "Reunião avulsa" de hoje (aparece na lista com ⚡); tema, orador etc. podem ser postos depois no card do tema.
+- Inserir texto bíblico: logo abaixo do versículo entra a linha "🔗 Ler no JW: …" com o endereço do jw.org que abre o versículo (ou o trecho) na Bíblia de estudo; no celular com o JW Library instalado, o sistema costuma abrir no app.
+
 ## 6.15.35
 
 - Fontes de consulta do serviço de campo: com "📖 Usar uma matéria da Biblioteca On-line" marcada, as demais fontes e o Marcar/Desmarcar todas ficam desabilitados (apagados, sem perder as marcas), o título mostra "(só a matéria da Biblioteca On-line)" e só a matéria vai como base do esboço. Preparar esboço com a caixa marcada e sem matéria escolhida pede o link primeiro. Desmarcando, tudo volta como estava.

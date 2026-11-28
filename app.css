@@ -19197,3 +19197,8 @@ span[role="status"]:is(.ok, .warn, .erro):not(:empty):not(.main-copy-status) { d
 #campoFontesBox .fam-check.campo-fonte-travada { opacity: .45; cursor: not-allowed; }
 #campoFontesBox .fam-check.campo-fonte-travada input { cursor: not-allowed; }
 #campoFontesBox .fam-acoes-dupla button:disabled { opacity: .45; cursor: not-allowed; }
+
+/* 6.15.36: Reunião: o cadastro completo num card e, embaixo, o botão da anotação rápida (reunião avulsa), na largura toda */
+.anot-reuniao-nova.anot-reuniao-card { margin: 0 0 10px; padding: 12px; border: 1px solid #93c5fd; border-radius: 14px; background: color-mix(in srgb, #60a5fa 7%, var(--card)); min-width: 0; }
+.anot-reuniao-card > .anotacoes-subtitulo { margin: 0 0 4px; }
+#anotReuniaoRapidaBtn { display: block; width: 100%; margin: 0 0 16px; border: 1px solid #fb923c; background: color-mix(in srgb, #fb923c 12%, var(--card)); color: var(--text); font-weight: 700; }
