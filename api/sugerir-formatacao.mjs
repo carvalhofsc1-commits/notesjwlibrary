@@ -6339,7 +6339,7 @@ async function esbocoDeCampo(res, body, P) {
   }
 
   const assunto = f.capa
-    ? `ASSUNTO: a matéria de capa do jw.org desta semana, "${f.capa.titulo}" (o texto vem abaixo). A consideração prepara o grupo para usar essa matéria na pregação de hoje: como puxar conversa sobre a preocupação que ela trata, um texto bíblico que traga a resposta ou a esperança da Bíblia sobre ela e como mostrar ou enviar a matéria às pessoas pelo jw.org. Fale dos acontecimentos com equilíbrio, sem alarmismo, sem opinar sobre política e sem citar governantes, partidos ou países em conflito.`
+    ? `ASSUNTO: a matéria escolhida pelo dirigente na Biblioteca On-line, "${f.capa.titulo}" (o texto vem abaixo). A consideração prepara o grupo para usar essa matéria na pregação de hoje: como puxar conversa sobre o assunto que ela trata, um texto bíblico que traga a resposta ou a esperança da Bíblia sobre ele e como usar a matéria com as pessoas (quando for do jw.org, mostrá-la ou enviá-la pelo site). Fale dos acontecimentos com equilíbrio, sem alarmismo, sem opinar sobre política e sem citar governantes, partidos ou países em conflito.`
     : d.assunto
     ? `ASSUNTO PEDIDO PELO DIRIGENTE: ${d.assunto}`
     : `ASSUNTO: o dirigente não escolheu; tire um assunto prático para hoje do parágrafo de w24.05 abaixo${f.paragrafo ? "" : " (ou, sem ele, das outras fontes)"}, ligado ao tipo de pregação.`;
@@ -6415,7 +6415,7 @@ async function esbocoDeCampo(res, body, P) {
     if (f.paragrafo && !corpo.pontos.some((p) => p.fontes.some((x) => /w24\.05/i.test(x)))) {
       avisos.push(`O esboço não cita "w24.05, § ${f.paragrafo.numero}" em nenhum ponto. Use "Melhorar" para pedir a citação.`);
     }
-    if (d.capa && !f.capa) avisos.push("Não consegui ler a matéria de capa do jw.org no wol.jw.org agora: o esboço usou o título dela como assunto e as outras fontes.");
+    if (d.capa && !f.capa) avisos.push("Não consegui ler a matéria escolhida no wol.jw.org agora: o esboço usou o título dela como assunto e as outras fontes.");
     if (d.fontes.w24 && !f.w24 && !f.capa) avisos.push("Não consegui ler A Sentinela de maio de 2024 no wol.jw.org agora: o esboço usou as outras fontes.");
     if (f.reiniciou) avisos.push("Todos os parágrafos de w24.05 já tinham sido usados: o rodízio recomeçou.");
     // Completo = tem ponto e a consideração se apoia num texto bíblico lido (a leitura abre o primeiro ponto).
@@ -6447,7 +6447,7 @@ async function esbocoDeCampo(res, body, P) {
 
     return res.status(200).json({
       semana: "",
-      titulo: `Serviço de campo · ${dataCurta(d.data)}${f.capa ? " · capa do jw.org" : esboco.paragrafoW24 ? ` · w24.05 § ${esboco.paragrafoW24}` : ""}`,
+      titulo: `Serviço de campo · ${dataCurta(d.data)}${f.capa ? " · matéria da Biblioteca On-line" : esboco.paragrafoW24 ? ` · w24.05 § ${esboco.paragrafoW24}` : ""}`,
       url: null,
       minutos: d.minutos,
       erro: completo ? null : "A IA não montou a consideração (ela precisa se basear na leitura de um texto bíblico). Tente de novo.",
@@ -6521,10 +6521,11 @@ async function sugerirAssuntosCampo(res, body, P) {
 async function capaDoJwParaCampo(res, body) {
   if (!acessoDoDirigente(res, body)) return;
   const link = typeof body.link === "string" ? body.link.trim().slice(0, 400) : "";
-  if (!link) return erro(res, 400, "Cole o link da matéria de capa do jw.org.");
+  // 6.15.33: qualquer matéria da Biblioteca On-line (link do wol.jw.org) ou do jw.org.
+  if (!link) return erro(res, 400, "Cole o link da matéria da Biblioteca On-line.");
   try {
     const r = await capaPeloLinkDoJw(link, { timeoutMs: 12000 });
-    if (r.erro === "link") return erro(res, 400, "Esse link não é de uma matéria do jw.org em português. Use o link do botão Compartilhar → Copiar link da matéria, ou o endereço que começa com https://www.jw.org/pt/.");
+    if (r.erro === "link") return erro(res, 400, "Esse link não é de uma matéria em português da Biblioteca On-line (https://wol.jw.org/pt/wol/d/…) nem do jw.org.");
     if (!r.capa) return erro(res, 404, "Não achei essa matéria no wol.jw.org. Confira se o link abre a matéria (não a revista inteira) ou escreva o assunto no campo Assunto.");
     return res.status(200).json({ capa: r.capa });
   } catch (e) {

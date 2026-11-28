@@ -2673,6 +2673,12 @@ export async function capaPeloLinkDoJw(link, { timeoutMs = 9000 } = {}) {
   } catch {
     return { erro: "link" };
   }
+  // 6.15.33: link da própria Biblioteca On-line (https://wol.jw.org/pt/wol/d/r5/lp-t/102026005, com ou sem "#h=…" ou "?q=…").
+  if (url.protocol === "https:" && url.hostname === "wol.jw.org") {
+    const d = url.pathname.match(/^\/pt\/wol\/d\/r5\/lp-t\/(\d{6,12})\/?$/);
+    if (!d) return { erro: "link" };
+    return montarCapaDoWol({ docId: d[1], titulo: "" }, `${BASE}/pt/wol/d/r5/lp-t/${d[1]}`, timeoutMs);
+  }
   if (url.protocol !== "https:" || !/^(www\.)?jw\.org$/.test(url.hostname)) return { erro: "link" };
   // 6.15.32: o link do botão Compartilhar do jw.org ("https://www.jw.org/finder?wtlocale=T&docid=102026005&srcid=share") já traz o
   // número do documento, que é o mesmo no wol (wtlocale=T = português).

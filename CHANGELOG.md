@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.15.33
+
+- Serviço de campo: a opção da matéria de capa virou "📖 Usar uma matéria da Biblioteca On-line": aceita o link de qualquer matéria do wol.jw.org (https://wol.jw.org/pt/wol/d/…, com ou sem trecho marcado) e continua aceitando os links do jw.org. Textos do card, avisos, título salvo e instruções da IA falam em "matéria escolhida da Biblioteca On-line".
+
 ## 6.15.32
 
 - Matéria de capa do jw.org: aceita o link do botão Compartilhar → Copiar link do jw.org ("https://www.jw.org/finder?wtlocale=T&docid=…"), que já traz o número da matéria; ela é lida direto no wol.jw.org, com a série no título ("Como vencer a solidão — Ajude outros").

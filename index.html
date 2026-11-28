@@ -1355,18 +1355,19 @@
                         <label class="fam-check"><input type="checkbox" name="campoArtigo" value="w18.10" checked> <span>w outubro/2018: Ensine a verdade</span></label>
                       </div>
                       <!-- 6.15.31: a matéria de capa do jw.org fica aqui, como penúltima opção das fontes (o jw.org bloqueia o servidor: a pessoa cola o link e a matéria é achada no wol.jw.org). -->
-                      <p class="fam-rotulo">📰 Usar a matéria de capa do jw.org</p>
+                      <!-- 6.15.33: o foco passou a ser qualquer matéria da Biblioteca On-line (link do wol.jw.org ou do jw.org). -->
+                      <p class="fam-rotulo">📖 Usar uma matéria da Biblioteca On-line</p>
                       <div id="campoCapaPedir" class="campo-capa-pedir">
-                        <label for="campoCapaLinkIn" class="hint">Coloque o link aqui (no jw.org: toque na matéria → Compartilhar → Copiar link)</label>
-                        <input id="campoCapaLinkIn" type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://www.jw.org/pt/…">
-                        <button id="campoCapaBtn" data-codigo-ia="dirigente" class="secondary ai-study-load" type="button">📰 Usar a matéria do link</button>
+                        <label for="campoCapaLinkIn" class="hint">Coloque o link aqui (no wol.jw.org: abra a matéria e copie o endereço; no jw.org: Compartilhar → Copiar link)</label>
+                        <input id="campoCapaLinkIn" type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://wol.jw.org/pt/wol/d/…">
+                        <button id="campoCapaBtn" data-codigo-ia="dirigente" class="secondary ai-study-load" type="button">📖 Usar a matéria do link</button>
                       </div>
                       <div id="campoCapa" class="campo-capa" hidden>
-                        <p class="campo-capa-rotulo">📰 Matéria de capa do jw.org</p>
+                        <p class="campo-capa-rotulo">📖 Matéria da Biblioteca On-line</p>
                         <strong id="campoCapaTitulo"></strong>
                         <small id="campoCapaResumo"></small>
-                        <a id="campoCapaLink" class="fam-link-moldura" href="#" target="_blank" rel="noopener">🔗 Abrir a matéria no jw.org</a>
-                        <button id="campoCapaTirar" class="secondary fam-fino" type="button">✕ Não usar a matéria de capa</button>
+                        <a id="campoCapaLink" class="fam-link-moldura" href="#" target="_blank" rel="noopener">🔗 Abrir a matéria</a>
+                        <button id="campoCapaTirar" class="secondary fam-fino" type="button">✕ Não usar esta matéria</button>
                       </div>
                       <p class="fam-rotulo">Pesquisar além da lista</p>
                       <div class="fam-checks" role="group" aria-label="Outras fontes">

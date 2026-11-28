@@ -323,7 +323,7 @@ export function dadosDoCampo(body) {
   // A matéria de capa do jw.org escolhida no app: só o número do documento, o título e o endereço do próprio jw.org (o texto é lido no servidor).
   const c = b.capa && typeof b.capa === "object" ? b.capa : null;
   const capa = c && /^\d{6,12}$/.test(String(c.docId || ""))
-    ? { docId: String(c.docId), titulo: linha(c.titulo, 200), link: /^https:\/\/www\.jw\.org\/(pt\/[^\s"<>]*|finder\?wtlocale=T&docid=\d{6,12})$/.test(String(c.link || "")) ? String(c.link).slice(0, 300) : "" }
+    ? { docId: String(c.docId), titulo: linha(c.titulo, 200), link: /^https:\/\/(www\.jw\.org\/(pt\/[^\s"<>]*|finder\?wtlocale=T&docid=\d{6,12})|wol\.jw\.org\/pt\/wol\/d\/r5\/lp-t\/\d{6,12})$/.test(String(c.link || "")) ? String(c.link).slice(0, 300) : "" }
     : null;
   return {
     capa,
@@ -387,7 +387,7 @@ export function fonteDoPonto(texto, siglas) {
 export function textoDasFontesDoCampo({ capa = null, paragrafo, reiniciou = false, licoes = [], artigos = [], be = [] }) {
   const partes = [];
   if (capa) {
-    partes.push(`MATÉRIA DE CAPA DO JW.ORG DESTA SEMANA, "${capa.titulo}" (fonte prioritária: é o assunto da consideração; cite "${SIGLA_CAPA}"):\n${capa.texto}`);
+    partes.push(`MATÉRIA ESCOLHIDA DA BIBLIOTECA ON-LINE, "${capa.titulo}" (fonte prioritária: é o assunto da consideração; cite "${SIGLA_CAPA}"):\n${capa.texto}`);
   }
   if (paragrafo) {
     partes.push(
@@ -419,7 +419,7 @@ export function listaDeFontes({ capa = null, paragrafo, licoes = [], artigos = [
   const n = semAcento(citado);
   const cita = (s) => new RegExp(`(^|[^a-z0-9.])${semAcento(s).replace(/\./g, "\\.")}(?![a-z0-9])`).test(n);
   const lista = [];
-  if (capa) lista.push(`${SIGLA_CAPA} — "${capa.titulo}" (matéria de capa)${capa.link ? ` — ${capa.link}` : ""}`);
+  if (capa) lista.push(`${SIGLA_CAPA} — "${capa.titulo}" (matéria escolhida da Biblioteca On-line)${capa.link ? ` — ${capa.link}` : ""}`);
   if (paragrafo) lista.push(`${W24.codigo} — "${W24.titulo}", § ${paragrafo.numero}`);
   for (const l of licoes) if (cita(`${l.sigla} lição ${l.licao}`) || cita(`${l.sigla} lic ${l.licao}`) || n.includes(semAcento(l.nome))) lista.push(`${l.sigla} lição ${l.licao} — ${l.nome}`);
   for (const a of artigos) if (cita(a.codigo)) lista.push(`${a.codigo} — "${a.titulo}"`);

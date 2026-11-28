@@ -7964,7 +7964,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.15.32'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.15.33'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -19266,10 +19266,10 @@ function saveTemplatesToStorage() {
       if (erroAcesso) return setAiStatus(erroAcesso, true);
       // 6.15.31: o link colado (o jw.org não deixa o servidor ler a página inicial); a matéria é achada no wol.jw.org.
       const linkIn = document.getElementById('campoCapaLinkIn');
-      const link = (linkIn.value.match(/https?:\/\/(?:www\.)?jw\.org\/\S+/i) || [''])[0];
+      const link = (linkIn.value.match(/https?:\/\/(?:www\.|wol\.)?jw\.org\/\S+/i) || [''])[0];
       if (!link) {
         linkIn.focus();
-        return setAiStatus('Abra o jw.org, toque na matéria de capa, copie o link (Compartilhar → Copiar) e cole no campo 📰.', true);
+        return setAiStatus('Abra a matéria na Biblioteca On-line (wol.jw.org), copie o endereço e cole no campo 📖.', true);
       }
       linkIn.value = link;
       aiBusy = true;
@@ -19278,17 +19278,17 @@ function saveTemplatesToStorage() {
         const result = await postStudy({ tarefa: 'campo-capa', link, codigoDirigente: codigoDirigenteSalvo() }, 30000);
         if (!result.ok) {
           if (await dirigenteRecusado(result)) return;
-          return setAiStatus(studyFailureMessage(result, 'Não consegui ler a matéria de capa do jw.org agora.'), true);
+          return setAiStatus(studyFailureMessage(result, 'Não consegui ler a matéria agora.'), true);
         }
         const c = result.data && result.data.capa;
-        if (!c || !c.titulo || !c.docId) return setAiStatus('Não achei a matéria de capa na página inicial do jw.org.', true);
+        if (!c || !c.titulo || !c.docId) return setAiStatus('Não achei essa matéria na Biblioteca On-line.', true);
         campoCapaAtual = { titulo: c.titulo, descricao: c.descricao || '', link: c.link, docId: c.docId };
         document.getElementById('campoAssunto').value = c.titulo;
         document.getElementById('campoAssuntos').querySelectorAll('.campo-assunto').forEach(b => b.setAttribute('aria-pressed', 'false'));
         campoCapaPintar();
-        setAiStatus('✅ Matéria de capa escolhida como assunto. Toque em ✨ Preparar esboço.', false);
+        setAiStatus('✅ Matéria escolhida como assunto. Toque em ✨ Preparar esboço.', false);
       } catch (e) {
-        setAiStatus(e && e.name === 'AbortError' ? 'O jw.org demorou demais. Tente de novo.' : 'Falha de conexão ao ler o jw.org.', true);
+        setAiStatus(e && e.name === 'AbortError' ? 'A Biblioteca On-line demorou demais. Tente de novo.' : 'Falha de conexão ao ler a Biblioteca On-line.', true);
       } finally {
         aiBusy = false;
         setAiLoading(false);
@@ -19339,7 +19339,7 @@ function saveTemplatesToStorage() {
           });
         });
         const lmd = String(e.brochura || '').match(/lmd\s+lição\s+\d+(?:,\s*[^.:;]+)?/i);
-        const fontes = [e.capa && e.capa.titulo ? 'matéria de capa do jw.org: ' + e.capa.titulo : '', e.paragrafoW24 ? 'w24.05, § ' + e.paragrafoW24 : '', lmd ? lmd[0] : ''].filter(Boolean);
+        const fontes = [e.capa && e.capa.titulo ? 'matéria da Biblioteca On-line: ' + e.capa.titulo : '', e.paragrafoW24 ? 'w24.05, § ' + e.paragrafoW24 : '', lmd ? lmd[0] : ''].filter(Boolean);
         if (fontes.length) linhas.push('📚 ' + fontes.join(' · '));
         const corpo = document.createElement('p');
         corpo.className = 'campo-salva-pontos';
