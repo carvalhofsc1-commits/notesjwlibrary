@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.15.39
+
+- Reunião, lista das partes: "↕️ Mudar a ordem" passou para baixo do "➕ Nova parte", fino e discreto, dividindo a linha com o novo botão "🎙️ Importar parte gravada" (código de texto). Ele abre os arquivos do aparelho; o áudio escolhido vira uma parte nova no fim da lista, o app transcreve e resume em segundo plano (andamento na própria lista) e a IA preenche o título e o orador quando a gravação permite saber (senão ficam em branco e a parte aparece só com o número). A instrução enviada à IA aparece na tela de prompts (montagem dos pedidos).
+
 ## 6.15.38
 
 - Reunião, tela das partes: o tema principal da reunião ficou com mais destaque que o título das partes — letra maior (cerca de 20 px contra 17 px), em negrito, na cor roxa, com moldura roxa e fundo roxo bem leve.

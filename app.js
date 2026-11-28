@@ -7964,7 +7964,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.15.38'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.15.39'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -37440,6 +37440,48 @@ function saveTemplatesToStorage() {
         const alvo = reuniaoPartesEl.querySelector('[data-mover="' + (delta < 0 ? 'sobe' : 'desce') + '"][data-parte="' + id + '"]');
         if (alvo && !alvo.disabled) alvo.focus();
       }
+      // 6.15.39: 🎙️ Importar parte gravada — o áudio escolhido vira uma parte nova no fim da lista; o app transcreve, resume e preenche o
+      // título e o orador quando a gravação permite saber (senão ficam em branco e a parte aparece só com o número).
+      const importarBtn = document.getElementById('anotReuniaoImportar');
+      const importarArq = document.getElementById('anotReuniaoImportarArq');
+      const importarStatus = document.getElementById('anotReuniaoImportStatus');
+      const dizerImportar = msg => { importarStatus.textContent = msg || ''; importarStatus.hidden = !msg; };
+      importarBtn.addEventListener('click', () => {
+        if (gravacao) return dizerImportar('Pare a gravação antes de importar um áudio.');
+        if (!codigoTextoSalvo()) return dizerImportar('Salve o código de texto em Ajustes → 🔐 Autorização de acessos.');
+        dizerImportar('');
+        importarArq.value = '';
+        importarArq.click();
+      });
+      importarArq.addEventListener('change', async () => {
+        const arquivo = importarArq.files && importarArq.files[0];
+        importarArq.value = '';
+        const r = reuniaoAtual();
+        if (!arquivo || !r || importarBtn.disabled) return;
+        if (!/^(audio|video)\//.test(arquivo.type || '') && !/\.(mp3|m4a|aac|wav|ogg|oga|opus|webm|flac|amr|3gp|mp4|caf)$/i.test(arquivo.name)) return dizerImportar('Escolha um arquivo de áudio.');
+        importarBtn.disabled = true;
+        try {
+          const duracaoS = await trDuracaoLer(arquivo);
+          const p = novaParteReuniao();
+          r.partes.push(p);
+          const alvo = {
+            modo: 'reuniao', programa: false, chave: '', parte: 0, parteId: '', dona: -1, donaId: '', q: null,
+            rId: r.id, rp: p.id, contexto: '', titulo: 'Parte ' + r.partes.length + ' (áudio importado)', identificar: true
+          };
+          salvarRascunho();
+          reuniaoPintar();
+          if (!(await filaAdicionar(pedidoUmaGravacao(arquivo, duracaoS || null, alvo)))) {
+            r.partes = r.partes.filter(x => x !== p); // nada foi enviado: a parte vazia não fica
+            salvarRascunho();
+            reuniaoPintar();
+            dizerImportar('Nada foi enviado.');
+          }
+        } catch (e) {
+          dizerImportar('Não foi possível processar o arquivo.');
+        } finally {
+          importarBtn.disabled = false;
+        }
+      });
       function linhaComSetas(botao, id, i, total) {
         const linha = document.createElement('div');
         linha.className = 'anot-reuniao-linha';
@@ -37536,7 +37578,7 @@ function saveTemplatesToStorage() {
           if (r.partes.length < 2) reuniaoOrdenando = false;
           const ordenarBtn = document.getElementById('anotReuniaoOrdenar');
           ordenarBtn.hidden = r.partes.length < 2;
-          ordenarBtn.textContent = reuniaoOrdenando ? '✓ Pronto' : '↕️ Mudar a ordem das partes';
+          ordenarBtn.textContent = reuniaoOrdenando ? '✓ Pronto' : '↕️ Mudar a ordem';
           ordenarBtn.classList.toggle('secondary', !reuniaoOrdenando);
           document.getElementById('anotReuniaoOrdenarDica').hidden = !reuniaoOrdenando;
           r.partes.forEach((p, i) => {
@@ -38836,6 +38878,7 @@ function saveTemplatesToStorage() {
       async function anotacoesResumir(transc, varias, alvo, deTexto) {
         const pedido = { acao: 'resumo', modo: 'anotacoes', codigoTexto: codigoTextoSalvo(), texto: transc.slice(0, 60000), contexto: alvo.contexto };
         if (alvo.q) pedido.pergunta = textoDaPergunta(alvo.q);
+        if (alvo.identificar) pedido.identificar = true; // parte importada de um áudio: a IA devolve também o título e o orador
         const r = await trPost(pedido);
         if (!r.ok && deTexto) return { ok: true, falhaTexto: trMensagem(r, 'o resumo falhou') };
         if (!r.ok) {
@@ -38843,6 +38886,18 @@ function saveTemplatesToStorage() {
           return { ok, falhaResumo: trMensagem(r, 'o resumo falhou') };
         }
         let resumo = (r.dados && r.dados.resumo) || '';
+        let ident = null;
+        if (alvo.identificar) {
+          const tirar = rotulo => {
+            const re = new RegExp('^[ \\t*_#>]*' + rotulo + '[ \\t*_]*:(.*)$', 'im');
+            const m = re.exec(resumo);
+            if (!m) return '';
+            resumo = (resumo.slice(0, m.index) + resumo.slice(m.index + m[0].length)).replace(/\s+$/, '');
+            const v = semLetrasDecoradas(m[1]).replace(/\*\*|__/g, '').replace(/^[\s"“”]+|[\s"“”.]+$/g, '').slice(0, 200);
+            return /^(?:[-–—]*|n[ãa]o (?:identificado|informado|mencionado|dito))$/i.test(v) ? '' : v;
+          };
+          ident = { titulo: tirar('T[ÍI]TULO DA PARTE'), orador: tirar('ORADOR DA PARTE') };
+        }
         // A resposta do orador à pergunta de recapitulação vai para o campo da resposta. Conferência do app: a transcrição precisa anunciar a
         // pergunta de revisão/recapitulação e, logo depois, repetir a pergunta do card (pelo menos 60% das palavras); senão, é descartada.
         const achou = alvo.q ? /^[ \t*_]*RESPOSTA DA RECAPITULA[ÇC][ÃA]O:[ \t*_]*([\s\S]+)$/im.exec(resumo) : null;
@@ -38853,7 +38908,38 @@ function saveTemplatesToStorage() {
         }
         const titulo = deTexto ? '—— Resumo do texto ——' : varias ? '—— Resumo das gravações ——' : '—— Resumo da gravação ——';
         const ok = entregarNaAnotacao(alvo, bibliaMarcasParaUnicode('**__' + titulo + '__**') + '\n\n' + anotacoesResumoFormatar(resumo), resp);
+        if (ok && ident) identificarParteReuniao(alvo, ident);
         return { ok, resposta: Boolean(resp) };
+      }
+      // 6.15.39: título e orador achados no áudio importado vão para a parte (só nos campos que ainda estão vazios).
+      function identificarParteReuniao(alvo, ident) {
+        if (!alvo.rId || (!ident.titulo && !ident.orador)) return;
+        const achar = lista => { const r = (lista || []).find(x => x.id === alvo.rId); return r ? r.partes.find(p => p.id === alvo.rp) : null; };
+        const por = p => {
+          if (ident.titulo && !String(p.tema || '').trim()) p.tema = ident.titulo;
+          if (ident.orador && !String(p.orador || '').trim()) p.orador = ident.orador;
+        };
+        if (modo === 'reuniao') {
+          const p = achar(reunioes);
+          if (!p) return;
+          if (alvoAberto(alvo)) { // a parte está aberta: os campos da tela também recebem
+            if (ident.titulo && !temaEl.value.trim()) temaEl.value = ident.titulo;
+            if (ident.orador && !oradorEl.value.trim()) oradorEl.value = ident.orador;
+          }
+          por(p);
+          guardarNota();
+          salvarRascunho();
+          try { atualizarVista(); } catch (e) { /* ignore */ }
+          reuniaoPintar();
+          return;
+        }
+        try {
+          const dados = lerRascunhos();
+          const p = achar(dados.reuniao && dados.reuniao.reunioes);
+          if (!p) return;
+          por(p);
+          localStorage.setItem(ANOT_KEY, JSON.stringify(dados));
+        } catch (e) { /* sem armazenamento */ }
       }
       function mensagemFinal(alvo, res) {
         const nome = '«' + (alvo.titulo || 'Anotações') + '»';
@@ -38963,6 +39049,13 @@ function saveTemplatesToStorage() {
           filaEl.hidden = true;
         }
         filaEl.dataset.chave = chave;
+        // O mesmo andamento aparece na lista das partes da reunião (áudio importado dali).
+        const espelho = document.getElementById('anotReuniaoFila');
+        if (espelho && (espelho.dataset.chave || '') !== chave) {
+          espelho.replaceChildren(...[...filaEl.childNodes].map(n => n.cloneNode(true)));
+          espelho.hidden = filaEl.hidden;
+          espelho.dataset.chave = chave;
+        }
         // Botão da anotação aberta: girando enquanto um pedido dela roda; "Na fila" se ainda espera.
         const btn = gravResumirTodasBtn;
         if (!btn) return;

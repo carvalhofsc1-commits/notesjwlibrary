@@ -5238,6 +5238,29 @@
       margin: 0;
     }
 
+    /* 6.15.39: opções adicionais da lista das partes (mudar a ordem, importar parte gravada): finas e discretas, dividindo a linha */
+    .anot-reuniao-extras {
+      display: flex;
+      gap: 8px;
+      margin: 8px 0;
+    }
+
+    .anot-reuniao-extras > button {
+      flex: 1 1 0;
+      width: auto;
+      min-width: 0;
+      min-height: 36px;
+      margin: 0;
+      padding: 4px 6px;
+      font-size: .82rem;
+      font-weight: 500;
+      line-height: 1.2;
+    }
+
+    .anot-reuniao-extras > button[hidden] {
+      display: none;
+    }
+
     .anot-reuniao-setas {
       flex: 0 0 48px;
       width: 48px;

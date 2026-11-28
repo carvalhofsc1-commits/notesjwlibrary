@@ -13,6 +13,7 @@ import { iaDaTarefa, lerConfigIa } from "./_iaConfig.mjs";
 import { criarClienteIa, erroSemIa, iaDisponivel } from "./_clienteIa.mjs";
 import { registrarUsoIa } from "./_estatisticas.mjs";
 import { carregarPrompts } from "./_promptsArmazenados.mjs";
+import { IDENTIFICAR_PARTE } from "./_prompts.mjs";
 import { buscarVersiculos, fontesConfiguradas, referenciasNoTexto } from "./_fontes.mjs";
 import { chaveDeDirigenteValida } from "./familia-sessao.mjs";
 import { apagarTranscricao, lerTranscricao, listarTranscricoes, salvarTranscricao, transcricoesConfiguradas } from "./_transcricoes.mjs";
@@ -658,6 +659,8 @@ export default async function handler(req, res) {
             console.error("Resumo das anotações: versículos indisponíveis", e?.message);
           }
         }
+        // Parte da reunião criada a partir de um áudio importado: a IA devolve também o título e o orador, em duas linhas no fim.
+        if (corpo.identificar === true && typeof mensagemResumo === "string") mensagemResumo += "\n\n" + IDENTIFICAR_PARTE;
       }
       const client = criarClienteIa({ maxRetries: 1, timeout: 120_000 });
       const resposta = await client.messages.create({

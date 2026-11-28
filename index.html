@@ -276,8 +276,15 @@
             </div>
             <p id="anotReuniaoOrdenarDica" class="hint anot-reuniao-dica" hidden>Use ▲ e ▼ para pôr cada parte no lugar certo. Toque em “Pronto” quando terminar.</p>
             <div id="anotReuniaoPartes" class="anot-reuniao-itens"></div>
-            <button id="anotReuniaoOrdenar" class="secondary anot-reuniao-largo" type="button" hidden>↕️ Mudar a ordem das partes</button>
             <button id="anotReuniaoNovaParte" class="anot-reuniao-largo" type="button">➕ Nova parte</button>
+            <!-- 6.15.39: opções adicionais, finas e sem destaque, na mesma linha: mudar a ordem e criar uma parte a partir de um áudio já gravado. -->
+            <div class="anot-reuniao-extras">
+              <button id="anotReuniaoOrdenar" class="secondary" type="button" hidden>↕️ Mudar a ordem</button>
+              <button id="anotReuniaoImportar" data-codigo-ia="texto" class="secondary" type="button" title="Escolher o áudio de um discurso desta reunião: o app transcreve, resume e cria uma parte nova com ele">🎙️ Importar parte gravada</button>
+            </div>
+            <input id="anotReuniaoImportarArq" type="file" accept="audio/*,.mp3,.m4a,.aac,.wav,.ogg,.opus,.webm,.flac,.amr,.3gp,.caf" hidden>
+            <p id="anotReuniaoImportStatus" class="anotacoes-msg warn" role="status" aria-live="polite" hidden></p>
+            <p id="anotReuniaoFila" class="anotacoes-msg anotacoes-fila" role="status" aria-live="polite" hidden></p>
             <button id="anotReuniaoExportar" class="secondary anot-reuniao-largo" type="button" title="Mostra a prévia do Word com as anotações de todas as partes desta reunião e de lá exporta">📄 Exportar anotações da reunião</button>
           </div>
         </div>
