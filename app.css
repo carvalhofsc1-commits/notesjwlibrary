@@ -19173,3 +19173,14 @@ span[role="status"]:is(.ok, .warn, .erro):not(:empty):not(.main-copy-status) { d
 .acesso-site-demo-botoes > button:first-child { flex-basis: 100%; }
 .meus-dados-excluir { margin-top: 14px; }
 .meus-dados-excluir > button { width: 100%; }
+
+/* 6.15.30: Serviço de campo: os botões do fim do card (Sugerir 3 assuntos, matéria de capa, Preparar esboço, Refazer, Limpar tudo), os assuntos sugeridos, o quadro da capa e o aviso com o mesmo espaço de 10 px entre si */
+.campo-form > #campoSugerirBtn,
+.campo-form > #campoAssuntos,
+.campo-form > #campoCapaBtn,
+.campo-form > #campoCapa,
+.campo-form > #campoEsbocoBtn,
+.campo-form > #campoRefazerBtn,
+.campo-form > #campoLimparBtn,
+.campo-form > #campoStatus { margin-top: 10px !important; margin-bottom: 0 !important; }
+.campo-form > #campoStatus:empty { margin-top: 0 !important; }

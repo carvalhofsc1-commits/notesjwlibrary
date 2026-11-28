@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.15.30
+
+- Serviço de campo, matéria de capa do jw.org: o botão voltava ao normal só com a IA e ficava preso em "Consultando a IA… 00:00"; agora mostra "Consultando o wol.jw.org…" e volta no fim. No servidor, se a página inicial vier sem o destaque, tenta de novo como navegador comum, procura o número do documento na própria matéria e registra no log o que veio.
+- Os botões do fim do card (Sugerir 3 assuntos, matéria de capa, Preparar esboço, Limpar tudo) e o aviso ficam com o mesmo espaço de 10 px entre si.
+
 ## 6.15.29
 
 - Reunião: saiu o botão "📋 Partes" do topo da tela de anotação (a seta de voltar já leva à lista das partes). O "📋 Programa" da assembleia/congresso continua.

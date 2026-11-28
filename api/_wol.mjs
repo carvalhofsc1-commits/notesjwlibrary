@@ -2622,10 +2622,39 @@ export function capaDaPaginaInicial(html) {
   if (!titulo || !/^https:\/\/www\.jw\.org\/pt\//.test(link)) return null;
   return { titulo, descricao, link, docId };
 }
+// 6.15.30: no servidor a página inicial às vezes vinha sem o destaque (resposta 502 em 0,2 s). Agora: tenta de novo com o agente de navegador
+// comum, procura o número do documento na própria matéria quando o botão "Saiba mais" não o traz e registra no log o que veio, para diagnóstico.
+const AGENTE_NAVEGADOR = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Safari/537.36";
+async function baixarJw(url, timeoutMs, agente) {
+  const resposta = await fetch(url, {
+    headers: { "User-Agent": agente, "Accept-Language": "pt-BR,pt;q=0.9", Accept: "text/html,application/xhtml+xml" },
+    redirect: "follow",
+    signal: AbortSignal.timeout(timeoutMs),
+  });
+  const html = resposta.ok ? (await resposta.text()).slice(0, MAX_BYTES) : "";
+  return { status: resposta.status, url: resposta.url, html };
+}
 export async function lerCapaDoJw({ timeoutMs = 9000, forcar = false } = {}) {
   if (!forcar && capaJw && Date.now() - capaJw.quando < VALIDADE_CAPA_MS) return capaJw.capa;
-  const capa = capaDaPaginaInicial(await baixar(BASE_JW + "/pt/", timeoutMs));
-  if (capa) capaJw = { quando: Date.now(), capa };
+  let capa = null;
+  const vistos = [];
+  for (const agente of [AGENTE, AGENTE_NAVEGADOR]) {
+    const r = await baixarJw(BASE_JW + "/pt/", timeoutMs, agente);
+    capa = capaDaPaginaInicial(r.html);
+    vistos.push(`${agente === AGENTE ? "app" : "navegador"}: ${r.status} ${r.url} ${r.html.length} bytes, billboard=${r.html.includes('class="billboard')}, título="${textoDe((r.html.match(/<title[^>]*>([\s\S]*?)<\/title>/i) || [])[1] || "").slice(0, 80)}"`);
+    if (capa) break;
+  }
+  if (capa && !capa.docId) {
+    try {
+      const r = await baixarJw(capa.link, timeoutMs, AGENTE_NAVEGADOR);
+      capa.docId = (r.html.match(/\bdocId-(\d{6,12})\b/) || [])[1] || "";
+      if (!capa.docId) vistos.push(`matéria sem docId: ${r.status} ${capa.link}`);
+    } catch (e) {
+      vistos.push(`matéria: ${e?.message}`);
+    }
+  }
+  if (!capa || !capa.docId) console.error("Matéria de capa do jw.org: não achada.", vistos.join(" | "));
+  if (capa && capa.docId) capaJw = { quando: Date.now(), capa };
   return capa;
 }
 
