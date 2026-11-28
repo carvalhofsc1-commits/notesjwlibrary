@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.15.38
+
+- Reunião, tela das partes: o tema principal da reunião ficou com mais destaque que o título das partes — letra maior (cerca de 20 px contra 17 px), em negrito, na cor roxa, com moldura roxa e fundo roxo bem leve.
+
 ## 6.15.37
 
 - Reunião: tema da reunião, tema da parte, orador, congregação e nome da reunião ficam sempre na fonte padrão do app. Letras "decoradas" (o negrito das anotações, que aparece com serifa, tipo Times New Roman) viram letras comuns ao digitar ou colar, e o que já estava gravado é convertido ao abrir. O texto das anotações continua com a formatação.

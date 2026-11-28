@@ -5298,6 +5298,21 @@
       overflow-wrap: anywhere;
     }
 
+    /* 6.15.38: na tela das partes, o tema da reunião com mais destaque que o título das partes: maior, na cor roxa e com fundo leve */
+    textarea#anotReuniaoTema.anot-reuniao-tema-campo {
+      font-size: 1.28rem !important;
+      font-weight: 800;
+      line-height: 1.3;
+      color: var(--brand);
+      border: 1px solid var(--brand);
+      background: color-mix(in srgb, var(--brand) 7%, var(--card));
+    }
+
+    textarea#anotReuniaoTema.anot-reuniao-tema-campo::placeholder {
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
     .anot-reuniao-tema-lista {
       display: block;
       margin: 4px 0 2px;
