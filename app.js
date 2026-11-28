@@ -7965,7 +7965,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.15.46'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.15.47'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -21987,7 +21987,18 @@ function saveTemplatesToStorage() {
     // Os caracteres de uma linha: [{ c, f }] (letra comum e o estilo que a letra formatada dizia).
     function docxLetras(linha) {
       if (!docxMapa) docxMapa = docxMontarMapa();
-      return [...linha].map(ch => docxMapa.get(ch) ? { ...docxMapa.get(ch) } : { c: ch, f: '' });
+      const L = [];
+      for (const ch of linha) {
+        // 6.15.47: o acento "solto" (as letras em negrito das anotações vêm como letra + acento) volta para a própria letra, no mesmo
+        // estilo; antes ia para um trecho separado e o Word mostrava a acentuação toda errada.
+        if (/[̀-ͯ]/.test(ch) && L.length) {
+          const anterior = L[L.length - 1];
+          if (!anterior.c.normalize('NFD').includes(ch)) anterior.c = (anterior.c + ch).normalize('NFC');
+          continue;
+        }
+        L.push(docxMapa.get(ch) ? { ...docxMapa.get(ch) } : { c: ch, f: '' });
+      }
+      return L;
     }
 
     // As fontes do app não têm letras acentuadas nem pontuação formatadas: uma palavra com letras formatadas e acentuadas (ex.:
