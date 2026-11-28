@@ -7964,7 +7964,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.15.40'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.15.41'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -36561,6 +36561,7 @@ function saveTemplatesToStorage() {
       function atualizarVista() {
         const programa = comPrograma();
         ativa = programa && vista === 'anotando' && parteAtual >= 0 && Boolean(partes[parteAtual]);
+        conferirCartoesDeAudio(); // o cartão de confirmar um áudio some ao trocar de tela ou de parte
         programaBox.hidden = !programa || vista === 'anotando'; // vazia na tela de anotação: escondida, para não somar mais um espaço
         escolhaEl.hidden = vista !== 'escolha';
         programaVistaEl.hidden = vista !== 'programa';
@@ -37462,26 +37463,74 @@ function saveTemplatesToStorage() {
         importarBtn.disabled = true;
         try {
           const duracaoS = await trDuracaoLer(arquivo);
-          const p = novaParteReuniao();
-          r.partes.push(p);
-          const alvo = {
-            modo: 'reuniao', programa: false, chave: '', parte: 0, parteId: '', dona: -1, donaId: '', q: null,
-            rId: r.id, rp: p.id, contexto: '', titulo: 'Parte ' + r.partes.length + ' (áudio importado)', identificar: true
-          };
-          salvarRascunho();
-          reuniaoPintar();
-          if (!(await filaAdicionar(pedidoUmaGravacao(arquivo, duracaoS || null, alvo)))) {
-            r.partes = r.partes.filter(x => x !== p); // nada foi enviado: a parte vazia não fica
+          // 6.15.41: a parte só é criada (e o áudio enviado) depois de confirmar.
+          cartaoDeAudio(document.getElementById('anotReuniaoImportCard'), arquivo, duracaoS, async () => {
+            const p = novaParteReuniao();
+            r.partes.push(p);
+            const alvo = {
+              modo: 'reuniao', programa: false, chave: '', parte: 0, parteId: '', dona: -1, donaId: '', q: null,
+              rId: r.id, rp: p.id, contexto: '', titulo: 'Parte ' + r.partes.length + ' (áudio importado)', identificar: true
+            };
             salvarRascunho();
             reuniaoPintar();
-            dizerImportar('Nada foi enviado.');
-          }
+            const enviado = await filaAdicionar(pedidoUmaGravacao(arquivo, duracaoS || null, alvo));
+            if (!enviado) {
+              r.partes = r.partes.filter(x => x !== p); // nada foi enviado: a parte vazia não fica
+              salvarRascunho();
+              reuniaoPintar();
+              dizerImportar('Nada foi enviado.');
+            }
+            return enviado;
+          });
         } catch (e) {
           dizerImportar('Não foi possível processar o arquivo.');
         } finally {
           importarBtn.disabled = false;
         }
       });
+      // 6.15.41: o cartão com os dados do áudio escolhido. A transcrição só começa em "✅ Confirmar a importação"; "🗑️ Descartar" desiste.
+      // O cartão vale para a tela (reunião ou parte) em que o arquivo foi escolhido: ao sair dela, some sem enviar nada.
+      function donoDoCartao(id) {
+        if (id === 'anotReuniaoImportCard') return [modo, reuniaoVista, reuniaoAtualId].join('|');
+        return (comPrograma() ? [modo, chaveAtual, parteAtual] : [modo, reuniaoVista, reuniaoAtualId, reuniaoParteId]).join('|');
+      }
+      function fecharCartao(caixa) {
+        caixa.replaceChildren();
+        caixa.hidden = true;
+        caixa.dataset.dono = '';
+      }
+      function conferirCartoesDeAudio() {
+        document.querySelectorAll('.anot-importar-card:not([hidden])').forEach(c => { if (c.dataset.dono !== donoDoCartao(c.id)) fecharCartao(c); });
+      }
+      function cartaoDeAudio(caixa, arquivo, duracaoS, aoConfirmar) {
+        const linhas = ['🎵 Nome: ' + (arquivo.name || 'sem nome'), '📍 Origem: arquivo deste aparelho', '🏷️ Tipo: ' + (arquivo.type || 'não informado'), '📦 Tamanho: ' + trTamanhoTexto(arquivo.size)];
+        if (arquivo.lastModified > 0) {
+          const quando = new Date(arquivo.lastModified);
+          linhas.push('📅 Data e hora: ' + quando.toLocaleDateString('pt-BR') + ' às ' + quando.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
+        }
+        linhas.push('⏱️ Duração: ' + (duracaoS ? trDuracaoTexto(duracaoS) : 'não foi possível ler'));
+        const criar = (tag, classe, conteudo) => { const el = document.createElement(tag); el.className = classe; el.textContent = conteudo; return el; };
+        const confirmar = criar('button', 'anot-importar-confirmar', '✅ Confirmar a importação');
+        const descartar = criar('button', 'secondary anot-importar-descartar', '🗑️ Descartar');
+        confirmar.type = descartar.type = 'button';
+        const longo = duracaoS && duracaoS / 60 > trLimites.gravacaoMin;
+        caixa.replaceChildren(
+          criar('strong', 'anot-importar-titulo', 'Confira o áudio antes de importar'),
+          criar('div', 'tr-lista-dados', linhas.join('\n')),
+          criar('p', 'hint anot-importar-dica', longo ? '⚠️ Este áudio passa de ' + trLimites.gravacaoMin + ' minutos, o limite por gravação.' : 'A transcrição só começa depois de confirmar.'),
+          confirmar, descartar
+        );
+        confirmar.disabled = Boolean(longo);
+        descartar.addEventListener('click', () => fecharCartao(caixa));
+        confirmar.addEventListener('click', async () => {
+          if (caixa.dataset.dono !== donoDoCartao(caixa.id)) return fecharCartao(caixa);
+          fecharCartao(caixa);
+          await aoConfirmar();
+        });
+        caixa.dataset.dono = donoDoCartao(caixa.id);
+        caixa.hidden = false;
+        caixa.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
       function linhaComSetas(botao, id, i, total) {
         const linha = document.createElement('div');
         linha.className = 'anot-reuniao-linha';
@@ -39619,12 +39668,15 @@ function saveTemplatesToStorage() {
         carregarBtn.disabled = true;
         try {
           gravarStatus.textContent = 'Lendo o arquivo…';
-          const alvo = alvoAtual();
-          // 6.15.40: na parte da reunião, a mesma regra do "Importar parte gravada": a IA tenta achar o título e o orador (campos vazios).
-          if (alvo.modo === 'reuniao' && !alvo.programa) alvo.identificar = true;
           const duracaoS = await trDuracaoLer(arquivo);
           gravarStatus.textContent = '';
-          await filaAdicionar(pedidoUmaGravacao(arquivo, duracaoS || null, alvo));
+          // 6.15.41: nada é enviado ainda — primeiro os dados do arquivo, com Confirmar ou Descartar.
+          cartaoDeAudio(document.getElementById('anotacoesImportCard'), arquivo, duracaoS, async () => {
+            const alvo = alvoAtual();
+            // 6.15.40: na parte da reunião, a mesma regra do "Importar parte gravada": a IA tenta achar o título e o orador (campos vazios).
+            if (alvo.modo === 'reuniao' && !alvo.programa) alvo.identificar = true;
+            return filaAdicionar(pedidoUmaGravacao(arquivo, duracaoS || null, alvo));
+          });
         } catch (e) {
           gravarStatus.textContent = 'Não foi possível processar o arquivo.';
         } finally {

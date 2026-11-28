@@ -5261,6 +5261,40 @@
       display: none;
     }
 
+    /* 6.15.41: cartão com os dados do áudio escolhido, antes de confirmar a importação; os botões na largura toda */
+    .anot-importar-card {
+      display: grid;
+      gap: 8px;
+      margin: 8px 0;
+      padding: 12px;
+      border: 1px solid #60a5fa;
+      border-radius: 14px;
+      background: color-mix(in srgb, #60a5fa 7%, var(--card));
+      font-size: .9rem;
+      line-height: 1.5;
+      min-width: 0;
+      scroll-margin: 90px 0;
+    }
+
+    .anot-importar-card[hidden] {
+      display: none;
+    }
+
+    .anot-importar-card .anot-importar-dica {
+      margin: 0;
+    }
+
+    .anot-importar-card > button {
+      width: 100%;
+      margin: 0;
+    }
+
+    .anot-importar-card > .anot-importar-descartar {
+      background: color-mix(in srgb, #ef4444 12%, var(--card));
+      border-color: color-mix(in srgb, #ef4444 45%, transparent);
+      color: var(--text);
+    }
+
     .anot-reuniao-setas {
       flex: 0 0 48px;
       width: 48px;

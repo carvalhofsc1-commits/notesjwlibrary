@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.15.41
+
+- Anotações: ao escolher um áudio ("🎙️ Importar parte gravada" na lista das partes ou "📁 Carregar gravação e resumir" dentro da anotação), a transcrição não começa mais na hora: aparece um cartão com nome, origem, tipo, tamanho, data e hora e duração, com "✅ Confirmar a importação" e "🗑️ Descartar". A parte nova só é criada depois de confirmar; saindo da tela, o cartão some sem enviar nada. Áudio acima do limite de minutos por gravação não deixa confirmar.
+
 ## 6.15.40
 
 - Reunião, dentro da parte: "📁 Carregar gravação e resumir" segue a mesma regra do "Importar parte gravada": a IA tenta descobrir o título e o orador e preenche os campos do card Tema, orador e congregação que estiverem vazios (o que já foi digitado não muda).
