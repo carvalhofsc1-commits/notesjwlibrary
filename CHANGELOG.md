@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.15.42
+
+- Reunião, "↕️ Mudar a ordem": a parte que está sendo movida fica destacada em laranja claro, com moldura laranja no card e nos botões ▲▼, para acompanhar a posição dela. O destaque some ao tocar em "✓ Pronto".
+
 ## 6.15.41
 
 - Anotações: ao escolher um áudio ("🎙️ Importar parte gravada" na lista das partes ou "📁 Carregar gravação e resumir" dentro da anotação), a transcrição não começa mais na hora: aparece um cartão com nome, origem, tipo, tamanho, data e hora e duração, com "✅ Confirmar a importação" e "🗑️ Descartar". A parte nova só é criada depois de confirmar; saindo da tela, o cartão some sem enviar nada. Áudio acima do limite de minutos por gravação não deixa confirmar.

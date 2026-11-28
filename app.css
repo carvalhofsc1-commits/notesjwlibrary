@@ -5295,6 +5295,17 @@
       color: var(--text);
     }
 
+    /* 6.15.42: ao mudar a ordem, a parte que está sendo movida (card e setas) fica em laranja claro com moldura mais forte */
+    .anot-reuniao-linha.anot-reuniao-movendo > button.anot-reuniao-item,
+    .anot-reuniao-linha.anot-reuniao-movendo .anot-reuniao-setas > button {
+      border: 2px solid #f97316 !important;
+      background: color-mix(in srgb, #fb923c 20%, var(--card)) !important;
+    }
+
+    .anot-reuniao-linha.anot-reuniao-movendo .anot-reuniao-setas > button {
+      color: #c2410c;
+    }
+
     .anot-reuniao-setas {
       flex: 0 0 48px;
       width: 48px;

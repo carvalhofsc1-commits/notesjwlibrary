@@ -7964,7 +7964,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.15.41'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.15.42'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -35827,6 +35827,7 @@ function saveTemplatesToStorage() {
       let reuniaoParteId = '';
       let reuniaoVista = 'lista';
       let reuniaoOrdenando = false;
+      let reuniaoMovidaId = '';
       const reuniaoBox = document.getElementById('anotReuniaoBox');
       const reuniaoListaBox = document.getElementById('anotReuniaoListaBox');
       const reuniaoPartesBox = document.getElementById('anotReuniaoPartesBox');
@@ -37427,6 +37428,7 @@ function saveTemplatesToStorage() {
       // 6.15.26: mudar a ordem das partes (ex.: áudio de uma parte subido fora da ordem). No modo de ordenar, as setas ▲▼ ficam no lugar da lixeira.
       document.getElementById('anotReuniaoOrdenar').addEventListener('click', () => {
         reuniaoOrdenando = !reuniaoOrdenando;
+        reuniaoMovidaId = '';
         reuniaoPintar();
       });
       function reuniaoMoverParte(id, delta) {
@@ -37436,6 +37438,7 @@ function saveTemplatesToStorage() {
         if (i < 0 || j < 0 || j >= r.partes.length) return;
         const [p] = r.partes.splice(i, 1);
         r.partes.splice(j, 0, p);
+        reuniaoMovidaId = id; // 6.15.42: a parte que está sendo movida fica destacada (card e setas)
         salvarRascunho();
         reuniaoPintar();
         const alvo = reuniaoPartesEl.querySelector('[data-mover="' + (delta < 0 ? 'sobe' : 'desce') + '"][data-parte="' + id + '"]');
@@ -37533,7 +37536,7 @@ function saveTemplatesToStorage() {
       }
       function linhaComSetas(botao, id, i, total) {
         const linha = document.createElement('div');
-        linha.className = 'anot-reuniao-linha';
+        linha.className = 'anot-reuniao-linha' + (id === reuniaoMovidaId ? ' anot-reuniao-movendo' : '');
         const setas = document.createElement('div');
         setas.className = 'anot-reuniao-setas';
         [['sobe', '▲', -1, 'Subir a parte ' + (i + 1)], ['desce', '▼', 1, 'Descer a parte ' + (i + 1)]].forEach(([nome, sinal, delta, rotulo]) => {
