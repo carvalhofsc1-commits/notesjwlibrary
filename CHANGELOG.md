@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.15.27
+
+- Reuniões anotadas: o tema principal da reunião aparece em destaque, numa linha própria logo abaixo da data (maior, em negrito e na cor roxa); embaixo ficam o tipo e o número de partes.
+
 ## 6.15.26
 
 - Reuniões: botão "↕️ Mudar a ordem das partes" na lista de partes (aparece com 2 ou mais partes). No modo de ordenar, as setas ▲ e ▼ ficam no lugar da lixeira e a nova ordem fica salva (vale também para o Word exportado). "✓ Pronto" volta ao normal.

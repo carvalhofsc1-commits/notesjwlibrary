@@ -7964,7 +7964,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.15.26'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.15.27'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -37407,7 +37407,15 @@ function saveTemplatesToStorage() {
           document.getElementById('anotReuniaoItensTitulo').hidden = !lista.length;
           lista.forEach(r => {
             const n = r.partes.length;
-            const btn = botaoDeItem(r.tipo && !['meio', 'fim'].includes(r.tipo) ? '🤝' : '📅', nomeReuniao(r), [tipoReuniao(r), String(r.tema || '').trim() ? '“' + r.tema.trim() + '”' : '', n + (n === 1 ? ' parte' : ' partes')].filter(Boolean).join(' · '));
+            const temaR = String(r.tema || '').trim();
+            const btn = botaoDeItem(r.tipo && !['meio', 'fim'].includes(r.tipo) ? '🤝' : '📅', nomeReuniao(r), [tipoReuniao(r), n + (n === 1 ? ' parte' : ' partes')].join(' · '));
+            if (temaR) {
+              // 6.15.27: o tema principal da reunião em destaque, numa linha própria logo abaixo da data.
+              const t = document.createElement('span');
+              t.className = 'anot-reuniao-tema-lista';
+              t.textContent = temaR;
+              btn.querySelector('.anotacoes-evento-texto strong').after(t);
+            }
             btn.addEventListener('click', () => reuniaoAbrir(r.id));
             reuniaoItensEl.appendChild(linhaComLixeira(btn, () => reuniaoApagar(r.id), 'Apagar a reunião de ' + nomeReuniao(r)));
           });
