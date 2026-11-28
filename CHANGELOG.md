@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.15.43
+
+- Anotações: o andamento da importação/resumo de um áudio virou um card roxo claro (na lista das partes da reunião e dentro da anotação), com a etapa (Transcrevendo o áudio → Fazendo o resumo), o tempo, o nome da parte, a barra de andamento, os trechos do áudio já transcritos ("3 de 6") e a porcentagem. Ao terminar, o mesmo card mostra o resultado por alguns segundos.
+
 ## 6.15.42
 
 - Reunião, "↕️ Mudar a ordem": a parte que está sendo movida fica destacada em laranja claro, com moldura laranja no card e nos botões ▲▼, para acompanhar a posição dela. O destaque some ao tocar em "✓ Pronto".

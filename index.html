@@ -285,7 +285,7 @@
             <input id="anotReuniaoImportarArq" type="file" accept="audio/*,.mp3,.m4a,.aac,.wav,.ogg,.opus,.webm,.flac,.amr,.3gp,.caf" hidden>
             <div id="anotReuniaoImportCard" class="anot-importar-card" hidden></div>
             <p id="anotReuniaoImportStatus" class="anotacoes-msg warn" role="status" aria-live="polite" hidden></p>
-            <p id="anotReuniaoFila" class="anotacoes-msg anotacoes-fila" role="status" aria-live="polite" hidden></p>
+            <div id="anotReuniaoFila" class="anotacoes-msg anotacoes-fila anot-andamento" role="status" aria-live="off" hidden></div>
             <button id="anotReuniaoExportar" class="secondary anot-reuniao-largo" type="button" title="Mostra a prévia do Word com as anotações de todas as partes desta reunião e de lá exporta">📄 Exportar anotações da reunião</button>
           </div>
         </div>
@@ -451,7 +451,7 @@
             </div>
             <p id="anotacoesGravarStatus" class="anotacoes-msg" role="status" aria-live="polite"></p>
             <!-- Resumo em segundo plano: o andamento do pedido (de qualquer discurso) e a fila. -->
-            <p id="anotacoesFila" class="anotacoes-msg anotacoes-fila" role="status" aria-live="polite" hidden></p>
+            <div id="anotacoesFila" class="anotacoes-msg anotacoes-fila anot-andamento" role="status" aria-live="off" hidden></div>
             <!-- As gravações desta anotação, guardadas no app (qualidade de voz): card recolhível com o resumo de todas, ouvir, exportar e apagar. -->
             <details id="anotacoesGravacoesBox" class="anotacoes-gravacoes-box" hidden>
               <summary id="anotacoesGravacoesTitulo">🎧 Gravações guardadas no app</summary>

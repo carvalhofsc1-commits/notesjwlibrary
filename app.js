@@ -7964,7 +7964,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.15.42'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.15.43'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -39075,39 +39075,61 @@ function saveTemplatesToStorage() {
           filaPintar();
         }
       }
-      // A linha do andamento (ícone girando e tempo) e o botão Resumir as gravações da anotação aberta.
+      // 6.15.43: o card roxo do andamento (como no Áudio em texto): a etapa, o tempo, a parte, a barra e os trechos do áudio já transcritos.
+      function andamentoDoJob(job) {
+        const fase = job.fase || '';
+        if (/^Transcrevendo/.test(fase)) {
+          const titulo = '🎙️ ' + fase.replace(/^Transcrevendo/, 'Transcrevendo o áudio');
+          if (!(trControle && trProgresso.hasAttribute('value') && trProgresso.max > 1)) return { titulo, detalhe: 'Preparando o áudio neste aparelho…', pct: null };
+          const feitos = Math.round(trProgresso.value), total = Math.round(trProgresso.max);
+          const pct = Math.max(0, Math.min(100, Math.round(feitos / total * 100)));
+          // com a separação de quem fala (lote), o andamento vem em porcentagem; no modo comum, em trechos do áudio
+          return { titulo, detalhe: trFalantesCaixa.checked && total === 100 ? 'Áudio inteiro, separando quem fala' : 'Trechos do áudio: ' + feitos + ' de ' + total, pct };
+        }
+        if (/^Resumindo/.test(fase)) return { titulo: '✨ Fazendo o resumo', detalhe: 'Transcrição pronta: a IA está escrevendo o resumo', pct: null };
+        if (/^Guardando/.test(fase)) return { titulo: '💾 Guardando a transcrição', detalhe: 'Transcrição pronta', pct: null };
+        return { titulo: '⏳ Começando', detalhe: '', pct: null };
+      }
+      function cartaoDoAndamento(el, job) {
+        if (el.dataset.tipo !== 'rodando') {
+          const criar = (tag, classe) => { const n = document.createElement(tag); n.className = classe; return n; };
+          const topo = criar('div', 'anot-and-topo');
+          topo.append(criar('strong', 'anot-and-titulo'), criar('span', 'anot-and-tempo'));
+          const barra = criar('div', 'anot-and-barra');
+          barra.setAttribute('role', 'progressbar');
+          barra.setAttribute('aria-label', 'Andamento da importação');
+          barra.appendChild(criar('span', 'anot-and-cheio'));
+          const rodape = criar('div', 'anot-and-rodape');
+          rodape.append(criar('span', 'anot-and-detalhe'), criar('strong', 'anot-and-pct'));
+          el.replaceChildren(topo, criar('div', 'anot-and-nome'), barra, rodape);
+          el.dataset.tipo = 'rodando';
+        }
+        const a = andamentoDoJob(job);
+        const por = (classe, valor) => { el.querySelector('.' + classe).textContent = valor; };
+        por('anot-and-titulo', a.titulo);
+        por('anot-and-tempo', '⏱️ ' + tempoMmSs(Math.floor((Date.now() - job.inicio) / 1000)));
+        por('anot-and-nome', String(job.alvo.titulo || 'Anotações').replace(' (áudio importado)', '') + (filaResumo.length ? ' · mais ' + filaResumo.length + ' na fila' : ''));
+        por('anot-and-detalhe', a.detalhe);
+        por('anot-and-pct', a.pct === null ? '' : a.pct + '%');
+        const barra = el.querySelector('.anot-and-barra');
+        barra.classList.toggle('indefinida', a.pct === null);
+        if (a.pct === null) barra.removeAttribute('aria-valuenow'); else barra.setAttribute('aria-valuenow', String(a.pct));
+        el.querySelector('.anot-and-cheio').style.width = a.pct === null ? '' : a.pct + '%';
+      }
+      // O andamento (na anotação e na lista das partes da reunião) e o botão Resumir as gravações da anotação aberta.
       function filaPintar() {
         if (!filaEl) return;
         const job = filaRodando;
-        let chave;
-        if (job) {
-          const seg = Math.floor((Date.now() - job.inicio) / 1000);
-          chave = 'r|' + job.alvo.titulo + '|' + job.fase + '|' + seg + '|' + filaResumo.length;
-          if (filaEl.dataset.chave !== chave) {
-            const giro = document.createElement('span');
-            giro.className = 'ai-spinner';
-            giro.setAttribute('aria-hidden', 'true');
-            const t = document.createElement('span');
-            t.textContent = '«' + job.alvo.titulo + '» — ' + job.fase + '… ' + tempoMmSs(seg) + (filaResumo.length ? ' · mais ' + filaResumo.length + ' na fila' : '');
-            filaEl.replaceChildren(giro, t);
-          }
-          filaEl.hidden = false;
-        } else if (filaUltimo && Date.now() - filaUltimoEm < 20000) {
-          chave = 'u|' + filaUltimo;
-          if (filaEl.dataset.chave !== chave) filaEl.textContent = filaUltimo;
-          filaEl.hidden = false;
-        } else {
-          chave = '';
-          filaEl.hidden = true;
-        }
-        filaEl.dataset.chave = chave;
-        // O mesmo andamento aparece na lista das partes da reunião (áudio importado dali).
-        const espelho = document.getElementById('anotReuniaoFila');
-        if (espelho && (espelho.dataset.chave || '') !== chave) {
-          espelho.replaceChildren(...[...filaEl.childNodes].map(n => n.cloneNode(true)));
-          espelho.hidden = filaEl.hidden;
-          espelho.dataset.chave = chave;
-        }
+        [filaEl, document.getElementById('anotReuniaoFila')].filter(Boolean).forEach(el => {
+          if (job) {
+            cartaoDoAndamento(el, job);
+            el.hidden = false;
+          } else if (filaUltimo && Date.now() - filaUltimoEm < 20000) {
+            if (el.dataset.tipo !== 'fim' || el.textContent !== filaUltimo) el.textContent = filaUltimo;
+            el.dataset.tipo = 'fim';
+            el.hidden = false;
+          } else el.hidden = true;
+        });
         // Botão da anotação aberta: girando enquanto um pedido dela roda; "Na fila" se ainda espera.
         const btn = gravResumirTodasBtn;
         if (!btn) return;

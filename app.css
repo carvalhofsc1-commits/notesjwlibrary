@@ -15495,6 +15495,18 @@ body.leitura-lendo .screen-leitura .leitura-acoes .leitura-ler[data-ia-nota]::af
   font-size: .84rem;
 }
 
+/* 6.15.43: andamento da importação/resumo de um áudio num card roxo claro, com barra (como no Áudio em texto) */
+.anotacoes-msg.anotacoes-fila.anot-andamento { display: grid; gap: 6px; margin: 10px 0; padding: 12px; border: 1px solid #a78bfa; border-radius: 14px; background: color-mix(in srgb, #8b5cf6 12%, var(--card)); color: var(--text); font-size: .9rem; line-height: 1.35; text-align: left; min-width: 0; }
+.anotacoes-msg.anotacoes-fila.anot-andamento[hidden] { display: none; }
+.anot-and-topo, .anot-and-rodape { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.anot-and-titulo { font-size: 1rem; color: var(--brand); }
+.anot-and-tempo, .anot-and-pct { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.anot-and-nome { font-weight: 700; overflow-wrap: anywhere; }
+.anot-and-barra { position: relative; height: 10px; border-radius: 99px; overflow: hidden; background: color-mix(in srgb, #8b5cf6 22%, var(--card)); }
+.anot-and-cheio { display: block; height: 100%; width: 0; border-radius: 99px; background: #7c3aed; transition: width .4s ease; }
+.anot-and-barra.indefinida .anot-and-cheio { position: absolute; width: 35%; animation: anot-and-vai 1.4s ease-in-out infinite; }
+@keyframes anot-and-vai { from { left: -35%; } to { left: 100%; } }
+
 /* Anotações: o 🔊 ao lado do título do campo e o tocador logo abaixo. */
 .anotacoes-texto-cab {
   display: flex;
