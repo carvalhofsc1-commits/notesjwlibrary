@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.15.51
+
+- Anotações: o atalho "Reuniões congregacionais" passou a se chamar "Reuniões congregacionais e especiais".
+
 ## 6.15.50
 
 - Word das anotações da reunião: título grande, centralizado e roxo (o tema, ou o tipo da reunião), com o tipo e a data embaixo e uma linha roxa; o título e a data se repetem no cabeçalho de todas as páginas, com o logo à direita.
