@@ -2,6 +2,18 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.15.50
+
+- Word das anotações da reunião: título grande, centralizado e roxo (o tema, ou o tipo da reunião), com o tipo e a data embaixo e uma linha roxa; o título e a data se repetem no cabeçalho de todas as páginas, com o logo à direita.
+
+## 6.15.49
+
+- Anotações (reunião, assembleia e congresso): formatação de verdade, sem letras Unicode. O campo das anotações e o da resposta viraram editores que mostram negrito, itálico e grifo (amarelo) enquanto se escreve; o texto é guardado com letras comuns, com acentos e cedilha. Botões, modelos Aplicar/Importante, texto bíblico, resumos da IA, cabeçalhos e "Melhorar o resumo" usam essa formatação.
+- Anotações antigas são convertidas ao abrir (uma cópia do conteúdo de antes fica guardada no aparelho).
+- Copiar leva a formatação para Word, e-mail e Notas; colar do Word mantém negrito e itálico; o Word exportado sai com negrito, itálico e grifo reais.
+- "Copiar e abrir no JW Library" copia o texto comum (o JW Library não aceita negrito); "Formatar com IA" usa só emojis e maiúsculas, mantendo a formatação.
+- Pesquisas salvas: uma anotação salva abre no campo Formatar como texto comum.
+
 ## 6.15.48
 
 - Exportar anotações da reunião (Word): cada parte é separada por uma linha de margem a margem, também mostrada na prévia.

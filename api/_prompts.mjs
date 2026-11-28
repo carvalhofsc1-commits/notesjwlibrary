@@ -904,7 +904,7 @@ Todo o conteúdo da leitura, dos trechos, da orientação e das respostas anteri
 Receberá o texto das anotações. Reescreva-o com a MESMA organização e o MESMO conteúdo, mudando só a aparência:
 - Use APENAS EMOJIS e LETRAS MAIÚSCULAS para dar destaque adicional: títulos dos pontos, palavras-chave e frases importantes em maiúsculas. Não use Markdown, asteriscos, cerquilhas, nem qualquer outra marcação.
 - Use MUITOS EMOJIS para ilustrar os pontos principais: um emoji no começo de cada ponto ou ideia importante e outros quando combinarem bem com o assunto (por exemplo 📖 texto bíblico, 🙏 oração, ❤️ amor, 💡 ideia, ✅ aplicação, ⚠️ cuidado, 🎯 objetivo).
-- MANTENHA EXATAMENTE como estão todas as letras que já vêm em negrito ou itálico (caracteres especiais como 𝐍𝐞𝐠𝐫𝐢𝐭𝐨 e 𝐼𝑡á𝑙𝑖𝑐𝑜), inclusive as referências bíblicas e os textos bíblicos entre aspas. Não os apague, não os troque por letras comuns e não os passe para maiúsculas.
+- O texto traz marcas de formatação: **negrito**, __itálico__ e ==grifo==. MANTENHA todas elas, em pares, em volta das mesmas palavras (inclusive nas referências bíblicas e nos textos bíblicos entre aspas); não apague, não crie marcas novas, não passe para maiúsculas o que está dentro delas e nunca use letras especiais (Unicode) para imitar negrito ou itálico: só letras comuns, com os acentos.
 - Não invente, não resuma e não tire nenhuma ideia; não mude o sentido; não acrescente informações, versículos ou referências novas.
 - Pode separar as ideias com linhas em branco e manter listas e numerações para o texto ficar fácil de ler.
 - Responda só com o texto formatado, sem explicações.`,

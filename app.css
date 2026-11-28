@@ -19428,3 +19428,22 @@ span[role="status"]:is(.ok, .warn, .erro):not(:empty):not(.main-copy-status) { d
 
 /* 6.15.48: prévia do Word: linha de separação de margem a margem entre as partes da reunião */
 .visor-folha.doc p.doc-separador { margin: 0 0 12px; padding: 0; min-height: 0; height: 0; border-bottom: 2px solid #6b7280; text-indent: 0; }
+
+/* 6.15.49: editor das anotações com formatação de verdade (negrito, itálico e grifo) */
+textarea.rico-nativo { display: none !important; }
+div.rico { box-sizing: border-box; padding: 11px; border: 1px solid #94a3b8; border-radius: 10px; background: var(--field); color: var(--text); font-size: 16px; line-height: 1.5; }
+div.anotacoes-texto.rico { border-color: var(--tint5-border); }
+div.anotacoes-resposta.rico { min-height: 96px; }
+div.anotacoes-texto.rico, div.rico { display: block; width: 100%; height: auto; white-space: pre-wrap; overflow-wrap: anywhere; text-align: left; cursor: text; -webkit-user-select: text; user-select: text; font-weight: 400; font-style: normal; }
+div.rico:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+div.rico:empty::before { content: attr(data-vazio); color: var(--muted); pointer-events: none; }
+div.rico b { font-weight: 800; }
+div.rico mark, .anotacoes-biblia-previa-texto mark { background: #fde68a; color: #111827; padding: 0; }
+.visor-folha.doc .doc-h { background: #fde68a; color: #111827; }
+.anotacoes-fmt button mark { background: #fde68a; color: #111827; border-radius: 3px; padding: 0 3px; }
+
+/* 6.15.50: prévia do Word das anotações da reunião: cabeçalho de página, título e linha colorida */
+.visor-folha.doc p.doc-cabecalho { margin: 0 0 14px; padding: 0 0 4px; border-bottom: 1px solid #5b3fb5; color: #5b3fb5; font-weight: 700; font-size: .75em; text-indent: 0; }
+.visor-folha.doc p.doc-titulo-reuniao { margin: 0 0 4px; text-align: center; color: #5b3fb5; font-weight: 800; font-size: 1.7em; line-height: 1.25; text-indent: 0; }
+.visor-folha.doc p.doc-subtitulo-reuniao { margin: 0 0 4px; text-align: center; color: #4b5563; font-size: 1.1em; text-indent: 0; }
+.visor-folha.doc p.doc-linha-titulo { margin: 0 0 14px; padding: 0; height: 0; min-height: 0; border-bottom: 3px solid #5b3fb5; text-indent: 0; }

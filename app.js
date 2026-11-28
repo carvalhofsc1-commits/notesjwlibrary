@@ -7965,7 +7965,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.15.48'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.15.50'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -8578,6 +8578,328 @@
 
     // Texto sem as letras "decoradas" (negrito/itálico feitos com outros caracteres), com os acentos recompostos.
     const semLetrasDecoradas = text => removeUnicodeFormatting(String(text || '')).normalize('NFC');
+
+    // ---------- Formatação de verdade nas Anotações (6.15.49) ----------
+    // O texto das anotações é guardado com letras comuns (com acentos e cedilha) e marcas: **negrito**, __itálico__ e ==grifo==. O campo mostra
+    // a formatação de verdade (sem as marcas); no Word, no Copiar e nos outros apps ela sai como negrito, itálico e grifo reais.
+    const RICO_MARCAS = { '**': 'b', '__': 'i', '==': 'h' };
+    // Marcas → lista de letras com o estilo de cada uma. A marca sem par na mesma linha fica como texto.
+    function ricoLetras(marcado) {
+      const saida = [];
+      String(marcado || '').split('\n').forEach((linha, n) => {
+        if (n) saida.push({ c: '\n', b: false, i: false, h: false });
+        const pedacos = linha.split(/(\*\*|__|==(?!=))/);
+        const sobra = {};
+        Object.keys(RICO_MARCAS).forEach(m => { const q = pedacos.filter((p, k) => k % 2 && p === m).length; if (q % 2) sobra[m] = pedacos.lastIndexOf(m); });
+        const liga = { b: false, i: false, h: false };
+        pedacos.forEach((p, k) => {
+          if (k % 2 && sobra[p] !== k) { liga[RICO_MARCAS[p]] = !liga[RICO_MARCAS[p]]; return; }
+          for (const c of p) saida.push({ c, b: liga.b, i: liga.i, h: liga.h });
+        });
+      });
+      return saida;
+    }
+    // Lista de letras → texto com marcas (cada linha abre e fecha as suas).
+    function ricoMarcado(letras) {
+      let saida = '';
+      const liga = { b: false, i: false, h: false };
+      const mudar = alvo => {
+        ['h', 'i', 'b'].forEach(k => { if (liga[k] && !alvo[k]) { saida += k === 'b' ? '**' : k === 'i' ? '__' : '=='; liga[k] = false; } });
+        ['b', 'i', 'h'].forEach(k => { if (!liga[k] && alvo[k]) { saida += k === 'b' ? '**' : k === 'i' ? '__' : '=='; liga[k] = true; } });
+      };
+      letras.forEach(l => {
+        if (l.c === '\n') { mudar({}); saida += '\n'; return; }
+        mudar(l);
+        saida += l.c;
+      });
+      mudar({});
+      return saida;
+    }
+    // Texto com letras "decoradas" (as anotações antigas ou coladas) → letras comuns com as marcas, com os acentos no lugar.
+    function ricoDeUnicode(texto) {
+      const t = String(texto || '');
+      if (!/[\u{1D400}-\u{1D7FF}ℂ-ⅉ]/u.test(t)) return t;
+      return consertarKeycaps(t).split('\n').map(linha => {
+        if (!/[\u{1D400}-\u{1D7FF}ℂ-ⅉ]/u.test(linha)) return linha;
+        return ricoMarcado(docxSuavizar(docxLetras(linha)).map(x => ({ c: x.c.normalize('NFC'), b: x.f.includes('b'), i: x.f.includes('i'), h: x.f.includes('h') })));
+      }).join('\n');
+    }
+    const ricoPlano = texto => ricoLetras(ricoDeUnicode(texto)).map(l => l.c).join('');
+    function ricoHtml(marcado) {
+      const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const linhas = [[]];
+      ricoLetras(ricoDeUnicode(marcado)).forEach(l => { if (l.c === '\n') linhas.push([]); else linhas[linhas.length - 1].push(l); });
+      return linhas.map(letras => {
+        let html = '';
+        for (let k = 0; k < letras.length;) {
+          const a = letras[k];
+          let j = k, trecho = '';
+          while (j < letras.length && letras[j].b === a.b && letras[j].i === a.i && letras[j].h === a.h) trecho += letras[j++].c;
+          let h = esc(trecho);
+          if (a.h) h = '<span style="background-color:#fde68a">' + h + '</span>';
+          if (a.i) h = '<i>' + h + '</i>';
+          if (a.b) h = '<b>' + h + '</b>';
+          html += h;
+          k = j;
+        }
+        return '<p style="margin:0;white-space:pre-wrap">' + (html || '<br>') + '</p>';
+      }).join('');
+    }
+    // Copiar levando a formatação (Word, e-mail, Notas…); onde o aparelho não aceita, vai o texto comum.
+    async function ricoCopiar(marcado) {
+      const plano = ricoPlano(marcado);
+      try {
+        if (window.ClipboardItem && navigator.clipboard.write) {
+          await navigator.clipboard.write([new ClipboardItem({ 'text/html': new Blob([ricoHtml(marcado)], { type: 'text/html' }), 'text/plain': new Blob([plano], { type: 'text/plain' }) })]);
+          return;
+        }
+      } catch (e) { /* tenta o texto comum */ }
+      await navigator.clipboard.writeText(plano);
+    }
+    // O editor no lugar do <textarea>: o textarea continua sendo o "modelo" (value, eventos input/focus/blur e focus() funcionam como antes),
+    // fica escondido, e a pessoa vê e escreve no quadro com a formatação.
+    function editorRico(campo) {
+      const area = document.createElement('div');
+      area.className = campo.className + ' rico';
+      area.contentEditable = 'true';
+      area.setAttribute('role', 'textbox');
+      area.setAttribute('aria-multiline', 'true');
+      area.setAttribute('aria-label', campo.getAttribute('aria-label') || campo.placeholder || 'Anotações');
+      area.dataset.vazio = campo.placeholder || '';
+      area.spellcheck = true;
+      campo.classList.add('rico-nativo');
+      campo.insertAdjacentElement('afterend', area);
+      const original = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value');
+      let selecao = null; // [início, fim] em letras
+      // O quadro → lista de letras (e onde está a seleção).
+      const ler = () => {
+        const letras = [];
+        const sel = window.getSelection();
+        const pontos = sel && sel.rangeCount && area.contains(sel.anchorNode) ? [[sel.anchorNode, sel.anchorOffset], [sel.focusNode, sel.focusOffset]] : [];
+        const achados = [null, null];
+        const marcar = (no, pos) => pontos.forEach((p, k) => { if (p[0] === no && p[1] === pos) achados[k] = letras.length; });
+        let quebrar = false;
+        const novaLinha = () => { letras.push({ c: '\n', b: false, i: false, h: false }); quebrar = false; };
+        const andar = (no, est) => {
+          if (no.nodeType === 3) {
+            if (quebrar && no.data) novaLinha();
+            let pos = 0;
+            for (const c of no.data) {
+              marcar(no, pos);
+              if (c !== '​') letras.push({ c: c === ' ' ? ' ' : c, b: est.b && c !== '\n', i: est.i && c !== '\n', h: est.h && c !== '\n' });
+              pos += c.length;
+            }
+            marcar(no, pos);
+            return;
+          }
+          if (no.nodeType !== 1) return;
+          if (no.tagName === 'BR') {
+            if (no.dataset.fim !== undefined) return;
+            const pai = no.parentNode;
+            if (pai !== area && pai.lastChild === no && /^(DIV|P|LI)$/.test(pai.tagName)) { if (quebrar) novaLinha(); return; } // linha vazia criada pelo navegador
+            if (quebrar) novaLinha();
+            novaLinha();
+            return;
+          }
+          const bloco = no !== area && /^(DIV|P|LI|H[1-6]|TR)$/.test(no.tagName);
+          if (bloco) { if (letras.length && (quebrar || letras[letras.length - 1].c !== '\n')) novaLinha(); quebrar = false; }
+          const css = no.style || {};
+          const novo = no === area ? est : {
+            b: css.fontWeight ? /bold|[6-9]00/.test(css.fontWeight) : est.b || /^(B|STRONG|H[1-6])$/.test(no.tagName),
+            i: css.fontStyle ? css.fontStyle === 'italic' : est.i || /^(I|EM)$/.test(no.tagName),
+            h: est.h || no.tagName === 'MARK' || Boolean(css.backgroundColor && no.classList && no.classList.contains('rico-grifo'))
+          };
+          const filhos = [...no.childNodes];
+          filhos.forEach((f, k) => { marcar(no, k); andar(f, novo); });
+          marcar(no, filhos.length);
+          if (bloco) quebrar = true;
+        };
+        andar(area, { b: false, i: false, h: false });
+        return { letras, sel: achados[0] === null ? null : [Math.min(achados[0], achados[1] ?? achados[0]), Math.max(achados[0], achados[1] ?? achados[0])] };
+      };
+      const desenhar = letras => {
+        const nos = [];
+        for (let k = 0; k < letras.length;) {
+          const a = letras[k];
+          let j = k, trecho = '';
+          while (j < letras.length && letras[j].b === a.b && letras[j].i === a.i && letras[j].h === a.h) trecho += letras[j++].c;
+          let no = document.createTextNode(trecho);
+          [[a.h, 'mark'], [a.i, 'i'], [a.b, 'b']].forEach(([liga, tag]) => { if (liga) { const el = document.createElement(tag); el.appendChild(no); no = el; } });
+          nos.push(no);
+          k = j;
+        }
+        if (letras.length && letras[letras.length - 1].c === '\n') { const br = document.createElement('br'); br.dataset.fim = ''; nos.push(br); }
+        area.replaceChildren(...nos);
+      };
+      const selecionar = (ini, fim) => {
+        const achar = alvo => {
+          const w = document.createTreeWalker(area, NodeFilter.SHOW_TEXT);
+          let n = 0, no;
+          while ((no = w.nextNode())) {
+            let pos = 0;
+            for (const c of no.data) { if (n === alvo) return [no, pos]; pos += c.length; n++; }
+            if (n === alvo && !no.data.endsWith('\n')) return [no, pos];
+          }
+          return [area, area.childNodes.length - (area.lastChild && area.lastChild.nodeName === 'BR' ? 1 : 0)];
+        };
+        const r = document.createRange();
+        r.setStart(...achar(ini));
+        r.setEnd(...achar(fim));
+        const s = window.getSelection();
+        s.removeAllRanges();
+        s.addRange(r);
+        selecao = [ini, fim];
+      };
+      const avisar = () => campo.dispatchEvent(new Event('input', { bubbles: true }));
+      // Grava as letras no modelo, redesenha, põe o cursor e avisa (rascunho).
+      const aplicar = (letras, ini, fim, comFoco = true) => {
+        original.set.call(campo, ricoMarcado(letras));
+        desenhar(letras);
+        if (comFoco) { area.focus({ preventScroll: true }); selecionar(ini, fim); } else selecao = [ini, fim];
+        avisar();
+      };
+      const atual = () => {
+        const { letras, sel } = ler();
+        const s = sel || selecao || [letras.length, letras.length];
+        return { letras, ini: Math.min(s[0], letras.length), fim: Math.min(s[1], letras.length) };
+      };
+      Object.defineProperty(campo, 'value', {
+        configurable: true,
+        get() { return original.get.call(this); },
+        set(v) {
+          const marcado = ricoDeUnicode(String(v ?? '').replace(/\r\n?/g, '\n'));
+          if (marcado === original.get.call(this) && area.childNodes.length) return;
+          original.set.call(this, marcado);
+          selecao = null;
+          desenhar(ricoLetras(marcado));
+        }
+      });
+      Object.defineProperty(campo, 'scrollTop', { configurable: true, get() { return area.scrollTop; }, set(v) { area.scrollTop = v; } });
+      Object.defineProperty(campo, 'scrollHeight', { configurable: true, get() { return area.scrollHeight; } });
+      campo.focus = opcoes => area.focus(opcoes);
+      campo.blur = () => area.blur();
+      campo.select = () => { area.focus(); const r = document.createRange(); r.selectNodeContents(area); const s = window.getSelection(); s.removeAllRanges(); s.addRange(r); };
+      area.addEventListener('input', () => { const { letras, sel } = ler(); selecao = sel; original.set.call(campo, ricoMarcado(letras)); avisar(); });
+      area.addEventListener('focus', () => campo.dispatchEvent(new FocusEvent('focus')));
+      area.addEventListener('blur', () => campo.dispatchEvent(new FocusEvent('blur')));
+      document.addEventListener('selectionchange', () => {
+        const s = window.getSelection();
+        if (s && s.rangeCount && area.contains(s.anchorNode) && area.contains(s.focusNode)) selecao = ler().sel;
+      });
+      const trocar = novas => { const a = atual(); a.letras.splice(a.ini, a.fim - a.ini, ...novas); aplicar(a.letras, a.ini + novas.length, a.ini + novas.length); };
+      area.addEventListener('beforeinput', e => {
+        if (e.inputType === 'insertParagraph' || e.inputType === 'insertLineBreak') {
+          e.preventDefault();
+          trocar([{ c: '\n', b: false, i: false, h: false }]);
+          const s = window.getSelection();
+          if (s.rangeCount) { const el = s.anchorNode.nodeType === 3 ? s.anchorNode.parentElement : s.anchorNode; if (el !== area && el.getBoundingClientRect().bottom > area.getBoundingClientRect().bottom) el.scrollIntoView({ block: 'nearest' }); }
+        } else if (/^format(Bold|Italic)$/.test(e.inputType)) { e.preventDefault(); alternar(e.inputType === 'formatBold' ? 'b' : 'i'); }
+        else if (/^format/.test(e.inputType)) e.preventDefault();
+      });
+      area.addEventListener('paste', e => {
+        const dados = e.clipboardData;
+        if (!dados) return;
+        e.preventDefault();
+        const html = dados.getData('text/html');
+        let marcado = dados.getData('text/plain').replace(/\r\n?/g, '\n');
+        if (html) {
+          const doc = new DOMParser().parseFromString(html, 'text/html');
+          if (doc.body.querySelector('b,strong,i,em,mark,[style*="font-weight"],[style*="font-style"]')) {
+            const letras = [];
+            const andar = (no, est) => {
+              if (no.nodeType === 3) { const pre = /\S/.test(no.data); for (const c of (pre ? no.data.replace(/[\r\n\t]+/g, ' ') : no.data.replace(/\s+/g, ''))) letras.push({ c: c === ' ' ? ' ' : c, ...est }); return; }
+              if (no.nodeType !== 1 || /^(STYLE|SCRIPT|META|TITLE)$/.test(no.tagName)) return;
+              if (no.tagName === 'BR') { letras.push({ c: '\n', b: false, i: false, h: false }); return; }
+              const bloco = /^(DIV|P|LI|H[1-6]|TR)$/.test(no.tagName);
+              if (bloco && letras.length && letras[letras.length - 1].c !== '\n') letras.push({ c: '\n', b: false, i: false, h: false });
+              const css = no.style;
+              const novo = {
+                b: css.fontWeight ? /bold|[6-9]00/.test(css.fontWeight) : est.b || /^(B|STRONG|H[1-6])$/.test(no.tagName),
+                i: css.fontStyle ? css.fontStyle === 'italic' : est.i || /^(I|EM)$/.test(no.tagName),
+                h: est.h || no.tagName === 'MARK'
+              };
+              no.childNodes.forEach(f => andar(f, novo));
+              if (bloco && letras.length && letras[letras.length - 1].c !== '\n') letras.push({ c: '\n', b: false, i: false, h: false });
+            };
+            andar(doc.body, { b: false, i: false, h: false });
+            while (letras.length && letras[letras.length - 1].c === '\n') letras.pop();
+            marcado = ricoMarcado(letras);
+          }
+        }
+        trocar(ricoLetras(ricoDeUnicode(marcado)));
+      });
+      area.addEventListener('copy', e => copiarSelecao(e, false));
+      area.addEventListener('cut', e => copiarSelecao(e, true));
+      function copiarSelecao(e, recortar) {
+        const a = atual();
+        if (a.ini === a.fim || !e.clipboardData) return;
+        e.preventDefault();
+        const marcado = ricoMarcado(a.letras.slice(a.ini, a.fim));
+        e.clipboardData.setData('text/html', ricoHtml(marcado));
+        e.clipboardData.setData('text/plain', ricoPlano(marcado));
+        if (recortar) trocar([]);
+      }
+      // Botões: negrito, itálico e grifo no trecho selecionado (tira, se todo ele já tiver).
+      function alternar(estilo) {
+        const a = atual();
+        if (a.ini === a.fim) return false;
+        const trecho = a.letras.slice(a.ini, a.fim).filter(l => l.c !== '\n');
+        const por = !trecho.every(l => l[estilo]);
+        for (let k = a.ini; k < a.fim; k++) if (a.letras[k].c !== '\n') a.letras[k] = { ...a.letras[k], [estilo]: por };
+        aplicar(a.letras, a.ini, a.fim);
+        return true;
+      }
+      campo.rico = {
+        area,
+        alternar,
+        // O que há antes e depois do cursor (em texto comum), para quem precisa pôr linhas em branco em volta de um trecho.
+        volta() { const a = atual(); const t = l => l.map(x => x.c).join(''); return { antes: t(a.letras.slice(0, a.ini)), depois: t(a.letras.slice(a.fim)) }; },
+        temSelecao() { const a = atual(); return a.ini !== a.fim; },
+        // Insere um trecho (com marcas) no cursor ou no lugar da seleção, numa linha nova quando preciso.
+        inserir(marcado, { semLinha = false } = {}) {
+          const a = atual();
+          const precisa = !semLinha && a.ini > 0 && a.letras[a.ini - 1].c !== '\n' && !marcado.startsWith('\n');
+          trocar(ricoLetras((precisa ? '\n' : '') + marcado));
+        },
+        maiusculas() {
+          const a = atual();
+          const ini = a.ini === a.fim ? 0 : a.ini, fim = a.ini === a.fim ? a.letras.length : a.fim;
+          for (let k = ini; k < fim; k++) a.letras[k] = { ...a.letras[k], c: a.letras[k].c.toLocaleUpperCase('pt-BR') };
+          aplicar(a.letras, ini, fim);
+        },
+        // Lista nas linhas da seleção; prefixo(n, linhaSemMarcador) devolve a linha com o marcador novo.
+        lista(prefixo) {
+          const a = atual();
+          const linhas = [[]];
+          const quebras = [];
+          a.letras.forEach(l => { if (l.c === '\n') { quebras.push(l); linhas.push([]); } else linhas[linhas.length - 1].push(l); });
+          let pos = 0, n = 0, novoIni = -1, novoFim = 0;
+          const saida = [];
+          linhas.forEach((linha, k) => {
+            const comeco = pos, final = pos + linha.length;
+            pos = final + 1;
+            let nova = linha;
+            if (final >= a.ini && comeco <= a.fim && linha.some(l => l.c.trim())) {
+              const textoLinha = linha.map(l => l.c).join('');
+              const recuo = textoLinha.match(/^\s*/)[0];
+              const conteudo = stripListPrefix(textoLinha.slice(recuo.length));
+              const resto = linha.slice(linha.length - [...conteudo].length);
+              nova = [...[...(recuo + prefixo(n++))].map(c => ({ c, b: false, i: false, h: false })), ...resto];
+              if (novoIni < 0) novoIni = saida.length;
+              novoFim = saida.length + nova.length;
+            }
+            saida.push(...nova);
+            if (k < quebras.length) saida.push(quebras[k]);
+          });
+          if (novoIni >= 0) aplicar(saida, novoIni, novoFim);
+        }
+      };
+      const rotulo = campo.id && document.querySelector('label[for="' + campo.id + '"]');
+      if (rotulo) rotulo.addEventListener('click', e => { e.preventDefault(); area.focus(); });
+      campo.value = original.get.call(campo);
+      desenhar(ricoLetras(original.get.call(campo)));
+      return campo.rico;
+    }
 
     let reverseUnicodeStyleMap = null;
 
@@ -20452,7 +20774,7 @@ function saveTemplatesToStorage() {
           : doc.corpo ? await docxPacote(doc.corpo(visorZoom), titulo) // documento próprio (ex.: a tabela dos arquivos do servidor)
           : doc.pesquisa ? await docxPacote(window.pesquisaDocxCorpo(doc.pesquisa, visorZoom), titulo)
           : doc.familia ? await docxPacote(window.familiaDocxCorpo(doc.familia, visorZoom), titulo)
-          : doc.modelo ? await docxGerarLeitura(doc.modelo, titulo, visorZoom) : await docxGerar(doc.texto, titulo, doc.acentos, visorZoom);
+          : doc.modelo ? await docxGerarLeitura(doc.modelo, titulo, visorZoom) : await docxGerar(doc.texto, titulo, doc.acentos, visorZoom, doc.cabecalho);
         const mensagem = await docxEntregar(blob, nome, compartilhar);
         visorDizer(mensagem);
         if (doc && !doc.modelo && !doc.externo && mensagem) {
@@ -20478,10 +20800,24 @@ function saveTemplatesToStorage() {
       const folha = document.createElement('article');
       folha.className = 'visor-folha doc';
       let primeira = true;
+      if (doc.cabecalho) { // o que se repete no alto de todas as páginas do Word
+        const cab = document.createElement('p');
+        cab.className = 'doc-p doc-cabecalho';
+        cab.textContent = doc.cabecalho;
+        folha.append(cab);
+      }
       docxLinhas(doc.texto).forEach(linha => {
         const p = document.createElement('p');
         p.className = 'doc-p';
         if (linha.trim() === DOCX_SEPARADOR) { p.className = 'doc-p doc-separador'; folha.append(p); return; }
+        if (linha.startsWith(DOCX_TITULO) || linha.startsWith(DOCX_SUBTITULO)) {
+          p.className = 'doc-p ' + (linha.startsWith(DOCX_TITULO) ? 'doc-titulo-reuniao' : 'doc-subtitulo-reuniao');
+          p.textContent = ricoPlano(linha.slice(1));
+          primeira = false;
+          folha.append(p);
+          return;
+        }
+        if (linha.trim() === DOCX_LINHA_TITULO) { p.className = 'doc-p doc-linha-titulo'; folha.append(p); return; }
         const modelo = docxLinhaModelo(linha, doc.acentos);
         if (!modelo) {
           p.classList.add('vazio');
@@ -20492,7 +20828,7 @@ function saveTemplatesToStorage() {
           p.style.setProperty('--pen', modelo.marcador ? String(284 / 20) : '0');
           modelo.trechos.forEach(t => {
             const trecho = document.createElement('span');
-            trecho.className = (t.f.includes('b') ? 'doc-b ' : '') + (t.f.includes('i') ? 'doc-i' : '');
+            trecho.className = (t.f.includes('b') ? 'doc-b ' : '') + (t.f.includes('i') ? 'doc-i ' : '') + (t.f.includes('h') ? 'doc-h' : '');
             trecho.textContent = t.texto;
             p.append(trecho);
           });
@@ -20505,7 +20841,7 @@ function saveTemplatesToStorage() {
 
     // Abre a prévia do documento Word com o texto do campo (os botões "Exportar para Word (.docx)" e "Compartilhar o arquivo Word").
     // textoDeFora e nomeDeFora (opcionais): o texto de outro campo (Áudio em texto) e o nome do arquivo (sem a extensão); sem eles vale o campo de texto.
-    async function docxPreviaAbrir(origem, textoDeFora, nomeDeFora) {
+    async function docxPreviaAbrir(origem, textoDeFora, nomeDeFora, cabecalho) {
       const deFora = typeof textoDeFora === 'string';
       const texto = deFora ? textoDeFora : input.value;
       if (!texto.trim() || !visor.hidden) return;
@@ -20521,7 +20857,7 @@ function saveTemplatesToStorage() {
         return;
       }
       if (visor.hidden) return; // fechou antes de ficar pronta
-      visorDoc = { texto, nome, acentos, externo: deFora };
+      visorDoc = { texto, nome, acentos, externo: deFora, cabecalho: cabecalho || '' };
       visorBotoesDeExportar();
       visorTitulo.textContent = visorTituloDoc();
       visorCorpo.replaceChildren(docxPreviaMontar(visorDoc));
@@ -21989,7 +22325,9 @@ function saveTemplatesToStorage() {
     function docxLetras(linha) {
       if (!docxMapa) docxMapa = docxMontarMapa();
       const L = [];
-      for (const ch of linha) {
+      // 6.15.49: as marcas das anotações (**negrito**, __itálico__, ==grifo==) viram o estilo das letras.
+      for (const letra of ricoLetras(linha)) {
+        const ch = letra.c;
         // 6.15.47: o acento "solto" (as letras em negrito das anotações vêm como letra + acento) volta para a própria letra, no mesmo
         // estilo; antes ia para um trecho separado e o Word mostrava a acentuação toda errada.
         if (/[̀-ͯ]/.test(ch) && L.length) {
@@ -21997,7 +22335,9 @@ function saveTemplatesToStorage() {
           if (!anterior.c.normalize('NFD').includes(ch)) anterior.c = (anterior.c + ch).normalize('NFC');
           continue;
         }
-        L.push(docxMapa.get(ch) ? { ...docxMapa.get(ch) } : { c: ch, f: '' });
+        const base = docxMapa.get(ch) ? { ...docxMapa.get(ch) } : { c: ch, f: '' };
+        const f = (letra.b || base.f.includes('b') ? 'b' : '') + (letra.i || base.f.includes('i') ? 'i' : '') + (letra.h || base.f.includes('h') ? 'h' : '');
+        L.push({ ...base, f });
       }
       return L;
     }
@@ -22038,13 +22378,16 @@ function saveTemplatesToStorage() {
 
     // Uma linha do texto que, no Word e na prévia, vira uma linha horizontal de margem a margem.
     const DOCX_SEPARADOR = '';
+    // 6.15.50: o cabeçalho do documento das anotações da reunião: título grande e colorido, a linha de baixo e uma linha colorida.
+    const DOCX_TITULO = '', DOCX_SUBTITULO = '', DOCX_LINHA_TITULO = '';
+    const DOCX_COR_TITULO = '5B3FB5';
 
     // Um trecho de texto com o mesmo estilo vira uma ou mais "runs" (os emojis ficam em runs próprias, com a fonte de emojis).
     function docxRuns(texto, f, tamanho, cor, fundo) {
       const tam = tamanho ? '<w:sz w:val="' + tamanho + '"/><w:szCs w:val="' + tamanho + '"/>' : '';
       const corXml = cor ? '<w:color w:val="' + cor + '"/>' : ''; // vem antes do tamanho, na ordem do esquema do Word
       const fundoXml = fundo ? '<w:shd w:val="clear" w:color="auto" w:fill="' + fundo + '"/>' : ''; // o sombreado vem depois do tamanho
-      const run = (t, emoji) => '<w:r><w:rPr>' + (emoji ? DOCX_FONTE_EMOJI : '') + (f.includes('b') && !emoji ? '<w:b/><w:bCs/>' : '') + (f.includes('i') && !emoji ? '<w:i/><w:iCs/>' : '') + corXml + tam + fundoXml + '</w:rPr><w:t xml:space="preserve">' + docxXml(t) + '</w:t></w:r>';
+      const run = (t, emoji) => '<w:r><w:rPr>' + (emoji ? DOCX_FONTE_EMOJI : '') + (f.includes('b') && !emoji ? '<w:b/><w:bCs/>' : '') + (f.includes('i') && !emoji ? '<w:i/><w:iCs/>' : '') + corXml + tam + (fundoXml || (f.includes('h') && !emoji ? '<w:shd w:val="clear" w:color="auto" w:fill="FDE68A"/>' : '')) + '</w:rPr><w:t xml:space="preserve">' + docxXml(t) + '</w:t></w:r>';
       let xml = '';
       let ate = 0;
       for (const m of texto.matchAll(DOCX_EMOJI)) {
@@ -22083,6 +22426,12 @@ function saveTemplatesToStorage() {
       const corpo = Math.round(22 * escala);
       // 6.15.48: linha de separação de margem a margem (entre as partes da reunião no Word).
       if (linha.trim() === DOCX_SEPARADOR) return '<w:p><w:pPr><w:pBdr><w:bottom w:val="single" w:sz="12" w:space="1" w:color="6B7280"/></w:pBdr><w:spacing w:before="0" w:after="200"/></w:pPr></w:p>';
+      if (linha.startsWith(DOCX_TITULO) || linha.startsWith(DOCX_SUBTITULO)) {
+        const grande = linha.startsWith(DOCX_TITULO);
+        const t = ricoPlano(linha.slice(1)).normalize('NFC');
+        return '<w:p><w:pPr><w:keepNext/><w:spacing w:before="0" w:after="' + (grande ? 80 : 60) + '"/><w:jc w:val="center"/></w:pPr>' + docxRuns(t, grande ? 'b' : '', Math.round((grande ? 40 : 26) * escala), grande ? DOCX_COR_TITULO : '4B5563') + '</w:p>';
+      }
+      if (linha.trim() === DOCX_LINHA_TITULO) return '<w:p><w:pPr><w:pBdr><w:bottom w:val="single" w:sz="24" w:space="1" w:color="' + DOCX_COR_TITULO + '"/></w:pBdr><w:spacing w:before="0" w:after="240"/></w:pPr></w:p>';
       const modelo = docxLinhaModelo(linha, acentos);
       if (!modelo) return escala === 1 ? '<w:p/>' : '<w:p><w:pPr><w:rPr><w:sz w:val="' + corpo + '"/><w:szCs w:val="' + corpo + '"/></w:rPr></w:pPr></w:p>';
       const esquerda = Math.round(modelo.esquerda * escala);
@@ -22109,8 +22458,8 @@ function saveTemplatesToStorage() {
     const DOCX_NS = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"';
 
     // O pacote .docx (um zip com as partes mínimas que o Word exige) com o texto do campo; acentos: o que docxPrepararAcentos devolveu.
-    async function docxGerar(texto, titulo, acentos, escala = 1) {
-      return docxPacote(docxCorpo(texto, acentos, escala), titulo);
+    async function docxGerar(texto, titulo, acentos, escala = 1, tituloPagina = '') {
+      return docxPacote(docxCorpo(texto, acentos, escala), titulo, tituloPagina);
     }
 
     // O logo do NoteStyle para o cabeçalho do Word (o mesmo do topo do app); se não puder ser lido, o documento sai sem cabeçalho.
@@ -22136,26 +22485,31 @@ function saveTemplatesToStorage() {
     const DOCX_LOGO_MARCA = '<!--logo-notestyle-->';
 
     // O cabeçalho do Word: um parágrafo alinhado à direita com o logo (1,3 cm).
-    function docxCabecalhoXml() {
-      return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:hdr ' + DOCX_NS + DOCX_NS_DESENHO + '><w:p><w:pPr><w:jc w:val="right"/></w:pPr>' + docxLogoRun(468000) + '</w:p></w:hdr>';
+    // tituloPagina (6.15.50): o título que se repete no alto de todas as páginas, à esquerda, com o logo à direita e uma linha embaixo.
+    function docxCabecalhoXml(tituloPagina = '', comLogo = true) {
+      const paragrafo = tituloPagina
+        ? '<w:p><w:pPr><w:pBdr><w:bottom w:val="single" w:sz="6" w:space="4" w:color="' + DOCX_COR_TITULO + '"/></w:pBdr><w:tabs><w:tab w:val="right" w:pos="10772"/></w:tabs><w:spacing w:after="160"/></w:pPr>' +
+          docxRuns(tituloPagina, 'b', 18, DOCX_COR_TITULO) + (comLogo ? '<w:r><w:tab/></w:r>' + docxLogoRun(360000) : '') + '</w:p>'
+        : '<w:p><w:pPr><w:jc w:val="right"/></w:pPr>' + docxLogoRun(468000) + '</w:p>';
+      return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:hdr ' + DOCX_NS + DOCX_NS_DESENHO + '>' + paragrafo + '</w:hdr>';
     }
 
     // O pacote .docx com o corpo (os parágrafos em XML) já pronto.
-    async function docxPacote(corpo, titulo) {
+    async function docxPacote(corpo, titulo, tituloPagina = '') {
       await loadScriptOnce(BACKUP_LIBS.jszip);
       const zip = new window.JSZip();
       const agora = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
       const logo = await docxLogo();
       const logoNoCorpo = corpo.includes(DOCX_LOGO_MARCA);
       corpo = corpo.split(DOCX_LOGO_MARCA).join(logo ? docxLogoRun(396000) : ''); // 1,1 cm na linha "NoteStyle"
-      const cabecalho = logo && !logoNoCorpo;
+      const cabecalho = Boolean(tituloPagina) || (logo && !logoNoCorpo);
       zip.file('[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>' + (logo ? '<Default Extension="png" ContentType="image/png"/>' : '') + (cabecalho ? '<Override PartName="/word/header1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml"/>' : '') + '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/></Types>');
       zip.file('_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/></Relationships>');
       zip.file('word/_rels/document.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>' + (cabecalho ? '<Relationship Id="rIdCab" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/header" Target="header1.xml"/>' : '') + (logo && logoNoCorpo ? '<Relationship Id="rIdLogo" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/logo.png"/>' : '') + '</Relationships>');
       if (logo) zip.file('word/media/logo.png', logo);
       if (cabecalho) {
-        zip.file('word/header1.xml', docxCabecalhoXml());
-        zip.file('word/_rels/header1.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdLogo" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/logo.png"/></Relationships>');
+        zip.file('word/header1.xml', docxCabecalhoXml(tituloPagina, Boolean(logo)));
+        if (logo) zip.file('word/_rels/header1.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdLogo" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/logo.png"/></Relationships>');
       }
       zip.file('word/styles.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles ' + DOCX_NS + '><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:eastAsia="Calibri" w:cs="Calibri"/><w:sz w:val="22"/><w:szCs w:val="22"/><w:lang w:val="pt-BR" w:eastAsia="pt-BR" w:bidi="ar-SA"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="0" w:line="264" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style></w:styles>');
       zip.file('word/document.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ' + DOCX_NS + DOCX_NS_DESENHO + '><w:body>' + corpo + '<w:sectPr>' + (cabecalho ? '<w:headerReference w:type="default" r:id="rIdCab"/>' : '') + '<w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="567" w:right="567" w:bottom="567" w:left="567" w:header="283" w:footer="283" w:gutter="0"/></w:sectPr></w:body></w:document>');
@@ -22798,7 +23152,8 @@ function saveTemplatesToStorage() {
       aiSuggestions = [];
       aiResults.textContent = '';
       aiResumo = { texto: partes.map(p => p.texto).join('\n\n\n'), partes, done: false, kind: 'estudo', restaurada: !refino, semBotoes: item.tipo === 'esboco' || item.tipo === 'nota' };
-      setInputRange(0, input.value.length, soPartes || juntado ? aiResumo.texto : item.textoEditado || aiResumo.texto); // a versão com as alterações salvas, se houver
+      const textoDoSalvo = soPartes || juntado ? aiResumo.texto : item.textoEditado || aiResumo.texto; // a versão com as alterações salvas, se houver
+      setInputRange(0, input.value.length, item.anotId ? ricoPlano(textoDoSalvo) : textoDoSalvo); // anotação salva: sem as marcas de formatação
       autoGrowInputText();
       if (refino) {
         // Como numa resposta recém-gerada: Outra resposta, Melhorar e Desfazer voltam ao texto de antes (o texto colado, ou o campo vazio).
@@ -35975,16 +36330,19 @@ function saveTemplatesToStorage() {
       function inserirNoCursor(trecho, campo = texto, silencioso = false) {
         const t = String(trecho || '');
         if (!t) return;
-        const ini = campo.selectionStart ?? campo.value.length;
-        const fim = campo.selectionEnd ?? ini;
-        const antes = campo.value.slice(0, ini);
-        const depois = campo.value.slice(fim);
-        const precisaNL = antes && !/\n$/.test(antes) && !/^\n/.test(t);
-        const bloco = (precisaNL ? '\n' : '') + t;
-        campo.value = antes + bloco + depois;
-        const pos = (antes + bloco).length;
-        campo.focus();
-        campo.setSelectionRange(pos, pos);
+        if (campo.rico) campo.rico.inserir(t);
+        else {
+          const ini = campo.selectionStart ?? campo.value.length;
+          const fim = campo.selectionEnd ?? ini;
+          const antes = campo.value.slice(0, ini);
+          const depois = campo.value.slice(fim);
+          const precisaNL = antes && !/\n$/.test(antes) && !/^\n/.test(t);
+          const bloco = (precisaNL ? '\n' : '') + t;
+          campo.value = antes + bloco + depois;
+          const pos = (antes + bloco).length;
+          campo.focus();
+          campo.setSelectionRange(pos, pos);
+        }
         // Sem o evento input o rascunho não agenda: inserir bíblia, formatar ou colar o resumo da gravação sumiriam se o app fechasse na hora.
         if (campo === texto) {
           guardarNota();
@@ -36249,37 +36607,14 @@ function saveTemplatesToStorage() {
       const temNotas = () => indicesComAnotacao().length > 0;
       const revisaoEl = document.getElementById('anotacoesRevisao');
       const respostaEl = document.getElementById('anotacoesResposta');
-      // Os campos das anotações e da resposta crescem com o texto (como o campo da tela Formatar); a altura mínima do CSS continua como piso.
-      // O texto muda por digitação e também por código (trocar de discurso, resumo da gravação, formatação): o "value" desses dois campos
-      // foi embrulhado para recalcular a altura a cada mudança, e o campo também é medido quando aparece na tela ou muda de largura.
-      (function camposQueCrescem() {
-        const desc = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value');
-        const crescer = el => {
-          if (!el.getClientRects().length) return;
-          const pagina = document.scrollingElement || document.documentElement;
-          const rolagem = pagina.scrollTop;
-          el.style.height = 'auto';
-          const moldura = el.offsetHeight - el.clientHeight;
-          el.style.height = (el.scrollHeight + moldura) + 'px';
-          if (pagina.scrollTop !== rolagem) pagina.scrollTop = rolagem;
-        };
-        [texto, respostaEl].forEach(el => {
-          if (!el || !desc) return;
-          let pedido = 0;
-          const agendar = () => { cancelAnimationFrame(pedido); pedido = requestAnimationFrame(() => crescer(el)); };
-          Object.defineProperty(el, 'value', {
-            configurable: true,
-            get() { return desc.get.call(this); },
-            set(v) { desc.set.call(this, v); agendar(); },
-          });
-          el.addEventListener('input', () => crescer(el));
-          let largura = 0;
-          if (window.ResizeObserver) new ResizeObserver(entradas => {
-            const w = Math.round(entradas[0].contentRect.width);
-            if (w && w !== largura) { largura = w; agendar(); }
-          }).observe(el);
-        });
-      })();
+      // 6.15.49: os campos das anotações e da resposta são editores com formatação de verdade (crescem sozinhos com o texto; a altura mínima do
+      // CSS continua como piso). Antes de converter as anotações antigas (letras decoradas), uma cópia delas é guardada neste aparelho.
+      try {
+        const CHAVE_COPIA = 'jwLibraryNoteAplicarAnotacoesCopiaAntes6149';
+        const dados = localStorage.getItem('jwLibraryNoteAplicarAnotacoesV1');
+        if (dados && localStorage.getItem(CHAVE_COPIA) === null) localStorage.setItem(CHAVE_COPIA, dados);
+      } catch (e) { /* sem espaço: segue sem a cópia */ }
+      [texto, respostaEl].forEach(editorRico);
       const perguntasBox = document.getElementById('anotacoesPerguntas');
       const perguntasTexto = document.getElementById('anotacoesPerguntasTexto');
       const perguntasLista = document.getElementById('anotacoesPerguntasLista');
@@ -37759,18 +38094,22 @@ function saveTemplatesToStorage() {
       reuniaoExportarBtn.addEventListener('click', async () => {
         const r = reuniaoAtual();
         if (!r) return;
-        const linhas = [estiloComAcentos(nomeReuniao(r), 'bold'), tipoReuniao(r)];
-        if (String(r.tema || '').trim()) linhas.push('Tema: ' + estiloComAcentos(r.tema.trim(), 'bold'));
-        linhas.push('');
+        // 6.15.50: título grande (o tema, ou o tipo da reunião), com o tipo e a data embaixo e uma linha colorida; o título também vai no
+        // cabeçalho de todas as páginas.
+        const temaR = String(r.tema || '').trim();
+        const linhas = [DOCX_TITULO + (temaR || tipoReuniao(r)), DOCX_SUBTITULO + [temaR ? tipoReuniao(r) : '', nomeReuniao(r)].filter(Boolean).join(' · '), DOCX_LINHA_TITULO];
+        let partesPostas = 0;
         r.partes.forEach((p, i) => {
           if (!String(p.texto || '').trim()) return;
-          linhas.push(DOCX_SEPARADOR, estiloComAcentos(temaDaParteReuniao(p, i), 'bold')); // 6.15.48: uma linha separa cada parte
+          if (partesPostas++) linhas.push(DOCX_SEPARADOR); // 6.15.48: uma linha separa cada parte
+          linhas.push(estiloComAcentos(temaDaParteReuniao(p, i), 'bold'));
           if (p.orador) linhas.push('Orador: ' + p.orador);
           if (p.congregacao) linhas.push('Congregação: ' + p.congregacao);
           linhas.push('', p.texto.trim(), '');
         });
         const nome = ('Anotações - Reunião ' + (r.data || '')).replace(/[\\/:*?"<>|]/g, '').trim();
-        await docxPreviaAbrir(reuniaoExportarBtn, linhas.join('\n').trim(), nome);
+        const dataCurta = (lerData(r.data) || new Date()).toLocaleDateString('pt-BR');
+        await docxPreviaAbrir(reuniaoExportarBtn, linhas.join('\n').trim(), nome, [temaR || tipoReuniao(r), dataCurta].join(' · '));
       });
 
       // Anotações já feitas neste evento (se houver), para não perder ao escolher o mesmo evento de novo.
@@ -38068,8 +38407,9 @@ function saveTemplatesToStorage() {
       // Negrito ou itálico Unicode que mantém os acentos: as letras viram as do estilo e os acentos (decompostos) seguem colados nelas.
       function estiloComAcentos(texto, id) {
         const estilo = styles.find(x => x.id === id) || styles[0];
-        const lista = [...removeUnicodeFormatting(String(texto || '')).normalize('NFD')];
-        return lista.map((ch, i) => (/\p{M}/u.test(ch) || ehBaseDeKeycap(lista, i) ? ch : convertChar(ch, estilo))).join('');
+        // 6.15.49: nas anotações a formatação vai como marcas (negrito/itálico de verdade), sem letras Unicode.
+        const marcas = { bold: ['**', '**'], italic: ['__', '__'], boldItalic: ['**__', '__**'] }[estilo.id] || ['', ''];
+        return semLetrasDecoradas(texto).split('\n').map(l => (l.trim() ? marcas[0] + l + marcas[1] : l)).join('\n');
       }
 
       // Recado do texto bíblico: aparece dentro da barra (logo abaixo do campo "Livro"), onde está a atenção de quem digita, e some sozinho.
@@ -38129,7 +38469,7 @@ function saveTemplatesToStorage() {
         const bloco = await anotacoesBuscarBiblia(ref);
         if (!bloco) return;
         previa = { ref, bloco };
-        bibPreviaTexto.textContent = bloco;
+        bibPreviaTexto.innerHTML = ricoHtml(bloco);
         bibPrevia.hidden = false;
         posicionarListaBiblia();
       });
@@ -38143,6 +38483,18 @@ function saveTemplatesToStorage() {
         fecharPrevia();
         // Sempre com uma linha em branco antes e outra depois do texto bíblico.
         const campo = alvoInsercao;
+        if (campo.rico) {
+          const { antes: a, depois: d } = campo.rico.volta();
+          const antesTrecho = !a.trim() ? '' : /\n\n$/.test(a) ? '' : /\n$/.test(a) ? '\n' : '\n\n';
+          const depoisTrecho = /^\n\n/.test(d) ? '' : /^\n/.test(d) ? '\n' : '\n\n';
+          inserirNoCursor(antesTrecho + bloco + depoisTrecho, campo, true);
+          dizerBiblia('Texto bíblico inserido.');
+          bibRef.value = '';
+          guia.aberto = false;
+          document.getElementById('anotacoesBibliaEscolher').setAttribute('aria-expanded', 'false');
+          sincronizarDoTexto();
+          return;
+        }
         const ini = campo.selectionStart ?? campo.value.length;
         const fim = campo.selectionEnd ?? ini;
         const antes = campo.value.slice(0, ini);
@@ -38365,8 +38717,9 @@ function saveTemplatesToStorage() {
       programaPubEl.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); anotacoesProgramaManual(); } });
 
       // Modelos prontos: o texto entra onde está o cursor, no campo ao lado (anotações ou resposta), pronto para continuar a escrever.
-      const MODELOS_ANOTACAO = { aplicar: '✅ 𝐀𝐩𝐥𝐢𝐜𝐚𝐫 👉 ', importante: '🎯⚡️⚡️ 𝑰𝑴𝑷𝑶𝑹𝑻𝑨𝑵𝑻𝑬 👉 ' };
+      const MODELOS_ANOTACAO = { aplicar: '✅ **Aplicar** 👉 ', importante: '🎯⚡️⚡️ **__IMPORTANTE__** 👉 ' };
       document.querySelectorAll('[data-anotacoes-modelo]').forEach(btn => {
+        btn.addEventListener('mousedown', e => e.preventDefault()); // o campo não perde o cursor ao tocar no botão
         btn.addEventListener('click', () => {
           const campo = btn.closest('.anotacoes-fmt-modelos-resp') ? respostaEl : texto;
           inserirNoCursor(MODELOS_ANOTACAO[btn.dataset.anotacoesModelo], campo, true);
@@ -38388,53 +38741,28 @@ function saveTemplatesToStorage() {
         });
       });
       document.querySelectorAll('[data-anotacoes-fmt]').forEach(btn => {
+        btn.addEventListener('mousedown', e => e.preventDefault()); // a seleção continua marcada ao tocar no botão
         btn.addEventListener('click', () => {
           const naResposta = Boolean(btn.closest('.anotacoes-fmt-resp'));
           const campo = naResposta ? respostaEl : texto;
           const dizerFmt = naResposta ? dizerResp : dizer;
           const acao = btn.dataset.anotacoesFmt;
-          let ini = campo.selectionStart || 0;
-          let fim = campo.selectionEnd || 0;
+          const guardar = () => { if (!naResposta) { guardarNota(); agendarRascunho(); } };
           // MAIÚSCULAS: o trecho selecionado ou, sem seleção, o texto todo do campo (com confirmação, porque não há como voltar).
           if (acao === 'upper') {
             if (!campo.value.trim()) return dizerFmt('Não há texto para passar para maiúsculas.', true);
-            const aplicar = () => {
-              if (ini === fim) { ini = 0; fim = campo.value.length; }
-              const novoUp = maiusculasComEstilo(campo.value.slice(ini, fim));
-              campo.value = campo.value.slice(0, ini) + novoUp + campo.value.slice(fim);
-              campo.focus();
-              campo.setSelectionRange(ini, ini + novoUp.length);
-              if (naResposta) campo.dispatchEvent(new Event('input', { bubbles: true }));
-              else { guardarNota(); agendarRascunho(); }
-              dizerFmt('');
-            };
-            if (ini !== fim) return aplicar();
+            const aplicar = () => { campo.rico.maiusculas(); guardar(); dizerFmt(''); };
+            if (campo.rico.temSelecao()) return aplicar();
             askConfirm('Passar todo o texto ' + (naResposta ? 'da resposta' : 'das anotações') + ' para MAIÚSCULAS? Para mudar só um trecho, selecione-o antes.', 'Maiúsculas', { ok: 'Passar tudo', cancel: 'Cancelar' }).then(ok => { if (ok) aplicar(); });
             return;
           }
-          if (ini === fim && (acao === 'bold' || acao === 'italic' || acao === 'hl')) {
-            return dizerFmt('Selecione o trecho para formatar.', true);
-          }
-          const sel = campo.value.slice(ini, fim);
-          let novo = sel;
-          if (acao === 'bold') novo = convertTextWithStyle(sel, 'bold');
-          else if (acao === 'italic') novo = convertTextWithStyle(sel, 'italic');
-          else if (acao === 'hl') novo = convertTextWithStyle(sel, 'sansBold');
-          else if (acao === 'ul' || acao === 'ol') {
+          if (acao === 'bold' || acao === 'italic' || acao === 'hl') {
+            if (!campo.rico.alternar(acao === 'bold' ? 'b' : acao === 'italic' ? 'i' : 'h')) return dizerFmt('Selecione o trecho para formatar.', true);
+          } else {
             const model = acao === 'ul' ? 'bullet' : 'keycapNumber'; // lista numerada com os números em ícones: 1️⃣ 2️⃣ 3️⃣ …
-            let itemIndex = 0;
-            novo = sel.replace(/\r\n/g, '\n').split('\n').map(line => {
-              if (!line.trim()) return line;
-              const leading = line.match(/^\s*/)[0];
-              const content = stripListPrefix(line.slice(leading.length));
-              return leading + getListPrefix(model, itemIndex++) + content;
-            }).join('\n');
+            campo.rico.lista(n => getListPrefix(model, n));
           }
-          campo.value = campo.value.slice(0, ini) + novo + campo.value.slice(fim);
-          campo.focus();
-          campo.setSelectionRange(ini, ini + novo.length);
-          if (naResposta) campo.dispatchEvent(new Event('input', { bubbles: true }));
-          else { guardarNota(); agendarRascunho(); }
+          guardar();
           dizerFmt('Formatação aplicada.');
         });
       });
@@ -38444,7 +38772,7 @@ function saveTemplatesToStorage() {
           const destino = anotacoesJwlDestino();
           if (!destino) return dizer('Selecione uma parte do programa carregada da WOL.', true);
           if (!texto.value.trim()) return dizer('Escreva as anotações antes de enviar ao JW Library.', true);
-          const nota = textoDaAnotacao(); // com o tema, o horário e os dados do orador
+          const nota = ricoPlano(textoDaAnotacao()); // com o tema, o horário e os dados do orador; o JW Library só aceita texto comum
           try {
             await navigator.clipboard.writeText(nota);
             jwlBtn.textContent = '✓ Copiado';
@@ -38567,7 +38895,7 @@ function saveTemplatesToStorage() {
       document.getElementById('anotacoesCopiarBtn').addEventListener('click', async () => {
         if (!texto.value.trim()) return dizer('Não há anotações para copiar.', true);
         try {
-          await navigator.clipboard.writeText(textoDaAnotacao());
+          await ricoCopiar(textoDaAnotacao()); // com negrito, itálico e grifo de verdade para Word, e-mail, Notas…
           piscarBotao(document.getElementById('anotacoesCopiarBtn'), '✓ Copiado');
         } catch (e) {
           texto.focus();
@@ -38631,8 +38959,11 @@ function saveTemplatesToStorage() {
         dizer('Anotações limpas.');
       });
 
-      // O resumo vem com marcas: [IMPORTANTE]/[APLICAR] viram os modelos prontos; **negrito** e __itálico__ viram letras Unicode (o Word as volta ao normal).
-      const anotacoesResumoFormatar = resumoDiscursoFormatar;
+      // O resumo vem com marcas: [IMPORTANTE]/[APLICAR] viram os modelos prontos; **negrito** e __itálico__ continuam como marcas (6.15.49: o
+      // campo mostra a formatação de verdade, sem letras Unicode).
+      const anotacoesResumoFormatar = t => ricoDeUnicode(String(t || '').replace(/\r\n?/g, '\n')
+        .replace(/\[IMPORTANTE\]\s*/gi, MODELOS_ANOTACAO.importante)
+        .replace(/\[APLICAR\]\s*/gi, MODELOS_ANOTACAO.aplicar)).replace(/\n{3,}/g, '\n\n').trim();
       function anotacoesMimeGravacao() {
         // M4A (AAC) primeiro: toca em qualquer celular e computador. O WebM (o Safari novo também grava nele) não abre no app Arquivos nem em muitos tocadores.
         return ['audio/mp4;codecs=mp4a.40.2', 'audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus'].find(t => window.MediaRecorder && MediaRecorder.isTypeSupported(t)) || '';
@@ -39046,7 +39377,7 @@ function saveTemplatesToStorage() {
       // parágrafo "📝 RESUMO:" que fecha o resumo; sem esse parágrafo, até o próximo título "——" ou o fim do texto.
       function blocosDeResumo(t) {
         const linhas = t.split('\n');
-        const simples = linhas.map(l => semLetrasDecoradas(l).normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().trim());
+        const simples = linhas.map(l => ricoPlano(l).normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().trim());
         const inicios = [];
         linhas.reduce((pos, l, i) => { inicios[i] = pos; return pos + l.length + 1; }, 0);
         const titulo = /^[—–-]{2,}\s*resumo(?: completo)? d(?:a gravacao|as gravacoes)\s*[—–-]{2,}$/;
@@ -39182,7 +39513,7 @@ function saveTemplatesToStorage() {
           if (anotacoesOradorRespondeu(transc, alvo.q)) resp = anotacoesResumoFormatar(achou[1].replace(/[*_]{2}/g, '')).trim();
         }
         const titulo = deTexto ? '—— Resumo do texto ——' : alvo.detalhe === 'completo' ? '—— Resumo completo da gravação ——' : varias ? '—— Resumo das gravações ——' : '—— Resumo da gravação ——';
-        const bloco = bibliaMarcasParaUnicode('**__' + titulo + '__**') + '\n\n' + anotacoesResumoFormatar(resumo);
+        const bloco = '**__' + titulo + '__**\n\n' + anotacoesResumoFormatar(resumo);
         const ok = entregarNaAnotacao(alvo, bloco, resp);
         if (ok && ident) identificarParteReuniao(alvo, ident);
         return { ok, resposta: Boolean(resp), bloco: ok ? bloco : '', cortado: Boolean(r.dados && r.dados.cortado) };
@@ -40055,7 +40386,7 @@ function saveTemplatesToStorage() {
           uso: 'leitura',
           acesso: () => (!codigoLeituraSalvo() ? 'Salve o código de leitura em Ajustes → 🔐 Autorização de acessos.' : !navigator.onLine ? 'Sem conexão com a internet.' : ''),
           preparar: () => {
-            const bruto = removeUnicodeFormatting(texto.value || '').normalize('NFC').trim();
+            const bruto = ricoPlano(texto.value || '').normalize('NFC').trim();
             if (!bruto) return 'Não há anotações para ouvir.';
             texto.blur(); // some o teclado do celular
             const regras = leituraRegras(vozRegras || VOZ_REGRAS_PADRAO);
