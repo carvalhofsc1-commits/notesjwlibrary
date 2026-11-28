@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.15.25
+
+- O card "🎨 Formatação" (Anotações e Pesquisas) ganhou fundo amarelo claro, com moldura amarela fina.
+- Menu: as linhas ficaram mais estreitas (38 px em vez de 46), com fundo cinza bem leve e o texto numa linha só. Os nomes encurtaram: "Formatar notas JW", "Leitura em voz" e "Pesquisar na biblioteca".
+
 ## 6.15.24
 
 - Anotações: o card "Tema, orador e congregação" ganhou fundo azul claro (moldura azul fina) e o título centralizado.

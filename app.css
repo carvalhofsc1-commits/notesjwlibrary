@@ -410,6 +410,20 @@
       transform: none;
     }
 
+    /* 6.15.25: linhas do menu mais estreitas, com fundo cinza bem leve, e o texto numa linha só. */
+    .app-menu-lista {
+      gap: 4px;
+    }
+
+    .app-menu-lista button:not(.app-menu-consumo),
+    .app-menu-lista a.app-menu-link {
+      min-height: 38px;
+      padding: 6px 12px;
+      border-radius: 10px;
+      background: color-mix(in srgb, var(--muted) 9%, var(--card));
+      white-space: nowrap;
+    }
+
     .app-menu-lista button:hover,
     .app-menu-lista a.app-menu-link:hover {
       background: var(--soft);
@@ -5594,6 +5608,13 @@
       border: 1px solid var(--line);
       border-radius: 12px;
       background: color-mix(in srgb, var(--card) 70%, transparent);
+    }
+
+    /* 6.15.25: o card Formatação com fundo amarelo claro (moldura amarela fina). */
+    details.anotacoes-fmt-box {
+      background: #fffbe8;
+      background: color-mix(in srgb, #facc15 12%, var(--card));
+      border-color: color-mix(in srgb, #eab308 45%, var(--line));
     }
 
     .anotacoes-fmt-box > summary {
