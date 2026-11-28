@@ -19192,3 +19192,8 @@ span[role="status"]:is(.ok, .warn, .erro):not(:empty):not(.main-copy-status) { d
 #campoCapaPedir label { margin: 0; font-size: .85rem; font-weight: 600; }
 #campoCapaPedir input { width: 100%; margin: 0; min-width: 0; }
 #campoCapaPedir #campoCapaBtn { width: 100%; margin: 0 !important; }
+
+/* 6.15.35: com a matéria da Biblioteca On-line marcada, as outras fontes aparecem desabilitadas (apagadas) */
+#campoFontesBox .fam-check.campo-fonte-travada { opacity: .45; cursor: not-allowed; }
+#campoFontesBox .fam-check.campo-fonte-travada input { cursor: not-allowed; }
+#campoFontesBox .fam-acoes-dupla button:disabled { opacity: .45; cursor: not-allowed; }

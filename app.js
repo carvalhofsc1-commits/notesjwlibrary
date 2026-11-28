@@ -7964,7 +7964,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.15.34'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.15.35'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -18545,7 +18545,9 @@ function saveTemplatesToStorage() {
         tituloHistorico: '🚶 Considerações para o serviço de campo',
         falhaLer: 'Não consegui preparar a consideração agora.',
         extraPayload: () => campoCampos(),
-        validar: () => '',
+        // 6.15.35: com a caixa da matéria da Biblioteca On-line marcada, ela é a única fonte: precisa estar escolhida.
+        validar: () => document.getElementById('campoMateriaWolChk').checked && !campoCapaAtual
+          ? 'Cole o link da matéria da Biblioteca On-line e toque em 📖 Usar a matéria do link (ou desmarque a opção para usar as outras fontes).' : '',
         // Nas pesquisas salvas: "🚶 Considerações para o serviço de campo · sáb 21/11 · w24.05 § 3 - tema do esboço".
         nomeSalvo: dados => ESBOCOS.campo.tituloHistorico + ' · ' + String(dados.titulo).replace(/^Serviço de campo · /, '') + (dados.esboco && dados.esboco.tema ? ' - ' + dados.esboco.tema : ''),
         // A duração e as fontes que o esboço usou.
@@ -19217,6 +19219,7 @@ function saveTemplatesToStorage() {
     function campoCampos() {
       const marcados = nome => [...document.querySelectorAll('input[name="' + nome + '"]:checked')].map(c => c.value);
       const fontesMarcadas = new Set(marcados('campoFonte'));
+      const soMateriaWol = document.getElementById('campoMateriaWolChk').checked && Boolean(campoCapaAtual);
       const salvos = campoSalvos();
       return {
         data: campoDataLocal(), // a data da saída é sempre a da elaboração do esboço (hoje)
@@ -19225,9 +19228,10 @@ function saveTemplatesToStorage() {
         campanha: document.getElementById('campoCampanha').value.trim(),
         publico: document.getElementById('campoPublico').value.trim(),
         assunto: document.getElementById('campoAssunto').value.trim(),
+        // 6.15.35: com a matéria da Biblioteca On-line marcada, as outras fontes ficam desabilitadas e não vão (só a matéria é a base).
         fontes: {
-          ...Object.fromEntries(['w24', 'lmd', 'th', 'be', 'outros'].map(k => [k, fontesMarcadas.has(k)])),
-          artigos: Object.fromEntries([...document.querySelectorAll('input[name="campoArtigo"]')].map(c => [c.value, c.checked]))
+          ...Object.fromEntries(['w24', 'lmd', 'th', 'be', 'outros'].map(k => [k, !soMateriaWol && fontesMarcadas.has(k)])),
+          artigos: Object.fromEntries([...document.querySelectorAll('input[name="campoArtigo"]')].map(c => [c.value, !soMateriaWol && c.checked]))
         },
         usados: [...new Set(salvos.map(item => Number(item.esbocoJson.paragrafoW24)).filter(n => Number.isInteger(n) && n > 0))],
         recentes: [...new Set(salvos.map(item => String(item.esbocoJson.tema || '').trim()).filter(Boolean))].slice(0, 5),
@@ -19453,6 +19457,7 @@ function saveTemplatesToStorage() {
       ['campoCampanha', 'campoPublico', 'campoAssunto'].forEach(id => { document.getElementById(id).value = ''; });
       document.querySelectorAll('input[name="campoTipo"], #campoFontesBox input[type="checkbox"]').forEach(c => { c.checked = c.defaultChecked; });
       campoFontesResumo();
+      campoMateriaWolTravar();
       campoCapaPintar(); // a caixa da matéria da Biblioteca On-line volta desmarcada: some o campo do link
       document.getElementById('campoFontesBox').open = false;
       const sugestoes = document.getElementById('campoAssuntos');
@@ -19473,7 +19478,20 @@ function saveTemplatesToStorage() {
     // Fontes de consulta (6.11.56): contêiner sempre recolhido ao abrir o card, com o resumo do que está marcado no título.
     // A caixa da matéria da Biblioteca On-line (6.15.34) não é uma fonte da lista: fica fora da conta e do Marcar/Desmarcar todas.
     const campoFontesCaixas = () => [...document.querySelectorAll('#campoFontesBox input[type="checkbox"]:not(#campoMateriaWolChk)')];
+    // 6.15.35: marcada a matéria da Biblioteca On-line, as demais fontes (e o Marcar/Desmarcar todas) ficam desabilitadas, sem perder as marcas.
+    function campoMateriaWolTravar() {
+      const ligada = document.getElementById('campoMateriaWolChk').checked;
+      campoFontesCaixas().forEach(c => {
+        c.disabled = ligada;
+        const rot = c.closest('.fam-check');
+        if (rot) rot.classList.toggle('campo-fonte-travada', ligada);
+      });
+      ['campoFontesTodas', 'campoFontesNenhuma'].forEach(id => { document.getElementById(id).disabled = ligada; });
+      document.getElementById('campoFontesQtd').textContent = ligada ? '(só a matéria da Biblioteca On-line)' : document.getElementById('campoFontesQtd').textContent;
+      if (!ligada) campoFontesResumo();
+    }
     document.getElementById('campoMateriaWolChk').addEventListener('change', e => {
+      campoMateriaWolTravar();
       if (e.target.checked) {
         campoCapaPintar();
         setTimeout(() => { if (!campoCapaAtual) document.getElementById('campoCapaLinkIn').focus(); }, 0);

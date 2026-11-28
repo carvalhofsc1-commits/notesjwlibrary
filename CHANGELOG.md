@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.15.35
+
+- Fontes de consulta do serviço de campo: com "📖 Usar uma matéria da Biblioteca On-line" marcada, as demais fontes e o Marcar/Desmarcar todas ficam desabilitados (apagados, sem perder as marcas), o título mostra "(só a matéria da Biblioteca On-line)" e só a matéria vai como base do esboço. Preparar esboço com a caixa marcada e sem matéria escolhida pede o link primeiro. Desmarcando, tudo volta como estava.
+
 ## 6.15.34
 
 - Fontes de consulta do serviço de campo: "📖 Usar uma matéria da Biblioteca On-line" passou para o fim da lista (depois de "Pesquisar além da lista") e ganhou uma caixa de marcar/desmarcar. Marcada, aparece o campo do link; desmarcada, o campo some e a matéria escolhida sai. A caixa começa desmarcada, não entra na conta das fontes nem no Marcar/Desmarcar todas, e o Limpar tudo a desmarca.
