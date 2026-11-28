@@ -2622,6 +2622,99 @@ export function capaDaPaginaInicial(html) {
   if (!titulo || !/^https:\/\/www\.jw\.org\/pt\//.test(link)) return null;
   return { titulo, descricao, link, docId };
 }
+// 6.15.31: o jw.org responde aos servidores na nuvem com uma verificação anti-robô (202, página vazia), então a capa não é mais lida de lá:
+// a pessoa cola o link da matéria (copiado do jw.org no celular) e o servidor acha a MESMA matéria no wol.jw.org — pela revista do link
+// (Despertai!/A Sentinela, número e ano → sumário da edição no wol) ou, se não for revista, pela pesquisa do wol com o título exato.
+const slugDe = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+const BIBLIOTECA_WOL = BASE + "/pt/wol/library/r5/lp-t/todas-as-publicações/";
+function linksDoWol(html) {
+  const ini = html.indexOf('id="content"');
+  const corpo = ini > 0 ? html.slice(ini) : html;
+  return [...corpo.matchAll(/<a\b[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/g)].map((m) => ({ href: decodificar(m[1]), texto: textoDe(m[2]) }));
+}
+function documentosDoWol(html) {
+  const vistos = new Set();
+  const lista = [];
+  for (const { href, texto } of linksDoWol(html)) {
+    const d = href.match(/^\/pt\/wol\/d\/r5\/lp-t\/(\d{6,12})(?:[?#]|$)/);
+    if (!d || vistos.has(d[1]) || !texto) continue;
+    vistos.add(d[1]);
+    lista.push({ docId: d[1], titulo: texto });
+  }
+  return lista;
+}
+// O título do wol corresponde ao fim do endereço do jw.org ("COMO VENCER A SOLIDÃO Ajude outros" ↔ "ajude-outros")?
+function tituloCombina(titulo, artigo) {
+  const s = slugDe(titulo);
+  if (!s || !artigo) return 0;
+  if (s === artigo) return 3;
+  if (s.endsWith("-" + artigo)) return 2;
+  const palavras = artigo.split("-").filter((p) => p.length > 2);
+  const doTitulo = new Set(s.split("-"));
+  return palavras.length >= 2 && palavras.every((p) => doTitulo.has(p)) ? 1 : 0;
+}
+async function sumarioDaRevistaNoWol(revista, timeoutMs) {
+  let m = revista.match(/^despertai-no(\d+)-(\d{4})$/);
+  if (m) return BIBLIOTECA_WOL + `despertai/despertai-${m[2]}/n-${m[1]}`;
+  m = revista.match(/^(?:a-)?sentinela-no(\d+)-(\d{4})$/);
+  if (m) return BIBLIOTECA_WOL + `a-sentinela/a-sentinela-${m[2]}/edição-para-o-público/n-${m[1]}`;
+  m = revista.match(/^(?:a-)?sentinela-estudo-([a-z]+)-(\d{4})$/);
+  if (m) {
+    const edicoes = await baixar(encodeURI(BIBLIOTECA_WOL + `a-sentinela/a-sentinela-${m[2]}/edição-de-estudo`), timeoutMs);
+    const achou = linksDoWol(edicoes).find((l) => /\/edi/.test(l.href) && slugDe(l.texto).includes(m[1]));
+    return achou ? BASE + achou.href : null;
+  }
+  return null;
+}
+export async function capaPeloLinkDoJw(link, { timeoutMs = 9000 } = {}) {
+  let url;
+  try {
+    url = new URL(String(link || "").trim());
+  } catch {
+    return { erro: "link" };
+  }
+  if (url.protocol !== "https:" || !/^(www\.)?jw\.org$/.test(url.hostname) || !url.pathname.startsWith("/pt/")) return { erro: "link" };
+  const partes = url.pathname.split("/").filter(Boolean).map((p) => { try { return decodeURIComponent(p); } catch { return p; } });
+  const artigo = slugDe(partes[partes.length - 1]);
+  if (!artigo || partes.length < 3) return { erro: "link" };
+  const ano = (url.pathname.match(/(20\d\d)/) || [])[1] || "";
+  let candidatos = [];
+  const iRev = partes.indexOf("revistas");
+  if (iRev >= 0 && partes[iRev + 1] && partes.length > iRev + 2) {
+    const sumario = await sumarioDaRevistaNoWol(slugDe(partes[iRev + 1]), timeoutMs).catch(() => null);
+    if (sumario) candidatos = documentosDoWol(await baixar(encodeURI(sumario), timeoutMs).catch(() => ""));
+  }
+  let melhor = null;
+  for (const c of candidatos) {
+    const n = tituloCombina(c.titulo, artigo);
+    if (n && (!melhor || n > melhor.n)) melhor = { ...c, n };
+  }
+  if (!melhor) {
+    // Pesquisa do wol pelas palavras do endereço; só vale título que combine (os mais novos e do mesmo ano primeiro).
+    const q = encodeURIComponent('"' + artigo.replace(/-/g, " ") + '"');
+    const html = await baixar(BASE + `/pt/wol/s/r5/lp-t?q=${q}&p=doc`, timeoutMs).catch(() => "");
+    for (const c of documentosDoWol(html)) {
+      const n = tituloCombina(c.titulo, artigo) * 2 + (ano && c.docId.includes(ano) ? 1 : 0);
+      if (tituloCombina(c.titulo, artigo) >= 2 && (!melhor || n > melhor.n)) melhor = { ...c, n };
+    }
+  }
+  if (!melhor) return { erro: "nao-achou" };
+  const a = await lerArtigoDoWol(`${BASE}/pt/wol/d/r5/lp-t/${melhor.docId}`, { timeoutMs, maxCaracteres: 3000, estruturado: true }).catch(() => null);
+  const primeiro = a ? (a.texto.split("\n").find((l) => !l.startsWith("#") && l.length > 60) || "") : "";
+  // O sumário traz a série antes do título ("COMO VENCER A SOLIDÃO Ajude outros") → "Como vencer a solidão — Ajude outros".
+  let titulo = (a && a.titulo) || melhor.titulo;
+  const serie = melhor.titulo.endsWith(titulo) ? melhor.titulo.slice(0, -titulo.length).trim() : "";
+  if (serie && serie === serie.toUpperCase()) titulo = serie.charAt(0) + serie.slice(1).toLowerCase() + " — " + titulo;
+  return {
+    capa: {
+      titulo,
+      descricao: primeiro.length > 260 ? primeiro.slice(0, 257).replace(/\s+\S*$/, "") + "…" : primeiro,
+      link: url.origin.replace("//jw.org", "//www.jw.org") + url.pathname,
+      docId: melhor.docId,
+    },
+  };
+}
+
 // 6.15.30: no servidor a página inicial às vezes vinha sem o destaque (resposta 502 em 0,2 s). Agora: tenta de novo com o agente de navegador
 // comum, procura o número do documento na própria matéria quando o botão "Saiba mais" não o traz e registra no log o que veio, para diagnóstico.
 const AGENTE_NAVEGADOR = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Safari/537.36";

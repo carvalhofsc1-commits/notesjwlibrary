@@ -19184,3 +19184,11 @@ span[role="status"]:is(.ok, .warn, .erro):not(:empty):not(.main-copy-status) { d
 .campo-form > #campoLimparBtn,
 .campo-form > #campoStatus { margin-top: 10px !important; margin-bottom: 0 !important; }
 .campo-form > #campoStatus:empty { margin-top: 0 !important; }
+
+/* 6.15.31: campo para colar o link da matéria de capa do jw.org, dentro do card Fontes de consulta (penúltima opção) */
+#campoCapaPedir { display: grid; gap: 8px; margin: 0 0 10px; padding: 10px 12px; border: 1px solid #60a5fa; border-radius: 12px; background: color-mix(in srgb, #60a5fa 8%, var(--card)); min-width: 0; }
+#campoCapaPedir[hidden] { display: none !important; }
+#campoFontesBox #campoCapa { margin: 0 0 10px; }
+#campoCapaPedir label { margin: 0; font-size: .85rem; font-weight: 600; }
+#campoCapaPedir input { width: 100%; margin: 0; min-width: 0; }
+#campoCapaPedir #campoCapaBtn { width: 100%; margin: 0 !important; }

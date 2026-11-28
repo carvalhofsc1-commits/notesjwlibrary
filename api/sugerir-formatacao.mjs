@@ -41,7 +41,7 @@ import {
   textoDaCapa,
   trechosBe,
 } from "./_servicoCampo.mjs";
-import { lerCapaDoJw } from "./_wol.mjs";
+import { capaPeloLinkDoJw } from "./_wol.mjs";
 import { artigosDoTopicoDoGuia, buscarNosLivros, buscarVerbete, buscarVersiculos, versiculosDoCapitulo, fontesConfiguradas, lerCanticos, lerEnsinosBiblicos, lerPrincipios, lerTextoDoLivro, lerVerbeteCompleto, localDoTrecho, materiaDoTrecho, nomeDoLivro, siglaDoLivro, precarregarFontes, referenciaPadrao, referenciasNoTexto, resolvedorDeLivros, textoDeGruposBiblicos } from "./_fontes.mjs";
 import { JOGOS_FAMILIA, QUADROS_FAMILIA, minutosDosQuadros, quadrosDoPedido } from "./_familiaQuadros.mjs";
 import {
@@ -6517,15 +6517,19 @@ async function sugerirAssuntosCampo(res, body, P) {
 
 // "📰 Matéria de capa do jw.org" (6.15.23): o destaque do alto da página inicial do jw.org (título, resumo, endereço e o número do documento).
 // Só lê a página (sem IA, sem custo); o texto é lido no wol na hora de preparar o esboço. Com o código do dirigente, como as outras ações do card.
+// 6.15.31: o jw.org bloqueia servidores na nuvem (verificação anti-robô); a pessoa cola o link da matéria e ela é achada no wol.jw.org.
 async function capaDoJwParaCampo(res, body) {
   if (!acessoDoDirigente(res, body)) return;
+  const link = typeof body.link === "string" ? body.link.trim().slice(0, 400) : "";
+  if (!link) return erro(res, 400, "Cole o link da matéria de capa do jw.org.");
   try {
-    const capa = await lerCapaDoJw({ timeoutMs: 12000 });
-    if (!capa || !capa.docId) return erro(res, 502, "Não consegui ler a matéria de capa do jw.org agora. Tente de novo daqui a pouco.");
-    return res.status(200).json({ capa });
+    const r = await capaPeloLinkDoJw(link, { timeoutMs: 12000 });
+    if (r.erro === "link") return erro(res, 400, "Esse link não é de uma matéria do jw.org em português (começa com https://www.jw.org/pt/).");
+    if (!r.capa) return erro(res, 404, "Não achei essa matéria no wol.jw.org. Confira se o link abre a matéria (não a revista inteira) ou escreva o assunto no campo Assunto.");
+    return res.status(200).json({ capa: r.capa });
   } catch (e) {
-    console.error("Serviço de campo: página inicial do jw.org indisponível", e?.message);
-    return erro(res, 502, "Não consegui abrir a página inicial do jw.org agora. Tente de novo daqui a pouco.");
+    console.error("Serviço de campo: matéria do link no wol indisponível", e?.message);
+    return erro(res, 502, "Não consegui abrir o wol.jw.org agora. Tente de novo daqui a pouco.");
   }
 }
 
