@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.15.24
+
+- Anotações: o card "Tema, orador e congregação" ganhou fundo azul claro (moldura azul fina) e o título centralizado.
+
 ## 6.15.23
 
 - Considerações para o serviço de campo: novo botão "📰 Usar a matéria de capa do jw.org".
