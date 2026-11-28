@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.15.29
+
+- Reunião: saiu o botão "📋 Partes" do topo da tela de anotação (a seta de voltar já leva à lista das partes). O "📋 Programa" da assembleia/congresso continua.
+
 ## 6.15.28
 
 - Reunião: o campo "Tema principal da reunião" (no cadastro e na tela das partes) virou uma caixa que cresce em mais linhas quando o tema é comprido, com o texto centralizado e em negrito. Enter fecha o teclado (não quebra linha).
