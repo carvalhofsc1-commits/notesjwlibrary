@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.15.46
+
+- "✨ Melhorar o resumo": o resumo completo agora SUBSTITUI o anterior no campo de texto (não ficam os dois), mesmo que o texto dele tenha sido mudado ou seja de antes: o app acha o resumo pelo título "—— Resumo da gravação ——" até o parágrafo "📝 RESUMO". O que está fora do resumo continua. Só se o título não for encontrado o completo entra no fim.
+
 ## 6.15.45
 
 - Reunião, tabela do "Tipo de reunião": o texto fica centralizado na altura de cada linha (no iPhone ficava no alto da célula).

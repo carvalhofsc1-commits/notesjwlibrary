@@ -7965,7 +7965,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.15.45'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.15.46'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -38763,11 +38763,12 @@ function saveTemplatesToStorage() {
         const itens = (await transcIndice()).filter(transcDaParteAberta).reverse(); // na ordem em que foram feitas
         if (!itens.length) return;
         if (filaResumo.concat(filaRodando || []).some(j => j.tipo === 'melhorar' && alvoAberto(j.alvo))) { gravarStatus.textContent = 'Este resumo já está sendo melhorado.'; return; }
-        const ok = await askConfirm('Fazer um resumo completo, com todos os detalhes (quase a transcrição na íntegra), a partir ' + (itens.length > 1 ? 'das ' + itens.length + ' transcrições' : 'da transcrição') + ' desta parte? Ele entra no lugar do resumo anterior; se você mudou aquele texto, nada é apagado e o completo entra no fim. Usa a IA (gasta crédito).', 'Melhorar o resumo', { ok: 'Fazer o resumo completo', cancel: 'Cancelar' });
+        const ok = await askConfirm('Fazer um resumo completo, com todos os detalhes (quase a transcrição na íntegra), a partir ' + (itens.length > 1 ? 'das ' + itens.length + ' transcrições' : 'da transcrição') + ' desta parte? Ele substitui o resumo anterior no campo de texto (mudanças feitas dentro daquele resumo se perdem; o que está fora dele continua). Usa a IA (gasta crédito).', 'Melhorar o resumo', { ok: 'Fazer o resumo completo', cancel: 'Cancelar' });
         if (!ok) return;
         alvo.detalhe = 'completo';
         alvo.melhorar = true;
         alvo.trocar = [...new Set(itens.map(x => x.bloco).filter(Boolean))];
+        alvo.quantos = itens.length;
         alvo.titulo = String(alvo.titulo || 'Anotações').replace(' (áudio importado)', '');
         gravarStatus.textContent = '';
         await filaAdicionar({
@@ -39024,19 +39025,60 @@ function saveTemplatesToStorage() {
       }
       const alvoAberto = a => Boolean(modo) && modo === a.modo && (a.programa ? (comPrograma() && chaveAtual === a.chave && ativa && indiceDoAlvo(partes, a.parteId, a.parte) === parteAtual) : (!comPrograma() && reuniaoVista === 'anotando' && (!a.rId || (a.rId === reuniaoAtualId && a.rp === reuniaoParteId))));
       const juntarTexto = (velho, novo) => (String(velho || '').trim() ? String(velho).replace(/\s+$/, '') + '\n\n' : '') + novo;
-      // 6.15.44: o resumo completo entra no lugar do anterior quando ele ainda está igualzinho no texto; senão, no fim (nada é apagado).
-      function juntarResumo(velho, novo, trocar) {
-        const t = String(velho || '');
-        const achados = (trocar || []).filter(b => b && t.includes(b));
-        if (!achados.length) return juntarTexto(t, novo);
-        let r = t.replace(achados[0], () => novo);
-        achados.slice(1).forEach(b => { r = r.replace(b, ''); });
-        return r.replace(/\n{3,}/g, '\n\n');
+      // Onde estão os resumos de gravação no texto (6.15.46): do título "—— Resumo da gravação ——" (ou "completo", "das gravações") até o fim do
+      // parágrafo "📝 RESUMO:" que fecha o resumo; sem esse parágrafo, até o próximo título "——" ou o fim do texto.
+      function blocosDeResumo(t) {
+        const linhas = t.split('\n');
+        const simples = linhas.map(l => semLetrasDecoradas(l).normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().trim());
+        const inicios = [];
+        linhas.reduce((pos, l, i) => { inicios[i] = pos; return pos + l.length + 1; }, 0);
+        const titulo = /^[—–-]{2,}\s*resumo(?: completo)? d(?:a gravacao|as gravacoes)\s*[—–-]{2,}$/;
+        const outroTitulo = /^[—–]{2,}/;
+        const blocos = [];
+        for (let i = 0; i < linhas.length; i++) {
+          if (!titulo.test(simples[i])) continue;
+          let fim = -1, j = i + 1;
+          for (; j < linhas.length && !outroTitulo.test(simples[j]); j++) {
+            if (!/^[^a-z0-9]*resumo\s*:/.test(simples[j])) continue;
+            let k = j;
+            if (/:$/.test(simples[j])) while (k + 1 < linhas.length && !simples[k + 1]) k++; // rótulo sozinho: o parágrafo vem depois
+            while (k + 1 < linhas.length && simples[k + 1] && !outroTitulo.test(simples[k + 1])) k++;
+            fim = k;
+            break;
+          }
+          if (fim < 0) { fim = j - 1; while (fim > i && !simples[fim]) fim--; }
+          blocos.push({ ini: inicios[i], fim: inicios[fim] + linhas[fim].length });
+          i = fim;
+        }
+        return blocos;
+      }
+      // "✨ Melhorar o resumo" (alvo.melhorar): o completo SUBSTITUI o resumo anterior — o texto guardado dele quando ainda está igual e, se foi
+      // mudado ou é de antes, o bloco achado pelo título (os mais recentes primeiro, um por transcrição usada). Fora disso, entra no fim.
+      function juntarResumo(velho, novo, alvo) {
+        let t = String(velho || '');
+        if (!alvo.melhorar) return juntarTexto(t, novo);
+        const MARCA = '\u0001NOVO\u0001';
+        let feitos = 0;
+        (alvo.trocar || []).forEach(b => {
+          if (!b || !t.includes(b)) return;
+          const primeiro = feitos++ === 0;
+          t = t.replace(b, () => (primeiro ? MARCA : ''));
+        });
+        const faltam = (alvo.quantos || 1) - feitos;
+        if (faltam > 0) {
+          const outros = blocosDeResumo(t).slice(-faltam);
+          for (let i = outros.length - 1; i >= 0; i--) {
+            const poeAqui = i === 0 && !t.includes(MARCA);
+            t = t.slice(0, outros[i].ini) + (poeAqui ? MARCA : '') + t.slice(outros[i].fim);
+          }
+        }
+        if (!t.includes(MARCA)) return juntarTexto(velho, novo);
+        return t.replace(MARCA, () => novo).replace(/\n{3,}/g, '\n\n').replace(/\s+$/, '');
       }
       // Grava o resumo (e a resposta da recapitulação) na anotação do alvo: aberta na tela, em outra parte do evento aberto ou só no rascunho.
       function entregarNaAnotacao(alvo, bloco, resp) {
         if (alvoAberto(alvo)) {
-          texto.value = juntarResumo(texto.value, bloco, alvo.trocar);
+          texto.value = juntarResumo(texto.value, bloco, alvo);
           guardarNota();
           if (resp && perguntaDaParte(parteAtual)) {
             respostaAntesDaIa = respostaEl.value;
@@ -39050,7 +39092,7 @@ function saveTemplatesToStorage() {
         }
         const ip = alvo.programa ? indiceDoAlvo(partes, alvo.parteId, alvo.parte) : -1;
         if (alvo.programa && modo === alvo.modo && comPrograma() && chaveAtual === alvo.chave && ip >= 0) {
-          partes[ip].nota = juntarResumo(partes[ip].nota, bloco, alvo.trocar);
+          partes[ip].nota = juntarResumo(partes[ip].nota, bloco, alvo);
           const id = alvo.dona >= 0 ? indiceDoAlvo(partes, alvo.donaId, alvo.dona) : -1;
           if (resp && partes[id]) partes[id].resposta = juntarTexto(partes[id].resposta, resp);
           salvarRascunho();
@@ -39061,7 +39103,7 @@ function saveTemplatesToStorage() {
         if (!alvo.programa && modo === 'reuniao') {
           const p = acharParteReuniao(reunioes, alvo);
           if (!p) return false;
-          p.texto = juntarResumo(p.texto, bloco, alvo.trocar);
+          p.texto = juntarResumo(p.texto, bloco, alvo);
           p.em = new Date().toISOString();
           salvarRascunho();
           try { atualizarVista(); } catch (e) { /* ignore */ }
@@ -39074,14 +39116,14 @@ function saveTemplatesToStorage() {
             const ipr = ev ? indiceDoAlvo(ev.partes, alvo.parteId, alvo.parte) : -1;
             const p = ipr >= 0 ? ev.partes[ipr] : null;
             if (!p) return false;
-            p.nota = juntarResumo(p.nota, bloco, alvo.trocar);
+            p.nota = juntarResumo(p.nota, bloco, alvo);
             const idr = alvo.dona >= 0 ? indiceDoAlvo(ev.partes, alvo.donaId, alvo.dona) : -1;
             if (resp && ev.partes[idr]) ev.partes[idr].resposta = juntarTexto(ev.partes[idr].resposta, resp);
           } else {
             if (!dados.reuniao || typeof dados.reuniao !== 'object') dados.reuniao = {};
             const p = acharParteReuniao(reunioesDoRascunho(dados.reuniao), alvo);
             if (!p) return false;
-            p.texto = juntarResumo(p.texto, bloco, alvo.trocar);
+            p.texto = juntarResumo(p.texto, bloco, alvo);
             p.em = new Date().toISOString();
           }
           localStorage.setItem(ANOT_KEY, JSON.stringify(dados));
