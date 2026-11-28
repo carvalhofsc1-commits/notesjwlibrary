@@ -7965,7 +7965,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.15.52'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.15.53'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -22528,17 +22528,22 @@ function saveTemplatesToStorage() {
         '<a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="1" name="logo.png"/><pic:cNvPicPr/></pic:nvPicPr>' +
         '<pic:blipFill><a:blip r:embed="rIdLogo"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="' + lado + '" cy="' + lado + '"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>';
     }
-    // Onde o corpo do documento quer o logo (a linha "NoteStyle" da pesquisa): docxPacote troca pela imagem e, nesse caso, não põe o cabeçalho.
+    // Marca antiga de "logo no corpo" (a linha "NoteStyle" no alto das pesquisas e da adoração): desde a 6.15.53 o logo e o nome vão no
+    // cabeçalho de todas as páginas, e essa linha do corpo sai para não repetir.
     const DOCX_LOGO_MARCA = '<!--logo-notestyle-->';
+    const DOCX_SITE = 'www.NoteStyle.com.br';
 
-    // O cabeçalho do Word: um parágrafo alinhado à direita com o logo (1,3 cm).
-    // tituloPagina (6.15.50): o título que se repete no alto de todas as páginas, à esquerda, com o logo à direita e uma linha embaixo.
+    // O cabeçalho de todas as páginas de todo Word do app (6.15.53): logo, o nome NoteStyle e, à direita, o endereço do site; quando houver,
+    // o título do documento (tituloPagina) numa segunda linha. Uma linha fina fecha o cabeçalho.
     function docxCabecalhoXml(tituloPagina = '', comLogo = true) {
-      const paragrafo = tituloPagina
-        ? '<w:p><w:pPr><w:pBdr><w:bottom w:val="single" w:sz="6" w:space="4" w:color="' + DOCX_COR_TITULO + '"/></w:pBdr><w:tabs><w:tab w:val="right" w:pos="10772"/></w:tabs><w:spacing w:after="160"/></w:pPr>' +
-          docxRuns(tituloPagina, 'b', 18, DOCX_COR_TITULO) + (comLogo ? '<w:r><w:tab/></w:r>' + docxLogoRun(360000) : '') + '</w:p>'
-        : '<w:p><w:pPr><w:jc w:val="right"/></w:pPr>' + docxLogoRun(468000) + '</w:p>';
-      return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:hdr ' + DOCX_NS + DOCX_NS_DESENHO + '>' + paragrafo + '</w:hdr>';
+      const linha = '<w:pBdr><w:bottom w:val="single" w:sz="6" w:space="4" w:color="' + DOCX_COR_TITULO + '"/></w:pBdr>';
+      const letra = (t, cor, tam, extra = '') => '<w:r><w:rPr><w:b/><w:bCs/><w:color w:val="' + cor + '"/>' + (extra) + '<w:sz w:val="' + tam + '"/><w:szCs w:val="' + tam + '"/></w:rPr><w:t xml:space="preserve">' + t + '</w:t></w:r>';
+      const alto = comLogo ? '<w:position w:val="8"/>' : ''; // o texto no meio da altura do logo
+      const marca = '<w:p><w:pPr>' + (tituloPagina ? '' : linha) + '<w:tabs><w:tab w:val="right" w:pos="10772"/></w:tabs><w:spacing w:after="' + (tituloPagina ? 40 : 160) + '"/></w:pPr>' +
+        (comLogo ? docxLogoRun(360000) : '') + letra(comLogo ? ' Note' : 'Note', '1F2937', 28, alto) + letra('Style', DOCX_COR_TITULO, 28, alto) +
+        '<w:r><w:tab/></w:r><w:hyperlink r:id="rIdSite"><w:r><w:rPr><w:color w:val="' + DOCX_COR_TITULO + '"/>' + alto + '<w:sz w:val="18"/><w:szCs w:val="18"/><w:u w:val="single"/></w:rPr><w:t>' + DOCX_SITE + '</w:t></w:r></w:hyperlink></w:p>';
+      const titulo = tituloPagina ? '<w:p><w:pPr>' + linha + '<w:spacing w:after="160"/></w:pPr>' + docxRuns(tituloPagina, 'b', 18, DOCX_COR_TITULO) + '</w:p>' : '';
+      return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:hdr ' + DOCX_NS + DOCX_NS_DESENHO + '>' + marca + titulo + '</w:hdr>';
     }
 
     // O pacote .docx com o corpo (os parágrafos em XML) já pronto.
@@ -22547,16 +22552,15 @@ function saveTemplatesToStorage() {
       const zip = new window.JSZip();
       const agora = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
       const logo = await docxLogo();
-      const logoNoCorpo = corpo.includes(DOCX_LOGO_MARCA);
-      corpo = corpo.split(DOCX_LOGO_MARCA).join(logo ? docxLogoRun(396000) : ''); // 1,1 cm na linha "NoteStyle"
-      const cabecalho = Boolean(tituloPagina) || (logo && !logoNoCorpo);
+      corpo = corpo.replace(/<w:p>(?:(?!<\/w:p>)[\s\S])*?<!--logo-notestyle-->(?:(?!<\/w:p>)[\s\S])*<\/w:p>/g, '');
+      const cabecalho = true; // todo documento tem o cabeçalho com o logo, o nome e o site
       zip.file('[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>' + (logo ? '<Default Extension="png" ContentType="image/png"/>' : '') + (cabecalho ? '<Override PartName="/word/header1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml"/>' : '') + '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/></Types>');
       zip.file('_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/></Relationships>');
-      zip.file('word/_rels/document.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>' + (cabecalho ? '<Relationship Id="rIdCab" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/header" Target="header1.xml"/>' : '') + (logo && logoNoCorpo ? '<Relationship Id="rIdLogo" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/logo.png"/>' : '') + '</Relationships>');
+      zip.file('word/_rels/document.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>' + (cabecalho ? '<Relationship Id="rIdCab" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/header" Target="header1.xml"/>' : '') + '</Relationships>');
       if (logo) zip.file('word/media/logo.png', logo);
       if (cabecalho) {
         zip.file('word/header1.xml', docxCabecalhoXml(tituloPagina, Boolean(logo)));
-        if (logo) zip.file('word/_rels/header1.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdLogo" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/logo.png"/></Relationships>');
+        zip.file('word/_rels/header1.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' + (logo ? '<Relationship Id="rIdLogo" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/logo.png"/>' : '') + '<Relationship Id="rIdSite" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="https://' + DOCX_SITE + '" TargetMode="External"/></Relationships>');
       }
       zip.file('word/styles.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles ' + DOCX_NS + '><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:eastAsia="Calibri" w:cs="Calibri"/><w:sz w:val="22"/><w:szCs w:val="22"/><w:lang w:val="pt-BR" w:eastAsia="pt-BR" w:bidi="ar-SA"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="0" w:line="264" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style></w:styles>');
       zip.file('word/document.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ' + DOCX_NS + DOCX_NS_DESENHO + '><w:body>' + corpo + '<w:sectPr>' + (cabecalho ? '<w:headerReference w:type="default" r:id="rIdCab"/>' : '') + '<w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="567" w:right="567" w:bottom="567" w:left="567" w:header="283" w:footer="283" w:gutter="0"/></w:sectPr></w:body></w:document>');

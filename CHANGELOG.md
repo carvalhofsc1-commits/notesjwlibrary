@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.15.53
+
+- Todos os documentos Word do app (anotações, esboços, pesquisas, adoração, leitura, textos e as páginas Sobre, Privacidade e Termos) têm no cabeçalho de todas as páginas o logo, o nome NoteStyle e o endereço www.NoteStyle.com.br (clicável); nas anotações, o título do evento vem na linha de baixo. A linha "NoteStyle" que ficava no corpo das pesquisas e da adoração saiu, para não repetir.
+
 ## 6.15.52
 
 - Word das anotações (reunião, assembleia e congresso): a primeira folha é o "Programa" (Programa da reunião especial, da reunião, da assembleia ou do congresso), com todas as partes numeradas, tema, orador e congregação, separadas por sessão (e por dia no congresso, com o horário do programa); a letra diminui quando há muitas partes. As anotações começam na folha seguinte. Parte vazia não entra no programa.
