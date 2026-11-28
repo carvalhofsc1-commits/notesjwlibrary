@@ -7964,7 +7964,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.15.25'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.15.26'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -35768,6 +35768,7 @@ function saveTemplatesToStorage() {
       let reuniaoAtualId = '';
       let reuniaoParteId = '';
       let reuniaoVista = 'lista';
+      let reuniaoOrdenando = false;
       const reuniaoBox = document.getElementById('anotReuniaoBox');
       const reuniaoListaBox = document.getElementById('anotReuniaoListaBox');
       const reuniaoPartesBox = document.getElementById('anotReuniaoPartesBox');
@@ -37265,6 +37266,7 @@ function saveTemplatesToStorage() {
         const r = reunioes.find(x => x.id === id);
         if (!r) return;
         reuniaoAtualId = id;
+        reuniaoOrdenando = false;
         dataReuniaoEl.value = r.data || '';
         salvarRascunho();
         reuniaoIr('partes');
@@ -37276,6 +37278,7 @@ function saveTemplatesToStorage() {
         const p = r && r.partes.find(x => x.id === id);
         if (!p) return;
         reuniaoParteId = id;
+        reuniaoOrdenando = false;
         texto.value = consertarKeycaps(p.texto || '');
         temaEl.value = p.tema || '';
         oradorEl.value = p.orador || '';
@@ -37314,6 +37317,44 @@ function saveTemplatesToStorage() {
         reuniaoNovaParte();
       });
       document.getElementById('anotReuniaoNovaParte').addEventListener('click', reuniaoNovaParte);
+      // 6.15.26: mudar a ordem das partes (ex.: áudio de uma parte subido fora da ordem). No modo de ordenar, as setas ▲▼ ficam no lugar da lixeira.
+      document.getElementById('anotReuniaoOrdenar').addEventListener('click', () => {
+        reuniaoOrdenando = !reuniaoOrdenando;
+        reuniaoPintar();
+      });
+      function reuniaoMoverParte(id, delta) {
+        const r = reuniaoAtual();
+        const i = r ? r.partes.findIndex(p => p.id === id) : -1;
+        const j = i + delta;
+        if (i < 0 || j < 0 || j >= r.partes.length) return;
+        const [p] = r.partes.splice(i, 1);
+        r.partes.splice(j, 0, p);
+        salvarRascunho();
+        reuniaoPintar();
+        const alvo = reuniaoPartesEl.querySelector('[data-mover="' + (delta < 0 ? 'sobe' : 'desce') + '"][data-parte="' + id + '"]');
+        if (alvo && !alvo.disabled) alvo.focus();
+      }
+      function linhaComSetas(botao, id, i, total) {
+        const linha = document.createElement('div');
+        linha.className = 'anot-reuniao-linha';
+        const setas = document.createElement('div');
+        setas.className = 'anot-reuniao-setas';
+        [['sobe', '▲', -1, 'Subir a parte ' + (i + 1)], ['desce', '▼', 1, 'Descer a parte ' + (i + 1)]].forEach(([nome, sinal, delta, rotulo]) => {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'secondary';
+          b.textContent = sinal;
+          b.title = rotulo;
+          b.setAttribute('aria-label', rotulo);
+          b.dataset.mover = nome;
+          b.dataset.parte = id;
+          b.disabled = delta < 0 ? i === 0 : i === total - 1;
+          b.addEventListener('click', () => reuniaoMoverParte(id, delta));
+          setas.appendChild(b);
+        });
+        linha.append(botao, setas);
+        return linha;
+      }
       function linhaComLixeira(botao, aoApagar, rotuloLixeira) {
         const linha = document.createElement('div');
         linha.className = 'anot-reuniao-linha';
@@ -37377,6 +37418,12 @@ function saveTemplatesToStorage() {
           document.getElementById('anotReuniaoNomeInfo').textContent = tipoReuniao(r);
           if (document.activeElement !== reuniaoTemaEl) reuniaoTemaEl.value = r.tema || '';
           reuniaoPartesEl.replaceChildren();
+          if (r.partes.length < 2) reuniaoOrdenando = false;
+          const ordenarBtn = document.getElementById('anotReuniaoOrdenar');
+          ordenarBtn.hidden = r.partes.length < 2;
+          ordenarBtn.textContent = reuniaoOrdenando ? '✓ Pronto' : '↕️ Mudar a ordem das partes';
+          ordenarBtn.classList.toggle('secondary', !reuniaoOrdenando);
+          document.getElementById('anotReuniaoOrdenarDica').hidden = !reuniaoOrdenando;
           r.partes.forEach((p, i) => {
             // 6.15.23: o tema em destaque (maior) e, embaixo, o orador (com a congregação), quando informados.
             const orador = String(p.orador || '').trim();
@@ -37385,7 +37432,7 @@ function saveTemplatesToStorage() {
             btn.classList.add('anot-reuniao-parte');
             if (String(p.tema || '').trim()) btn.classList.add('anot-reuniao-com-tema');
             btn.addEventListener('click', () => abrirParteReuniao(p.id));
-            reuniaoPartesEl.appendChild(linhaComLixeira(btn, () => reuniaoApagarParte(p.id), 'Apagar a parte ' + (i + 1)));
+            reuniaoPartesEl.appendChild(reuniaoOrdenando ? linhaComSetas(btn, p.id, i, r.partes.length) : linhaComLixeira(btn, () => reuniaoApagarParte(p.id), 'Apagar a parte ' + (i + 1)));
           });
           document.getElementById('anotReuniaoNovaParte').textContent = r.partes.length ? '➕ Nova parte' : '➕ Começar a primeira parte';
           document.getElementById('anotReuniaoExportar').hidden = !r.partes.some(p => String(p.texto || '').trim());
