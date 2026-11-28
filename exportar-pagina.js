@@ -110,14 +110,22 @@
   var NS = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"';
 
   var SITE = 'www.NoteStyle.com.br';
+  // Como nos outros documentos do app: à esquerda o logo com o nome e o endereço embaixo; à direita o título da página.
   function cabecalhoXml(comLogo) {
-    var alto = comLogo ? '<w:position w:val="8"/>' : '';
-    var letra = function (t, cor) { return '<w:r><w:rPr><w:b/><w:bCs/><w:color w:val="' + cor + '"/>' + alto + '<w:sz w:val="28"/><w:szCs w:val="28"/></w:rPr><w:t xml:space="preserve">' + t + '</w:t></w:r>'; };
-    var desenho = comLogo ? '<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="360000" cy="360000"/><wp:docPr id="1" name="Logo NoteStyle"/><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="1" name="logo.png"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="rIdLogo"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="360000" cy="360000"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>' : '';
+    var paragrafoCab = function (conteudo, alinhar) { return '<w:p><w:pPr><w:spacing w:before="0" w:after="0" w:line="240" w:lineRule="auto"/>' + (alinhar ? '<w:jc w:val="' + alinhar + '"/>' : '') + '</w:pPr>' + conteudo + '</w:p>'; };
+    var letra = function (t, cor, tam) { return '<w:r><w:rPr><w:b/><w:bCs/><w:color w:val="' + cor + '"/><w:sz w:val="' + tam + '"/><w:szCs w:val="' + tam + '"/></w:rPr><w:t xml:space="preserve">' + xml(t) + '</w:t></w:r>'; };
+    var celula = function (largura, conteudo) { return '<w:tc><w:tcPr><w:tcW w:w="' + largura + '" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr>' + conteudo + '</w:tc>'; };
+    var colLogo = comLogo ? 794 : 0, colMarca = 2400, colTitulo = 9638 - colLogo - colMarca;
+    var desenho = '<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="410000" cy="410000"/><wp:docPr id="1" name="Logo NoteStyle"/><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="1" name="logo.png"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="rIdLogo"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="410000" cy="410000"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>';
+    var marca = paragrafoCab(letra('Note', '1F2937', 28) + letra('Style', '5B3FB5', 28)) +
+      paragrafoCab('<w:hyperlink r:id="rIdSite"><w:r><w:rPr><w:color w:val="5B3FB5"/><w:sz w:val="17"/><w:szCs w:val="17"/></w:rPr><w:t>' + SITE + '</w:t></w:r></w:hyperlink>');
+    var titulo = paragrafoCab(letra(document.title.replace(/\s*[—–-]\s*NoteStyle\s*$/, ''), '5B3FB5', 22), 'right');
+    var nil = function (lado) { return '<w:' + lado + ' w:val="nil"/>'; };
     return '<w:hdr ' + NS + ' xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
-      '<w:p><w:pPr><w:pBdr><w:bottom w:val="single" w:sz="6" w:space="4" w:color="5B3FB5"/></w:pBdr><w:tabs><w:tab w:val="right" w:pos="9638"/></w:tabs><w:spacing w:after="160"/></w:pPr>' +
-      desenho + letra(comLogo ? ' Note' : 'Note', '1F2937') + letra('Style', '5B3FB5') +
-      '<w:r><w:tab/></w:r><w:hyperlink r:id="rIdSite"><w:r><w:rPr><w:color w:val="5B3FB5"/>' + alto + '<w:sz w:val="18"/><w:szCs w:val="18"/><w:u w:val="single"/></w:rPr><w:t>' + SITE + '</w:t></w:r></w:hyperlink></w:p></w:hdr>';
+      '<w:tbl><w:tblPr><w:tblW w:w="9638" w:type="dxa"/><w:tblBorders>' + nil('top') + nil('left') + '<w:bottom w:val="single" w:sz="8" w:space="0" w:color="5B3FB5"/>' + nil('right') + nil('insideH') + nil('insideV') +
+      '</w:tblBorders><w:tblLayout w:type="fixed"/><w:tblCellMar><w:left w:w="0" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="0" w:type="dxa"/></w:tblCellMar></w:tblPr>' +
+      '<w:tblGrid>' + (comLogo ? '<w:gridCol w:w="' + colLogo + '"/>' : '') + '<w:gridCol w:w="' + colMarca + '"/><w:gridCol w:w="' + colTitulo + '"/></w:tblGrid>' +
+      '<w:tr>' + (comLogo ? celula(colLogo, paragrafoCab(desenho)) : '') + celula(colMarca, marca) + celula(colTitulo, titulo) + '</w:tr></w:tbl>' + paragrafoCab('') + '</w:hdr>';
   }
 
   async function gerar() {

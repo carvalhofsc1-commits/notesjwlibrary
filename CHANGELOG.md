@@ -2,6 +2,11 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.15.54
+
+- Cabeçalho do Word arrumado: à esquerda o logo com "NoteStyle" e o endereço embaixo; à direita o título do documento, em quantas linhas precisar, com a data embaixo; uma linha roxa fecha o cabeçalho. Vale para todos os documentos do app.
+- Título do documento e do cabeçalho gravado sem acento ("ESTABELECA… MINISTERIO") recebe os acentos das mesmas palavras escritas com acento no próprio documento.
+
 ## 6.15.53
 
 - Todos os documentos Word do app (anotações, esboços, pesquisas, adoração, leitura, textos e as páginas Sobre, Privacidade e Termos) têm no cabeçalho de todas as páginas o logo, o nome NoteStyle e o endereço www.NoteStyle.com.br (clicável); nas anotações, o título do evento vem na linha de baixo. A linha "NoteStyle" que ficava no corpo das pesquisas e da adoração saiu, para não repetir.

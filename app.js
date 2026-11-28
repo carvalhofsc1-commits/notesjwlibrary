@@ -7965,7 +7965,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.15.53'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.15.54'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -20803,7 +20803,7 @@ function saveTemplatesToStorage() {
       if (doc.cabecalho) { // o que se repete no alto de todas as páginas do Word
         const cab = document.createElement('p');
         cab.className = 'doc-p doc-cabecalho';
-        cab.textContent = doc.cabecalho;
+        cab.textContent = docxAcentosDoTitulo(doc.cabecalho, doc.acentos);
         folha.append(cab);
       }
       docxLinhas(doc.texto).forEach(linha => {
@@ -20812,7 +20812,7 @@ function saveTemplatesToStorage() {
         if (linha.trim() === DOCX_SEPARADOR) { p.className = 'doc-p doc-separador'; folha.append(p); return; }
         if (linha.startsWith(DOCX_TITULO) || linha.startsWith(DOCX_SUBTITULO)) {
           p.className = 'doc-p ' + (linha.startsWith(DOCX_TITULO) ? 'doc-titulo-reuniao' : 'doc-subtitulo-reuniao');
-          p.textContent = ricoPlano(linha.slice(1));
+          p.textContent = docxAcentosDoTitulo(ricoPlano(linha.slice(1)), doc.acentos);
           primeira = false;
           folha.append(p);
           return;
@@ -22296,6 +22296,21 @@ function saveTemplatesToStorage() {
       return { frases, dicionario };
     }
 
+    // 6.15.54: o título do documento e o do cabeçalho gravados sem acento ("ESTABELECA… MINISTERIO") recebem os acentos das mesmas palavras
+    // escritas com acento no próprio documento (só quando há uma única forma acentuada).
+    function docxAcentosDoTitulo(titulo, ac) {
+      if (!ac) return titulo;
+      return String(titulo || '').replace(DOCX_PALAVRA, p => {
+        const chave = docxChave(p);
+        if (p.length < 5 || p.toLowerCase() !== chave) return p; // curta demais ou já acentuada
+        const formas = ac.dicionario.get(chave);
+        const comAcento = formas ? [...formas.keys()].filter(f => f !== chave) : [];
+        const certa = comAcento.length === 1 ? [...comAcento[0]] : null;
+        if (!certa || certa.length !== [...p].length) return p;
+        return [...p].map((letra, k) => (letra !== letra.toLowerCase() ? certa[k].toUpperCase() : certa[k])).join('');
+      });
+    }
+
     function docxRestaurarAcentos(L, ac) {
       if (!ac) return L;
       let i = 0;
@@ -22474,7 +22489,7 @@ function saveTemplatesToStorage() {
       if (linha.trim() === DOCX_SEPARADOR) return '<w:p><w:pPr><w:pBdr><w:bottom w:val="single" w:sz="12" w:space="1" w:color="6B7280"/></w:pBdr><w:spacing w:before="0" w:after="200"/></w:pPr></w:p>';
       if (linha.startsWith(DOCX_TITULO) || linha.startsWith(DOCX_SUBTITULO)) {
         const grande = linha.startsWith(DOCX_TITULO);
-        const t = ricoPlano(linha.slice(1)).normalize('NFC');
+        const t = docxAcentosDoTitulo(ricoPlano(linha.slice(1)).normalize('NFC'), acentos);
         return '<w:p><w:pPr><w:keepNext/><w:spacing w:before="0" w:after="' + (grande ? 80 : 60) + '"/><w:jc w:val="center"/></w:pPr>' + docxRuns(t, grande ? 'b' : '', Math.round((grande ? 40 : 26) * escala), grande ? DOCX_COR_TITULO : '4B5563') + '</w:p>';
       }
       if (linha.trim() === DOCX_LINHA_TITULO) return '<w:p><w:pPr><w:pBdr><w:bottom w:val="single" w:sz="24" w:space="1" w:color="' + DOCX_COR_TITULO + '"/></w:pBdr><w:spacing w:before="0" w:after="240"/></w:pPr></w:p>';
@@ -22506,7 +22521,7 @@ function saveTemplatesToStorage() {
 
     // O pacote .docx (um zip com as partes mínimas que o Word exige) com o texto do campo; acentos: o que docxPrepararAcentos devolveu.
     async function docxGerar(texto, titulo, acentos, escala = 1, tituloPagina = '') {
-      return docxPacote(docxCorpo(texto, acentos, escala), titulo, tituloPagina);
+      return docxPacote(docxCorpo(texto, acentos, escala), titulo, docxAcentosDoTitulo(tituloPagina, acentos));
     }
 
     // O logo do NoteStyle para o cabeçalho do Word (o mesmo do topo do app); se não puder ser lido, o documento sai sem cabeçalho.
@@ -22533,17 +22548,29 @@ function saveTemplatesToStorage() {
     const DOCX_LOGO_MARCA = '<!--logo-notestyle-->';
     const DOCX_SITE = 'www.NoteStyle.com.br';
 
-    // O cabeçalho de todas as páginas de todo Word do app (6.15.53): logo, o nome NoteStyle e, à direita, o endereço do site; quando houver,
-    // o título do documento (tituloPagina) numa segunda linha. Uma linha fina fecha o cabeçalho.
+    // O cabeçalho de todas as páginas de todo Word do app (6.15.53; arrumado na 6.15.54): à esquerda o logo com o nome NoteStyle e, embaixo
+    // dele, o endereço do site; à direita o título do documento (tituloPagina), em quantas linhas precisar, com a data na linha de baixo.
+    // Uma tabela sem bordas (só a linha de baixo) mantém os dois lados alinhados.
     function docxCabecalhoXml(tituloPagina = '', comLogo = true) {
-      const linha = '<w:pBdr><w:bottom w:val="single" w:sz="6" w:space="4" w:color="' + DOCX_COR_TITULO + '"/></w:pBdr>';
-      const letra = (t, cor, tam, extra = '') => '<w:r><w:rPr><w:b/><w:bCs/><w:color w:val="' + cor + '"/>' + (extra) + '<w:sz w:val="' + tam + '"/><w:szCs w:val="' + tam + '"/></w:rPr><w:t xml:space="preserve">' + t + '</w:t></w:r>';
-      const alto = comLogo ? '<w:position w:val="8"/>' : ''; // o texto no meio da altura do logo
-      const marca = '<w:p><w:pPr>' + (tituloPagina ? '' : linha) + '<w:tabs><w:tab w:val="right" w:pos="10772"/></w:tabs><w:spacing w:after="' + (tituloPagina ? 40 : 160) + '"/></w:pPr>' +
-        (comLogo ? docxLogoRun(360000) : '') + letra(comLogo ? ' Note' : 'Note', '1F2937', 28, alto) + letra('Style', DOCX_COR_TITULO, 28, alto) +
-        '<w:r><w:tab/></w:r><w:hyperlink r:id="rIdSite"><w:r><w:rPr><w:color w:val="' + DOCX_COR_TITULO + '"/>' + alto + '<w:sz w:val="18"/><w:szCs w:val="18"/><w:u w:val="single"/></w:rPr><w:t>' + DOCX_SITE + '</w:t></w:r></w:hyperlink></w:p>';
-      const titulo = tituloPagina ? '<w:p><w:pPr>' + linha + '<w:spacing w:after="160"/></w:pPr>' + docxRuns(tituloPagina, 'b', 18, DOCX_COR_TITULO) + '</w:p>' : '';
-      return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:hdr ' + DOCX_NS + DOCX_NS_DESENHO + '>' + marca + titulo + '</w:hdr>';
+      const paragrafo = (conteudo, alinhar = '') => '<w:p><w:pPr><w:spacing w:before="0" w:after="0" w:line="240" w:lineRule="auto"/>' + (alinhar ? '<w:jc w:val="' + alinhar + '"/>' : '') + '</w:pPr>' + conteudo + '</w:p>';
+      const letra = (t, cor, tam) => '<w:r><w:rPr><w:b/><w:bCs/><w:color w:val="' + cor + '"/><w:sz w:val="' + tam + '"/><w:szCs w:val="' + tam + '"/></w:rPr><w:t xml:space="preserve">' + t + '</w:t></w:r>';
+      const celula = (largura, conteudo) => '<w:tc><w:tcPr><w:tcW w:w="' + largura + '" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr>' + conteudo + '</w:tc>';
+      const colLogo = comLogo ? 794 : 0, colMarca = 2400, colTitulo = 10772 - colLogo - colMarca;
+      const marca = paragrafo(letra('Note', '1F2937', 28) + letra('Style', DOCX_COR_TITULO, 28)) +
+        paragrafo('<w:hyperlink r:id="rIdSite"><w:r><w:rPr><w:color w:val="' + DOCX_COR_TITULO + '"/><w:sz w:val="17"/><w:szCs w:val="17"/></w:rPr><w:t>' + DOCX_SITE + '</w:t></w:r></w:hyperlink>');
+      const partes = String(tituloPagina || '').split(' · ').filter(Boolean);
+      const data = partes.length > 1 ? partes.pop() : '';
+      const titulo = partes.length
+        ? paragrafo(docxRuns(partes.join(' · '), 'b', 22, DOCX_COR_TITULO), 'right') + (data ? paragrafo(docxRuns(data, '', 17, '4B5563'), 'right') : '')
+        : paragrafo('');
+      const nil = lado => '<w:' + lado + ' w:val="nil"/>';
+      const tabela = '<w:tbl><w:tblPr><w:tblW w:w="10772" w:type="dxa"/><w:tblBorders>' + nil('top') + nil('left') +
+        '<w:bottom w:val="single" w:sz="8" w:space="0" w:color="' + DOCX_COR_TITULO + '"/>' + nil('right') + nil('insideH') + nil('insideV') +
+        '</w:tblBorders><w:tblLayout w:type="fixed"/><w:tblCellMar><w:left w:w="0" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="0" w:type="dxa"/></w:tblCellMar></w:tblPr>' +
+        '<w:tblGrid>' + (comLogo ? '<w:gridCol w:w="' + colLogo + '"/>' : '') + '<w:gridCol w:w="' + colMarca + '"/><w:gridCol w:w="' + colTitulo + '"/></w:tblGrid>' +
+        '<w:tr>' + (comLogo ? celula(colLogo, paragrafo(docxLogoRun(410000))) : '') + celula(colMarca, marca) + celula(colTitulo, titulo) + '</w:tr></w:tbl>';
+      // o cabeçalho termina num parágrafo (exigência do Word): ele dá o respiro até o texto
+      return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:hdr ' + DOCX_NS + DOCX_NS_DESENHO + '>' + tabela + paragrafo('') + '</w:hdr>';
     }
 
     // O pacote .docx com o corpo (os parágrafos em XML) já pronto.
