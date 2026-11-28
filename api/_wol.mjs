@@ -2604,6 +2604,31 @@ export async function paragrafoDaPesquisa(achado, timeoutMs, maxCaracteres = 160
   };
 }
 
+// ---------- Matéria de capa da página inicial do jw.org (6.15.23) ----------
+// O destaque do alto da página inicial (div "billboard"): título, resumo, endereço e o número do documento (classe "docId-102026005" do botão
+// "Saiba mais"), que é o mesmo no wol.jw.org — o texto é lido lá. Guardada por 1 hora na instância (a capa muda poucas vezes por semana).
+let capaJw = null; // { quando, capa }
+const VALIDADE_CAPA_MS = 3600 * 1000;
+export function capaDaPaginaInicial(html) {
+  const ini = String(html || "").indexOf('class="billboard');
+  if (ini < 0) return null;
+  const bloco = html.slice(ini, ini + 12000);
+  const a = bloco.match(/<h3\b[^>]*billboardTitle[^>]*>[\s\S]*?<a\b[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/);
+  if (!a) return null;
+  const titulo = textoDe(a[2]);
+  const descricao = textoDe((bloco.match(/billboardDescription[^>]*>([\s\S]*?)<\/div>/) || [])[1] || "");
+  const docId = (bloco.match(/\bdocId-(\d{6,12})\b/) || [])[1] || "";
+  const link = a[1].startsWith("/") ? BASE_JW + a[1] : a[1];
+  if (!titulo || !/^https:\/\/www\.jw\.org\/pt\//.test(link)) return null;
+  return { titulo, descricao, link, docId };
+}
+export async function lerCapaDoJw({ timeoutMs = 9000, forcar = false } = {}) {
+  if (!forcar && capaJw && Date.now() - capaJw.quando < VALIDADE_CAPA_MS) return capaJw.capa;
+  const capa = capaDaPaginaInicial(await baixar(BASE_JW + "/pt/", timeoutMs));
+  if (capa) capaJw = { quando: Date.now(), capa };
+  return capa;
+}
+
 // ---------- Guia de Pesquisa para Testemunhas de Jeová (jw.org) ----------
 // O Guia de Pesquisa atualizado fica no jw.org (o do wol, edição 2019, parou no tempo): uma página por tópico ("Ansiedade", "Perdão (perdoar
 // outros)"…), com subtítulos ("Como lidar", "Informações para jovens"…) e, em cada um, os artigos recomendados, dos mais novos para os mais

@@ -7964,7 +7964,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.15.22'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.15.23'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -19231,9 +19231,61 @@ function saveTemplatesToStorage() {
         },
         usados: [...new Set(salvos.map(item => Number(item.esbocoJson.paragrafoW24)).filter(n => Number.isInteger(n) && n > 0))],
         recentes: [...new Set(salvos.map(item => String(item.esbocoJson.tema || '').trim()).filter(Boolean))].slice(0, 5),
-        ...(campoEvitar ? { evitar: campoEvitar } : {})
+        ...(campoEvitar ? { evitar: campoEvitar } : {}),
+        // A matéria de capa do jw.org vale enquanto o Assunto continuar com o título dela.
+        ...(campoCapaAtual && document.getElementById('campoAssunto').value.trim() === campoCapaAtual.titulo
+          ? { capa: { docId: campoCapaAtual.docId, titulo: campoCapaAtual.titulo, link: campoCapaAtual.link } } : {})
       };
     }
+
+    // 📰 Matéria de capa do jw.org (6.15.23): o servidor lê o destaque da página inicial (sem IA, sem custo); o título vai para o Assunto e,
+    // ao preparar, o texto da matéria entra como fonte prioritária (lido no wol.jw.org).
+    let campoCapaAtual = null;
+    function campoCapaPintar() {
+      const box = document.getElementById('campoCapa');
+      box.hidden = !campoCapaAtual;
+      if (!campoCapaAtual) return;
+      document.getElementById('campoCapaTitulo').textContent = campoCapaAtual.titulo;
+      const resumo = document.getElementById('campoCapaResumo');
+      resumo.textContent = campoCapaAtual.descricao || '';
+      resumo.hidden = !campoCapaAtual.descricao;
+      document.getElementById('campoCapaLink').href = campoCapaAtual.link;
+    }
+    function campoCapaTirar(limparAssunto) {
+      if (campoCapaAtual && limparAssunto && document.getElementById('campoAssunto').value.trim() === campoCapaAtual.titulo) document.getElementById('campoAssunto').value = '';
+      campoCapaAtual = null;
+      campoCapaPintar();
+    }
+    async function campoCapaBuscar() {
+      const botao = document.getElementById('campoCapaBtn');
+      if (aiBusy) return setAiStatus('⏳ Aguarde: a IA ainda está trabalhando no pedido anterior.', false);
+      aiStatusKind = 'campo';
+      const erroAcesso = dirigenteAccessError();
+      if (erroAcesso) return setAiStatus(erroAcesso, true);
+      aiBusy = true;
+      setAiLoading(true, botao);
+      try {
+        const result = await postStudy({ tarefa: 'campo-capa', codigoDirigente: codigoDirigenteSalvo() }, 30000);
+        if (!result.ok) {
+          if (await dirigenteRecusado(result)) return;
+          return setAiStatus(studyFailureMessage(result, 'Não consegui ler a matéria de capa do jw.org agora.'), true);
+        }
+        const c = result.data && result.data.capa;
+        if (!c || !c.titulo || !c.docId) return setAiStatus('Não achei a matéria de capa na página inicial do jw.org.', true);
+        campoCapaAtual = { titulo: c.titulo, descricao: c.descricao || '', link: c.link, docId: c.docId };
+        document.getElementById('campoAssunto').value = c.titulo;
+        document.getElementById('campoAssuntos').querySelectorAll('.campo-assunto').forEach(b => b.setAttribute('aria-pressed', 'false'));
+        campoCapaPintar();
+        setAiStatus('✅ Matéria de capa escolhida como assunto. Toque em ✨ Preparar esboço.', false);
+      } catch (e) {
+        setAiStatus(e && e.name === 'AbortError' ? 'O jw.org demorou demais. Tente de novo.' : 'Falha de conexão ao ler o jw.org.', true);
+      } finally {
+        aiBusy = false;
+        setAiLoading(false);
+      }
+    }
+    document.getElementById('campoCapaBtn').addEventListener('click', campoCapaBuscar);
+    document.getElementById('campoCapaTirar').addEventListener('click', () => campoCapaTirar(true));
 
     // 🗂️ Considerações já salvas (6.11.64): um card sempre recolhido que lista as do histórico (as mais novas primeiro), com a data e o que cada uma
     // abrangeu: o tema, os textos lidos, os pontos e as aplicações, o parágrafo de w24.05 e a lição do Ame as Pessoas. "Abrir" a leva ao campo de texto.
@@ -19277,7 +19329,7 @@ function saveTemplatesToStorage() {
           });
         });
         const lmd = String(e.brochura || '').match(/lmd\s+lição\s+\d+(?:,\s*[^.:;]+)?/i);
-        const fontes = [e.paragrafoW24 ? 'w24.05, § ' + e.paragrafoW24 : '', lmd ? lmd[0] : ''].filter(Boolean);
+        const fontes = [e.capa && e.capa.titulo ? 'matéria de capa do jw.org: ' + e.capa.titulo : '', e.paragrafoW24 ? 'w24.05, § ' + e.paragrafoW24 : '', lmd ? lmd[0] : ''].filter(Boolean);
         if (fontes.length) linhas.push('📚 ' + fontes.join(' · '));
         const corpo = document.createElement('p');
         corpo.className = 'campo-salva-pontos';
@@ -19338,6 +19390,7 @@ function saveTemplatesToStorage() {
           }
           opcao.addEventListener('click', () => {
             document.getElementById('campoAssunto').value = a.titulo;
+            campoCapaTirar(false);
             lista.querySelectorAll('.campo-assunto').forEach(b => b.setAttribute('aria-pressed', String(b === opcao)));
             aiStatusKind = 'campo';
             setAiStatus('✅ Assunto escolhido. Toque em ✨ Preparar esboço.', false);
@@ -19359,6 +19412,7 @@ function saveTemplatesToStorage() {
     function campoRefazer() {
       if (aiBusy) return setAiStatus('⏳ Aguarde: a IA ainda está trabalhando no pedido anterior.', false);
       const atual = ESBOCOS.campo.ultimoEsboco;
+      campoCapaTirar(true);
       document.getElementById('campoAssunto').value = '';
       document.getElementById('campoAssuntos').querySelectorAll('.campo-assunto').forEach(b => b.setAttribute('aria-pressed', 'false'));
       campoEvitar = (atual && atual.tema) || '';
@@ -19383,6 +19437,7 @@ function saveTemplatesToStorage() {
         aiSentinelaRaw = [];
         clearAnswerCopyButtons();
       }
+      campoCapaTirar(true);
       ['campoCampanha', 'campoPublico', 'campoAssunto'].forEach(id => { document.getElementById(id).value = ''; });
       document.querySelectorAll('input[name="campoTipo"], #campoFontesBox input[type="checkbox"]').forEach(c => { c.checked = c.defaultChecked; });
       campoFontesResumo();
@@ -36175,9 +36230,13 @@ function saveTemplatesToStorage() {
       // aberto, a barra vira "fixed" no topo da área visível (acompanhando a rolagem da área visível pelo visualViewport); sem o teclado, volta ao normal.
       const bibliaBarra = document.querySelector('.anotacoes-biblia-barra');
       let bibliaEspaco = null;
-      // Topo real da área visível: o iOS às vezes deixa o offsetTop "preso" (pageTop = rolagem, deslocamento real 0) e a barra descia até o meio
-      // do campo, em cima do texto. Vale o menor entre o offsetTop e o que o pageTop indica (mesma conta da barra de baixo).
-      const topoVisivel = vv => Number.isFinite(vv.pageTop) ? Math.max(0, Math.min(vv.offsetTop, vv.pageTop - window.scrollY)) : vv.offsetTop;
+      // 6.15.23: a barra presa fica na PÁGINA (position: absolute, relativa ao body), na altura do topo da área visível em coordenadas da página
+      // (visualViewport.pageTop). No iPhone, o offsetTop às vezes fica "preso" (a barra descia até o meio do campo) e a rolagem às vezes vem já
+      // somada (a conta de 6.15.16 a mandava para cima, fora da tela); o pageTop estava certo nos dois casos. Como no sticky, a barra nunca fica
+      // acima do lugar dela na página (o espaço guardado).
+      const topoNaPagina = el => { let y = 0; for (let e = el; e; e = e.offsetParent) y += e.offsetTop; return y; };
+      const topoVisivelNaPagina = vv => (Number.isFinite(vv.pageTop) ? vv.pageTop : window.scrollY + vv.offsetTop);
+      const topoDaBarra = vv => Math.max(topoVisivelNaPagina(vv), bibliaEspaco ? topoNaPagina(bibliaEspaco) : 0) - topoNaPagina(bibliaBarra.offsetParent);
       function ajustarBarraBiblia() {
         const vv = window.visualViewport;
         const foco = document.activeElement;
@@ -36193,16 +36252,17 @@ function saveTemplatesToStorage() {
             bibliaEspaco = document.createElement('div');
             bibliaEspaco.style.height = (bibliaBarra.offsetHeight + 14) + 'px'; // guarda o lugar da barra para o texto não pular
             bibliaBarra.before(bibliaEspaco);
-            bibliaBarra.style.left = r.left + 'px';
-            bibliaBarra.style.width = r.width + 'px';
             bibliaBarra.classList.add('anotacoes-biblia-fixa');
+            const pai = bibliaBarra.offsetParent;
+            bibliaBarra.style.left = (r.left - (pai ? pai.getBoundingClientRect().left : 0)) + 'px';
+            bibliaBarra.style.width = r.width + 'px';
           }
-          bibliaBarra.style.transform = 'translateY(' + topoVisivel(vv) + 'px)';
+          bibliaBarra.style.top = topoDaBarra(vv) + 'px';
         } else if (bibliaEspaco) {
           bibliaEspaco.remove();
           bibliaEspaco = null;
           bibliaBarra.classList.remove('anotacoes-biblia-fixa');
-          bibliaBarra.style.left = bibliaBarra.style.width = bibliaBarra.style.transform = '';
+          bibliaBarra.style.left = bibliaBarra.style.width = bibliaBarra.style.top = bibliaBarra.style.transform = '';
         }
         posicionarListaBiblia();
       }
@@ -36212,8 +36272,9 @@ function saveTemplatesToStorage() {
         const fixa = bibliaBarra.classList.contains('anotacoes-biblia-fixa') && !bibPick.hidden;
         const vv = window.visualViewport;
         if (fixa && vv) {
-          const topo = topoVisivel(vv) + bibliaBarra.offsetHeight + 4;
           bibPick.classList.add('anotacoes-biblia-pick-fixa');
+          // A lista fica logo abaixo da barra, na mesma referência (o body): o topo da barra na página, mais a altura dela.
+          const topo = topoNaPagina(bibliaBarra) + bibliaBarra.offsetHeight + 4 - topoNaPagina(bibPick.offsetParent);
           bibPick.style.left = bibliaBarra.style.left;
           bibPick.style.width = bibliaBarra.style.width;
           bibPick.style.top = topo + 'px';
@@ -37166,15 +37227,10 @@ function saveTemplatesToStorage() {
         r.tema = reuniaoTemaEl.value;
         agendarRascunho();
       });
-      let reuniaoTipoEscolhido = false; // escolhido à mão: trocar a data não muda mais o tipo
       function reuniaoTipoPintar() { reuniaoOutroEl.hidden = reuniaoTipoSel.value !== 'outra'; }
       reuniaoTipoSel.addEventListener('change', () => {
-        reuniaoTipoEscolhido = true;
         reuniaoTipoPintar();
         if (reuniaoTipoSel.value === 'outra') reuniaoOutroEl.focus();
-      });
-      reuniaoNovaData.addEventListener('change', () => {
-        if (!reuniaoTipoEscolhido || ['meio', 'fim'].includes(reuniaoTipoSel.value)) { reuniaoTipoSel.value = tipoPelaData(reuniaoNovaData.value); reuniaoTipoPintar(); }
       });
       const temaDaParteReuniao = (p, i) => String(p.tema || '').trim() || 'Parte ' + (i + 1);
       // Os campos de sempre mostram a parte aberta; ao sair dela (ou a cada digitação), o que está nos campos volta para a parte.
@@ -37200,8 +37256,7 @@ function saveTemplatesToStorage() {
       // Ao abrir a Reunião: primeiro o cadastro de uma nova reunião, com a lista das já anotadas embaixo.
       function reuniaoEntrar() {
         reuniaoNovaData.value = hojeIso();
-        reuniaoTipoSel.value = tipoPelaData(hojeIso());
-        reuniaoTipoEscolhido = false;
+        reuniaoTipoSel.value = ''; // 6.15.23: começa em "Escolha o tipo de reunião…" (não vem mais preenchido pela data)
         reuniaoOutroEl.value = '';
         reuniaoTipoPintar();
         reuniaoVista = 'lista'; // sempre abre no cadastro, com a lista das reuniões anotadas logo abaixo (6.15.22)
@@ -37245,6 +37300,7 @@ function saveTemplatesToStorage() {
       document.getElementById('anotReuniaoNovaBtn').addEventListener('click', () => {
         const data = reuniaoNovaData.value || hojeIso();
         const tipo = reuniaoTipoSel.value;
+        if (!tipo) { dizer('Escolha o tipo de reunião.', true); reuniaoTipoSel.focus(); return; }
         const tipoNome = tipo === 'outra' ? reuniaoOutroEl.value.trim() : nomeDoTipo(tipo);
         if (!tipoNome) { dizer('Informe o nome da reunião.', true); reuniaoOutroEl.focus(); return; }
         dizer('');
@@ -37322,8 +37378,12 @@ function saveTemplatesToStorage() {
           if (document.activeElement !== reuniaoTemaEl) reuniaoTemaEl.value = r.tema || '';
           reuniaoPartesEl.replaceChildren();
           r.partes.forEach((p, i) => {
-            const btn = botaoDeItem(String(i + 1) + '.', temaDaParteReuniao(p, i), [p.orador, p.congregacao].filter(Boolean).join(' · '), String(p.texto || '').trim() ? '✍️' : '');
+            // 6.15.23: o tema em destaque (maior) e, embaixo, o orador (com a congregação), quando informados.
+            const orador = String(p.orador || '').trim();
+            const btn = botaoDeItem(String(i + 1) + '.', temaDaParteReuniao(p, i), orador ? '🎤 ' + [orador, String(p.congregacao || '').trim()].filter(Boolean).join(' · ') : '', String(p.texto || '').trim() ? '✍️' : '');
             btn.querySelector('.anotacoes-evento-icone').classList.add('anot-reuniao-num');
+            btn.classList.add('anot-reuniao-parte');
+            if (String(p.tema || '').trim()) btn.classList.add('anot-reuniao-com-tema');
             btn.addEventListener('click', () => abrirParteReuniao(p.id));
             reuniaoPartesEl.appendChild(linhaComLixeira(btn, () => reuniaoApagarParte(p.id), 'Apagar a parte ' + (i + 1)));
           });

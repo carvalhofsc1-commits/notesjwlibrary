@@ -5239,6 +5239,19 @@
       transform: none;
     }
 
+    .anot-reuniao-parte.anot-reuniao-com-tema .anotacoes-evento-texto strong {
+      font-size: 1.08rem;
+      font-weight: 800;
+      line-height: 1.3;
+      overflow-wrap: anywhere;
+    }
+
+    .anot-reuniao-parte .anotacoes-evento-texto small {
+      font-size: .88rem;
+      color: var(--text);
+      opacity: .8;
+    }
+
     .anot-reuniao-num {
       font-size: 1.05rem;
       font-weight: 800;
@@ -5287,8 +5300,29 @@
       display: none !important;
     }
 
-    .anot-reuniao-cab .ai-week-nav {
-      min-height: 64px;
+    /* 6.15.23: mais fino (era 64 px de altura). */
+    #anotReuniaoCab .ai-week-nav,
+    #anotReuniaoCab .anotacoes-cab-centro {
+      min-height: 40px;
+    }
+
+    #anotReuniaoCab .ai-week-nav {
+      flex-basis: 42px;
+    }
+
+    #anotReuniaoCab .anotacoes-cab-centro {
+      padding: 3px 10px;
+      gap: 0;
+    }
+
+    #anotReuniaoCab .anotacoes-cab-tema {
+      font-size: .95rem;
+      line-height: 1.2;
+    }
+
+    #anotReuniaoCab .anotacoes-cab-pos {
+      font-size: .76rem;
+      line-height: 1.2;
     }
 
     .anotacoes-ver-programa {
@@ -5313,7 +5347,7 @@
 
     /* Teclado aberto: a barra fica fixa no topo da área visível (posição e largura vêm do app). */
     .anotacoes-biblia-barra.anotacoes-biblia-fixa {
-      position: fixed;
+      position: absolute;
       top: 0;
       z-index: 1600;
       margin: 0;
@@ -5322,7 +5356,7 @@
 
     /* Barra fixa (teclado aberto): a lista de livros/capítulos/versículos vem logo abaixo dela, na área visível, com rolagem própria. */
     .anotacoes-biblia-pick.anotacoes-biblia-pick-fixa {
-      position: fixed;
+      position: absolute;
       z-index: 1599;
       margin: 0;
       overflow-y: auto;
@@ -17721,6 +17755,13 @@ input[type="date"].fam-campo::-webkit-calendar-picker-indicator { margin: 0; pad
 }
 .campo-assuntos .campo-assunto small { color: var(--muted); font-size: .82rem; font-weight: 400; line-height: 1.35; }
 .campo-assuntos .campo-assunto[aria-pressed="true"] { border-color: #60a5fa; box-shadow: inset 0 0 0 1px #60a5fa; background: color-mix(in srgb, #60a5fa 10%, var(--card)); }
+/* 6.15.23: a matéria de capa do jw.org escolhida como assunto (moldura azul fina, largura toda). */
+.campo-capa { display: grid; gap: 6px; margin: 8px 0; padding: 10px 12px; border: 1px solid #60a5fa; border-radius: 12px; background: color-mix(in srgb, #60a5fa 8%, var(--card)); min-width: 0; }
+.campo-capa[hidden], .campo-capa [hidden] { display: none !important; }
+.campo-capa-rotulo { margin: 0; font-size: .8rem; font-weight: 700; color: var(--muted); }
+.campo-capa strong { font-size: 1rem; line-height: 1.3; overflow-wrap: anywhere; }
+.campo-capa small { color: var(--muted); font-size: .85rem; line-height: 1.35; }
+.campo-capa a, .campo-capa button { width: 100%; margin: 0; box-sizing: border-box; }
 
 /* 6.11.56: contêiner das fontes do esboço da consideração para o serviço de campo (sempre recolhido). */
 .campo-fontes-box { border: 1px solid var(--line, #cbd5e1); border-radius: 10px; padding: 0 10px 10px; margin: 8px 0; min-width: 0; background: var(--card); }

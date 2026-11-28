@@ -2,6 +2,19 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.15.23
+
+- Considerações para o serviço de campo: novo botão "📰 Usar a matéria de capa do jw.org".
+  - O servidor lê o destaque do alto da página inicial do jw.org (sem IA, sem custo, com o código do dirigente). O título vai para o Assunto, e um quadro mostra o título, o resumo, o link para a matéria e "✕ Não usar a matéria de capa".
+  - Ao preparar, o texto da matéria (lido no wol.jw.org pelo número do documento) entra como fonte prioritária ("MATÉRIA DE CAPA DO JW.ORG DESTA SEMANA"), no lugar do parágrafo de w24.05. A consideração prepara o grupo para usar a matéria na pregação do dia: puxar conversa sobre a preocupação, a resposta da Bíblia e como mostrar ou enviar a matéria. Sempre com equilíbrio, sem alarmismo e sem política.
+  - A matéria aparece na lista de fontes do esboço e nas "Considerações já salvas".
+  - Escolher um assunto sugerido, refazer ou limpar tira a matéria de capa.
+- Descrição da montagem do pedido (tela de prompts) atualizada.
+- Anotações no iPhone: a barra "Inserir texto bíblico" às vezes sumia com o teclado aberto, porque a conta da 6.15.16 a mandava para cima, fora da tela. Agora a barra presa fica na própria página (position: absolute), na altura do topo da área visível em coordenadas da página (visualViewport.pageTop), sem depender do offsetTop nem da rolagem, que o iOS às vezes informa errado. Como no sticky, ela nunca sobe acima do lugar dela. A lista de livros e versículos acompanha logo abaixo.
+- Anotações → Reuniões: o "Tipo de reunião" do cadastro começa em "Escolha o tipo de reunião…", e não mais preenchido pela data. Sem escolher, o app avisa e não cadastra.
+- Anotações → Reuniões: o cabeçalho que troca de parte (◀ Parte N de M ▶) ficou mais fino, com cerca de 43 px de altura em vez de 64.
+- Anotações → Reuniões: na lista das partes, o tema cadastrado aparece em destaque (maior) e, logo abaixo, "🎤 orador · congregação", quando informados. Sem tema, continua "Parte N".
+
 ## 6.15.22
 
 - Anotações → Reuniões: ao entrar, abre sempre primeiro a tela de cadastro, com a lista das reuniões anotadas embaixo. Antes, a reunião de hoje já cadastrada abria direto nas partes, e o cadastro só aparecia depois de tocar em Voltar.

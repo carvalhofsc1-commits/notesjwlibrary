@@ -248,6 +248,7 @@
               <input id="anotReuniaoNovaData" type="date">
               <label for="anotReuniaoTipo">Tipo de reunião</label>
               <select id="anotReuniaoTipo">
+                <option value="" disabled selected>Escolha o tipo de reunião…</option>
                 <option value="meio">Reunião do meio de semana</option>
                 <option value="fim">Reunião do fim de semana</option>
                 <option value="pioneiros-circuito">Reunião anual com pioneiros do circuito</option>
@@ -1364,6 +1365,15 @@
                     <p id="campoInfo" class="hint ai-hint ebc-info"></p>
                     <button id="campoSugerirBtn" data-codigo-ia="dirigente" class="secondary ai-study-load" type="button">💡 Sugerir 3 assuntos</button>
                     <div id="campoAssuntos" class="campo-assuntos" role="group" aria-label="Assuntos sugeridos (toque em um para usar)" hidden></div>
+                    <!-- 6.15.23: a matéria de capa da página inicial do jw.org (o assunto atual da semana) como base do esboço. -->
+                    <button id="campoCapaBtn" data-codigo-ia="dirigente" class="secondary ai-study-load" type="button">📰 Usar a matéria de capa do jw.org</button>
+                    <div id="campoCapa" class="campo-capa" hidden>
+                      <p class="campo-capa-rotulo">📰 Matéria de capa do jw.org</p>
+                      <strong id="campoCapaTitulo"></strong>
+                      <small id="campoCapaResumo"></small>
+                      <a id="campoCapaLink" class="fam-link-moldura" href="#" target="_blank" rel="noopener">🔗 Abrir a matéria no jw.org</a>
+                      <button id="campoCapaTirar" class="secondary fam-fino" type="button">✕ Não usar a matéria de capa</button>
+                    </div>
                     <button id="campoEsbocoBtn" data-codigo-ia="dirigente" class="ai-study-btn" type="button">✨ Preparar esboço</button>
                     <button id="campoRefazerBtn" data-codigo-ia="dirigente" class="secondary ai-study-load" type="button" hidden>✨ Refazer com outro assunto</button>
                     <!-- 6.14.29: o card volta como ao abrir pela primeira vez. -->

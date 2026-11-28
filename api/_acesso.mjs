@@ -95,6 +95,7 @@ export const NIVEIS = {
   versiculos: "dirigente",
   "outros-pesquisar": "dirigente",
   "outros-ler": "dirigente",
+  "campo-capa": "dirigente", // a matéria de capa do jw.org para o esboço do serviço de campo (6.15.23)
   outros: "dirigente",
   "discurso-ler": "dirigente",
   discurso: "dirigente",

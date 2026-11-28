@@ -38,8 +38,10 @@ import {
   paragrafosW24,
   siglasPermitidas,
   textoDasFontesDoCampo,
+  textoDaCapa,
   trechosBe,
 } from "./_servicoCampo.mjs";
+import { lerCapaDoJw } from "./_wol.mjs";
 import { artigosDoTopicoDoGuia, buscarNosLivros, buscarVerbete, buscarVersiculos, versiculosDoCapitulo, fontesConfiguradas, lerCanticos, lerEnsinosBiblicos, lerPrincipios, lerTextoDoLivro, lerVerbeteCompleto, localDoTrecho, materiaDoTrecho, nomeDoLivro, siglaDoLivro, precarregarFontes, referenciaPadrao, referenciasNoTexto, resolvedorDeLivros, textoDeGruposBiblicos } from "./_fontes.mjs";
 import { JOGOS_FAMILIA, QUADROS_FAMILIA, minutosDosQuadros, quadrosDoPedido } from "./_familiaQuadros.mjs";
 import {
@@ -379,6 +381,7 @@ const TAREFAS_SEM_IA = new Set([
   "estudo-paragrafos",
   "outros-pesquisar",
   "outros-ler",
+  "campo-capa",
   "discurso-ler",
   "joias-ler",
   "apostila-imagens",
@@ -6296,7 +6299,9 @@ function textoDosDadosDoCampo(d) {
 
 // Junta as fontes do esboço (wol e arquivos do servidor) conforme as caixas marcadas. Nada aqui chama a IA.
 async function fontesDoCampo(d, { timeoutMs = 9000 } = {}) {
-  const w24 = d.fontes.w24 ? await paragrafosW24(timeoutMs) : null;
+  // 6.15.23: com a matéria de capa do jw.org, ela é a fonte prioritária e o assunto; o parágrafo de w24.05 fica de fora (as outras fontes continuam).
+  const capa = d.capa ? await textoDaCapa(d.capa, timeoutMs) : null;
+  const w24 = d.fontes.w24 && !capa ? await paragrafosW24(timeoutMs) : null;
   const escolha = w24 ? escolherParagrafoW24({ consulta: d.assunto, usados: d.usados, paragrafos: w24.paragrafos }) : null;
   const paragrafo = escolha ? escolha.paragrafo : null;
   const consulta = consultaDoCampo(d, paragrafo);
@@ -6308,7 +6313,7 @@ async function fontesDoCampo(d, { timeoutMs = 9000 } = {}) {
   ]);
   // "Pesquisar outras fontes" (outros artigos e outras publicações no wol): até 2, além dos artigos marcados.
   const outros = d.fontes.outros ? await outrasFontes(consulta, { max: 2, timeoutMs }) : [];
-  return { w24, paragrafo, reiniciou: !!(escolha && escolha.reiniciou), licoes, artigos: [...extras.artigos, ...outros], naoAchados: extras.naoAchados, be, consulta };
+  return { capa, w24, paragrafo, reiniciou: !!(escolha && escolha.reiniciou), licoes, artigos: [...extras.artigos, ...outros], naoAchados: extras.naoAchados, be, consulta };
 }
 
 async function esbocoDeCampo(res, body, P) {
@@ -6333,7 +6338,9 @@ async function esbocoDeCampo(res, body, P) {
     }
   }
 
-  const assunto = d.assunto
+  const assunto = f.capa
+    ? `ASSUNTO: a matéria de capa do jw.org desta semana, "${f.capa.titulo}" (o texto vem abaixo). A consideração prepara o grupo para usar essa matéria na pregação de hoje: como puxar conversa sobre a preocupação que ela trata, um texto bíblico que traga a resposta ou a esperança da Bíblia sobre ela e como mostrar ou enviar a matéria às pessoas pelo jw.org. Fale dos acontecimentos com equilíbrio, sem alarmismo, sem opinar sobre política e sem citar governantes, partidos ou países em conflito.`
+    : d.assunto
     ? `ASSUNTO PEDIDO PELO DIRIGENTE: ${d.assunto}`
     : `ASSUNTO: o dirigente não escolheu; tire um assunto prático para hoje do parágrafo de w24.05 abaixo${f.paragrafo ? "" : " (ou, sem ele, das outras fontes)"}, ligado ao tipo de pregação.`;
   let mensagem =
@@ -6398,6 +6405,7 @@ async function esbocoDeCampo(res, body, P) {
       ...corpo,
       fontes: listaDeFontes(f, citado),
       paragrafoW24: f.paragrafo ? f.paragrafo.numero : null,
+      ...(f.capa ? { capa: { titulo: f.capa.titulo, link: f.capa.link || "" } } : {}),
       brochura: brochura.texto,
       dicaDirigente: limparTextoGerado(bruto.dicaDirigente, 500),
     };
@@ -6407,7 +6415,8 @@ async function esbocoDeCampo(res, body, P) {
     if (f.paragrafo && !corpo.pontos.some((p) => p.fontes.some((x) => /w24\.05/i.test(x)))) {
       avisos.push(`O esboço não cita "w24.05, § ${f.paragrafo.numero}" em nenhum ponto. Use "Melhorar" para pedir a citação.`);
     }
-    if (d.fontes.w24 && !f.w24) avisos.push("Não consegui ler A Sentinela de maio de 2024 no wol.jw.org agora: o esboço usou as outras fontes.");
+    if (d.capa && !f.capa) avisos.push("Não consegui ler a matéria de capa do jw.org no wol.jw.org agora: o esboço usou o título dela como assunto e as outras fontes.");
+    if (d.fontes.w24 && !f.w24 && !f.capa) avisos.push("Não consegui ler A Sentinela de maio de 2024 no wol.jw.org agora: o esboço usou as outras fontes.");
     if (f.reiniciou) avisos.push("Todos os parágrafos de w24.05 já tinham sido usados: o rodízio recomeçou.");
     // Completo = tem ponto e a consideração se apoia num texto bíblico lido (a leitura abre o primeiro ponto).
     const completo = esboco.pontos.length > 0 && esboco.pontos[0].desenvolvimento.some((x) => x.leitura);
@@ -6420,6 +6429,7 @@ async function esbocoDeCampo(res, body, P) {
         minutos: d.minutos,
         tipos: d.tipos,
         assunto: !!d.assunto,
+        capa: f.capa ? f.capa.docId : d.capa ? "nao-lida" : null,
         paragrafoW24: esboco.paragrafoW24,
         licoes: f.licoes.map((l) => `${l.sigla} ${l.licao}`),
         artigos: f.artigos.map((a) => a.codigo),
@@ -6437,7 +6447,7 @@ async function esbocoDeCampo(res, body, P) {
 
     return res.status(200).json({
       semana: "",
-      titulo: `Serviço de campo · ${dataCurta(d.data)}${esboco.paragrafoW24 ? ` · w24.05 § ${esboco.paragrafoW24}` : ""}`,
+      titulo: `Serviço de campo · ${dataCurta(d.data)}${f.capa ? " · capa do jw.org" : esboco.paragrafoW24 ? ` · w24.05 § ${esboco.paragrafoW24}` : ""}`,
       url: null,
       minutos: d.minutos,
       erro: completo ? null : "A IA não montou a consideração (ela precisa se basear na leitura de um texto bíblico). Tente de novo.",
@@ -6502,6 +6512,20 @@ async function sugerirAssuntosCampo(res, body, P) {
     return res.status(200).json({ assuntos, memoriaUsada: memoriaUsadaAgora() });
   } catch (e) {
     return tratarErro(e, res);
+  }
+}
+
+// "📰 Matéria de capa do jw.org" (6.15.23): o destaque do alto da página inicial do jw.org (título, resumo, endereço e o número do documento).
+// Só lê a página (sem IA, sem custo); o texto é lido no wol na hora de preparar o esboço. Com o código do dirigente, como as outras ações do card.
+async function capaDoJwParaCampo(res, body) {
+  if (!acessoDoDirigente(res, body)) return;
+  try {
+    const capa = await lerCapaDoJw({ timeoutMs: 12000 });
+    if (!capa || !capa.docId) return erro(res, 502, "Não consegui ler a matéria de capa do jw.org agora. Tente de novo daqui a pouco.");
+    return res.status(200).json({ capa });
+  } catch (e) {
+    console.error("Serviço de campo: página inicial do jw.org indisponível", e?.message);
+    return erro(res, 502, "Não consegui abrir a página inicial do jw.org agora. Tente de novo daqui a pouco.");
   }
 }
 
@@ -7943,6 +7967,7 @@ async function tratarPedido(req, res) {
   if (TAREFAS_SEM_IA.has(tarefa)) {
     if (!exigirAcesso(res, body)) return;
     if (excedeuLimiteBackup(ip)) return erro(res, 429, "Muitas consultas. Tente novamente em alguns minutos.");
+    if (tarefa === "campo-capa") return capaDoJwParaCampo(res, body);
     if (tarefa === "ebc-ler") return lerEbc(res, body);
     if (tarefa === "consideracao-ler") return lerParteDaSemana(res, body, PARTES_APOSTILA.consideracao);
     if (tarefa === "nvc-ler") return lerParteDaSemana(res, body, PARTES_APOSTILA.nvc);

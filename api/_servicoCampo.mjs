@@ -7,7 +7,20 @@
 //   do servidor;
 // - os dados do pedido, conferidos.
 // Nada aqui inventa conteúdo: o que não for achado fica de fora (e o título que não for achado na wol vai para o registro).
-import { docDoArtigoDoGuia, paragrafosDoDocumento, pesquisarMateriasNovasNoWol, paragrafoDaPesquisa } from "./_wol.mjs";
+import { docDoArtigoDoGuia, paragrafosDoDocumento, pesquisarMateriasNovasNoWol, paragrafoDaPesquisa, lerArtigoDoWol } from "./_wol.mjs";
+
+// Matéria de capa do jw.org (6.15.23): a sigla que os pontos citam e o texto da matéria, lido no wol.jw.org pelo número do documento.
+export const SIGLA_CAPA = "jw.org";
+export async function textoDaCapa(capa, timeoutMs = 9000) {
+  if (!capa || !capa.docId) return null;
+  try {
+    const a = await lerArtigoDoWol(`https://wol.jw.org/pt/wol/d/r5/lp-t/${capa.docId}`, { timeoutMs, maxCaracteres: 7000, estruturado: true });
+    return a && a.texto ? { ...capa, titulo: capa.titulo || a.titulo, texto: a.texto } : null;
+  } catch (e) {
+    console.error("Serviço de campo: matéria de capa indisponível no wol", e?.message);
+    return null;
+  }
+}
 import { licoesDaBrochura, buscarNosLivros, nomeDoLivro } from "./_fontes.mjs";
 
 const DIA_MS = 24 * 60 * 60 * 1000;
@@ -307,7 +320,13 @@ export function dadosDoCampo(body) {
   // Cada artigo de A Sentinela tem a sua caixa (6.11.56). "sentinela: false" (versões antigas do app) desmarca todos de uma vez.
   const art = f.artigos && typeof f.artigos === "object" ? f.artigos : {};
   const artigos = COMPLEMENTARES.filter((a) => f.sentinela !== false && art[a.codigo] !== false).map((a) => a.codigo);
+  // A matéria de capa do jw.org escolhida no app: só o número do documento, o título e o endereço do próprio jw.org (o texto é lido no servidor).
+  const c = b.capa && typeof b.capa === "object" ? b.capa : null;
+  const capa = c && /^\d{6,12}$/.test(String(c.docId || ""))
+    ? { docId: String(c.docId), titulo: linha(c.titulo, 200), link: /^https:\/\/www\.jw\.org\/pt\/[^\s"<>]*$/.test(String(c.link || "")) ? String(c.link).slice(0, 300) : "" }
+    : null;
   return {
+    capa,
     data: dataValida ? b.data : hojeNoBrasil(),
     minutos,
     tipos: tipos.length ? tipos : ["casa"],
@@ -346,8 +365,9 @@ export function consultaDoCampo(d, paragrafo) {
 
 // ---------- Fontes no esboço ----------
 // As siglas que um ponto pode citar na linha "Fonte": as das fontes que foram na mensagem (e a Bíblia não conta como fonte aqui).
-export function siglasPermitidas({ paragrafo, licoes = [], artigos = [], be = [] }) {
+export function siglasPermitidas({ capa = null, paragrafo, licoes = [], artigos = [], be = [] }) {
   const siglas = new Set();
+  if (capa) siglas.add(SIGLA_CAPA);
   if (paragrafo) siglas.add(W24.codigo);
   for (const l of licoes) siglas.add(l.sigla);
   for (const a of artigos) siglas.add(a.codigo);
@@ -364,8 +384,11 @@ export function fonteDoPonto(texto, siglas) {
 }
 
 // O texto das fontes para a mensagem da IA (os rótulos estão na descrição da montagem, em _prompts.mjs).
-export function textoDasFontesDoCampo({ paragrafo, reiniciou = false, licoes = [], artigos = [], be = [] }) {
+export function textoDasFontesDoCampo({ capa = null, paragrafo, reiniciou = false, licoes = [], artigos = [], be = [] }) {
   const partes = [];
+  if (capa) {
+    partes.push(`MATÉRIA DE CAPA DO JW.ORG DESTA SEMANA, "${capa.titulo}" (fonte prioritária: é o assunto da consideração; cite "${SIGLA_CAPA}"):\n${capa.texto}`);
+  }
   if (paragrafo) {
     partes.push(
       `A SENTINELA DE MAIO DE 2024, "${W24.titulo}" (fonte prioritária; use este parágrafo e cite "${W24.codigo}, § ${paragrafo.numero}")` +
@@ -392,10 +415,11 @@ export function textoDasFontesDoCampo({ paragrafo, reiniciou = false, licoes = [
 }
 
 // A lista de fontes do fim do esboço: a de w24.05 (sempre, quando entrou) e as que a IA citou de verdade.
-export function listaDeFontes({ paragrafo, licoes = [], artigos = [], be = [] }, citado) {
+export function listaDeFontes({ capa = null, paragrafo, licoes = [], artigos = [], be = [] }, citado) {
   const n = semAcento(citado);
   const cita = (s) => new RegExp(`(^|[^a-z0-9.])${semAcento(s).replace(/\./g, "\\.")}(?![a-z0-9])`).test(n);
   const lista = [];
+  if (capa) lista.push(`${SIGLA_CAPA} — "${capa.titulo}" (matéria de capa)${capa.link ? ` — ${capa.link}` : ""}`);
   if (paragrafo) lista.push(`${W24.codigo} — "${W24.titulo}", § ${paragrafo.numero}`);
   for (const l of licoes) if (cita(`${l.sigla} lição ${l.licao}`) || cita(`${l.sigla} lic ${l.licao}`) || n.includes(semAcento(l.nome))) lista.push(`${l.sigla} lição ${l.licao} — ${l.nome}`);
   for (const a of artigos) if (cita(a.codigo)) lista.push(`${a.codigo} — "${a.titulo}"`);
