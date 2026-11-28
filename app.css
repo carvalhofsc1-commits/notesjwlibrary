@@ -19425,3 +19425,6 @@ span[role="status"]:is(.ok, .warn, .erro):not(:empty):not(.main-copy-status) { d
 .anot-reuniao-nova.anot-reuniao-card { margin: 0 0 10px; padding: 12px; border: 1px solid #93c5fd; border-radius: 14px; background: color-mix(in srgb, #60a5fa 7%, var(--card)); min-width: 0; }
 .anot-reuniao-card > .anotacoes-subtitulo { margin: 0 0 4px; }
 #anotReuniaoRapidaBtn { display: block; width: 100%; margin: 0 0 16px; border: 1px solid #fb923c; background: color-mix(in srgb, #fb923c 12%, var(--card)); color: var(--text); font-weight: 700; }
+
+/* 6.15.48: prévia do Word: linha de separação de margem a margem entre as partes da reunião */
+.visor-folha.doc p.doc-separador { margin: 0 0 12px; padding: 0; min-height: 0; height: 0; border-bottom: 2px solid #6b7280; text-indent: 0; }

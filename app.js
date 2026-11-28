@@ -7965,7 +7965,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.15.47'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.15.48'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -20481,6 +20481,7 @@ function saveTemplatesToStorage() {
       docxLinhas(doc.texto).forEach(linha => {
         const p = document.createElement('p');
         p.className = 'doc-p';
+        if (linha.trim() === DOCX_SEPARADOR) { p.className = 'doc-p doc-separador'; folha.append(p); return; }
         const modelo = docxLinhaModelo(linha, doc.acentos);
         if (!modelo) {
           p.classList.add('vazio');
@@ -22035,6 +22036,9 @@ function saveTemplatesToStorage() {
     const DOCX_MARCAS = { verde: '9DF0BE', amarelo: 'FDE68A', laranja: 'FDBA74', rosa: 'F9A8D4', roxo: 'D8B4FE' }; // as cores do marca-texto da Leitura em voz alta (as mesmas da prévia)
     const DOCX_FONTE_EMOJI = '<w:rFonts w:ascii="Segoe UI Emoji" w:hAnsi="Segoe UI Emoji" w:eastAsia="Segoe UI Emoji" w:cs="Segoe UI Emoji"/>';
 
+    // Uma linha do texto que, no Word e na prévia, vira uma linha horizontal de margem a margem.
+    const DOCX_SEPARADOR = '';
+
     // Um trecho de texto com o mesmo estilo vira uma ou mais "runs" (os emojis ficam em runs próprias, com a fonte de emojis).
     function docxRuns(texto, f, tamanho, cor, fundo) {
       const tam = tamanho ? '<w:sz w:val="' + tamanho + '"/><w:szCs w:val="' + tamanho + '"/>' : '';
@@ -22077,6 +22081,8 @@ function saveTemplatesToStorage() {
     // recuos acompanham a escala.
     function docxParagrafo(linha, primeira, acentos, escala = 1) {
       const corpo = Math.round(22 * escala);
+      // 6.15.48: linha de separação de margem a margem (entre as partes da reunião no Word).
+      if (linha.trim() === DOCX_SEPARADOR) return '<w:p><w:pPr><w:pBdr><w:bottom w:val="single" w:sz="12" w:space="1" w:color="6B7280"/></w:pBdr><w:spacing w:before="0" w:after="200"/></w:pPr></w:p>';
       const modelo = docxLinhaModelo(linha, acentos);
       if (!modelo) return escala === 1 ? '<w:p/>' : '<w:p><w:pPr><w:rPr><w:sz w:val="' + corpo + '"/><w:szCs w:val="' + corpo + '"/></w:rPr></w:pPr></w:p>';
       const esquerda = Math.round(modelo.esquerda * escala);
@@ -37758,10 +37764,10 @@ function saveTemplatesToStorage() {
         linhas.push('');
         r.partes.forEach((p, i) => {
           if (!String(p.texto || '').trim()) return;
-          linhas.push(estiloComAcentos(temaDaParteReuniao(p, i), 'bold'));
+          linhas.push(DOCX_SEPARADOR, estiloComAcentos(temaDaParteReuniao(p, i), 'bold')); // 6.15.48: uma linha separa cada parte
           if (p.orador) linhas.push('Orador: ' + p.orador);
           if (p.congregacao) linhas.push('Congregação: ' + p.congregacao);
-          linhas.push('', p.texto.trim(), '', '');
+          linhas.push('', p.texto.trim(), '');
         });
         const nome = ('Anotações - Reunião ' + (r.data || '')).replace(/[\\/:*?"<>|]/g, '').trim();
         await docxPreviaAbrir(reuniaoExportarBtn, linhas.join('\n').trim(), nome);

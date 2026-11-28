@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.15.48
+
+- Exportar anotações da reunião (Word): cada parte é separada por uma linha de margem a margem, também mostrada na prévia.
+
 ## 6.15.47
 
 - Exportar para Word (anotações e demais exportações): corrigida a acentuação quebrada. Nas letras em negrito/itálico das anotações o acento ia para um trecho separado, sem formatação, e o Word mostrava os acentos e as cedilhas errados; agora o acento volta para a própria letra, no mesmo negrito/itálico.
