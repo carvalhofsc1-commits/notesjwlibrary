@@ -7964,7 +7964,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.15.27'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.15.28'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -37222,6 +37222,20 @@ function saveTemplatesToStorage() {
       // Tema principal da reunião (6.15.19): informado no cadastro ou depois, na tela das partes; vai na lista, no cabeçalho da parte e no Word.
       const reuniaoTemaNovo = document.getElementById('anotReuniaoTemaNovo');
       const reuniaoTemaEl = document.getElementById('anotReuniaoTema');
+      // 6.15.28: os dois campos do tema são caixas de texto que crescem em mais linhas quando preciso (texto centralizado); Enter não quebra linha.
+      const crescerTemaReuniao = el => {
+        if (!el.offsetParent) return;
+        el.style.height = 'auto';
+        el.style.height = (el.scrollHeight + 2) + 'px';
+      };
+      [reuniaoTemaNovo, reuniaoTemaEl].forEach(el => {
+        el.addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); el.blur(); } });
+        el.addEventListener('input', () => {
+          if (/[\r\n]/.test(el.value)) el.value = el.value.replace(/\s*[\r\n]+\s*/g, ' ');
+          crescerTemaReuniao(el);
+        });
+      });
+      window.addEventListener('resize', () => { crescerTemaReuniao(reuniaoTemaNovo); crescerTemaReuniao(reuniaoTemaEl); });
       reuniaoTemaEl.addEventListener('input', () => {
         const r = reuniaoAtual();
         if (!r) return;
@@ -37252,6 +37266,7 @@ function saveTemplatesToStorage() {
       function reuniaoIr(v) {
         reuniaoVista = v;
         atualizarVista();
+        crescerTemaReuniao(reuniaoTemaEl); // a caixa do tema só mede depois de aparecer na tela
         window.scrollTo({ top: 0 });
       }
       // Ao abrir a Reunião: primeiro o cadastro de uma nova reunião, com a lista das já anotadas embaixo.
@@ -37309,6 +37324,7 @@ function saveTemplatesToStorage() {
         dizer('');
         const tema = reuniaoTemaNovo.value.trim();
         reuniaoTemaNovo.value = '';
+        reuniaoTemaNovo.style.height = '';
         const ja = reunioes.find(r => r.data === data && tipoReuniao(r) === tipoNome);
         if (ja) { if (tema && !ja.tema) ja.tema = tema; reuniaoAtualId = ja.id; reuniaoNovaParte(); return; } // a mesma reunião já cadastrada: começa mais uma parte nela
         const r = { id: novoIdReuniao(), data, tipo, tipoNome, tema, em: new Date().toISOString(), partes: [] };
@@ -37425,6 +37441,7 @@ function saveTemplatesToStorage() {
           document.getElementById('anotReuniaoNome').textContent = '📅 ' + nomeReuniao(r);
           document.getElementById('anotReuniaoNomeInfo').textContent = tipoReuniao(r);
           if (document.activeElement !== reuniaoTemaEl) reuniaoTemaEl.value = r.tema || '';
+          requestAnimationFrame(() => crescerTemaReuniao(reuniaoTemaEl));
           reuniaoPartesEl.replaceChildren();
           if (r.partes.length < 2) reuniaoOrdenando = false;
           const ordenarBtn = document.getElementById('anotReuniaoOrdenar');

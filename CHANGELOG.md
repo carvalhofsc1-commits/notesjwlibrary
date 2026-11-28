@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.15.28
+
+- Reunião: o campo "Tema principal da reunião" (no cadastro e na tela das partes) virou uma caixa que cresce em mais linhas quando o tema é comprido, com o texto centralizado e em negrito. Enter fecha o teclado (não quebra linha).
+
 ## 6.15.27
 
 - Reuniões anotadas: o tema principal da reunião aparece em destaque, numa linha própria logo abaixo da data (maior, em negrito e na cor roxa); embaixo ficam o tipo e o número de partes.

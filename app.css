@@ -5285,6 +5285,19 @@
       overflow-wrap: anywhere;
     }
 
+    textarea.anot-reuniao-tema-campo {
+      display: block;
+      width: 100%;
+      min-height: 0;
+      resize: none;
+      overflow: hidden;
+      text-align: center;
+      line-height: 1.35;
+      font-weight: 700;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
     .anot-reuniao-tema-lista {
       display: block;
       margin: 4px 0 2px;
