@@ -2,6 +2,15 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.15.44
+
+- Reunião, lista das partes: card "📜 Transcrições na íntegra" (acima do Exportar) com as transcrições de todas as partes da reunião, na ordem delas. As sem parte (feitas antes desta versão ou trazidas do servidor) aparecem à parte e podem ser ligadas a uma parte.
+- Dentro de uma parte da reunião, a lista mostra só a transcrição daquela parte.
+- Cartão do áudio: escolha do tipo de resumo antes de confirmar — "📝 Objetivo (padrão)" ou "📚 Completo" (todos os detalhes, quase a transcrição na íntegra).
+- Dentro da parte, "✨ Melhorar o resumo (mais completo)": refaz, a partir da transcrição, o resumo completo; ele entra no lugar do anterior se aquele texto não foi mudado, senão no fim (nada é apagado). Aparece enquanto houver transcrição sem resumo completo.
+- Reunião, cadastro: o "Tipo de reunião" abre uma lista do próprio app em forma de tabela (ícone numa coluna, nome na outra, linhas separadas, a escolhida em azul claro) no lugar da lista do aparelho.
+- Servidor: o resumo completo tem mais espaço de resposta e até 5 minutos; avisa se o texto for cortado. A instrução enviada à IA aparece na tela de prompts.
+
 ## 6.15.43
 
 - Anotações: o andamento da importação/resumo de um áudio virou um card roxo claro (na lista das partes da reunião e dentro da anotação), com a etapa (Transcrevendo o áudio → Fazendo o resumo), o tempo, o nome da parte, a barra de andamento, os trechos do áudio já transcritos ("3 de 6") e a porcentagem. Ao terminar, o mesmo card mostra o resultado por alguns segundos.

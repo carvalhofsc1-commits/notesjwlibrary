@@ -286,7 +286,16 @@
             <div id="anotReuniaoImportCard" class="anot-importar-card" hidden></div>
             <p id="anotReuniaoImportStatus" class="anotacoes-msg warn" role="status" aria-live="polite" hidden></p>
             <div id="anotReuniaoFila" class="anotacoes-msg anotacoes-fila anot-andamento" role="status" aria-live="off" hidden></div>
-            <button id="anotReuniaoExportar" class="secondary anot-reuniao-largo" type="button" title="Mostra a prévia do Word com as anotações de todas as partes desta reunião e de lá exporta">📄 Exportar anotações da reunião</button>
+            <!-- 6.15.44: as transcrições na íntegra de todas as partes desta reunião. -->
+            <details id="anotReuniaoTranscBox" class="anotacoes-gravacoes-box anot-reuniao-transc">
+              <summary id="anotReuniaoTranscTitulo">📜 Transcrições na íntegra</summary>
+              <div class="anotacoes-gravacoes-corpo">
+                <button id="anotReuniaoTranscBuscar" class="secondary anot-reuniao-largo" type="button" title="Trazer do servidor as transcrições que não estão neste aparelho">☁️ Buscar no servidor</button>
+                <div id="anotReuniaoTransc" class="anotacoes-transcricoes"></div>
+                <p id="anotReuniaoTranscStatus" class="anotacoes-msg" role="status" aria-live="polite"></p>
+              </div>
+            </details>
+            <button id="anotReuniaoExportar"class="secondary anot-reuniao-largo" type="button" title="Mostra a prévia do Word com as anotações de todas as partes desta reunião e de lá exporta">📄 Exportar anotações da reunião</button>
           </div>
         </div>
 
@@ -460,6 +469,7 @@
                 <div id="anotacoesGravacoes" class="anotacoes-gravacoes"></div>
               </div>
             </details>
+            <button id="anotacoesMelhorarBtn" data-codigo-ia="texto" class="anot-melhorar" type="button" title="Fazer um resumo completo, com todos os detalhes, a partir da transcrição desta parte" hidden>✨ Melhorar o resumo (mais completo)</button>
             <!-- As transcrições na íntegra de cada gravação resumida: guardadas neste aparelho e no servidor. -->
             <details id="anotacoesTranscricoesBox" class="anotacoes-gravacoes-box">
               <summary id="anotacoesTranscricoesTitulo">📜 Transcrições na íntegra</summary>

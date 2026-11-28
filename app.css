@@ -5306,6 +5306,133 @@
       color: #c2410c;
     }
 
+    /* 6.15.44: tipo de resumo no cartão do áudio, transcrições da reunião e o botão de melhorar o resumo */
+    .anot-importar-tipos {
+      display: grid;
+      gap: 6px;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      min-width: 0;
+    }
+
+    .anot-importar-tipos legend {
+      padding: 0 0 4px;
+      font-weight: 700;
+    }
+
+    .anot-importar-tipo {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      margin: 0;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--card);
+      cursor: pointer;
+      font-weight: 400;
+    }
+
+    .anot-importar-tipo:has(input:checked) {
+      border: 2px solid #7c3aed;
+      background: color-mix(in srgb, #8b5cf6 12%, var(--card));
+    }
+
+    .anot-importar-tipo input {
+      flex: 0 0 auto;
+      width: 20px;
+      height: 20px;
+      min-height: 0;
+      margin: 2px 0 0;
+    }
+
+    .anot-importar-tipo span {
+      display: grid;
+      min-width: 0;
+    }
+
+    .anot-importar-tipo small {
+      color: var(--muted);
+    }
+
+    .anot-reuniao-transc {
+      margin: 0 0 8px;
+    }
+
+    .anot-transc-ligar {
+      width: 100%;
+      margin: 0;
+    }
+
+    .anot-melhorar {
+      display: block;
+      width: 100%;
+      margin: 10px 0 0;
+    }
+
+    .anot-melhorar[hidden] {
+      display: none;
+    }
+
+    /* 6.15.44: lista dos tipos de reunião em forma de tabela */
+    .anot-tipo-tabela {
+      min-width: 0;
+    }
+
+    .anot-tipo-tabela .bk-seletor-lista {
+      max-height: 70vh;
+      border: 1px solid #60a5fa;
+    }
+
+    .anot-tipo-tabela .bk-seletor-lista > button.bk-seletor-item {
+      display: flex;
+      align-items: stretch;
+      gap: 12px;
+      width: 100%;
+      min-height: 52px;
+      margin: 0;
+      padding: 0 12px 0 0;
+      border: 0;
+      border-bottom: 1px solid #bfdbfe;
+      border-radius: 0;
+      font-size: .95rem;
+      text-align: left;
+    }
+
+    .anot-tipo-tabela .bk-seletor-lista > button.bk-seletor-item:last-child {
+      border-bottom: 0;
+    }
+
+    .anot-tipo-tabela .bk-seletor-item::before {
+      content: '🤝';
+      flex: 0 0 52px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-right: 1px solid #bfdbfe;
+      background: color-mix(in srgb, var(--muted) 9%, var(--card));
+      font-size: 1.2rem;
+    }
+
+    .anot-tipo-tabela .bk-seletor-item[data-valor="meio"]::before,
+    .anot-tipo-tabela .bk-seletor-item[data-valor="fim"]::before {
+      content: '📅';
+    }
+
+    .anot-tipo-tabela .bk-seletor-item[data-valor="outra"]::before {
+      content: '✏️';
+    }
+
+    /* o texto fica centralizado na altura da linha */
+    .anot-tipo-tabela .bk-seletor-item {
+      line-height: 1.3;
+    }
+
+    .anot-tipo-tabela .bk-seletor-lista > button.bk-seletor-item.selecionado {
+      background: color-mix(in srgb, #60a5fa 18%, var(--card));
+    }
+
     .anot-reuniao-setas {
       flex: 0 0 48px;
       width: 48px;

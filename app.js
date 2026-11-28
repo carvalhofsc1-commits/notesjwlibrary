@@ -2055,6 +2055,7 @@
           item.className = 'bk-seletor-item' + (destacar && destacar(o.value) ? ' destaque' : '') + (o.value === select.value ? ' selecionado' : '');
           item.setAttribute('role', 'option');
           item.disabled = o.disabled;
+          item.dataset.valor = o.value;
           item.textContent = (o.value === select.value ? '✓ ' : '') + o.textContent;
           item.addEventListener('click', event => {
             event.stopPropagation();
@@ -7964,7 +7965,7 @@
     // Olho só de linhas (o mesmo desenho do botão "Visualizar" das Anotações), no lugar do emoji 👁️ e do 🙈.
     const ICONE_OLHO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
     const ICONE_OLHO_FECHADO = '<svg class="icone-olho" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3 3l18 18"/></svg>';
-    const APP_VERSION = '6.15.43'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
+    const APP_VERSION = '6.15.44'; // histórico de versões: CHANGELOG.md. Numeração: o último número vai de 00 a 99 (6.2.00 … 6.2.99) e só então vem 6.3.00; nunca passa de 99.
     document.getElementById('appVersionTexto').textContent = 'Versão ' + APP_VERSION;
     document.getElementById('menuVersao').textContent = 'NoteStyle · versão ' + APP_VERSION;
 
@@ -36563,6 +36564,7 @@ function saveTemplatesToStorage() {
         const programa = comPrograma();
         ativa = programa && vista === 'anotando' && parteAtual >= 0 && Boolean(partes[parteAtual]);
         conferirCartoesDeAudio(); // o cartão de confirmar um áudio some ao trocar de tela ou de parte
+        setTimeout(() => { try { transcAoTrocar(); } catch (e) { /* ainda iniciando */ } }, 0); // transcrições da parte (ou da reunião) em dia
         programaBox.hidden = !programa || vista === 'anotando'; // vazia na tela de anotação: escondida, para não somar mais um espaço
         escolhaEl.hidden = vista !== 'escolha';
         programaVistaEl.hidden = vista !== 'programa';
@@ -37282,6 +37284,10 @@ function saveTemplatesToStorage() {
       // Tipo da reunião (6.15.18): meio ou fim de semana (pela data, se não escolhido), as reuniões especiais já cadastradas ou outra, com nome livre.
       const reuniaoTipoSel = document.getElementById('anotReuniaoTipo');
       const reuniaoOutroEl = document.getElementById('anotReuniaoOutro');
+      // 6.15.44: a lista dos tipos abre no próprio app, em forma de tabela (ícone numa coluna, nome na outra), no lugar da lista do aparelho.
+      backupSeletorLargo(reuniaoTipoSel);
+      reuniaoTipoSel.nextElementSibling.classList.add('anot-tipo-tabela');
+      reuniaoTipoSel.focus = () => reuniaoTipoSel.nextElementSibling.querySelector('.bk-seletor-botao').focus();
       const tipoPelaData = data => { const dt = lerData(data); return dt && (dt.getDay() === 0 || dt.getDay() === 6) ? 'fim' : 'meio'; };
       const nomeDoTipo = valor => { const o = [...reuniaoTipoSel.options].find(x => x.value === valor); return o ? o.textContent : ''; };
       const tipoReuniao = r => (r && r.tipoNome) || (r && lerData(r.data) ? nomeDoTipo(tipoPelaData(r.data)) : '');
@@ -37467,12 +37473,12 @@ function saveTemplatesToStorage() {
         try {
           const duracaoS = await trDuracaoLer(arquivo);
           // 6.15.41: a parte só é criada (e o áudio enviado) depois de confirmar.
-          cartaoDeAudio(document.getElementById('anotReuniaoImportCard'), arquivo, duracaoS, async () => {
+          cartaoDeAudio(document.getElementById('anotReuniaoImportCard'), arquivo, duracaoS, async detalhe => {
             const p = novaParteReuniao();
             r.partes.push(p);
             const alvo = {
               modo: 'reuniao', programa: false, chave: '', parte: 0, parteId: '', dona: -1, donaId: '', q: null,
-              rId: r.id, rp: p.id, contexto: '', titulo: 'Parte ' + r.partes.length + ' (áudio importado)', identificar: true
+              rId: r.id, rp: p.id, contexto: '', titulo: 'Parte ' + r.partes.length + ' (áudio importado)', identificar: true, detalhe
             };
             salvarRascunho();
             reuniaoPintar();
@@ -37517,9 +37523,26 @@ function saveTemplatesToStorage() {
         const descartar = criar('button', 'secondary anot-importar-descartar', '🗑️ Descartar');
         confirmar.type = descartar.type = 'button';
         const longo = duracaoS && duracaoS / 60 > trLimites.gravacaoMin;
+        // 6.15.44: o tipo de resumo, escolhido antes de confirmar (o objetivo vem marcado).
+        const tipos = document.createElement('fieldset');
+        tipos.className = 'anot-importar-tipos';
+        tipos.appendChild(criar('legend', '', 'Tipo de resumo'));
+        [['objetivo', '📝 Objetivo (padrão)', 'Os pontos principais, as aplicações e os textos.'], ['completo', '📚 Completo', 'Todos os detalhes, quase a transcrição na íntegra.']].forEach(([valor, nome, dica]) => {
+          const rot = criar('label', 'anot-importar-tipo', '');
+          const radio = document.createElement('input');
+          radio.type = 'radio';
+          radio.name = 'tipoResumo-' + caixa.id;
+          radio.value = valor;
+          radio.checked = valor === 'objetivo';
+          const txt = criar('span', '', '');
+          txt.append(criar('strong', '', nome), criar('small', '', dica));
+          rot.append(radio, txt);
+          tipos.appendChild(rot);
+        });
         caixa.replaceChildren(
           criar('strong', 'anot-importar-titulo', 'Confira o áudio antes de importar'),
           criar('div', 'tr-lista-dados', linhas.join('\n')),
+          tipos,
           criar('p', 'hint anot-importar-dica', longo ? '⚠️ Este áudio passa de ' + trLimites.gravacaoMin + ' minutos, o limite por gravação.' : 'A transcrição só começa depois de confirmar.'),
           confirmar, descartar
         );
@@ -37527,8 +37550,10 @@ function saveTemplatesToStorage() {
         descartar.addEventListener('click', () => fecharCartao(caixa));
         confirmar.addEventListener('click', async () => {
           if (caixa.dataset.dono !== donoDoCartao(caixa.id)) return fecharCartao(caixa);
+          const escolhido = caixa.querySelector('.anot-importar-tipos input:checked');
+          const detalhe = escolhido ? escolhido.value : 'objetivo';
           fecharCartao(caixa);
-          await aoConfirmar();
+          await aoConfirmar(detalhe);
         });
         caixa.dataset.dono = donoDoCartao(caixa.id);
         caixa.hidden = false;
@@ -38671,6 +38696,12 @@ function saveTemplatesToStorage() {
           duracaoS: Math.round(Number(duracaoS) || 0) || null,
           caracteres: texto.length,
           nuvem: '',
+          // 6.15.44: de qual anotação veio (a parte da reunião ou do programa), para mostrar na parte certa
+          modo: (alvo && alvo.modo) || '',
+          rId: alvo && !alvo.programa ? alvo.rId || '' : '',
+          rp: alvo && !alvo.programa ? alvo.rp || '' : '',
+          chave: alvo && alvo.programa ? alvo.chave || '' : '',
+          parteId: alvo && alvo.programa ? alvo.parteId || '' : '',
         };
         try { await bancoGravar('transc:' + item.id, texto); } catch (e) { /* sem espaço: fica só no servidor */ }
         const lista = await transcIndice();
@@ -38684,14 +38715,74 @@ function saveTemplatesToStorage() {
           const achado = atual.find(x => x.id === item.id);
           if (achado) { achado.nuvem = item.nuvem; await transcGravarIndice(atual); }
         }
+        transcAtualizarTelas();
+        return item.id;
+      }
+      async function transcMarcar(ids, dadosNovos) {
+        const lista = await transcIndice();
+        lista.forEach(x => { if (ids.includes(x.id)) Object.assign(x, dadosNovos); });
+        await transcGravarIndice(lista);
+        transcAtualizarTelas();
+      }
+      // 6.15.44: dentro de uma parte da reunião, a lista mostra só as transcrições dela (na assembleia e no congresso continua mostrando todas);
+      // "da parte aberta" também vale para o ✨ Melhorar o resumo.
+      const transcNaParteDaReuniao = () => modo === 'reuniao' && !comPrograma() && reuniaoVista === 'anotando';
+      function transcDaParteAberta(item) {
+        if (comPrograma()) return item.modo === modo && item.chave === chaveAtual && Boolean(partes[parteAtual]) && item.parteId === idDaParte(partes[parteAtual]);
+        return transcNaParteDaReuniao() && item.rId === reuniaoAtualId && item.rp === reuniaoParteId;
+      }
+      function transcAoTrocar() {
+        const dono = donoDoCartao('anotacoes');
+        if (transcBox.dataset.dono !== dono) {
+          transcBox.dataset.dono = dono;
+          transcAtualizarTelas();
+        } else if (modo === 'reuniao' && reuniaoVista === 'partes') transcDaReuniaoPintar();
+      }
+      function transcAtualizarTelas() {
         if (transcBox && transcBox.open) transcPintar();
         else transcContar();
+        if (modo === 'reuniao' && reuniaoVista === 'partes') transcDaReuniaoPintar();
+        melhorarPintar();
       }
       async function transcContar() {
         if (!transcTitulo) return;
-        const n = (await transcIndice()).length;
-        transcTitulo.textContent = '📜 Transcrições na íntegra' + (n ? ' (' + n + ')' : '');
+        const lista = await transcIndice();
+        const n = (transcNaParteDaReuniao() ? lista.filter(transcDaParteAberta) : lista).length;
+        transcTitulo.textContent = '📜 ' + (transcNaParteDaReuniao() ? 'Transcrição desta parte' : 'Transcrições na íntegra') + (n ? ' (' + n + ')' : '');
       }
+      // ✨ Melhorar o resumo: aparece na parte que tem transcrição ainda não resumida no modo completo.
+      async function melhorarPintar() {
+        const botao = document.getElementById('anotacoesMelhorarBtn');
+        if (!botao) return;
+        const lista = await transcIndice();
+        botao.hidden = !modo || !lista.some(x => transcDaParteAberta(x) && x.tipo !== 'completo');
+      }
+      document.getElementById('anotacoesMelhorarBtn').addEventListener('click', async () => {
+        if (!codigoTextoSalvo()) { gravarStatus.textContent = 'Salve o código de texto em Ajustes → 🔐 Autorização de acessos.'; return; }
+        const alvo = alvoAtual();
+        const itens = (await transcIndice()).filter(transcDaParteAberta).reverse(); // na ordem em que foram feitas
+        if (!itens.length) return;
+        if (filaResumo.concat(filaRodando || []).some(j => j.tipo === 'melhorar' && alvoAberto(j.alvo))) { gravarStatus.textContent = 'Este resumo já está sendo melhorado.'; return; }
+        const ok = await askConfirm('Fazer um resumo completo, com todos os detalhes (quase a transcrição na íntegra), a partir ' + (itens.length > 1 ? 'das ' + itens.length + ' transcrições' : 'da transcrição') + ' desta parte? Ele entra no lugar do resumo anterior; se você mudou aquele texto, nada é apagado e o completo entra no fim. Usa a IA (gasta crédito).', 'Melhorar o resumo', { ok: 'Fazer o resumo completo', cancel: 'Cancelar' });
+        if (!ok) return;
+        alvo.detalhe = 'completo';
+        alvo.melhorar = true;
+        alvo.trocar = [...new Set(itens.map(x => x.bloco).filter(Boolean))];
+        alvo.titulo = String(alvo.titulo || 'Anotações').replace(' (áudio importado)', '');
+        gravarStatus.textContent = '';
+        await filaAdicionar({
+          alvo, tipo: 'melhorar',
+          async executar(job) {
+            job.fase = 'Resumindo';
+            const textos = [];
+            for (const item of itens) { const t = await transcTexto(item); if (t) textos.push(itens.length > 1 ? '[Trecho ' + (textos.length + 1) + ']\n' + t : t); }
+            if (!textos.length) return '⚠️ Não encontrei o texto da transcrição desta parte.';
+            const res = await anotacoesResumir(textos.join('\n\n'), textos.length > 1, alvo);
+            if (res.bloco) await transcMarcar(itens.map(x => x.id), { bloco: res.bloco, tipo: 'completo' });
+            return mensagemFinal(alvo, res);
+          }
+        });
+      });
       async function transcTexto(item) {
         let texto = null;
         try { texto = await bancoLer('transc:' + item.id); } catch (e) { texto = null; }
@@ -38713,27 +38804,79 @@ function saveTemplatesToStorage() {
         try { await bancoApagar('transc:' + item.id); } catch (e) { /* ignore */ }
         await transcGravarIndice((await transcIndice()).filter(x => x.id !== item.id));
         transcStatus.textContent = '';
-        transcPintar();
+        transcAtualizarTelas();
       }
       const transcData = iso => { try { return new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }); } catch (e) { return ''; } };
       async function transcPintar() {
         if (!transcLista) return;
-        const lista = await transcIndice();
+        const todas = await transcIndice();
+        const soDaParte = transcNaParteDaReuniao();
+        const lista = soDaParte ? todas.filter(transcDaParteAberta) : todas;
         transcContar();
+        transcBox.querySelector('.hint').textContent = soDaParte
+          ? 'A transcrição do áudio desta parte. As de todas as partes (e as antigas, que dá para ligar a uma parte) ficam em 📜 Transcrições na íntegra, na lista das partes.'
+          : 'O texto completo de cada gravação transcrita fica guardado neste aparelho e no servidor (☁️), para ler, copiar ou recuperar depois.';
+        document.getElementById('anotacoesTranscricoesBuscarBtn').hidden = soDaParte;
         if (!lista.length) {
           const vazio = document.createElement('p');
           vazio.className = 'hint';
-          vazio.textContent = 'Nenhuma transcrição guardada ainda. Elas aparecem aqui depois de cada resumo de gravação.';
+          vazio.textContent = soDaParte ? 'Nenhuma transcrição desta parte ainda.' : 'Nenhuma transcrição guardada ainda. Elas aparecem aqui depois de cada resumo de gravação.';
           transcLista.replaceChildren(vazio);
           return;
         }
-        transcLista.replaceChildren(...lista.map(item => {
+        transcLista.replaceChildren(...lista.map(item => transcCartao(item, {
+          porNasAnotacoes: texto => {
+            campoNotas.value = juntarTexto(campoNotas.value, '—— Transcrição ——\n' + texto);
+            guardarNota();
+            salvarRascunho();
+          }
+        })));
+      }
+      // 6.15.44: na lista das partes, as transcrições de todas as partes desta reunião, na ordem das partes; as que não têm parte (feitas antes
+      // desta versão, ou trazidas do servidor) podem ser ligadas a uma parte.
+      async function transcDaReuniaoPintar() {
+        const caixa = document.getElementById('anotReuniaoTranscBox');
+        const r = reuniaoAtual();
+        if (!caixa || !r) return;
+        const todas = await transcIndice();
+        const daReuniao = [];
+        r.partes.forEach((p, i) => todas.filter(x => x.rId === r.id && x.rp === p.id).forEach(item => daReuniao.push({ item, p, i })));
+        const soltas = todas.filter(x => (!x.rId && (!x.modo || x.modo === 'reuniao')) || (x.rId === r.id && !r.partes.some(p => p.id === x.rp)));
+        document.getElementById('anotReuniaoTranscTitulo').textContent = '📜 Transcrições na íntegra' + (daReuniao.length ? ' (' + daReuniao.length + ')' : '');
+        if (!caixa.open) return;
+        const lista = document.getElementById('anotReuniaoTransc');
+        const aviso = texto => { const el = document.createElement('p'); el.className = 'hint'; el.textContent = texto; return el; };
+        const nomeParte = (p, i) => (i + 1) + '. ' + temaDaParteReuniao(p, i);
+        const nos = daReuniao.map(({ item, p, i }) => transcCartao(item, {
+          titulo: nomeParte(p, i),
+          porNasAnotacoes: texto => {
+            p.texto = juntarTexto(p.texto, '—— Transcrição ——\n' + texto);
+            p.em = new Date().toISOString();
+            salvarRascunho();
+            reuniaoPintar();
+          }
+        }));
+        if (!daReuniao.length) nos.push(aviso('Nenhuma transcrição ligada às partes desta reunião ainda.'));
+        if (soltas.length) {
+          nos.push(aviso('Sem parte (feitas antes ou em outro aparelho). Abra uma e escolha a que parte ela pertence:'));
+          soltas.forEach(item => nos.push(transcCartao(item, {
+            ligarA: r.partes.map((p, i) => ({ id: p.id, nome: nomeParte(p, i) })),
+            ligar: id => transcMarcar([item.id], { modo: 'reuniao', rId: r.id, rp: id, chave: '', parteId: '' })
+          })));
+        }
+        // quem estava aberto continua aberto depois de redesenhar
+        const abertos = new Set([...lista.querySelectorAll('details[open]')].map(d => d.dataset.id));
+        lista.replaceChildren(...nos);
+        lista.querySelectorAll('details').forEach(d => { if (abertos.has(d.dataset.id)) d.open = true; });
+      }
+      function transcCartao(item, opcoes) {
           const linha = document.createElement('details');
           linha.className = 'anotacoes-transcricao';
+          linha.dataset.id = item.id;
           const cab = document.createElement('summary');
           const nome = document.createElement('span');
           nome.className = 'anotacoes-transcricao-nome';
-          nome.textContent = item.titulo;
+          nome.textContent = opcoes.titulo || item.titulo;
           const info = document.createElement('small');
           info.textContent = [transcData(item.em), item.duracaoS ? mmss(item.duracaoS) : '', item.nuvem ? '☁️' : '⏳ só no aparelho'].filter(Boolean).join(' · ');
           const textos = document.createElement('span');
@@ -38774,12 +38917,11 @@ function saveTemplatesToStorage() {
             inserir.type = 'button';
             inserir.className = 'secondary';
             inserir.textContent = '📝 Pôr nas anotações';
-            inserir.title = 'Acrescentar esta transcrição às anotações abertas';
+            inserir.title = 'Acrescentar esta transcrição às anotações da parte';
+            inserir.disabled = !opcoes.porNasAnotacoes; // sem parte: primeiro ligar a uma
             inserir.addEventListener('click', () => {
-              campoNotas.value = juntarTexto(campoNotas.value, '—— Transcrição ——\n' + texto);
-              guardarNota();
-              salvarRascunho();
               piscarBotao(inserir, '📝 Pôr nas anotações');
+              opcoes.porNasAnotacoes(texto);
             });
             const apagar = document.createElement('button');
             apagar.type = 'button';
@@ -38790,10 +38932,21 @@ function saveTemplatesToStorage() {
             apagar.addEventListener('click', () => transcApagar(item, apagar));
             botoes.append(copiar, inserir, apagar);
             corpo.replaceChildren(area, botoes);
+            if (opcoes.ligar && opcoes.ligarA.length) {
+              const escolher = document.createElement('select');
+              escolher.className = 'anot-transc-ligar';
+              escolher.setAttribute('aria-label', 'Ligar esta transcrição a uma parte desta reunião');
+              escolher.appendChild(new Option('🔗 Ligar a uma parte desta reunião…', ''));
+              opcoes.ligarA.forEach(o => escolher.appendChild(new Option(o.nome, o.id)));
+              escolher.addEventListener('change', () => { if (escolher.value) opcoes.ligar(escolher.value); });
+              corpo.appendChild(escolher);
+            }
           });
           return linha;
-        }));
       }
+      const transcDaReuniaoBox = document.getElementById('anotReuniaoTranscBox');
+      transcDaReuniaoBox.addEventListener('toggle', () => { if (transcDaReuniaoBox.open) transcDaReuniaoPintar().then(transcReenviar); });
+      document.getElementById('anotReuniaoTranscBuscar').addEventListener('click', () => document.getElementById('anotacoesTranscricoesBuscarBtn').click());
       // Ao abrir a lista: envia ao servidor as que ficaram só no aparelho (sem internet na hora, por exemplo).
       async function transcReenviar() {
         const lista = await transcIndice();
@@ -38828,7 +38981,8 @@ function saveTemplatesToStorage() {
         const junta = lista.concat(novos).sort((a, b) => String(b.em).localeCompare(String(a.em)));
         await transcGravarIndice(junta);
         transcStatus.textContent = novos.length ? (novos.length === 1 ? '1 transcrição trazida do servidor.' : novos.length + ' transcrições trazidas do servidor.') : 'Nada novo no servidor: todas já estão aqui.';
-        transcPintar();
+        document.getElementById('anotReuniaoTranscStatus').textContent = transcStatus.textContent;
+        transcAtualizarTelas();
       });
       function anotacoesOradorRespondeu(transc, q) {
         const norm = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
@@ -38870,10 +39024,19 @@ function saveTemplatesToStorage() {
       }
       const alvoAberto = a => Boolean(modo) && modo === a.modo && (a.programa ? (comPrograma() && chaveAtual === a.chave && ativa && indiceDoAlvo(partes, a.parteId, a.parte) === parteAtual) : (!comPrograma() && reuniaoVista === 'anotando' && (!a.rId || (a.rId === reuniaoAtualId && a.rp === reuniaoParteId))));
       const juntarTexto = (velho, novo) => (String(velho || '').trim() ? String(velho).replace(/\s+$/, '') + '\n\n' : '') + novo;
+      // 6.15.44: o resumo completo entra no lugar do anterior quando ele ainda está igualzinho no texto; senão, no fim (nada é apagado).
+      function juntarResumo(velho, novo, trocar) {
+        const t = String(velho || '');
+        const achados = (trocar || []).filter(b => b && t.includes(b));
+        if (!achados.length) return juntarTexto(t, novo);
+        let r = t.replace(achados[0], () => novo);
+        achados.slice(1).forEach(b => { r = r.replace(b, ''); });
+        return r.replace(/\n{3,}/g, '\n\n');
+      }
       // Grava o resumo (e a resposta da recapitulação) na anotação do alvo: aberta na tela, em outra parte do evento aberto ou só no rascunho.
       function entregarNaAnotacao(alvo, bloco, resp) {
         if (alvoAberto(alvo)) {
-          texto.value = juntarTexto(texto.value, bloco);
+          texto.value = juntarResumo(texto.value, bloco, alvo.trocar);
           guardarNota();
           if (resp && perguntaDaParte(parteAtual)) {
             respostaAntesDaIa = respostaEl.value;
@@ -38887,7 +39050,7 @@ function saveTemplatesToStorage() {
         }
         const ip = alvo.programa ? indiceDoAlvo(partes, alvo.parteId, alvo.parte) : -1;
         if (alvo.programa && modo === alvo.modo && comPrograma() && chaveAtual === alvo.chave && ip >= 0) {
-          partes[ip].nota = juntarTexto(partes[ip].nota, bloco);
+          partes[ip].nota = juntarResumo(partes[ip].nota, bloco, alvo.trocar);
           const id = alvo.dona >= 0 ? indiceDoAlvo(partes, alvo.donaId, alvo.dona) : -1;
           if (resp && partes[id]) partes[id].resposta = juntarTexto(partes[id].resposta, resp);
           salvarRascunho();
@@ -38898,7 +39061,7 @@ function saveTemplatesToStorage() {
         if (!alvo.programa && modo === 'reuniao') {
           const p = acharParteReuniao(reunioes, alvo);
           if (!p) return false;
-          p.texto = juntarTexto(p.texto, bloco);
+          p.texto = juntarResumo(p.texto, bloco, alvo.trocar);
           p.em = new Date().toISOString();
           salvarRascunho();
           try { atualizarVista(); } catch (e) { /* ignore */ }
@@ -38911,14 +39074,14 @@ function saveTemplatesToStorage() {
             const ipr = ev ? indiceDoAlvo(ev.partes, alvo.parteId, alvo.parte) : -1;
             const p = ipr >= 0 ? ev.partes[ipr] : null;
             if (!p) return false;
-            p.nota = juntarTexto(p.nota, bloco);
+            p.nota = juntarResumo(p.nota, bloco, alvo.trocar);
             const idr = alvo.dona >= 0 ? indiceDoAlvo(ev.partes, alvo.donaId, alvo.dona) : -1;
             if (resp && ev.partes[idr]) ev.partes[idr].resposta = juntarTexto(ev.partes[idr].resposta, resp);
           } else {
             if (!dados.reuniao || typeof dados.reuniao !== 'object') dados.reuniao = {};
             const p = acharParteReuniao(reunioesDoRascunho(dados.reuniao), alvo);
             if (!p) return false;
-            p.texto = juntarTexto(p.texto, bloco);
+            p.texto = juntarResumo(p.texto, bloco, alvo.trocar);
             p.em = new Date().toISOString();
           }
           localStorage.setItem(ANOT_KEY, JSON.stringify(dados));
@@ -38931,8 +39094,9 @@ function saveTemplatesToStorage() {
         const pedido = { acao: 'resumo', modo: 'anotacoes', codigoTexto: codigoTextoSalvo(), texto: transc.slice(0, 60000), contexto: alvo.contexto };
         if (alvo.q) pedido.pergunta = textoDaPergunta(alvo.q);
         if (alvo.identificar) pedido.identificar = true; // parte importada de um áudio: a IA devolve também o título e o orador
+        if (alvo.detalhe === 'completo') pedido.detalhe = 'completo'; // 6.15.44: resumo com todos os detalhes
         const r = await trPost(pedido);
-        if (!r.ok && deTexto) return { ok: true, falhaTexto: trMensagem(r, 'o resumo falhou') };
+        if (!r.ok && (deTexto || alvo.melhorar)) return { ok: true, falhaTexto: trMensagem(r, 'o resumo falhou') };
         if (!r.ok) {
           const ok = entregarNaAnotacao(alvo, '—— Transcrição ——\n' + transc, '');
           return { ok, falhaResumo: trMensagem(r, 'o resumo falhou') };
@@ -38958,10 +39122,11 @@ function saveTemplatesToStorage() {
           resumo = resumo.slice(0, achou.index).replace(/\s+$/, '');
           if (anotacoesOradorRespondeu(transc, alvo.q)) resp = anotacoesResumoFormatar(achou[1].replace(/[*_]{2}/g, '')).trim();
         }
-        const titulo = deTexto ? '—— Resumo do texto ——' : varias ? '—— Resumo das gravações ——' : '—— Resumo da gravação ——';
-        const ok = entregarNaAnotacao(alvo, bibliaMarcasParaUnicode('**__' + titulo + '__**') + '\n\n' + anotacoesResumoFormatar(resumo), resp);
+        const titulo = deTexto ? '—— Resumo do texto ——' : alvo.detalhe === 'completo' ? '—— Resumo completo da gravação ——' : varias ? '—— Resumo das gravações ——' : '—— Resumo da gravação ——';
+        const bloco = bibliaMarcasParaUnicode('**__' + titulo + '__**') + '\n\n' + anotacoesResumoFormatar(resumo);
+        const ok = entregarNaAnotacao(alvo, bloco, resp);
         if (ok && ident) identificarParteReuniao(alvo, ident);
-        return { ok, resposta: Boolean(resp) };
+        return { ok, resposta: Boolean(resp), bloco: ok ? bloco : '', cortado: Boolean(r.dados && r.dados.cortado) };
       }
       // 6.15.39: título e orador achados no áudio importado vão para a parte (só nos campos que ainda estão vazios).
       function identificarParteReuniao(alvo, ident) {
@@ -38998,7 +39163,7 @@ function saveTemplatesToStorage() {
         if (!res.ok) return '⚠️ Não encontrei a anotação de ' + nome + ' para colocar o resumo.';
         if (res.falhaTexto) return '⚠️ ' + nome + ': ' + res.falhaTexto + '; o texto das anotações ficou como estava.';
         if (res.falhaResumo) return '⚠️ ' + nome + ': ' + res.falhaResumo + '; a transcrição foi colocada nas anotações.';
-        return '✅ Resumo de ' + nome + ' colocado nas anotações' + (res.resposta ? ', com a resposta da pergunta de recapitulação' : '') + '.';
+        return '✅ Resumo de ' + nome + ' colocado nas anotações' + (res.resposta ? ', com a resposta da pergunta de recapitulação' : '') + '.' + (res.cortado ? ' ⚠️ O texto ficou grande demais e pode ter sido cortado no fim.' : '');
       }
       // Pedido de uma gravação (a recém-gravada ou um arquivo carregado).
       function pedidoUmaGravacao(arquivo, duracaoS, alvo) {
@@ -39009,9 +39174,11 @@ function saveTemplatesToStorage() {
             const transc = await anotacoesTranscrever(arquivo, duracaoS);
             if (!transc) return '⚠️ Não foi possível transcrever a gravação de «' + alvo.titulo + '».';
             job.fase = 'Guardando a transcrição';
-            await guardarTranscricao(alvo, transc, duracaoS).catch(() => {});
+            const transcId = await guardarTranscricao(alvo, transc, duracaoS).catch(() => '');
             job.fase = 'Resumindo';
-            return mensagemFinal(alvo, await anotacoesResumir(transc, false, alvo));
+            const res = await anotacoesResumir(transc, false, alvo);
+            if (transcId && res.bloco) await transcMarcar([transcId], { bloco: res.bloco, tipo: alvo.detalhe === 'completo' ? 'completo' : 'objetivo' });
+            return mensagemFinal(alvo, res);
           }
         };
       }
@@ -39046,9 +39213,11 @@ function saveTemplatesToStorage() {
             if (!trechos.length) return '⚠️ Não foi possível transcrever as gravações de «' + alvo.titulo + '».';
             job.fase = 'Guardando a transcrição';
             const somaS = ids.reduce((s, id) => s + ((indice.find(g => g.id === id) || {}).duracaoS || 0), 0);
-            await guardarTranscricao(alvo, trechos.join('\n\n'), somaS).catch(() => {});
+            const transcId = await guardarTranscricao(alvo, trechos.join('\n\n'), somaS).catch(() => '');
             job.fase = 'Resumindo';
-            const msg = mensagemFinal(alvo, await anotacoesResumir(trechos.join('\n\n'), trechos.length > 1, alvo));
+            const res = await anotacoesResumir(trechos.join('\n\n'), trechos.length > 1, alvo);
+            if (transcId && res.bloco) await transcMarcar([transcId], { bloco: res.bloco, tipo: alvo.detalhe === 'completo' ? 'completo' : 'objetivo' });
+            const msg = mensagemFinal(alvo, res);
             return msg + (falhas ? (falhas === 1 ? ' (1 gravação não pôde ser transcrita.)' : ' (' + falhas + ' gravações não puderam ser transcritas.)') : '');
           }
         };
@@ -39696,8 +39865,9 @@ function saveTemplatesToStorage() {
           const duracaoS = await trDuracaoLer(arquivo);
           gravarStatus.textContent = '';
           // 6.15.41: nada é enviado ainda — primeiro os dados do arquivo, com Confirmar ou Descartar.
-          cartaoDeAudio(document.getElementById('anotacoesImportCard'), arquivo, duracaoS, async () => {
+          cartaoDeAudio(document.getElementById('anotacoesImportCard'), arquivo, duracaoS, async detalhe => {
             const alvo = alvoAtual();
+            alvo.detalhe = detalhe;
             // 6.15.40: na parte da reunião, a mesma regra do "Importar parte gravada": a IA tenta achar o título e o orador (campos vazios).
             if (alvo.modo === 'reuniao' && !alvo.programa) alvo.identificar = true;
             return filaAdicionar(pedidoUmaGravacao(arquivo, duracaoS || null, alvo));

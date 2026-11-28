@@ -13,7 +13,7 @@ import { iaDaTarefa, lerConfigIa } from "./_iaConfig.mjs";
 import { criarClienteIa, erroSemIa, iaDisponivel } from "./_clienteIa.mjs";
 import { registrarUsoIa } from "./_estatisticas.mjs";
 import { carregarPrompts } from "./_promptsArmazenados.mjs";
-import { IDENTIFICAR_PARTE } from "./_prompts.mjs";
+import { IDENTIFICAR_PARTE, RESUMO_COMPLETO } from "./_prompts.mjs";
 import { buscarVersiculos, fontesConfiguradas, referenciasNoTexto } from "./_fontes.mjs";
 import { chaveDeDirigenteValida } from "./familia-sessao.mjs";
 import { apagarTranscricao, lerTranscricao, listarTranscricoes, salvarTranscricao, transcricoesConfiguradas } from "./_transcricoes.mjs";
@@ -659,15 +659,18 @@ export default async function handler(req, res) {
             console.error("Resumo das anotações: versículos indisponíveis", e?.message);
           }
         }
+        if (corpo.detalhe === "completo" && typeof mensagemResumo === "string") mensagemResumo += "\n\n" + RESUMO_COMPLETO;
         // Parte da reunião criada a partir de um áudio importado: a IA devolve também o título e o orador, em duas linhas no fim.
         if (corpo.identificar === true && typeof mensagemResumo === "string") mensagemResumo += "\n\n" + IDENTIFICAR_PARTE;
       }
-      const client = criarClienteIa({ maxRetries: 1, timeout: 120_000 });
+      // O resumo completo é muito maior: mais espaço de resposta e mais tempo (sem repetir, para caber no limite de 5 min do servidor).
+      const completo = !parcial && corpo.modo === "anotacoes" && corpo.detalhe === "completo";
+      const client = criarClienteIa(completo ? { maxRetries: 0, timeout: 285_000 } : { maxRetries: 1, timeout: 120_000 });
       const resposta = await client.messages.create({
         model: modelo,
         ...esforcoDoModelo(modelo, esforco),
         ...pensarPouco(modelo),
-        max_tokens: tetoDoModelo(modelo, parcial ? 1500 : 4000),
+        max_tokens: tetoDoModelo(modelo, parcial ? 1500 : completo ? 20000 : 4000),
         system: parcial ? SISTEMA_RESUMO_PARCIAL : sistemaResumo,
         messages: [{ role: "user", content: mensagemResumo }],
       });
@@ -681,7 +684,7 @@ export default async function handler(req, res) {
           .join("\n")
       );
       if (!resumo) return erro(res, 502, "A IA não devolveu um resumo. Tente novamente.");
-      return res.status(200).json({ resumo });
+      return res.status(200).json({ resumo, ...(resposta.stop_reason === "max_tokens" ? { cortado: true } : {}) });
     }
 
     if (corpo.acao === "corrigir") {
