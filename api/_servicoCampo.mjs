@@ -323,7 +323,7 @@ export function dadosDoCampo(body) {
   // A matéria de capa do jw.org escolhida no app: só o número do documento, o título e o endereço do próprio jw.org (o texto é lido no servidor).
   const c = b.capa && typeof b.capa === "object" ? b.capa : null;
   const capa = c && /^\d{6,12}$/.test(String(c.docId || ""))
-    ? { docId: String(c.docId), titulo: linha(c.titulo, 200), link: /^https:\/\/www\.jw\.org\/pt\/[^\s"<>]*$/.test(String(c.link || "")) ? String(c.link).slice(0, 300) : "" }
+    ? { docId: String(c.docId), titulo: linha(c.titulo, 200), link: /^https:\/\/www\.jw\.org\/(pt\/[^\s"<>]*|finder\?wtlocale=T&docid=\d{6,12})$/.test(String(c.link || "")) ? String(c.link).slice(0, 300) : "" }
     : null;
   return {
     capa,

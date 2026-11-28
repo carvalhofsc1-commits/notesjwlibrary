@@ -6524,7 +6524,7 @@ async function capaDoJwParaCampo(res, body) {
   if (!link) return erro(res, 400, "Cole o link da matéria de capa do jw.org.");
   try {
     const r = await capaPeloLinkDoJw(link, { timeoutMs: 12000 });
-    if (r.erro === "link") return erro(res, 400, "Esse link não é de uma matéria do jw.org em português (começa com https://www.jw.org/pt/).");
+    if (r.erro === "link") return erro(res, 400, "Esse link não é de uma matéria do jw.org em português. Use o link do botão Compartilhar → Copiar link da matéria, ou o endereço que começa com https://www.jw.org/pt/.");
     if (!r.capa) return erro(res, 404, "Não achei essa matéria no wol.jw.org. Confira se o link abre a matéria (não a revista inteira) ou escreva o assunto no campo Assunto.");
     return res.status(200).json({ capa: r.capa });
   } catch (e) {

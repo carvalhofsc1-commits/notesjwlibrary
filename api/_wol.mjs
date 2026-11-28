@@ -2673,7 +2673,15 @@ export async function capaPeloLinkDoJw(link, { timeoutMs = 9000 } = {}) {
   } catch {
     return { erro: "link" };
   }
-  if (url.protocol !== "https:" || !/^(www\.)?jw\.org$/.test(url.hostname) || !url.pathname.startsWith("/pt/")) return { erro: "link" };
+  if (url.protocol !== "https:" || !/^(www\.)?jw\.org$/.test(url.hostname)) return { erro: "link" };
+  // 6.15.32: o link do botão Compartilhar do jw.org ("https://www.jw.org/finder?wtlocale=T&docid=102026005&srcid=share") já traz o
+  // número do documento, que é o mesmo no wol (wtlocale=T = português).
+  if (/^\/finder\/?$/.test(url.pathname)) {
+    const docId = url.searchParams.get("docid") || "";
+    if (!/^\d{6,12}$/.test(docId) || (url.searchParams.get("wtlocale") || "T") !== "T") return { erro: "link" };
+    return montarCapaDoWol({ docId, titulo: "" }, `https://www.jw.org/finder?wtlocale=T&docid=${docId}`, timeoutMs);
+  }
+  if (!url.pathname.startsWith("/pt/")) return { erro: "link" };
   const partes = url.pathname.split("/").filter(Boolean).map((p) => { try { return decodeURIComponent(p); } catch { return p; } });
   const artigo = slugDe(partes[partes.length - 1]);
   if (!artigo || partes.length < 3) return { erro: "link" };
@@ -2699,17 +2707,27 @@ export async function capaPeloLinkDoJw(link, { timeoutMs = 9000 } = {}) {
     }
   }
   if (!melhor) return { erro: "nao-achou" };
+  return montarCapaDoWol(melhor, url.origin.replace("//jw.org", "//www.jw.org") + url.pathname, timeoutMs);
+}
+async function montarCapaDoWol(melhor, link, timeoutMs) {
   const a = await lerArtigoDoWol(`${BASE}/pt/wol/d/r5/lp-t/${melhor.docId}`, { timeoutMs, maxCaracteres: 3000, estruturado: true }).catch(() => null);
-  const primeiro = a ? (a.texto.split("\n").find((l) => !l.startsWith("#") && l.length > 60) || "") : "";
-  // O sumário traz a série antes do título ("COMO VENCER A SOLIDÃO Ajude outros") → "Como vencer a solidão — Ajude outros".
-  let titulo = (a && a.titulo) || melhor.titulo;
-  const serie = melhor.titulo.endsWith(titulo) ? melhor.titulo.slice(0, -titulo.length).trim() : "";
+  if (!a) return { erro: "nao-achou" };
+  const linhas = a.texto.split("\n");
+  const primeiro = linhas.find((l) => !l.startsWith("#") && l.length > 60) || "";
+  // A série vem antes do título — no sumário ("COMO VENCER A SOLIDÃO Ajude outros") ou na 1.ª linha da matéria ("COMO VENCER A SOLIDÃO") —
+  // e fica "Como vencer a solidão — Ajude outros".
+  let titulo = a.titulo || melhor.titulo;
+  let serie = melhor.titulo && melhor.titulo.endsWith(titulo) ? melhor.titulo.slice(0, -titulo.length).trim() : "";
+  if (!serie) {
+    const l1 = (linhas[0] || "").replace(/^#+\s*/, "").trim();
+    if (l1 && l1 !== titulo && /\p{Lu}/u.test(l1) && l1 === l1.toUpperCase() && l1.length <= 70) serie = l1;
+  }
   if (serie && serie === serie.toUpperCase()) titulo = serie.charAt(0) + serie.slice(1).toLowerCase() + " — " + titulo;
   return {
     capa: {
       titulo,
       descricao: primeiro.length > 260 ? primeiro.slice(0, 257).replace(/\s+\S*$/, "") + "…" : primeiro,
-      link: url.origin.replace("//jw.org", "//www.jw.org") + url.pathname,
+      link,
       docId: melhor.docId,
     },
   };

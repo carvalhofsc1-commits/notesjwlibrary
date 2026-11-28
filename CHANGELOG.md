@@ -2,6 +2,10 @@
 
 Movido do comentário da constante APP_VERSION (index.html) em 2026-10-28.
 
+## 6.15.32
+
+- Matéria de capa do jw.org: aceita o link do botão Compartilhar → Copiar link do jw.org ("https://www.jw.org/finder?wtlocale=T&docid=…"), que já traz o número da matéria; ela é lida direto no wol.jw.org, com a série no título ("Como vencer a solidão — Ajude outros").
+
 ## 6.15.31
 
 - Serviço de campo, matéria de capa: o jw.org responde aos servidores na nuvem com uma verificação anti-robô (202, página vazia), então a página inicial não é mais lida. Agora a pessoa cola o link da matéria (copiado do jw.org) num campo 📰 e o servidor acha a mesma matéria no wol.jw.org: pela revista do link (Despertai!/A Sentinela, número e ano → sumário da edição) ou, nos outros casos, pela pesquisa do wol com o título. O título sai com a série ("Como vencer a solidão — Ajude outros") e o resumo é o primeiro parágrafo. A opção fica dentro do card 📚 Fontes de consulta, como penúltima ("📰 Usar a matéria de capa do jw.org", com o campo do link), antes de "Pesquisar além da lista".
